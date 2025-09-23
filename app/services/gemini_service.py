@@ -20,10 +20,10 @@ class GeminiService:
             genai.configure(api_key=settings.GOOGLE_API_KEY)
             self.generation_config = {"temperature": 0.5, "top_p": 1, "top_k": 1}
             self.model = genai.GenerativeModel(
-                model_name='gemini-2.5-flash', # Usando um modelo mais recente para melhor desempenho
+                model_name='gemini-1.5-flash',
                 generation_config=self.generation_config
             )
-            logger.info("✅ Cliente Gemini inicializado com sucesso (gemini-2.5-flash).")
+            logger.info("✅ Cliente Gemini inicializado com sucesso (gemini-1.5-flash).")
         except Exception as e:
             logger.error(f"🚨 ERRO CRÍTICO ao configurar o Gemini: {e}")
             raise
@@ -110,7 +110,6 @@ class GeminiService:
             formatted_history = self._format_history_for_prompt(conversation_history_db)
 
             master_prompt = {
-                # ================== A ALTERAÇÃO ESTÁ AQUI ==================
                 "instrucao_geral": (
                     "Você é um assistente de IA especialista em atendimento. Siga estas regras em ordem de prioridade:\n"
                     "1. **Prioridade Máxima ao Contexto:** Sua principal fonte de verdade é o `contexto_planilha`. **Sempre** procure a resposta neste contexto primeiro.\n"
@@ -118,7 +117,6 @@ class GeminiService:
                     "3. **Não Invente Respostas:** Se a pergunta for muito específica e você não tiver a informação (nem no contexto, nem no seu conhecimento), responda educadamente que irá verificar e peça para aguardar um pouco.\n"
                     "4. **Mantenha a Persona:** Siga sempre o tom de voz e o objetivo definidos em `configuracao_persona`."
                 ),
-                # ==========================================================
                 "formato_resposta_obrigatorio": {
                     "descricao": "Sua resposta DEVE ser um único objeto JSON válido, sem nenhum texto ou formatação adicional (como ```json).",
                     "chaves": {
@@ -144,8 +142,11 @@ class GeminiService:
 
         except Exception as e:
             logger.error(f"Erro ao gerar ação de conversação com Gemini: {e}")
+            # --- ALTERAÇÃO AQUI ---
+            # Em caso de erro, não enviamos nenhuma mensagem ao cliente.
+            # Apenas registamos o erro internamente.
             return {
-                "mensagem_para_enviar": "Desculpe, estou com um problema técnico e não consigo responder agora. Tente novamente em alguns instantes.",
+                "mensagem_para_enviar": None,
                 "nova_situacao": "Erro IA",
                 "observacoes": f"Falha da IA: {str(e)}"
             }
