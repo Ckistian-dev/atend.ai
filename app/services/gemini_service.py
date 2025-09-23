@@ -20,30 +20,52 @@ class GeminiService:
             genai.configure(api_key=settings.GOOGLE_API_KEY)
             self.generation_config = {"temperature": 0.5, "top_p": 1, "top_k": 1}
             self.model = genai.GenerativeModel(
-                model_name='gemini-1.5-flash',
+                model_name='gemini-2.5-flash',
                 generation_config=self.generation_config
             )
-            logger.info("✅ Cliente Gemini inicializado com sucesso (gemini-1.5-flash).")
+            logger.info("✅ Cliente Gemini inicializado com sucesso (gemini-2.5-flash).")
         except Exception as e:
             logger.error(f"🚨 ERRO CRÍTICO ao configurar o Gemini: {e}")
             raise
 
     def _generate_with_retry(self, prompt: Any) -> genai.types.GenerateContentResponse:
-        """Executa a chamada para a API Gemini com lógica de retentativa."""
+        """
+        Executa a chamada para a API Gemini com lógica de retentativa e depuração precisa.
+        """
         max_retries = 3
         attempt = 0
         while attempt < max_retries:
             try:
                 return self.model.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
+
+            # Erro específico de Quota (retentativa com espera)
             except exceptions.ResourceExhausted as e:
                 attempt += 1
                 logger.warning(f"Quota da API excedida (429). Tentativa {attempt}/{max_retries}.")
-                wait_time = (2 ** attempt) * 5
-                logger.info(f"Aguardando {wait_time} segundos para nova tentativa...")
-                time.sleep(wait_time)
+                if attempt < max_retries:
+                    wait_time = (2 ** attempt) * 5
+                    logger.info(f"A aguardar {wait_time} segundos para nova tentativa...")
+                    time.sleep(wait_time)
+                continue
+
+            # Erro de prompt mal formatado ou inválido (não tenta novamente)
+            except exceptions.InvalidArgument as e:
+                logger.error(f"Erro de Argumento Inválido (400) com a API Gemini. O prompt pode estar mal formatado. Erro: {e}", exc_info=True)
+                raise e # Lança o erro imediatamente
+
+            # Erro de segurança (não tenta novamente)
+            except genai.types.BlockedPromptException as e:
+                logger.error(f"Prompt bloqueado pela política de segurança do Gemini. Erro: {e}", exc_info=True)
+                raise e # Lança o erro imediatamente
+
+            # Outros erros genéricos (tenta novamente após uma pequena pausa)
             except Exception as e:
-                logger.error(f"Erro inesperado ao gerar conteúdo com Gemini: {e}")
-                raise e
+                attempt += 1
+                logger.error(f"Erro inesperado ({type(e).__name__}) na API Gemini. Tentativa {attempt}/{max_retries}. Erro: {e}")
+                if attempt < max_retries:
+                    time.sleep(5)
+                continue
+                
         raise Exception(f"Não foi possível obter uma resposta da API Gemini após {max_retries} tentativas.")
 
     def _replace_variables_in_dict(self, config_dict: Dict[str, Any], contact_data: models.Contact) -> Dict[str, Any]:
@@ -64,7 +86,6 @@ class GeminiService:
         return json.loads(config_str)
 
     def _format_history_for_prompt(self, db_history: List[dict]) -> List[Dict[str, str]]:
-        """Formata o histórico do banco de dados para um formato simples de JSON."""
         history_for_ia = []
         for msg in db_history:
             role = "ia" if msg.get("role") == "assistant" else "contato"
@@ -73,7 +94,6 @@ class GeminiService:
         return history_for_ia
         
     def transcribe_and_analyze_media(self, media_data: dict, db_history: List[dict]) -> str:
-        """Transcreve áudio ou analisa imagem/documento no contexto da conversa."""
         logger.info(f"Iniciando transcrição/análise para mídia do tipo {media_data.get('mime_type')}")
         prompt_parts = []
         
@@ -102,9 +122,7 @@ class GeminiService:
         conversation_history_db: List[dict],
         contexto_planilha: Optional[Dict[str, Any]]
     ) -> dict:
-        """
-        Constrói um ÚNICO prompt JSON com persona, histórico e o CONTEXTO da planilha.
-        """
+        # ... (sem alterações) ...
         try:
             campaign_config = self._replace_variables_in_dict(config.prompt_config, contact)
             formatted_history = self._format_history_for_prompt(conversation_history_db)
@@ -142,14 +160,7 @@ class GeminiService:
 
         except Exception as e:
             logger.error(f"Erro ao gerar ação de conversação com Gemini: {e}")
-            # --- ALTERAÇÃO AQUI ---
-            # Em caso de erro, não enviamos nenhuma mensagem ao cliente.
-            # Apenas registamos o erro internamente.
-            return {
-                "mensagem_para_enviar": None,
-                "nova_situacao": "Erro IA",
-                "observacoes": f"Falha da IA: {str(e)}"
-            }
+            return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": f"Falha da IA: {str(e)}" }
 
 _gemini_service_instance = None
 def get_gemini_service():
