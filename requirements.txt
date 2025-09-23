@@ -1,0 +1,29 @@
+# requirements.txt (versão final)
+
+# --- Core do FastAPI ---
+fastapi
+uvicorn[standard]
+
+# --- Banco de Dados ---
+sqlalchemy[asyncio]
+asyncpg
+alembic
+psycopg2-binary
+
+# --- Autenticação e Segurança ---
+passlib
+bcrypt
+python-jose[cryptography]
+
+# --- Configuração e Utilitários ---
+pydantic-settings
+python-multipart
+email-validator
+
+# --- Comunicação com APIs Externas ---
+httpx
+google-generativeai
+
+# --- Processamento de Dados (NOVO) ---
+pandas
+openpyxl

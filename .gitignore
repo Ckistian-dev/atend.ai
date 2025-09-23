@@ -1,0 +1,24 @@
+# .gitignore
+
+# Arquivos de Segredos e Configuração Local
+.env
+*.env.local
+
+# Dependências do Python
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Dependências do Node.js
+node_modules/
+dist/
+.npm
+npm-debug.log*
+
+# Arquivos de Sistema Operacional e IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
