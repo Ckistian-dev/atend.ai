@@ -1,1 +1,1 @@
-web: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+web: export DATABASE_URL=$(echo "$DATABASE_URL" | sed 's/postgresql/&+asyncpg/') && uvicorn app.main:app --host 0.0.0.0 --port $PORT
