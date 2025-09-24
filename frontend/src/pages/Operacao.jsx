@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axiosConfig';
-import { Play, Pause, Loader2, Zap, Save, Clock, Check } from 'lucide-react';
+import { Play, Pause, Loader2, Zap, Save, Clock, Check, Bot } from 'lucide-react';
 
 function Operacao() {
     const [agentStatus, setAgentStatus] = useState('stopped');
@@ -13,7 +13,6 @@ function Operacao() {
     const [followupValue, setFollowupValue] = useState(24);
     const [followupUnit, setFollowupUnit] = useState('hours');
 
-    // Estado para guardar a lista de todas as personas (para traduzir o ID para nome)
     const [personas, setPersonas] = useState([]);
 
     const fetchInitialData = useCallback(async () => {
@@ -61,7 +60,6 @@ function Operacao() {
         return () => clearInterval(interval);
     }, [fetchInitialData, fetchActivityData]);
     
-    // Função auxiliar para encontrar o nome da persona pelo ID
     const getPersonaNameById = (id) => {
         const persona = personas.find(p => p.id === id);
         return persona ? persona.nome_config : 'N/D';
@@ -119,16 +117,17 @@ function Operacao() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 min-h-0">
-                <div className="lg:col-span-1 flex flex-col gap-8">
+                {/* --- ALTERAÇÃO AQUI: Usamos grid e grid-rows-2 para dividir o espaço igualmente --- */}
+                <div className="lg:col-span-1 grid grid-rows-2 gap-8">
                     
-                    <div className="bg-white p-6 rounded-xl shadow-md border flex flex-col text-center">
+                    <div className="bg-white p-6 rounded-xl shadow-md border flex flex-col text-center justify-center">
                         <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-4 mx-auto ${isRunning ? 'bg-green-100' : 'bg-red-100'}`}>
                             <Zap size={48} className={isRunning ? 'text-green-500' : 'text-red-500'} />
                         </div>
                         <h2 className="text-2xl font-bold text-gray-800">
                             {isLoading ? 'A verificar...' : (isRunning ? 'Agente Ativo' : 'Agente Pausado')}
                         </h2>
-                        <p className="text-gray-500 mt-2 mb-6">
+                        <p className="text-gray-500 mt-2 mb-6 flex-1">
                             {isRunning ? 'A IA está a responder ativamente a novas mensagens.' : 'A IA não responderá a nenhuma mensagem até ser iniciada.'}
                         </p>
                         {isRunning ? (
@@ -142,7 +141,7 @@ function Operacao() {
                         )}
                     </div>
 
-                    <div className="bg-white p-6 rounded-xl shadow-md border">
+                    <div className="bg-white p-6 rounded-xl shadow-md border flex flex-col justify-center">
                         <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2"><Clock size={20} /> Configuração de Follow-up</h3>
                         <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg border mb-4">
                             <button type="button" onClick={() => setFollowupEnabled(!followupEnabled)} className={`w-6 h-6 rounded flex items-center justify-center transition-colors ${followupEnabled ? 'bg-green-600' : 'bg-gray-300'}`}>
@@ -187,7 +186,7 @@ function Operacao() {
                                         <td className="p-3 font-medium text-gray-700">{activity.whatsapp}</td>
                                         <td className="p-3 text-gray-600">{activity.situacao}</td>
                                         <td className="p-3 text-gray-600 font-medium">{getPersonaNameById(activity.active_persona_id)}</td>
-                                        <td className="p-3 text-gray-600 whitespace-pre-wrap">{activity.observacao}</td>
+                                        <td className="p-3 text-gray-600 whitespace-pre-wrap">{activity.observacao || '-'}</td>
                                     </tr>
                                 ))}
                             </tbody>
