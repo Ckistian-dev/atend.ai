@@ -21,14 +21,12 @@ async def _format_history_for_db(
 ) -> List[Dict[str, str]]:
     """
     Formata o histórico bruto da API do WhatsApp para o formato do banco de dados,
-    processando mídias (áudios) conforme necessário.
+    processando mídias (áudios, imagens, documentos) conforme necessário.
     """
     history_list = []
     whatsapp_service = get_whatsapp_service()
     gemini_service = get_gemini_service()
 
-    # O histórico da API vem do mais recente para o mais antigo,
-    # então invertemos para processar do mais antigo para o mais recente.
     for msg in reversed(raw_history):
         try:
             msg_content = msg.get("message", {})
@@ -45,12 +43,19 @@ async def _format_history_for_db(
                 logger.info(f"Áudio encontrado no histórico de {contact_number}. Processando...")
                 media_data = await whatsapp_service.get_media_and_convert(instance_name, msg)
                 if media_data:
-                    # NOTA: O processamento de áudio pode consumir tokens e tempo.
-                    # Considere se a transcrição de todo o histórico é necessária.
                     transcription = gemini_service.transcribe_and_analyze_media(media_data, history_list)
                     content = f"[Áudio transcrito]: {transcription}"
                 else:
                     content = "[Falha ao processar áudio do histórico]"
+            
+            elif msg_content.get("imageMessage") or msg_content.get("documentMessage"):
+                logger.info(f"Mídia (imagem/doc) encontrada no histórico de {contact_number}. Processando...")
+                media_data = await whatsapp_service.get_media_and_convert(instance_name, msg)
+                if media_data:
+                    analysis = gemini_service.transcribe_and_analyze_media(media_data, history_list)
+                    content = f"[Análise de Mídia]: {analysis}"
+                else:
+                    content = "[Falha ao processar mídia do histórico]"
 
             if content:
                 history_list.append({"role": role, "content": content})
@@ -60,6 +65,7 @@ async def _format_history_for_db(
             continue
             
     return history_list
+
 
 async def process_incoming_message(data: dict):
     """
@@ -86,8 +92,8 @@ async def process_incoming_message(data: dict):
             situacoes_de_parada = ["Ignorar Contato", "Atendente Chamado"]
             if not was_created and atendimento.status in situacoes_de_parada:
                 logger.info(f"Mensagem recebida de {contact_number}, mas o atendimento ID {atendimento.id} está com status '{atendimento.status}'. A nova mensagem será ignorada.")
-                return # Interrompe o processamento aqui
-            
+                return
+
             history_list = []
             
             whatsapp_service = get_whatsapp_service()
@@ -97,7 +103,6 @@ async def process_incoming_message(data: dict):
                 logger.info(f"Novo atendimento. Buscando as últimas 32 mensagens para {contact_number}...")
                 raw_history = await whatsapp_service.fetch_chat_history(instance_name, contact_number, count=32)
                 
-                # Usa a nova função para formatar o histórico
                 if raw_history:
                     history_list = await _format_history_for_db(raw_history, instance_name, contact_number)
                     logger.info(f"Histórico de {len(history_list)} mensagens formatado e pronto para o DB.")
@@ -107,25 +112,34 @@ async def process_incoming_message(data: dict):
                 except (json.JSONDecodeError, TypeError):
                     history_list = []
             
-            # --- O restante da lógica para processar a MENSAGEM ATUAL permanece o mesmo ---
             current_message_content = message_data.get('message', {})
             content_for_history = ""
             
             if current_message_content.get('conversation') or current_message_content.get('extendedTextMessage'):
                 content_for_history = current_message_content.get('conversation') or current_message_content.get('extendedTextMessage', {}).get('text', '')
+            
             elif "audioMessage" in current_message_content:
                 media_data = await whatsapp_service.get_media_and_convert(instance_name, message_data)
                 if media_data:
                     transcription = gemini_service.transcribe_and_analyze_media(media_data, history_list)
                     content_for_history = f"[Áudio transcrito]: {transcription}"
-                    # await crud_user.decrement_user_tokens(db, db_user=user, amount=1) # Descomente se necessário
                 else:
                     content_for_history = "[Falha ao processar áudio recebido]"
 
+            # --- ADICIONADO: Lógica para a Mensagem Atual ser Imagem ou Documento ---
+            elif "imageMessage" in current_message_content or "documentMessage" in current_message_content:
+                media_data = await whatsapp_service.get_media_and_convert(instance_name, message_data)
+                if media_data:
+                    analysis = gemini_service.transcribe_and_analyze_media(media_data, history_list)
+                    content_for_history = f"[Análise de Mídia]: {analysis}"
+                else:
+                    content_for_history = "[Falha ao processar mídia recebida]"
+            # --- FIM DA ADIÇÃO ---
+
             if not content_for_history or not content_for_history.strip():
+                logger.info(f"Mensagem de {contact_number} não continha conteúdo processável. Ignorando.")
                 return
             
-            # Adiciona a mensagem atual ao histórico
             history_list.append({"role": "user", "content": content_for_history})
 
             new_conversation_history = json.dumps(history_list)
