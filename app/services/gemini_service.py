@@ -33,16 +33,17 @@ class GeminiService:
         """Inicializa ou re-inicializa o cliente Gemini com a chave atual."""
         try:
             current_key = self.api_keys[self.current_key_index]
-            # O SDK moderno usa Transport para configurar a chave por requisição,
-            # mas re-inicializar o modelo é uma abordagem mais isolada e segura.
+            
+            genai.configure(api_key=current_key)
+            
             self.model = genai.GenerativeModel(
-                model_name='gemini-2.5-flash', # Recomendo usar 1.5-flash, o sucessor do gemini-2.5-flash
-                generation_config=self.generation_config,
-                api_key=current_key
+                model_name='gemini-2.5-flash',
+                generation_config=self.generation_config
             )
+
             logger.info(f"✅ Cliente Gemini inicializado com sucesso (chave índice {self.current_key_index}).")
         except Exception as e:
-            logger.error(f"🚨 ERRO CRÍTICO ao configurar o Gemini com a chave índice {self.current_key_index}: {e}")
+            logger.error(f"🚨 ERRO CRÍTICO ao configurar o Gemini com a chave índice {self.current_key_index}: {e}", exc_info=True)
             raise
 
     def _rotate_key(self):
