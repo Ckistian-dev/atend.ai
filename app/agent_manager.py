@@ -54,7 +54,7 @@ async def atendimento_agent_task(user_id: int):
                     action_taken = True
                     logger.info(f"Agente (Utilizador {user_id}): Processando atendimento ID {atendimento.id} para {atendimento.contact.whatsapp}")
 
-                    situacoes_de_parada = ["Ignorar Contato", "Vendedor Chamado", "Concluído"]
+                    situacoes_de_parada = ["Ignorar Contato", "Atendente Chamado", "Concluído"]
                     if atendimento.status in situacoes_de_parada:
                         logger.info(f"Atendimento {atendimento.id} com status '{atendimento.status}'. Nenhuma ação será tomada.")
                         update = schemas.AtendimentoUpdate(status="Aguardando") 

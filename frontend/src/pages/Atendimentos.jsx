@@ -129,7 +129,7 @@ function Atendimentos() {
 
     const [modalData, setModalData] = useState({ type: null, data: null });
 
-    const statusOptions = ["Aguardando Resposta", "Concluído", "Ignorar Contato", "Vendedor Chamado"];
+    const statusOptions = ["Aguardando Resposta", "Concluído", "Ignorar Contato", "Atendente Chamado"];
 
     const fetchData = useCallback(async () => {
         try {
