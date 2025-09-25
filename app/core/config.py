@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     Configurações centralizadas da aplicação, carregadas de variáveis de ambiente.
     """
     # Configurações do Banco de Dados
-    DATABASE_URL: str = "postgresql+asyncpg://user:password@host:port/db_name"
+    DATABASE_URL: str
 
     # Configurações de Autenticação JWT
     SECRET_KEY: str
