@@ -175,7 +175,6 @@ class WhatsAppService:
             return []
         
         url = f"{self.api_url}/chat/findMessages/{instance_name}"
-        # A API espera o número no formato JID (e.g., 554599861237@s.whatsapp.net)
         jid = f"{number}@s.whatsapp.net"
         
         payload = {
