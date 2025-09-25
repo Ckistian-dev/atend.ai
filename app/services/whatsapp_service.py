@@ -167,59 +167,44 @@ class WhatsAppService:
         
         return None
     
-    async def fetch_chat_history(self, instance_name: str, number: str, count: int = 100) -> List[Dict[str, Any]]:
+    async def fetch_chat_history(self, instance_name: str, number: str, count: int = 32) -> List[Dict[str, Any]]:
         """
-        Busca o histórico de mensagens de uma conversa, lidando com paginação.
-        O parâmetro 'count' define o tamanho da página (offset).
+        Busca as 'count' mensagens mais recentes de uma conversa.
+        Como a API retorna as mais novas primeiro, buscamos apenas a primeira página.
         """
         if not instance_name or not number:
             return []
 
         url = f"{self.api_url}/chat/findMessages/{instance_name}"
-        # A API espera o número no formato JID (e.g., 554599861237@s.whatsapp.net)
         jid = f"{number}@s.whatsapp.net"
         
-        historico_completo = []
-        pagina_atual = 1
-        total_paginas = 1  # Inicia com 1 para entrar no loop
+        payload = {
+            "page": 1,
+            "offset": count,
+            "where": {
+                "key": {
+                    "remoteJid": jid
+                }
+            }
+        }
 
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
-                while pagina_atual <= total_paginas:
-                    logger.info(f"Buscando histórico para {jid}, página {pagina_atual}/{total_paginas}...")
-                    
-                    payload = {
-                        "page": pagina_atual,
-                        "offset": count,  # Usa 'count' como o tamanho da página
-                        "where": {
-                            "key": {
-                                "remoteJid": jid
-                            }
-                        }
-                    }
+                logger.info(f"Buscando as últimas {count} mensagens para {jid}...")
+                response = await client.post(url, headers=self.headers, json=payload)
+                response.raise_for_status()
+                data = response.json()
 
-                    response = await client.post(url, headers=self.headers, json=payload)
-                    response.raise_for_status()
-                    data = response.json()
-
-                    # Na primeira busca, define o total de páginas a serem percorridas
-                    if pagina_atual == 1 and "messages" in data:
-                        total_paginas = data["messages"].get("pages", 1)
-
-                    mensagens_da_pagina = data.get("messages", {}).get("records", [])
-                    historico_completo.extend(mensagens_da_pagina)
-                    
-                    pagina_atual += 1
-
-            # A API retorna as mensagens mais recentes primeiro, então ordenamos da mais antiga para a mais nova
-            historico_ordenado = sorted(historico_completo, key=lambda msg: int(msg.get("messageTimestamp", 0)))
-            logger.info(f"Histórico para {jid} carregado com sucesso. Total de {len(historico_ordenado)} mensagens.")
-            return historico_ordenado
+                mensagens = data.get("messages", {}).get("records", [])
+                
+                # A API já retorna as mais recentes, então não precisamos ordenar o histórico completo
+                logger.info(f"Histórico para {jid} carregado com sucesso. Total de {len(mensagens)} mensagens encontradas.")
+                return mensagens
 
         except Exception as e:
             logger.error(f"Não foi possível buscar o histórico para {number}. Erro: {e}")
             return []
-
+        
 _whatsapp_service_instance = None
 def get_whatsapp_service():
     global _whatsapp_service_instance

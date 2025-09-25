@@ -1,6 +1,7 @@
 # app/core/config.py
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import List
 
 class Settings(BaseSettings):
     """
@@ -18,8 +19,8 @@ class Settings(BaseSettings):
     EVOLUTION_API_URL: str
     EVOLUTION_API_KEY: str
 
-    # Google Gemini API
-    GOOGLE_API_KEY: str
+    # Google Gemini API - Carrega múltiplas chaves a partir de uma string separada por vírgula
+    GOOGLE_API_KEYS: List[str]
 
     # URL Base para Webhooks (o endereço público da sua API)
     WEBHOOK_URL: str

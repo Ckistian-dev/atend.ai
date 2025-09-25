@@ -5,7 +5,6 @@ from google.api_core import exceptions
 import time
 import logging
 import json
-import re
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
@@ -16,58 +15,148 @@ logger = logging.getLogger(__name__)
 
 class GeminiService:
     def __init__(self):
+        if not settings.GOOGLE_API_KEYS:
+            logger.error("🚨 ERRO CRÍTICO: Nenhuma chave de API do Google foi configurada.")
+            raise ValueError("A lista de GOOGLE_API_KEYS não pode estar vazia.")
+            
+        self.api_keys = settings.GOOGLE_API_KEYS
+        self.current_key_index = 0
+        self.model = None
+        self.generation_config = {"temperature": 0.5, "top_p": 1, "top_k": 1}
+        
+        # Inicializa o modelo com a primeira chave
+        self._initialize_model()
+
+    def _initialize_model(self):
+        """Inicializa ou re-inicializa o cliente Gemini com a chave atual."""
         try:
-            genai.configure(api_key=settings.GOOGLE_API_KEY)
-            self.generation_config = {"temperature": 0.5, "top_p": 1, "top_k": 1}
+            current_key = self.api_keys[self.current_key_index]
+            # O SDK moderno usa Transport para configurar a chave por requisição,
+            # mas re-inicializar o modelo é uma abordagem mais isolada e segura.
             self.model = genai.GenerativeModel(
-                model_name='gemini-2.5-flash',
-                generation_config=self.generation_config
+                model_name='gemini-2.5-flash', # Recomendo usar 1.5-flash, o sucessor do gemini-2.5-flash
+                generation_config=self.generation_config,
+                api_key=current_key
             )
-            logger.info("✅ Cliente Gemini inicializado com sucesso (gemini-2.5-flash).")
+            logger.info(f"✅ Cliente Gemini inicializado com sucesso (chave índice {self.current_key_index}).")
         except Exception as e:
-            logger.error(f"🚨 ERRO CRÍTICO ao configurar o Gemini: {e}")
+            logger.error(f"🚨 ERRO CRÍTICO ao configurar o Gemini com a chave índice {self.current_key_index}: {e}")
             raise
 
-    def _generate_with_retry(self, prompt: Any) -> genai.types.GenerateContentResponse:
+    def _rotate_key(self):
+        """Muda para a próxima chave na lista."""
+        self.current_key_index = (self.current_key_index + 1) % len(self.api_keys)
+        logger.warning(f"Alternando para a chave de API do Google com índice {self.current_key_index}.")
+        self._initialize_model()
+        return self.current_key_index
+
+    def _generate_with_retry(self, prompt: Any, is_media: bool = False) -> genai.types.GenerateContentResponse:
         """
-        Executa a chamada para a API Gemini com lógica de retentativa e depuração precisa.
+        Executa a chamada para a API Gemini com lógica de retentativa e rotação de chaves.
         """
-        max_retries = 3
-        attempt = 0
-        while attempt < max_retries:
-            try:
-                return self.model.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
+        # Define o mime_type apenas para requisições de texto
+        gen_config = {"response_mime_type": "application/json"} if not is_media else None
 
-            # Erro específico de Quota (retentativa com espera)
-            except exceptions.ResourceExhausted as e:
-                attempt += 1
-                logger.warning(f"Quota da API excedida (429). Tentativa {attempt}/{max_retries}.")
-                if attempt < max_retries:
-                    wait_time = (2 ** attempt) * 5
-                    logger.info(f"A aguardar {wait_time} segundos para nova tentativa...")
-                    time.sleep(wait_time)
-                continue
+        initial_key_index = self.current_key_index
+        max_attempts_per_key = 2 # Tenta 2 vezes com a mesma chave antes de rotacionar
+        
+        while True:
+            for attempt in range(max_attempts_per_key):
+                try:
+                    # Passa a configuração diretamente na chamada
+                    return self.model.generate_content(prompt, generation_config=gen_config)
 
-            # Erro de prompt mal formatado ou inválido (não tenta novamente)
-            except exceptions.InvalidArgument as e:
-                logger.error(f"Erro de Argumento Inválido (400) com a API Gemini. O prompt pode estar mal formatado. Erro: {e}", exc_info=True)
-                raise e # Lança o erro imediatamente
+                except exceptions.ResourceExhausted as e:
+                    logger.warning(f"Quota da API excedida (429) com a chave {self.current_key_index} (tentativa {attempt + 1}/{max_attempts_per_key}).")
+                    # Na última tentativa com a chave atual, quebra o loop para rotacionar
+                    if attempt == max_attempts_per_key - 1:
+                        break 
+                    time.sleep(5) # Pequena espera antes de tentar novamente com a mesma chave
 
-            # Erro de segurança (não tenta novamente)
-            except genai.types.BlockedPromptException as e:
-                logger.error(f"Prompt bloqueado pela política de segurança do Gemini. Erro: {e}", exc_info=True)
-                raise e # Lança o erro imediatamente
+                except (exceptions.InvalidArgument, genai.types.BlockedPromptException) as e:
+                    logger.error(f"Erro não recuperável com a API Gemini: {type(e).__name__}. Não haverá nova tentativa. Erro: {e}", exc_info=True)
+                    raise e
 
-            # Outros erros genéricos (tenta novamente após uma pequena pausa)
-            except Exception as e:
-                attempt += 1
-                logger.error(f"Erro inesperado ({type(e).__name__}) na API Gemini. Tentativa {attempt}/{max_retries}. Erro: {e}")
-                if attempt < max_retries:
+                except Exception as e:
+                    logger.error(f"Erro inesperado ({type(e).__name__}) na API Gemini com a chave {self.current_key_index}. Tentativa {attempt + 1}/{max_attempts_per_key}. Erro: {e}")
                     time.sleep(5)
-                continue
-                
-        raise Exception(f"Não foi possível obter uma resposta da API Gemini após {max_retries} tentativas.")
+            
+            # Se todas as tentativas com a chave atual falharam por quota, rotaciona a chave
+            new_key_index = self._rotate_key()
+            
+            # Se demos a volta completa e voltamos à chave inicial, todas as chaves estão sem quota.
+            if new_key_index == initial_key_index:
+                raise Exception(f"Todas as {len(self.api_keys)} chaves de API excederam a quota. Não é possível continuar.")
 
+    def transcribe_and_analyze_media(self, media_data: dict) -> str:
+        logger.info(f"Iniciando transcrição/análise para mídia do tipo {media_data.get('mime_type')}")
+        prompt_parts = []
+        
+        if 'audio' in media_data['mime_type']:
+            task = "Sua única tarefa é transcrever o áudio a seguir. Retorne apenas o texto transcrito, sem adicionar nenhuma outra palavra ou formatação."
+        else:
+            task = "Você recebeu um arquivo (imagem ou documento) do contato. Analise o conteúdo do arquivo e retorne um resumo conciso do que ele representa, como se fosse uma anotação para o CRM. Retorne APENAS o texto do resumo."
+        
+        prompt_parts.extend([task, media_data])
+
+        try:
+            # A chamada para mídia não deve especificar response_mime_type
+            response = self._generate_with_retry(prompt_parts, is_media=True)
+            transcription = response.text.strip()
+            logger.info(f"Transcrição/Análise gerada: '{transcription[:100]}...'")
+            return transcription
+        except Exception as e:
+            logger.error(f"Erro ao transcrever/analisar mídia após todas as tentativas: {e}")
+            return f"[Erro ao processar mídia: {media_data.get('mime_type')}]"
+
+    def generate_conversation_action(
+        self,
+        config: models.Config,
+        contact: models.Contact,
+        conversation_history_db: List[dict],
+        contexto_planilha: Optional[Dict[str, Any]]
+    ) -> dict:
+        try:
+            campaign_config = self._replace_variables_in_dict(config.prompt_config, contact)
+            formatted_history = self._format_history_for_prompt(conversation_history_db)
+
+            master_prompt = {
+                # ... (o conteúdo do seu master_prompt permanece o mesmo) ...
+                 "instrucao_geral": (
+                     "Você é um assistente de IA especialista em atendimento. Siga estas regras em ordem de prioridade:\n"
+                     "1. **Prioridade Máxima ao Contexto:** Sua principal fonte de verdade é o `contexto_planilha`. **Sempre** procure a resposta neste contexto primeiro.\n"
+                     "2. **Conhecimento Geral como Alternativa:** Se, e **somente se**, a informação não estiver no `contexto_planilha`, você pode usar o seu conhecimento geral para formular a resposta.\n"
+                     "3. **Não Invente Respostas:** Se a pergunta for muito específica e você não tiver a informação (nem no contexto, nem no seu conhecimento), responda educadamente que irá verificar e peça para aguardar um pouco.\n"
+                     "4. **Mantenha a Persona:** Siga sempre o tom de voz e o objetivo definidos em `configuracao_persona`."
+                 ),
+                 "formato_resposta_obrigatorio": {
+                     "descricao": "Sua resposta DEVE ser um único objeto JSON válido, sem nenhum texto ou formatação adicional (como ```json).",
+                     "chaves": {
+                         "mensagem_para_enviar": "O texto da mensagem a ser enviada ao contato. Se decidir que não deve enviar uma mensagem agora, o valor deve ser null.",
+                         "nova_situacao": "Um status curto que descreva o estado atual da conversa (ex: 'Aguardando Resposta', 'Dúvida Respondida').",
+                         "observacoes": "Um resumo interno e conciso da interação para salvar no CRM."
+                     }
+                 },
+                 "configuracao_persona": campaign_config,
+                 "contexto_planilha": contexto_planilha or {"aviso": "Nenhum contexto de planilha foi fornecido."},
+                 "dados_atuais_conversa": {
+                     "contato_identificador": contact.whatsapp,
+                     "tarefa_imediata": "Analisar a última mensagem do contato e formular a PRÓXIMA resposta seguindo a `instrucao_geral`.",
+                     "historico_conversa": formatted_history
+                 }
+            }
+            
+            final_prompt_str = json.dumps(master_prompt, ensure_ascii=False, indent=2)
+            response = self._generate_with_retry(final_prompt_str)
+            
+            clean_response = response.text.strip().replace("```json", "").replace("```", "")
+            return json.loads(clean_response)
+
+        except Exception as e:
+            logger.error(f"Erro ao gerar ação de conversação com Gemini após todas as tentativas: {e}")
+            return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": f"Falha da IA: {str(e)}" }
+
+    # ... (os outros métodos como _replace_variables_in_dict e _format_history_for_prompt permanecem os mesmos) ...
     def _replace_variables_in_dict(self, config_dict: Dict[str, Any], contact_data: models.Contact) -> Dict[str, Any]:
         """Substitui variáveis dinâmicas em toda a estrutura do dicionário de configuração."""
         config_str = json.dumps(config_dict)
@@ -77,7 +166,6 @@ class GeminiService:
         replacements = {
             "{{data_atual}}": now.strftime("%d/%m/%Y"),
             "{{dia_semana}}": days_in_portuguese[now.weekday()],
-            "{{observacoes_contato}}": contact_data.observacoes or ""
         }
         
         for var, value in replacements.items():
@@ -92,75 +180,7 @@ class GeminiService:
             content = msg.get("content", "")
             history_for_ia.append({"remetente": role, "mensagem": content})
         return history_for_ia
-        
-    def transcribe_and_analyze_media(self, media_data: dict, db_history: List[dict]) -> str:
-        logger.info(f"Iniciando transcrição/análise para mídia do tipo {media_data.get('mime_type')}")
-        prompt_parts = []
-        
-        if 'audio' in media_data['mime_type']:
-            task = "Sua única tarefa é transcrever o áudio a seguir. Retorne apenas o texto transcrito, sem adicionar nenhuma outra palavra ou formatação."
-            prompt_parts.append(task)
-            prompt_parts.append(media_data)
-        else:
-            task = "Você recebeu um arquivo (imagem ou documento) do contato. Analise o conteúdo do arquivo e retorne um resumo conciso do que ele representa, como se fosse uma anotação para o CRM. Retorne APENAS o texto do resumo."
-            prompt_parts.append(task)
-            prompt_parts.append(media_data)
 
-        try:
-            response = self.model.generate_content(prompt_parts)
-            transcription = response.text.strip()
-            logger.info(f"Transcrição/Análise gerada: '{transcription[:100]}...'")
-            return transcription
-        except Exception as e:
-            logger.error(f"Erro ao transcrever/analisar mídia: {e}")
-            return f"[Erro ao processar mídia: {media_data.get('mime_type')}]"
-
-    def generate_conversation_action(
-        self,
-        config: models.Config,
-        contact: models.Contact,
-        conversation_history_db: List[dict],
-        contexto_planilha: Optional[Dict[str, Any]]
-    ) -> dict:
-        # ... (sem alterações) ...
-        try:
-            campaign_config = self._replace_variables_in_dict(config.prompt_config, contact)
-            formatted_history = self._format_history_for_prompt(conversation_history_db)
-
-            master_prompt = {
-                "instrucao_geral": (
-                    "Você é um assistente de IA especialista em atendimento. Siga estas regras em ordem de prioridade:\n"
-                    "1. **Prioridade Máxima ao Contexto:** Sua principal fonte de verdade é o `contexto_planilha`. **Sempre** procure a resposta neste contexto primeiro.\n"
-                    "2. **Conhecimento Geral como Alternativa:** Se, e **somente se**, a informação não estiver no `contexto_planilha`, você pode usar o seu conhecimento geral para formular a resposta.\n"
-                    "3. **Não Invente Respostas:** Se a pergunta for muito específica e você não tiver a informação (nem no contexto, nem no seu conhecimento), responda educadamente que irá verificar e peça para aguardar um pouco.\n"
-                    "4. **Mantenha a Persona:** Siga sempre o tom de voz e o objetivo definidos em `configuracao_persona`."
-                ),
-                "formato_resposta_obrigatorio": {
-                    "descricao": "Sua resposta DEVE ser um único objeto JSON válido, sem nenhum texto ou formatação adicional (como ```json).",
-                    "chaves": {
-                        "mensagem_para_enviar": "O texto da mensagem a ser enviada ao contato. Se decidir que não deve enviar uma mensagem agora, o valor deve ser null.",
-                        "nova_situacao": "Um status curto que descreva o estado atual da conversa (ex: 'Aguardando Resposta', 'Dúvida Respondida').",
-                        "observacoes": "Um resumo interno e conciso da interação para salvar no CRM."
-                    }
-                },
-                "configuracao_persona": campaign_config,
-                "contexto_planilha": contexto_planilha or {"aviso": "Nenhum contexto de planilha foi fornecido."},
-                "dados_atuais_conversa": {
-                    "contato_identificador": contact.whatsapp,
-                    "tarefa_imediata": "Analisar a última mensagem do contato e formular a PRÓXIMA resposta seguindo a `instrucao_geral`.",
-                    "historico_conversa": formatted_history
-                }
-            }
-
-            final_prompt_str = json.dumps(master_prompt, ensure_ascii=False, indent=2)
-            response = self._generate_with_retry(final_prompt_str)
-            
-            clean_response = response.text.strip().replace("```json", "").replace("```", "")
-            return json.loads(clean_response)
-
-        except Exception as e:
-            logger.error(f"Erro ao gerar ação de conversação com Gemini: {e}")
-            return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": f"Falha da IA: {str(e)}" }
 
 _gemini_service_instance = None
 def get_gemini_service():
