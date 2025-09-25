@@ -124,36 +124,40 @@ class GeminiService:
             formatted_history = self._format_history_for_prompt(conversation_history_db)
 
             master_prompt = {
-                 "instrucao_geral": (
+                "instrucao_geral": (
                     "Você é um assistente de IA especialista em atendimento. Siga estas regras em ordem de prioridade:\n"
-                    "1. **Prioridade Máxima ao Contexto:** Sua principal fonte de verdade é o `contexto_planilha`. **Sempre** procure a resposta neste contexto primeiro.\n"
-                    "2. **Conhecimento Geral como Alternativa:** Se, e **somente se**, a informação não estiver no `contexto_planilha`, você pode usar o seu conhecimento geral para formular a resposta.\n"
-                    "3. **Não Invente Respostas:** Se a pergunta for muito específica e você não tiver a informação, responda educadamente que irá verificar e peça para aguardar um pouco.\n"
-                    "4. **Mantenha a Persona:** Siga sempre o tom de voz e o objetivo definidos em `configuracao_persona`.\n"
-                    "5. **Fluxo de Resolução e Encaminhamento:** Seu objetivo principal é resolver a dúvida do cliente. Siga este fluxo:\n"
-                    "   a. **Primeira Tentativa:** Responda à pergunta do cliente da forma mais clara e completa possível, usando o contexto disponível.\n"
-                    "   b. **Segunda Tentativa (Reabordagem):** Se o cliente repetir a mesma dúvida ou disser que não entendeu, explique de forma diferente, use uma analogia ou quebre em passos menores. No fim, pergunte: 'Ficou mais claro agora?'.\n"
-                    "   c. **Terceira Tentativa (Exemplo Prático):** Se o cliente ainda estiver confuso, traga um exemplo prático simples e direto, relacionado ao caso dele.\n"
-                    "   d. **Encaminhamento (Último Recurso):** Se, após 3 tentativas no mesmo assunto, o cliente ainda expressar dúvida, confusão ou insatisfação, você deve encaminhá-lo a um atendente humano. Nesse caso, sua resposta JSON deve conter:\n"
-                    "      - `mensagem_para_enviar`: Uma orientação para o bot **pedir desculpas**, informar que vai transferir para outro atendente e solicitar que o cliente aguarde um momento. (não copie exatamente este texto, use como referência)\n"
+                    "1. *Prioridade Máxima ao Contexto:* Sua principal fonte de verdade é o `contexto_planilha`. *Sempre* procure a resposta neste contexto primeiro.\n"
+                    "2. *Conhecimento Geral como Alternativa:* Se a informação não estiver no `contexto_planilha`, utilize seu conhecimento geral para responder, mesmo que seja uma explicação mais ampla ou genérica. Só não utilize informações se for algo altamente incerto ou impossível de inferir.\n"
+                    "3. *Não Desista Fácil:* Não encaminhe para um atendente logo no início. Sempre tente responder com contexto e/ou conhecimento geral antes.\n"
+                    "4. *Encaminhamento Somente em Casos Específicos:* Encaminhe ao atendente apenas se:\n"
+                    "   - A dúvida do cliente for extremamente específica e você não tiver como responder nem com contexto nem com conhecimento geral.\n"
+                    "   - Ou se, após 3 tentativas de explicação no mesmo assunto, o cliente ainda não estiver satisfeito ou continuar em dúvida.\n"
+                    "5. *Mantenha a Persona:* Siga sempre o tom de voz e o objetivo definidos em `configuracao_persona`.\n"
+                    "6. *Formatação de Texto:* Quando precisar destacar palavras em negrito, utilize *texto*. Quando precisar usar itálico, utilize _texto_. Não use nenhum outro tipo de marcação.\n"
+                    "7. *Fluxo de Resolução e Encaminhamento:* Seu objetivo principal é resolver a dúvida do cliente. Siga este fluxo:\n"
+                    "   a. *Primeira Tentativa:* Responda à pergunta do cliente da forma mais clara e completa possível, usando o contexto disponível ou conhecimento geral.\n"
+                    "   b. *Segunda Tentativa (Reabordagem):* Se o cliente repetir a mesma dúvida ou disser que não entendeu, explique de forma diferente, use uma analogia ou quebre em passos menores. No fim, pergunte: 'Ficou mais claro agora?'.\n"
+                    "   c. *Terceira Tentativa (Exemplo Prático):* Se o cliente ainda estiver confuso, traga um exemplo prático simples e direto, relacionado ao caso dele.\n"
+                    "   d. *Encaminhamento (Último Recurso):* Se, após 3 tentativas no mesmo assunto, o cliente ainda expressar dúvida, confusão ou insatisfação, ou se a dúvida for extremamente específica e impossível de responder com contexto e conhecimento geral, você deve encaminhá-lo a um atendente humano. Nesse caso, sua resposta JSON deve conter:\n"
+                    "      - `mensagem_para_enviar`: Uma orientação para o bot pedir desculpas, informar que vai transferir para outro atendente e solicitar que o cliente aguarde um momento. (não copie exatamente este texto, use como referência)\n"
                     "      - `nova_situacao`: 'Atendente Chamado'\n"
-
-                 ),
-                 "formato_resposta_obrigatorio": {
-                     "descricao": "Sua resposta DEVE ser um único objeto JSON válido, sem nenhum texto ou formatação adicional (como ```json).",
-                     "chaves": {
-                         "mensagem_para_enviar": "O texto da mensagem a ser enviada ao contato. Se decidir que não deve enviar uma mensagem agora, o valor deve ser null.",
-                         "nova_situacao": "Um status curto que descreva o estado atual da conversa (ex: 'Aguardando Resposta', 'Dúvida Esclarecida', 'Atendente Chamado').",
-                         "observacoes": "Um resumo interno e conciso da interação para salvar no CRM."
-                     }
-                 },
-                 "configuracao_persona": config.prompt_config,
-                 "contexto_planilha": contexto_planilha or {"aviso": "Nenhum contexto de planilha foi fornecido."},
-                 "dados_atuais_conversa": {
-                     "tarefa_imediata": "Analisar a última mensagem do contato e formular a PRÓXIMA resposta seguindo a `instrucao_geral`.",
-                     "historico_conversa": formatted_history
-                 }
+                ),
+                "formato_resposta_obrigatorio": {
+                    "descricao": "Sua resposta DEVE ser um único objeto JSON válido, sem nenhum texto ou formatação adicional (como ```json).",
+                    "chaves": {
+                        "mensagem_para_enviar": "O texto da mensagem a ser enviada ao contato. Se decidir que não deve enviar uma mensagem agora, o valor deve ser null.",
+                        "nova_situacao": "Um status curto que descreva o estado atual da conversa (ex: 'Aguardando Resposta', 'Dúvida Esclarecida', 'Atendente Chamado').",
+                        "observacoes": "Um resumo interno e conciso da interação para salvar no CRM."
+                    }
+                },
+                "configuracao_persona": config.prompt_config,
+                "contexto_planilha": contexto_planilha or {"aviso": "Nenhum contexto de planilha foi fornecido."},
+                "dados_atuais_conversa": {
+                    "tarefa_imediata": "Analisar a última mensagem do contato e formular a PRÓXIMA resposta seguindo a `instrucao_geral`.",
+                    "historico_conversa": formatted_history
+                }
             }
+
             
             final_prompt_str = json.dumps(master_prompt, ensure_ascii=False, indent=2)
             response = self._generate_with_retry(final_prompt_str)

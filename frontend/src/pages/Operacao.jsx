@@ -186,7 +186,7 @@ function Operacao() {
                                         <td className="p-3 font-medium text-gray-700">{activity.whatsapp}</td>
                                         <td className="p-3 text-gray-600">{activity.situacao}</td>
                                         <td className="p-3 text-gray-600 font-medium">{getPersonaNameById(activity.active_persona_id)}</td>
-                                        <td className="p-3 text-gray-600 whitespace-pre-wrap">{activity.observacao || '-'}</td>
+                                        <td className="p-3 text-gray-600 whitespace-pre-wrap">{activity.observacao}</td>
                                     </tr>
                                 ))}
                             </tbody>
