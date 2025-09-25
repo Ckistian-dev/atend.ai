@@ -32,14 +32,11 @@ async def atendimento_agent_task(user_id: int):
         try:
             async with SessionLocal() as db:
                 
-                # --- A LINHA QUE FALTAVA ESTÁ AQUI ---
-                # Busca o objeto do utilizador no início de cada ciclo
                 user = await crud_user.get_user(db, user_id)
                 if not user:
                     logger.warning(f"Agente: Utilizador {user_id} não encontrado. A parar o agente.")
                     stop_agent_for_user(user_id)
                     return
-                # --- FIM DA CORREÇÃO ---
 
                 # 1. Busca por respostas (prioridade alta)
                 atendimentos_para_responder = await crud_atendimento.get_atendimentos_for_processing(db, user_id=user_id)
@@ -54,12 +51,9 @@ async def atendimento_agent_task(user_id: int):
                     action_taken = True
                     logger.info(f"Agente (Utilizador {user_id}): Processando atendimento ID {atendimento.id} para {atendimento.contact.whatsapp}")
 
-                    situacoes_de_parada = ["Ignorar Contato", "Atendente Chamado", "Concluído"]
+                    situacoes_de_parada = ["Ignorar Contato", "Atendente Chamado"]
                     if atendimento.status in situacoes_de_parada:
                         logger.info(f"Atendimento {atendimento.id} com status '{atendimento.status}'. Nenhuma ação será tomada.")
-                        update = schemas.AtendimentoUpdate(status="Aguardando") 
-                        await crud_atendimento.update_atendimento(db, atendimento, update)
-                        await db.commit() # Adicionado commit
                         continue
 
                     persona_config = await crud_config.get_config(db, config_id=atendimento.active_persona_id, user_id=user_id)
