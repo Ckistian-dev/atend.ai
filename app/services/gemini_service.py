@@ -15,16 +15,18 @@ logger = logging.getLogger(__name__)
 
 class GeminiService:
     def __init__(self):
-        if not settings.GOOGLE_API_KEYS:
-            logger.error("🚨 ERRO CRÍTICO: Nenhuma chave de API do Google foi configurada.")
+        keys_str = settings.GOOGLE_API_KEYS
+        self.api_keys = [key.strip() for key in keys_str.split(',') if key.strip()]
+
+        if not self.api_keys:
+            logger.error("🚨 ERRO CRÍTICO: Nenhuma chave de API do Google foi configurada em GOOGLE_API_KEYS.")
             raise ValueError("A lista de GOOGLE_API_KEYS não pode estar vazia.")
             
-        self.api_keys = settings.GOOGLE_API_KEYS
         self.current_key_index = 0
         self.model = None
         self.generation_config = {"temperature": 0.5, "top_p": 1, "top_k": 1}
         
-        # Inicializa o modelo com a primeira chave
+        # O resto do método __init__ continua igual
         self._initialize_model()
 
     def _initialize_model(self):
