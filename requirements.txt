@@ -8,7 +8,7 @@ uvicorn[standard]
 sqlalchemy[asyncio]
 asyncpg
 alembic
-psycopg2-binary
+asyncpg
 
 # --- Autenticação e Segurança ---
 passlib
