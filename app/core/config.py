@@ -7,26 +7,25 @@ class Settings(BaseSettings):
     """
     Configurações centralizadas da aplicação, carregadas de variáveis de ambiente.
     """
-    # Configurações do Banco de Dados
+    # ... (other settings like DATABASE_URL, SECRET_KEY, etc.)
     DATABASE_URL: str
-
-    # Configurações de Autenticação JWT
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 dias
-
-    # Evolution API (seu serviço de WhatsApp)
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
     EVOLUTION_API_URL: str
     EVOLUTION_API_KEY: str
+    WEBHOOK_URL: str
 
     # Google Gemini API - Carrega múltiplas chaves a partir de uma string separada por vírgula
     GOOGLE_API_KEYS: List[str]
 
-    # URL Base para Webhooks (o endereço público da sua API)
-    WEBHOOK_URL: str
-
-    # Carrega as variáveis de um arquivo .env
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    # Carrega as variáveis de um arquivo .env e habilita a conversão de strings com vírgula para listas
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_nested_delimiter='__',
+        env_separator=','
+    )
 
 # Instância única das configurações para ser usada em toda a aplicação
 settings = Settings()
