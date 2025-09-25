@@ -82,6 +82,12 @@ async def process_incoming_message(data: dict):
             if not result: return
 
             atendimento, was_created = result
+            
+            situacoes_de_parada = ["Ignorar Contato", "Atendente Chamado"]
+            if not was_created and atendimento.status in situacoes_de_parada:
+                logger.info(f"Mensagem recebida de {contact_number}, mas o atendimento ID {atendimento.id} está com status '{atendimento.status}'. A nova mensagem será ignorada.")
+                return # Interrompe o processamento aqui
+            
             history_list = []
             
             whatsapp_service = get_whatsapp_service()

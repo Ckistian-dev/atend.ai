@@ -51,11 +51,6 @@ async def atendimento_agent_task(user_id: int):
                     action_taken = True
                     logger.info(f"Agente (Utilizador {user_id}): Processando atendimento ID {atendimento.id} para {atendimento.contact.whatsapp}")
 
-                    situacoes_de_parada = ["Ignorar Contato", "Atendente Chamado"]
-                    if atendimento.status in situacoes_de_parada:
-                        logger.info(f"Atendimento {atendimento.id} com status '{atendimento.status}'. Nenhuma ação será tomada.")
-                        continue
-
                     persona_config = await crud_config.get_config(db, config_id=atendimento.active_persona_id, user_id=user_id)
                     if not persona_config:
                         logger.error(f"Persona com ID {atendimento.active_persona_id} não encontrada. Pulando atendimento {atendimento.id}.")
