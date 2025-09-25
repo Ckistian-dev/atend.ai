@@ -47,7 +47,7 @@ async def _format_history_for_db(
                 if media_data:
                     # NOTA: O processamento de áudio pode consumir tokens e tempo.
                     # Considere se a transcrição de todo o histórico é necessária.
-                    transcription = gemini_service.transcribe_and_analyze_media(media_data)
+                    transcription = gemini_service.transcribe_and_analyze_media(media_data, history_list)
                     content = f"[Áudio transcrito]: {transcription}"
                 else:
                     content = "[Falha ao processar áudio do histórico]"
@@ -110,7 +110,7 @@ async def process_incoming_message(data: dict):
             elif "audioMessage" in current_message_content:
                 media_data = await whatsapp_service.get_media_and_convert(instance_name, message_data)
                 if media_data:
-                    transcription = gemini_service.transcribe_and_analyze_media(media_data)
+                    transcription = gemini_service.transcribe_and_analyze_media(media_data, history_list)
                     content_for_history = f"[Áudio transcrito]: {transcription}"
                     # await crud_user.decrement_user_tokens(db, db_user=user, amount=1) # Descomente se necessário
                 else:
