@@ -79,6 +79,11 @@ async def process_incoming_message(data: dict):
             contact_number_full = key.get('remoteJid', '')
             if not contact_number_full: return
             
+            # Verifica se o JID da mensagem contém '@g.us', indicando que é um grupo.
+            if "@g.us" in contact_number_full:
+                logger.info(f"Mensagem de grupo ignorada, vinda de: {contact_number_full}")
+                return # Interrompe o processamento para esta mensagem
+            
             contact_number = contact_number_full.split('@')[0]
             
             user = await crud_user.get_user_by_instance(db, instance_name=instance_name)
@@ -126,7 +131,6 @@ async def process_incoming_message(data: dict):
                 else:
                     content_for_history = "[Falha ao processar áudio recebido]"
 
-            # --- ADICIONADO: Lógica para a Mensagem Atual ser Imagem ou Documento ---
             elif "imageMessage" in current_message_content or "documentMessage" in current_message_content:
                 media_data = await whatsapp_service.get_media_and_convert(instance_name, message_data)
                 if media_data:
@@ -134,7 +138,6 @@ async def process_incoming_message(data: dict):
                     content_for_history = f"[Análise de Mídia]: {analysis}"
                 else:
                     content_for_history = "[Falha ao processar mídia recebida]"
-            # --- FIM DA ADIÇÃO ---
 
             if not content_for_history or not content_for_history.strip():
                 logger.info(f"Mensagem de {contact_number} não continha conteúdo processável. Ignorando.")
