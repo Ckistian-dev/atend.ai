@@ -26,13 +26,21 @@ app = FastAPI(
     on_startup=[create_db_and_tables]
 )
 
+# --- ALTERAÇÃO AQUI ---
+# Define explicitamente quais domínios (origins) podem acessar sua API.
+origins = [
+    "https://atend-ai-ckistian-prog-solucoes.vercel.app", # Seu frontend em produção
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins, # Substituímos o "*" pela lista de origens permitidas
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# --- FIM DA ALTERAÇÃO ---
+
 
 API_PREFIX = "/api/v1"
 
