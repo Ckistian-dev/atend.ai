@@ -22,6 +22,12 @@ async def login_for_access_token(
     """
     Autentica o utilizador e retorna um token de acesso JWT.
     """
+    if len(form_data.password.encode('utf-8')) > 72:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="A senha não pode ter mais de 72 caracteres.",
+        )
+
     user = await crud_user.get_user_by_email(db, email=form_data.username)
     if not user or not security.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
