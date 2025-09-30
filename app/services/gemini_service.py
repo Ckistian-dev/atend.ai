@@ -149,6 +149,10 @@ class GeminiService:
                         "mensagem_para_enviar": "O texto da mensagem a ser enviada ao contato. Se decidir que não deve enviar uma mensagem agora, o valor deve ser null.",
                         "nova_situacao": "Um status curto que descreva o estado atual da conversa (ex: 'Aguardando Resposta', 'Dúvida Esclarecida', 'Atendente Chamado').",
                         "observacoes": "Um resumo interno e conciso da interação para salvar no CRM."
+                    },
+                    "regras_importantes": {
+                        "Sempre escape barras invertidas (\\) com outra barra (\\\\) dentro dos valores de string do JSON.",
+                        "O JSON deve ser estritamente válido e pronto para ser processado por um parser."
                     }
                 },
                 "configuracao_persona": config.prompt_config,
