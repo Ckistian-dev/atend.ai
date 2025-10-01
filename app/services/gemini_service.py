@@ -5,11 +5,21 @@ import logging
 import json
 from datetime import datetime
 from typing import Optional, List, Dict, Any
+from collections.abc import Set # Importação para type checking explícito
 
 from app.core.config import settings
 from app.db import models
 
 logger = logging.getLogger(__name__)
+
+# --- ADICIONADO ---
+# Classe customizada para "ensinar" o JSON a lidar com o tipo 'set',
+# convertendo qualquer set que encontrar para uma lista.
+class SetEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Set):
+            return list(obj)
+        return super().default(obj)
 
 class GeminiService:
     def __init__(self):
@@ -34,7 +44,7 @@ class GeminiService:
             genai.configure(api_key=current_key)
             
             self.model = genai.GenerativeModel(
-                model_name='gemini-2.5-flash',
+                model_name='gemini-1.5-flash', # Usando gemini-1.5-flash que é um modelo excelente e mais recente
                 generation_config=self.generation_config
             )
 
@@ -54,7 +64,9 @@ class GeminiService:
         """
         Executa a chamada para a API Gemini com lógica de retentativa e rotação de chaves.
         """
-        gen_config = {"response_mime_type": "application/json"} if not is_media else None
+        gen_config_override = self.generation_config.copy()
+        if not is_media:
+            gen_config_override["response_mime_type"] = "application/json"
 
         initial_key_index = self.current_key_index
         max_attempts_per_key = 2
@@ -62,7 +74,7 @@ class GeminiService:
         while True:
             for attempt in range(max_attempts_per_key):
                 try:
-                    return self.model.generate_content(prompt, generation_config=gen_config)
+                    return self.model.generate_content(prompt, generation_config=gen_config_override)
                 except exceptions.ResourceExhausted as e:
                     logger.warning(f"Quota da API excedida (429) com a chave {self.current_key_index} (tentativa {attempt + 1}/{max_attempts_per_key}).")
                     if attempt == max_attempts_per_key - 1:
@@ -80,7 +92,6 @@ class GeminiService:
             if new_key_index == initial_key_index:
                 raise Exception(f"Todas as {len(self.api_keys)} chaves de API excederam a quota. Não é possível continuar.")
 
-    # --- ALTERADO ---: A função agora recebe o histórico do banco de dados como contexto.
     def transcribe_and_analyze_media(self, media_data: dict, db_history: List[dict]) -> str:
         logger.info(f"Iniciando transcrição/análise para mídia do tipo {media_data.get('mime_type')}")
         prompt_parts = []
@@ -96,7 +107,7 @@ class GeminiService:
                 "Sua resposta será usada como uma anotação interna no CRM."
                 "\n\n"
                 "HISTÓRICO DA CONVERSA:\n"
-                f"{json.dumps(formatted_history, ensure_ascii=False, indent=2)}\n\n"
+                f"{json.dumps(formatted_history, ensure_ascii=False, indent=2, cls=SetEncoder)}\n\n"
                 "REGRAS:\n"
                 "1. Foque no conteúdo do arquivo (imagem ou documento).\n"
                 "2. Conecte o conteúdo do arquivo com o que foi discutido na conversa, se aplicável.\n"
@@ -162,17 +173,19 @@ class GeminiService:
                     "historico_conversa": formatted_history
                 }
             }
-
-
             
-            final_prompt_str = json.dumps(master_prompt, ensure_ascii=False, indent=2)
+            # --- ALTERADO ---
+            # Usamos o 'cls=SetEncoder' para que a conversão para JSON 
+            # use a nossa classe customizada, evitando o erro.
+            final_prompt_str = json.dumps(master_prompt, ensure_ascii=False, indent=2, cls=SetEncoder)
+            
             response = self._generate_with_retry(final_prompt_str)
             
             clean_response = response.text.strip().replace("```json", "").replace("```", "")
             return json.loads(clean_response)
 
         except Exception as e:
-            logger.error(f"Erro ao gerar ação de conversação com Gemini após todas as tentativas: {e}")
+            logger.error(f"Erro ao gerar ação de conversação com Gemini após todas as tentativas: {e}", exc_info=True)
             return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": f"Falha da IA: {str(e)}" }
 
 
