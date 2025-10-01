@@ -44,7 +44,7 @@ class GeminiService:
             genai.configure(api_key=current_key)
             
             self.model = genai.GenerativeModel(
-                model_name='gemini-1.5-flash', # Usando gemini-1.5-flash que é um modelo excelente e mais recente
+                model_name='gemini-2.5-flash', # Usando gemini-1.5-flash que é um modelo excelente e mais recente
                 generation_config=self.generation_config
             )
 
