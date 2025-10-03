@@ -29,7 +29,7 @@ app = FastAPI(
 # --- ALTERAÇÃO AQUI ---
 # Define explicitamente quais domínios (origins) podem acessar sua API.
 origins = [
-    "https://atend-ai-ckistian-prog-solucoes.vercel.app", # Seu frontend em produção
+    "https://atend-ai-ckistian-prog-solucoes.vercel.app", "http://localhost:5173" # Seu frontend em produção
 ]
 
 app.add_middleware(

@@ -94,7 +94,7 @@ async def process_incoming_message(data: dict):
 
             atendimento, was_created = result
             
-            situacoes_de_parada = ["Ignorar Contato", "Atendente Chamado"]
+            situacoes_de_parada = ["Ignorar Contato", "Atendente Chamado", "Concluído"]
             if not was_created and atendimento.status in situacoes_de_parada:
                 logger.info(f"Mensagem recebida de {contact_number}, mas o atendimento ID {atendimento.id} está com status '{atendimento.status}'. A nova mensagem será ignorada.")
                 return

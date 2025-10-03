@@ -64,6 +64,25 @@ function Operacao() {
         const persona = personas.find(p => p.id === id);
         return persona ? persona.nome_config : 'N/D';
     };
+    
+    // --- Função para retornar a classe da badge de Status ---
+    const getStatusClass = (status) => {
+        const baseClasses = "px-3 py-1 text-xs font-semibold rounded-full inline-block text-center min-w-[140px]";
+        switch (status) {
+            case 'Resposta Recebida':
+                return `${baseClasses} bg-green-100 text-green-800`;
+            case 'Aguardando Resposta':
+                return `${baseClasses} bg-yellow-100 text-yellow-800`;
+            case 'Atendente Chamado':
+                return `${baseClasses} bg-orange-100 text-orange-800`;
+            case 'Erro IA':
+                return `${baseClasses} bg-red-200 text-red-800`;
+            case 'Ignorar Contato':
+                return `${baseClasses} bg-gray-200 text-gray-700`;
+            default:
+                return `${baseClasses} bg-gray-100 text-gray-600`;
+        }
+    };
 
     const handleStartAgent = async () => {
         setIsProcessing(true);
@@ -117,7 +136,6 @@ function Operacao() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 min-h-0">
-                {/* --- ALTERAÇÃO AQUI: Usamos grid e grid-rows-2 para dividir o espaço igualmente --- */}
                 <div className="lg:col-span-1 grid grid-rows-2 gap-8">
                     
                     <div className="bg-white p-6 rounded-xl shadow-md border flex flex-col text-center justify-center">
@@ -151,22 +169,22 @@ function Operacao() {
                         </div>
                         {followupEnabled && (
                             <div className="grid grid-cols-2 gap-4 mb-4 animate-fade-in">
-                                <input type="number" value={followupValue} onChange={e => setFollowupValue(e.target.value)} min="1" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue" />
-                                <select value={followupUnit} onChange={e => setFollowupUnit(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue">
+                                <input type="number" value={followupValue} onChange={e => setFollowupValue(e.target.value)} min="1" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                <select value={followupUnit} onChange={e => setFollowupUnit(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <option value="minutes">Minutos</option>
                                     <option value="hours">Horas</option>
                                     <option value="days">Dias</option>
                                 </select>
                             </div>
                         )}
-                        <button onClick={handleSaveFollowup} className="w-full flex items-center justify-center gap-2 bg-brand-blue text-white font-bold py-2 rounded-lg shadow-md hover:bg-brand-blue-dark transition-all">
+                        <button onClick={handleSaveFollowup} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-2 rounded-lg shadow-md hover:bg-blue-700 transition-all">
                             <Save size={18} /> Guardar Follow-up
                         </button>
                     </div>
 
                 </div>
 
-                <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-md border flex flex-col">
+                <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-md border flex flex-col overflow-y-scroll">
                     <h3 className="font-bold text-lg text-gray-800 mb-4">Log de Atividade Recente</h3>
                     <div className="overflow-y-auto flex-1">
                         <table className="w-full text-left">
@@ -184,7 +202,11 @@ function Operacao() {
                                 ) : recentActivity.map((activity, index) => (
                                     <tr key={index} className="border-b border-gray-100">
                                         <td className="p-3 font-medium text-gray-700">{activity.whatsapp}</td>
-                                        <td className="p-3 text-gray-600">{activity.situacao}</td>
+                                        <td className="p-3">
+                                          <span className={getStatusClass(activity.situacao)}>
+                                              {activity.situacao}
+                                          </span>
+                                        </td>
                                         <td className="p-3 text-gray-600 font-medium">{getPersonaNameById(activity.active_persona_id)}</td>
                                         <td className="p-3 text-gray-600 whitespace-pre-wrap">{activity.observacao}</td>
                                     </tr>

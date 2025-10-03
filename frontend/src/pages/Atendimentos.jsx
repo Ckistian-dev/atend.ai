@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import api from '../api/axiosConfig';
+import api from '../api/axiosConfig'; 
 import { Search, MessageSquare, Edit, Trash2, XCircle, AlertTriangle } from 'lucide-react';
 
 // --- MODAL GENÉRICO ---
@@ -34,13 +34,12 @@ const ConversationModal = ({ onClose, conversation, contactIdentifier }) => {
                 <div className="p-4 border-b bg-gray-50 rounded-t-lg">
                     <h2 className="text-lg font-semibold text-gray-800">Conversa com {contactIdentifier}</h2>
                 </div>
-                {/* A alteração está nesta linha */}
-                <div ref={chatContainerRef} className="flex-1 p-4 md:p-6 overflow-y-auto space-y-4 bg-[url('https://i.redd.it/qwd83nc4xxf41.jpg')]">
+                <div ref={chatContainerRef} className="flex-1 p-4 md:p-6 overflow-y-auto space-y-4 bg-[url('https://i.redd.it/qwd83nc4xxf41.jpg')] bg-cover bg-center">
                     {messages.map((msg, index) => {
                         const isAssistant = msg.role === 'assistant';
                         return (
                             <div key={index} className={`flex items-end gap-2 w-full ${isAssistant ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-xs md:max-w-md p-3 rounded-2xl shadow-sm break-words ${isAssistant ? 'bg-brand-blue text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none'}`}>
+                                <div className={`max-w-xs md:max-w-md p-3 rounded-2xl shadow-sm break-words ${isAssistant ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none'}`}>
                                     <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
                                 </div>
                             </div>
@@ -59,7 +58,7 @@ const ConversationModal = ({ onClose, conversation, contactIdentifier }) => {
     );
 };
 
-// --- NOVO MODAL DE EDIÇÃO ---
+// --- MODAL DE EDIÇÃO ---
 const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose }) => {
     const [status, setStatus] = useState(atendimento.status);
     const [personaId, setPersonaId] = useState(atendimento.active_persona_id);
@@ -74,17 +73,17 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose }) =>
             <div className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Editar Atendimento</h3>
                 <p className="text-sm text-gray-500 mb-6">A alterar o atendimento de: <strong className="text-gray-700">{atendimento.contact.whatsapp}</strong></p>
-                
+
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Situação</label>
-                        <select value={status} onChange={e => setStatus(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-blue focus:ring-brand-blue sm:text-sm">
+                        <select value={status} onChange={e => setStatus(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                             {statusOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                         </select>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Persona Ativa</label>
-                        <select value={personaId} onChange={e => setPersonaId(parseInt(e.target.value))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand-blue focus:ring-brand-blue sm:text-sm">
+                        <select value={personaId} onChange={e => setPersonaId(parseInt(e.target.value))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                             {personas.map(p => <option key={p.id} value={p.id}>{p.nome_config}</option>)}
                         </select>
                     </div>
@@ -92,14 +91,14 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose }) =>
 
                 <div className="mt-8 flex justify-end gap-4">
                     <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">Cancelar</button>
-                    <button type="button" onClick={handleSave} className="px-4 py-2 bg-brand-blue text-white rounded-md hover:bg-brand-blue-dark transition">Guardar Alterações</button>
+                    <button type="button" onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Guardar Alterações</button>
                 </div>
             </div>
         </Modal>
     );
 };
 
-// --- NOVO MODAL DE CONFIRMAÇÃO PARA APAGAR ---
+// --- MODAL DE CONFIRMAÇÃO PARA APAGAR ---
 const DeleteConfirmationModal = ({ atendimento, onConfirm, onClose }) => (
     <Modal onClose={onClose}>
         <div className="p-6 text-center">
@@ -118,6 +117,7 @@ const DeleteConfirmationModal = ({ atendimento, onConfirm, onClose }) => (
     </Modal>
 );
 
+
 // --- COMPONENTE PRINCIPAL DA PÁGINA ---
 function Atendimentos() {
     const [atendimentos, setAtendimentos] = useState([]);
@@ -129,7 +129,7 @@ function Atendimentos() {
 
     const [modalData, setModalData] = useState({ type: null, data: null });
 
-    const statusOptions = ["Aguardando Resposta", "Resposta Recebida", "Ignorar Contato", "Atendente Chamado"];
+    const statusOptions = ["Aguardando Resposta", "Resposta Recebida", "Ignorar Contato", "Atendente Chamado", "Concluído"];
 
     const fetchData = useCallback(async () => {
         try {
@@ -180,8 +180,29 @@ function Atendimentos() {
         }
     };
 
+    // --- Função para retornar a classe da badge de Status ---
+    const getStatusClass = (status) => {
+        const baseClasses = "px-3 py-1 text-xs font-semibold rounded-full inline-block text-center min-w-[140px]";
+        switch (status) {
+            case 'Resposta Recebida':
+                return `${baseClasses} bg-blue-100 text-blue-800`;
+            case 'Concluído':
+                return `${baseClasses} bg-green-100 text-green-800`;
+            case 'Aguardando Resposta':
+                return `${baseClasses} bg-yellow-100 text-yellow-800`;
+            case 'Atendente Chamado':
+                return `${baseClasses} bg-orange-100 text-orange-800`;
+            case 'Erro IA':
+                return `${baseClasses} bg-red-200 text-red-800`;
+            case 'Ignorar Contato':
+                return `${baseClasses} bg-gray-200 text-gray-700`;
+            default:
+                return `${baseClasses} bg-gray-100 text-gray-600`;
+        }
+    };
+
     return (
-        <div className="p-6 md:p-10 bg-gray-50 min-h-full">
+        <div className="p-6 md:p-10 bg-gray-50 min-h-screen">
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-800">Atendimentos</h1>
@@ -192,7 +213,7 @@ function Atendimentos() {
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
                 <div className="relative mb-4">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                    <input type="text" placeholder="Pesquisar por telefone ou situação..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue" />
+                    <input type="text" placeholder="Pesquisar por telefone ou situação..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
 
                 <div className="overflow-x-auto">
@@ -210,14 +231,18 @@ function Atendimentos() {
                             {isLoading ? (
                                 <tr><td colSpan="5" className="text-center p-8 text-gray-500">A carregar atendimentos...</td></tr>
                             ) : filteredAtendimentos.map((at) => (
-                                <tr key={at.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                <tr key={at.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                                     <td className="p-4 font-medium text-gray-800">{at.contact.whatsapp}</td>
                                     <td className="p-4 text-sm text-gray-600">{new Date(at.updated_at).toLocaleString('pt-BR')}</td>
-                                    <td className="p-4 text-sm text-gray-600">{at.status}</td>
+                                    <td className="p-4">
+                                        <span className={getStatusClass(at.status)}>
+                                            {at.status}
+                                        </span>
+                                    </td>
                                     <td className="p-4 text-sm text-gray-600">{getPersonaNameById(at.active_persona_id)}</td>
                                     <td className="p-4 text-center">
                                         <div className="flex justify-center items-center gap-2">
-                                            <button onClick={() => setModalData({ type: 'conversation', data: at })} className="p-2 text-gray-500 hover:text-brand-blue hover:bg-gray-100 rounded-full transition-colors" title="Ver conversa"><MessageSquare size={18} /></button>
+                                            <button onClick={() => setModalData({ type: 'conversation', data: at })} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors" title="Ver conversa"><MessageSquare size={18} /></button>
                                             <button onClick={() => setModalData({ type: 'edit', data: at })} className="p-2 text-gray-500 hover:text-green-600 hover:bg-gray-100 rounded-full transition-colors" title="Editar Situação/Persona"><Edit size={18} /></button>
                                             <button onClick={() => setModalData({ type: 'delete', data: at })} className="p-2 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded-full transition-colors" title="Apagar Atendimento"><Trash2 size={18} /></button>
                                         </div>

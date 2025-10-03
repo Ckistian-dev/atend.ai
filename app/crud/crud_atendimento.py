@@ -126,7 +126,6 @@ async def get_dashboard_data(db: AsyncSession, user_id: int) -> Dict[str, Any]:
         .where(models.Atendimento.user_id == user_id)
         .options(joinedload(models.Atendimento.contact))
         .order_by(models.Atendimento.updated_at.desc())
-        .limit(5)
     )
     recent_activity = recent_activity_query.scalars().all()
     
