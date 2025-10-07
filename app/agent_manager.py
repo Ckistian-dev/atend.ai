@@ -232,7 +232,7 @@ async def atendimento_agent_task(user_id: int):
                                 pending_id = f"sent_{datetime.now(timezone.utc).isoformat()}"
                                 history_after_response.append({"id": pending_id, "role": "assistant", "content": part})
                                 if i < len(message_parts) - 1:
-                                    delay = random.uniform(1.5, 3.5)
+                                    delay = random.uniform(5, 10)
                                     await asyncio.sleep(delay)
                             else:
                                 logger.error(f"FALHA ao enviar parte {i+1} da mensagem para {atendimento.contact.whatsapp}.")
