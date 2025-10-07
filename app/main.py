@@ -15,6 +15,8 @@ from app.api.atendimentos import router as atendimentos_router
 from app.api.agent import router as agent_router
 from app.api.users import router as users_router
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
 async def create_db_and_tables():
     async with engine.begin() as conn:
         await conn.run_sync(models.Base.metadata.create_all)

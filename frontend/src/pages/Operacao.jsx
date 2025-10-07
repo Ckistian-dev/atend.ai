@@ -86,7 +86,7 @@ const ActivityLog = ({ activities, isLoading, getPersonaName, getStatusClass, on
             </div>
             <h3 className="font-bold text-lg text-gray-800">Log de Atividade Recente</h3>
         </div>
-        <div className="overflow-x-auto -mx-6 flex-1">
+        <div className="overflow-x-auto -mx-6 flex-1 overflow-y-scroll">
             <table className="w-full text-left">
                 <thead className="border-b-2 border-gray-200 sticky top-0 bg-white z-10">
                     <tr>

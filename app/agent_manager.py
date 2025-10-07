@@ -77,7 +77,6 @@ async def _process_raw_message(
         logger.error(f"Erro ao processar mensagem individual ID {msg_id}: {e}", exc_info=True)
         return None
 
-
 async def _synchronize_and_process_history(
     db: AsyncSession, 
     atendimento: models.Atendimento, 
@@ -87,7 +86,7 @@ async def _synchronize_and_process_history(
     gemini_service: GeminiService
 ) -> List[Dict[str, Any]]:
     """
-    Busca o histórico da API, remove mensagens temporárias e sem ID do DB, processa as novas e retorna o histórico completo.
+    Busca o histórico da API, remove mensagens temporárias do DB, processa as novas e retorna o histórico completo.
     """
     logger.info(f"Iniciando sincronização de histórico para o atendimento ID {atendimento.id}...")
     
@@ -96,28 +95,22 @@ async def _synchronize_and_process_history(
     except (json.JSONDecodeError, TypeError):
         db_history = []
     
-    # --- LÓGICA DE LIMPEZA CORRIGIDA ---
-    # 1. Filtra o histórico do DB, mantendo apenas as mensagens que:
-    #    a) Possuem a chave 'id'.
-    #    b) Não possuem um ID temporário ('sent_' ou 'internal_').
     clean_db_history = [
         msg for msg in db_history 
-        if 'id' in msg and not str(msg['id']).startswith('sent_') and not str(msg['id']).startswith('internal_')
+        if not str(msg.get('id', '')).startswith('sent_') and not str(msg.get('id', '')).startswith('internal_')
     ]
     
-    had_malformed_or_temp_messages = len(db_history) > len(clean_db_history)
-    if had_malformed_or_temp_messages:
-        logger.info(f"Removendo/reprocessando {len(db_history) - len(clean_db_history)} mensagens temporárias ou sem ID.")
+    had_temporary_messages = len(db_history) > len(clean_db_history)
+    if had_temporary_messages:
+        logger.info(f"Removendo {len(db_history) - len(clean_db_history)} mensagens temporárias antes da sincronização.")
     
-    # Com a garantia de que todo `msg` em `clean_db_history` tem um ID, podemos montar o conjunto com segurança.
     processed_message_ids = {msg['id'] for msg in clean_db_history}
     
-    # 2. Busca o histórico da API (fonte da verdade).
     raw_history_api = await whatsapp_service.fetch_chat_history(user.instance_name, atendimento.contact.whatsapp, count=100)
     
     if not raw_history_api:
         logger.warning("Não foi possível buscar o histórico da API.")
-        if had_malformed_or_temp_messages:
+        if had_temporary_messages:
             logger.info("Salvando histórico limpo no DB após falha na API.")
             update_schema = schemas.AtendimentoUpdate(conversa=json.dumps(clean_db_history))
             await crud_atendimento.update_atendimento(db, db_atendimento=atendimento, atendimento_in=update_schema)
@@ -125,7 +118,6 @@ async def _synchronize_and_process_history(
             await db.refresh(atendimento)
         return clean_db_history
 
-    # 3. Identifica e processa as mensagens que ainda não estão no nosso histórico limpo.
     newly_processed_messages = []
     for raw_msg in reversed(raw_history_api):
         msg_id = raw_msg.get("key", {}).get("id")
@@ -137,10 +129,10 @@ async def _synchronize_and_process_history(
             if processed_msg:
                 newly_processed_messages.append(processed_msg)
     
-    if newly_processed_messages or had_malformed_or_temp_messages:
+    if newly_processed_messages or had_temporary_messages:
         updated_history = clean_db_history + newly_processed_messages
         if newly_processed_messages:
-            logger.info(f"Sincronização: {len(newly_processed_messages)} mensagens novas/corrigidas processadas.")
+            logger.info(f"Sincronização: {len(newly_processed_messages)} mensagens novas processadas.")
         
         logger.info(f"Salvando histórico atualizado (total: {len(updated_history)} mensagens) no DB para atendimento ID {atendimento.id}.")
         update_schema = schemas.AtendimentoUpdate(conversa=json.dumps(updated_history))
@@ -155,7 +147,7 @@ async def _synchronize_and_process_history(
 
 async def atendimento_agent_task(user_id: int):
     """
-    O agente inteligente de atendimento com a nova lógica de sincronização.
+    O agente inteligente de atendimento com retentativa simples e segura.
     """
     logger.info(f"-> Agente de atendimento INICIADO para o utilizador {user_id}.")
     agent_status[user_id] = True
@@ -181,81 +173,112 @@ async def atendimento_agent_task(user_id: int):
                     atendimentos_para_processar.sort(key=lambda a: a.updated_at)
                     atendimento = atendimentos_para_processar[0]
                     action_taken = True
-                    logger.info(f"Agente (Utilizador {user_id}): Processando atendimento ID {atendimento.id} com status '{atendimento.status}'.")
-
-                    persona_config = await crud_config.get_config(db, config_id=atendimento.active_persona_id, user_id=user_id)
-                    if not persona_config:
-                        logger.error(f"Persona com ID {atendimento.active_persona_id} não encontrada. Pulando atendimento {atendimento.id}.")
-                        update = schemas.AtendimentoUpdate(status="Erro: Persona não encontrada")
-                        await crud_atendimento.update_atendimento(db, atendimento, update)
-                        await db.commit()
-                        continue
                     
-                    if atendimento.status == "Mensagem Recebida":
-                        full_history = await _synchronize_and_process_history(
-                            db, atendimento, user, persona_config, whatsapp_service, gemini_service
+                    try:
+                        logger.info(f"Agente (Utilizador {user_id}): Processando atendimento ID {atendimento.id} com status '{atendimento.status}'.")
+                        
+                        MAX_PROCESS_ATTEMPTS = 3
+                        PROCESS_RETRY_DELAY = 10
+                        full_history = None
+                        ia_response = None
+
+                        # --- ETAPA 1: SINCRONIZAÇÃO (com retentativas) ---
+                        for attempt in range(MAX_PROCESS_ATTEMPTS):
+                            try:
+                                if atendimento.status == "Mensagem Recebida":
+                                    persona_config_sync = await crud_config.get_config(db, config_id=atendimento.active_persona_id, user_id=user.id)
+                                    if not persona_config_sync: raise ValueError("Persona não encontrada para sincronização.")
+                                    full_history = await _synchronize_and_process_history(db, atendimento, user, persona_config_sync, whatsapp_service, gemini_service)
+                                else:
+                                    full_history = json.loads(atendimento.conversa) if atendimento.conversa else []
+                                break 
+                            except Exception as sync_err:
+                                logger.warning(f"Falha na Sincronização para Atendimento ID {atendimento.id} (tentativa {attempt + 1}): {sync_err}")
+                                if attempt == MAX_PROCESS_ATTEMPTS - 1: raise
+                                await asyncio.sleep(PROCESS_RETRY_DELAY)
+                        
+                        last_message_is_from_user = not full_history or full_history[-1]['role'] == 'user'
+                        if atendimento.status == "Mensagem Recebida" and not last_message_is_from_user:
+                             logger.info(f"Atendimento {atendimento.id} já respondido. Finalizando ciclo.")
+                             final_update = schemas.AtendimentoUpdate(status="Aguardando Resposta")
+                             await crud_atendimento.update_atendimento(db, db_atendimento=atendimento, atendimento_in=final_update)
+                             continue
+
+                        # --- ETAPA 2: GERAÇÃO IA (com retentativas) ---
+                        logger.info(f"Atendimento {atendimento.id} apto para gerar resposta. Chamando IA...")
+                        persona_config = await crud_config.get_config(db, config_id=atendimento.active_persona_id, user_id=user.id)
+                        if not persona_config: raise ValueError("Persona não encontrada para geração de IA.")
+
+                        for attempt in range(MAX_PROCESS_ATTEMPTS):
+                            try:
+                                ia_response = gemini_service.generate_conversation_action(
+                                    config=persona_config, contact=atendimento.contact,
+                                    conversation_history_db=full_history, contexto_planilha=persona_config.contexto_json
+                                )
+                                break
+                            except Exception as ia_err:
+                                logger.warning(f"Falha na Geração da IA para Atendimento ID {atendimento.id} (tentativa {attempt + 1}): {ia_err}")
+                                if attempt == MAX_PROCESS_ATTEMPTS - 1: raise
+                                await asyncio.sleep(PROCESS_RETRY_DELAY)
+                        
+                        # --- ETAPA 3: ENVIO DE MENSAGEM (lógica segura já existente) ---
+                        message_to_send = ia_response.get("mensagem_para_enviar")
+                        new_status = ia_response.get("nova_situacao", "Aguardando Resposta")
+                        new_observation = ia_response.get("observacoes", "")
+                        history_after_response = full_history.copy()
+                        
+                        if message_to_send:
+                            message_parts = [part.strip() for part in message_to_send.split('\n\n') if part.strip()]
+                            all_sent_successfully = True
+                            MAX_SEND_ATTEMPTS = 3
+                            SEND_RETRY_DELAY = 5
+
+                            for i, part in enumerate(message_parts):
+                                part_sent = False
+                                for attempt in range(MAX_SEND_ATTEMPTS):
+                                    logger.info(f"Enviando parte {i+1}/{len(message_parts)} para {atendimento.contact.whatsapp} (Tentativa {attempt + 1})...")
+                                    success = await whatsapp_service.send_text_message(user.instance_name, atendimento.contact.whatsapp, part)
+                                    if success:
+                                        part_sent = True
+                                        break
+                                    logger.warning(f"Falha na tentativa {attempt + 1} de enviar a parte {i+1}. Aguardando {SEND_RETRY_DELAY}s.")
+                                    await asyncio.sleep(SEND_RETRY_DELAY)
+
+                                if part_sent:
+                                    logger.info(f"Parte {i+1} enviada com sucesso.")
+                                    pending_id = f"sent_{datetime.now(timezone.utc).isoformat()}"
+                                    history_after_response.append({"id": pending_id, "role": "assistant", "content": part})
+                                    if i < len(message_parts) - 1:
+                                        await asyncio.sleep(random.uniform(1.5, 3.5))
+                                else:
+                                    logger.error(f"FALHA ao enviar parte {i+1} após {MAX_SEND_ATTEMPTS} tentativas. Abortando envio.")
+                                    new_status = "Falha no Envio"
+                                    new_observation += f" | Falha ao enviar parte {i+1}/{len(message_parts)}."
+                                    all_sent_successfully = False
+                                    break
+                            
+                            if all_sent_successfully and message_parts:
+                                await crud_user.decrement_user_tokens(db, db_user=user)
+                        else:
+                            logger.info(f"IA decidiu não enviar mensagem para {atendimento.contact.whatsapp}.")
+                            pending_id = f"internal_{datetime.now(timezone.utc).isoformat()}"
+                            history_after_response.append({"id": pending_id, "role": "assistant", "content": "[Ação Interna: Não responder]"})
+
+                        final_update = schemas.AtendimentoUpdate(
+                            status=new_status, observacoes=new_observation,
+                            conversa=json.dumps(history_after_response)
                         )
-                    else: # É um follow-up
-                         full_history = json.loads(atendimento.conversa) if atendimento.conversa else []
-
-                    last_message_is_from_user = not full_history or full_history[-1]['role'] == 'user'
-                    
-                    if atendimento.status == "Mensagem Recebida" and not last_message_is_from_user:
-                        logger.info(f"Atendimento {atendimento.id} já respondido (detectado na sincronização). Mudando status para 'Aguardando Resposta'.")
-                        final_update = schemas.AtendimentoUpdate(status="Aguardando Resposta")
                         await crud_atendimento.update_atendimento(db, db_atendimento=atendimento, atendimento_in=final_update)
                         await db.commit()
-                        continue
-                    
-                    logger.info(f"Atendimento {atendimento.id} apto para resposta/follow-up. Gerando ação com a IA...")
-                    
-                    ia_response = gemini_service.generate_conversation_action(
-                        config=persona_config,
-                        contact=atendimento.contact,
-                        conversation_history_db=full_history,
-                        contexto_planilha=persona_config.contexto_json
-                    )
 
-                    message_to_send = ia_response.get("mensagem_para_enviar")
-                    new_status = ia_response.get("nova_situacao", "Aguardando Resposta")
-                    new_observation = ia_response.get("observacoes", "")
-                    
-                    history_after_response = full_history.copy()
-                    
-                    if message_to_send:
-                        message_parts = [part.strip() for part in message_to_send.split('\n\n') if part.strip()]
-                        all_sent_successfully = True
-                        for i, part in enumerate(message_parts):
-                            success = await whatsapp_service.send_text_message(user.instance_name, atendimento.contact.whatsapp, part)
-                            if success:
-                                logger.info(f"Parte {i+1}/{len(message_parts)} da mensagem enviada para {atendimento.contact.whatsapp}.")
-                                pending_id = f"sent_{datetime.now(timezone.utc).isoformat()}"
-                                history_after_response.append({"id": pending_id, "role": "assistant", "content": part})
-                                if i < len(message_parts) - 1:
-                                    delay = random.uniform(5, 10)
-                                    await asyncio.sleep(delay)
-                            else:
-                                logger.error(f"FALHA ao enviar parte {i+1} da mensagem para {atendimento.contact.whatsapp}.")
-                                new_status = "Falha no Envio"
-                                all_sent_successfully = False
-                                break
-                        if all_sent_successfully:
-                            await crud_user.decrement_user_tokens(db, db_user=user)
-                    else:
-                        logger.info(f"IA decidiu não enviar mensagem para {atendimento.contact.whatsapp}.")
-                        pending_id = f"internal_{datetime.now(timezone.utc).isoformat()}"
-                        history_after_response.append({"id": pending_id, "role": "assistant", "content": "[Ação Interna: Não responder]"})
+                    except Exception as process_err:
+                        logger.error(f"Falha ao processar atendimento {atendimento.id} após todas as tentativas. Marcando com erro.", exc_info=True)
+                        err_update = schemas.AtendimentoUpdate(status="Erro no Agente", observacoes=f"Falha final no processamento: {str(process_err)}")
+                        await crud_atendimento.update_atendimento(db, atendimento, err_update)
+                        await db.commit()
 
-                    final_update = schemas.AtendimentoUpdate(
-                        status=new_status,
-                        observacoes=new_observation,
-                        conversa=json.dumps(history_after_response)
-                    )
-                    await crud_atendimento.update_atendimento(db, db_atendimento=atendimento, atendimento_in=final_update)
-                    await db.commit()
-
-        except Exception as e:
-            logger.error(f"ERRO no ciclo do agente (Utilizador {user_id}): {e}", exc_info=True)
+        except Exception as outer_err:
+            logger.error(f"ERRO CRÍTICO no ciclo do agente (fora do processamento de atendimento): {outer_err}", exc_info=True)
         
         sleep_time = 5 if action_taken else 15
         await asyncio.sleep(sleep_time)
