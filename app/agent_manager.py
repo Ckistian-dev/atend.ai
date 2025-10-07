@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-import random # Importado para o delay aleatório
+import random
 from typing import Dict, List, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta, timezone
@@ -87,7 +87,7 @@ async def _synchronize_and_process_history(
     gemini_service: GeminiService
 ) -> List[Dict[str, Any]]:
     """
-    Busca o histórico da API, remove mensagens temporárias do DB, processa as novas e retorna o histórico completo.
+    Busca o histórico da API, remove mensagens temporárias e sem ID do DB, processa as novas e retorna o histórico completo.
     """
     logger.info(f"Iniciando sincronização de histórico para o atendimento ID {atendimento.id}...")
     
@@ -96,22 +96,28 @@ async def _synchronize_and_process_history(
     except (json.JSONDecodeError, TypeError):
         db_history = []
     
+    # --- LÓGICA DE LIMPEZA CORRIGIDA ---
+    # 1. Filtra o histórico do DB, mantendo apenas as mensagens que:
+    #    a) Possuem a chave 'id'.
+    #    b) Não possuem um ID temporário ('sent_' ou 'internal_').
     clean_db_history = [
         msg for msg in db_history 
-        if not str(msg.get('id', '')).startswith('sent_') and not str(msg.get('id', '')).startswith('internal_')
+        if 'id' in msg and not str(msg['id']).startswith('sent_') and not str(msg['id']).startswith('internal_')
     ]
     
-    had_temporary_messages = len(db_history) > len(clean_db_history)
-    if had_temporary_messages:
-        logger.info(f"Removendo {len(db_history) - len(clean_db_history)} mensagens temporárias antes da sincronização.")
+    had_malformed_or_temp_messages = len(db_history) > len(clean_db_history)
+    if had_malformed_or_temp_messages:
+        logger.info(f"Removendo/reprocessando {len(db_history) - len(clean_db_history)} mensagens temporárias ou sem ID.")
     
+    # Com a garantia de que todo `msg` em `clean_db_history` tem um ID, podemos montar o conjunto com segurança.
     processed_message_ids = {msg['id'] for msg in clean_db_history}
     
+    # 2. Busca o histórico da API (fonte da verdade).
     raw_history_api = await whatsapp_service.fetch_chat_history(user.instance_name, atendimento.contact.whatsapp, count=100)
     
     if not raw_history_api:
         logger.warning("Não foi possível buscar o histórico da API.")
-        if had_temporary_messages:
+        if had_malformed_or_temp_messages:
             logger.info("Salvando histórico limpo no DB após falha na API.")
             update_schema = schemas.AtendimentoUpdate(conversa=json.dumps(clean_db_history))
             await crud_atendimento.update_atendimento(db, db_atendimento=atendimento, atendimento_in=update_schema)
@@ -119,6 +125,7 @@ async def _synchronize_and_process_history(
             await db.refresh(atendimento)
         return clean_db_history
 
+    # 3. Identifica e processa as mensagens que ainda não estão no nosso histórico limpo.
     newly_processed_messages = []
     for raw_msg in reversed(raw_history_api):
         msg_id = raw_msg.get("key", {}).get("id")
@@ -130,10 +137,10 @@ async def _synchronize_and_process_history(
             if processed_msg:
                 newly_processed_messages.append(processed_msg)
     
-    if newly_processed_messages or had_temporary_messages:
+    if newly_processed_messages or had_malformed_or_temp_messages:
         updated_history = clean_db_history + newly_processed_messages
         if newly_processed_messages:
-            logger.info(f"Sincronização: {len(newly_processed_messages)} mensagens novas processadas.")
+            logger.info(f"Sincronização: {len(newly_processed_messages)} mensagens novas/corrigidas processadas.")
         
         logger.info(f"Salvando histórico atualizado (total: {len(updated_history)} mensagens) no DB para atendimento ID {atendimento.id}.")
         update_schema = schemas.AtendimentoUpdate(conversa=json.dumps(updated_history))
@@ -148,7 +155,7 @@ async def _synchronize_and_process_history(
 
 async def atendimento_agent_task(user_id: int):
     """
-    O agente inteligente de atendimento com a nova lógica de sincronização e envio de mensagens separadas.
+    O agente inteligente de atendimento com a nova lógica de sincronização.
     """
     logger.info(f"-> Agente de atendimento INICIADO para o utilizador {user_id}.")
     agent_status[user_id] = True
@@ -215,11 +222,8 @@ async def atendimento_agent_task(user_id: int):
                     
                     history_after_response = full_history.copy()
                     
-                    # --- LÓGICA DE ENVIO SEPARADO E COM DELAY ---
                     if message_to_send:
-                        # 1. Divide a mensagem em parágrafos. Filtra parágrafos vazios.
                         message_parts = [part.strip() for part in message_to_send.split('\n\n') if part.strip()]
-                        
                         all_sent_successfully = True
                         for i, part in enumerate(message_parts):
                             success = await whatsapp_service.send_text_message(user.instance_name, atendimento.contact.whatsapp, part)
@@ -227,17 +231,14 @@ async def atendimento_agent_task(user_id: int):
                                 logger.info(f"Parte {i+1}/{len(message_parts)} da mensagem enviada para {atendimento.contact.whatsapp}.")
                                 pending_id = f"sent_{datetime.now(timezone.utc).isoformat()}"
                                 history_after_response.append({"id": pending_id, "role": "assistant", "content": part})
-                                
-                                # Adiciona um delay aleatório entre as mensagens para parecer mais natural
                                 if i < len(message_parts) - 1:
-                                    delay = random.uniform(4, 10) # Atraso entre 1.5 e 3.5 segundos
+                                    delay = random.uniform(1.5, 3.5)
                                     await asyncio.sleep(delay)
                             else:
                                 logger.error(f"FALHA ao enviar parte {i+1} da mensagem para {atendimento.contact.whatsapp}.")
                                 new_status = "Falha no Envio"
                                 all_sent_successfully = False
-                                break # Interrompe o envio se uma parte falhar
-                        
+                                break
                         if all_sent_successfully:
                             await crud_user.decrement_user_tokens(db, db_user=user)
                     else:
@@ -245,7 +246,6 @@ async def atendimento_agent_task(user_id: int):
                         pending_id = f"internal_{datetime.now(timezone.utc).isoformat()}"
                         history_after_response.append({"id": pending_id, "role": "assistant", "content": "[Ação Interna: Não responder]"})
 
-                    # A atualização salva o histórico com todas as mensagens pendentes enviadas.
                     final_update = schemas.AtendimentoUpdate(
                         status=new_status,
                         observacoes=new_observation,
