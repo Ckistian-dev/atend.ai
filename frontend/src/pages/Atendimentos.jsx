@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api/axiosConfig'; 
-import { Search, MessageSquare, Edit, Trash2, XCircle, AlertTriangle } from 'lucide-react';
+import { Search, MessageSquare, Edit, Trash2, XCircle, AlertTriangle, Info } from 'lucide-react';
 
 // --- MODAL GENÉRICO ---
 const Modal = ({ onClose, children }) => (
@@ -73,7 +74,6 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose }) =>
             <div className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Editar Atendimento</h3>
                 <p className="text-sm text-gray-500 mb-6">A alterar o atendimento de: <strong className="text-gray-700">{atendimento.contact.whatsapp}</strong></p>
-
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Situação</label>
@@ -88,7 +88,6 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose }) =>
                         </select>
                     </div>
                 </div>
-
                 <div className="mt-8 flex justify-end gap-4">
                     <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">Cancelar</button>
                     <button type="button" onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Guardar Alterações</button>
@@ -125,11 +124,13 @@ function Atendimentos() {
     const [personas, setPersonas] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
+    
+    const [searchParams] = useSearchParams();
+    const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
 
     const [modalData, setModalData] = useState({ type: null, data: null });
 
-    const statusOptions = ["Aguardando Resposta", "Resposta Recebida", "Ignorar Contato", "Atendente Chamado", "Concluído"];
+    const statusOptions = ["Aguardando Resposta", "Mensagem Recebida", "Ignorar Contato", "Atendente Chamado", "Concluído"];
 
     const fetchData = useCallback(async () => {
         try {
@@ -153,7 +154,8 @@ function Atendimentos() {
         const lowercasedFilter = searchTerm.toLowerCase();
         const filtered = atendimentos.filter(item =>
             item.contact.whatsapp.toLowerCase().includes(lowercasedFilter) ||
-            item.status.toLowerCase().includes(lowercasedFilter)
+            item.status.toLowerCase().includes(lowercasedFilter) ||
+            (item.observacoes && item.observacoes.toLowerCase().includes(lowercasedFilter))
         );
         setFilteredAtendimentos(filtered);
     }, [searchTerm, atendimentos]);
@@ -180,11 +182,10 @@ function Atendimentos() {
         }
     };
 
-    // --- Função para retornar a classe da badge de Status ---
     const getStatusClass = (status) => {
         const baseClasses = "px-3 py-1 text-xs font-semibold rounded-full inline-block text-center min-w-[140px]";
         switch (status) {
-            case 'Resposta Recebida':
+            case 'Mensagem Recebida':
                 return `${baseClasses} bg-blue-100 text-blue-800`;
             case 'Concluído':
                 return `${baseClasses} bg-green-100 text-green-800`;
@@ -213,7 +214,7 @@ function Atendimentos() {
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
                 <div className="relative mb-4">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                    <input type="text" placeholder="Pesquisar por telefone ou situação..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input type="text" placeholder="Pesquisar por telefone, situação ou observação..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
 
                 <div className="overflow-x-auto">
@@ -223,13 +224,14 @@ function Atendimentos() {
                                 <th className="p-4 text-sm font-semibold text-gray-600">Contato (WhatsApp)</th>
                                 <th className="p-4 text-sm font-semibold text-gray-600">Última Atualização</th>
                                 <th className="p-4 text-sm font-semibold text-gray-600">Situação</th>
+                                <th className="p-4 text-sm font-semibold text-gray-600">Observação da IA</th>
                                 <th className="p-4 text-sm font-semibold text-gray-600">Persona Ativa</th>
                                 <th className="p-4 text-sm font-semibold text-gray-600 text-center">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td colSpan="5" className="text-center p-8 text-gray-500">A carregar atendimentos...</td></tr>
+                                <tr><td colSpan="6" className="text-center p-8 text-gray-500">A carregar atendimentos...</td></tr>
                             ) : filteredAtendimentos.map((at) => (
                                 <tr key={at.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                                     <td className="p-4 font-medium text-gray-800">{at.contact.whatsapp}</td>
@@ -238,6 +240,15 @@ function Atendimentos() {
                                         <span className={getStatusClass(at.status)}>
                                             {at.status}
                                         </span>
+                                    </td>
+                                    <td className="p-4 text-sm text-gray-600 max-w-xl">
+                                        {at.observacoes ? (
+                                            <p className="flex items-center gap-2" title={at.observacoes}>
+                                                {at.observacoes}
+                                            </p>
+                                        ) : (
+                                            <span className="text-gray-400 italic">Nenhuma</span>
+                                        )}
                                     </td>
                                     <td className="p-4 text-sm text-gray-600">{getPersonaNameById(at.active_persona_id)}</td>
                                     <td className="p-4 text-center">

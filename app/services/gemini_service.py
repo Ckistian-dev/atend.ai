@@ -12,9 +12,6 @@ from app.db import models
 
 logger = logging.getLogger(__name__)
 
-# --- ADICIONADO ---
-# Classe customizada para "ensinar" o JSON a lidar com o tipo 'set',
-# convertendo qualquer set que encontrar para uma lista.
 class SetEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Set):
@@ -44,7 +41,7 @@ class GeminiService:
             genai.configure(api_key=current_key)
             
             self.model = genai.GenerativeModel(
-                model_name='gemini-2.5-flash', # Usando gemini-1.5-flash que é um modelo excelente e mais recente
+                model_name='gemini-2.5-flash',
                 generation_config=self.generation_config
             )
 
@@ -65,8 +62,8 @@ class GeminiService:
         Executa a chamada para a API Gemini com lógica de retentativa e rotação de chaves.
         """
         gen_config_override = self.generation_config.copy()
-        if not is_media:
-            gen_config_override["response_mime_type"] = "application/json"
+        if not is_media and isinstance(prompt, str): # Apenas para prompts de texto/json
+             gen_config_override["response_mime_type"] = "application/json"
 
         initial_key_index = self.current_key_index
         max_attempts_per_key = 2
@@ -92,36 +89,48 @@ class GeminiService:
             if new_key_index == initial_key_index:
                 raise Exception(f"Todas as {len(self.api_keys)} chaves de API excederam a quota. Não é possível continuar.")
 
-    def transcribe_and_analyze_media(self, media_data: dict, db_history: List[dict]) -> str:
+    def transcribe_and_analyze_media(
+        self, 
+        media_data: dict, 
+        db_history: List[dict], 
+        config: models.Config,
+        contexto_planilha: Optional[Dict[str, Any]]
+    ) -> str:
         logger.info(f"Iniciando transcrição/análise para mídia do tipo {media_data.get('mime_type')}")
         prompt_parts = []
         
         if 'audio' in media_data['mime_type']:
+            # Para áudio, a tarefa é simples e não precisa de contexto extra
             task = "Sua única tarefa é transcrever o áudio a seguir. Retorne apenas o texto transcrito, sem adicionar nenhuma outra palavra ou formatação."
             prompt_parts.extend([task, media_data])
         else:
+            # Para imagens e documentos, construímos um prompt JSON rico em contexto
             formatted_history = self._format_history_for_prompt(db_history)
-            task = (
-                "Você é um especialista em análise de documentos e imagens. Baseado no histórico de conversa a seguir, "
-                "analise o arquivo enviado pelo contato e descreva seu conteúdo de forma concisa e objetiva. "
-                "Sua resposta será usada como uma anotação interna no CRM."
-                "\n\n"
-                "HISTÓRICO DA CONVERSA:\n"
-                f"{json.dumps(formatted_history, ensure_ascii=False, indent=2, cls=SetEncoder)}\n\n"
-                "REGRAS:\n"
-                "1. Foque no conteúdo do arquivo (imagem ou documento).\n"
-                "2. Conecte o conteúdo do arquivo com o que foi discutido na conversa, se aplicável.\n"
-                "3. Retorne APENAS o texto da análise, sem nenhuma outra palavra ou formatação."
-            )
-            prompt_parts.extend([task, media_data])
+            
+            media_analysis_prompt = {
+                "instrucao_geral": "Você é um especialista em análise de documentos e imagens. Sua tarefa é analisar o arquivo enviado pelo contato e descrever seu conteúdo de forma concisa e objetiva para ser usado como uma anotação interna no CRM.",
+                "regras": [
+                    "1. Foque no conteúdo do arquivo (imagem ou documento).",
+                    "2. Conecte o conteúdo do arquivo com o que foi discutido na conversa, se aplicável, usando o `historico_conversa` e o `contexto_planilha`.",
+                    "3. Siga o tom de voz definido na `configuracao_persona` para formular a sua análise.",
+                    "4. Sua resposta final deve ser APENAS o texto da análise, sem nenhuma outra palavra, título ou formatação."
+                ],
+                "configuracao_persona": config.prompt_config,
+                "contexto_planilha": contexto_planilha or {"aviso": "Nenhum contexto de planilha foi fornecido para esta análise."},
+                "historico_conversa": formatted_history
+            }
+            
+            prompt_text = json.dumps(media_analysis_prompt, ensure_ascii=False, indent=2, cls=SetEncoder)
+            prompt_parts.extend([prompt_text, media_data])
 
         try:
+            # Para mídias, a resposta não é JSON, então não configuramos o mime_type
             response = self._generate_with_retry(prompt_parts, is_media=True)
             transcription = response.text.strip()
             logger.info(f"Transcrição/Análise gerada: '{transcription[:100]}...'")
             return transcription
         except Exception as e:
-            logger.error(f"Erro ao transcrever/analisar mídia após todas as tentativas: {e}")
+            logger.error(f"Erro ao transcrever/analisar mídia após todas as tentativas: {e}", exc_info=True)
             return f"[Erro ao processar mídia: {media_data.get('mime_type')}]"
 
     def generate_conversation_action(
@@ -175,9 +184,6 @@ class GeminiService:
                 }
             }
             
-            # --- ALTERADO ---
-            # Usamos o 'cls=SetEncoder' para que a conversão para JSON 
-            # use a nossa classe customizada, evitando o erro.
             final_prompt_str = json.dumps(master_prompt, ensure_ascii=False, indent=2, cls=SetEncoder)
             
             response = self._generate_with_retry(final_prompt_str)
