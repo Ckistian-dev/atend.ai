@@ -246,7 +246,7 @@ function Operacao() {
     };
 
     return (
-        <div className="p-6 md:p-10 bg-gray-50 h-screen">
+        <div className="p-6 md:p-10 bg-gray-50 min-h-screen max-h-screen">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-gray-800">Operação do Agente</h1>
                 <p className="text-gray-500 mt-1">Controle o atendimento automático e as configurações de follow-up.</p>
