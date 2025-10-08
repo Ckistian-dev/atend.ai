@@ -4,7 +4,7 @@ import logging
 import random
 from typing import Dict, List, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from app.db.database import SessionLocal
 from app.crud import crud_atendimento, crud_user, crud_config
@@ -22,7 +22,9 @@ async def _process_raw_message(
     instance_name: str, 
     persona_config: models.Config, 
     whatsapp_service: WhatsAppService, 
-    gemini_service: GeminiService
+    gemini_service: GeminiService,
+    db: AsyncSession,
+    user: models.User
 ) -> Optional[Dict[str, Any]]:
     """
     Processa uma mensagem bruta da API, transcreve mídias se necessário, e retorna um dicionário formatado.
@@ -44,8 +46,8 @@ async def _process_raw_message(
         elif msg_content.get("audioMessage"):
             media_data = await whatsapp_service.get_media_and_convert(instance_name, raw_msg)
             if media_data:
-                transcription = gemini_service.transcribe_and_analyze_media(
-                    media_data, history_list_for_context, persona_config, persona_config.contexto_json
+                transcription = await gemini_service.transcribe_and_analyze_media(
+                    media_data, history_list_for_context, persona_config, persona_config.contexto_json, db, user
                 )
                 content = f"[Áudio transcrito]: {transcription}"
             else:
@@ -54,8 +56,8 @@ async def _process_raw_message(
         elif msg_content.get("imageMessage") or msg_content.get("documentMessage"):
             media_data = await whatsapp_service.get_media_and_convert(instance_name, raw_msg)
             if media_data:
-                analysis = gemini_service.transcribe_and_analyze_media(
-                    media_data, history_list_for_context, persona_config, persona_config.contexto_json
+                analysis = await gemini_service.transcribe_and_analyze_media(
+                    media_data, history_list_for_context, persona_config, persona_config.contexto_json, db, user
                 )
                 content = f"[Análise de Mídia]: {analysis}"
                 caption_text = ""
@@ -124,7 +126,7 @@ async def _synchronize_and_process_history(
         if msg_id and msg_id not in processed_message_ids:
             current_context_history = clean_db_history + newly_processed_messages
             processed_msg = await _process_raw_message(
-                raw_msg, current_context_history, user.instance_name, persona_config, whatsapp_service, gemini_service
+                raw_msg, current_context_history, user.instance_name, persona_config, whatsapp_service, gemini_service, db, user
             )
             if processed_msg:
                 newly_processed_messages.append(processed_msg)
@@ -199,10 +201,11 @@ async def atendimento_agent_task(user_id: int):
                         
                         last_message_is_from_user = not full_history or full_history[-1]['role'] == 'user'
                         if atendimento.status == "Mensagem Recebida" and not last_message_is_from_user:
-                             logger.info(f"Atendimento {atendimento.id} já respondido. Finalizando ciclo.")
-                             final_update = schemas.AtendimentoUpdate(status="Aguardando Resposta")
-                             await crud_atendimento.update_atendimento(db, db_atendimento=atendimento, atendimento_in=final_update)
-                             continue
+                                logger.info(f"Atendimento {atendimento.id} já respondido. Finalizando ciclo.")
+                                final_update = schemas.AtendimentoUpdate(status="Aguardando Resposta")
+                                await crud_atendimento.update_atendimento(db, db_atendimento=atendimento, atendimento_in=final_update)
+                                await db.commit()
+                                continue
 
                         # --- ETAPA 2: GERAÇÃO IA (com retentativas) ---
                         logger.info(f"Atendimento {atendimento.id} apto para gerar resposta. Chamando IA...")
@@ -211,9 +214,10 @@ async def atendimento_agent_task(user_id: int):
 
                         for attempt in range(MAX_PROCESS_ATTEMPTS):
                             try:
-                                ia_response = gemini_service.generate_conversation_action(
+                                ia_response = await gemini_service.generate_conversation_action(
                                     config=persona_config, contact=atendimento.contact,
-                                    conversation_history_db=full_history, contexto_planilha=persona_config.contexto_json
+                                    conversation_history_db=full_history, contexto_planilha=persona_config.contexto_json,
+                                    db=db, user=user
                                 )
                                 break
                             except Exception as ia_err:
@@ -221,7 +225,7 @@ async def atendimento_agent_task(user_id: int):
                                 if attempt == MAX_PROCESS_ATTEMPTS - 1: raise
                                 await asyncio.sleep(PROCESS_RETRY_DELAY)
                         
-                        # --- ETAPA 3: ENVIO DE MENSAGEM (lógica segura já existente) ---
+                        # --- ETAPA 3: ENVIO DE MENSAGEM ---
                         message_to_send = ia_response.get("mensagem_para_enviar")
                         new_status = ia_response.get("nova_situacao", "Aguardando Resposta")
                         new_observation = ia_response.get("observacoes", "")
@@ -229,7 +233,6 @@ async def atendimento_agent_task(user_id: int):
                         
                         if message_to_send:
                             message_parts = [part.strip() for part in message_to_send.split('\n\n') if part.strip()]
-                            all_sent_successfully = True
                             MAX_SEND_ATTEMPTS = 3
                             SEND_RETRY_DELAY = 5
 
@@ -254,11 +257,7 @@ async def atendimento_agent_task(user_id: int):
                                     logger.error(f"FALHA ao enviar parte {i+1} após {MAX_SEND_ATTEMPTS} tentativas. Abortando envio.")
                                     new_status = "Falha no Envio"
                                     new_observation += f" | Falha ao enviar parte {i+1}/{len(message_parts)}."
-                                    all_sent_successfully = False
                                     break
-                            
-                            if all_sent_successfully and message_parts:
-                                await crud_user.decrement_user_tokens(db, db_user=user)
                         else:
                             logger.info(f"IA decidiu não enviar mensagem para {atendimento.contact.whatsapp}.")
                             pending_id = f"internal_{datetime.now(timezone.utc).isoformat()}"

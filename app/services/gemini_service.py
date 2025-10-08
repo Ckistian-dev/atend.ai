@@ -3,16 +3,20 @@ from google.api_core import exceptions
 import time
 import logging
 import json
-from datetime import datetime
+import asyncio
 from typing import Optional, List, Dict, Any
-from collections.abc import Set # Importação para type checking explícito
+from collections.abc import Set
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.db import models
+from app.crud import crud_user
 
 logger = logging.getLogger(__name__)
 
 class SetEncoder(json.JSONEncoder):
+    """Codificador JSON para lidar com objetos 'set'."""
     def default(self, obj):
         if isinstance(obj, Set):
             return list(obj)
@@ -37,14 +41,11 @@ class GeminiService:
         """Inicializa ou re-inicializa o cliente Gemini com a chave atual."""
         try:
             current_key = self.api_keys[self.current_key_index]
-            
             genai.configure(api_key=current_key)
-            
             self.model = genai.GenerativeModel(
                 model_name='gemini-2.5-flash',
                 generation_config=self.generation_config
             )
-
             logger.info(f"✅ Cliente Gemini inicializado com sucesso (chave índice {self.current_key_index}).")
         except Exception as e:
             logger.error(f"🚨 ERRO CRÍTICO ao configurar o Gemini com a chave índice {self.current_key_index}: {e}", exc_info=True)
@@ -57,13 +58,20 @@ class GeminiService:
         self._initialize_model()
         return self.current_key_index
 
-    def _generate_with_retry(self, prompt: Any, is_media: bool = False) -> genai.types.GenerateContentResponse:
+    async def _generate_with_retry(
+        self, 
+        prompt: Any, 
+        db: AsyncSession, 
+        user: models.User, 
+        is_media: bool = False
+    ) -> genai.types.GenerateContentResponse:
         """
-        Executa a chamada para a API Gemini com lógica de retentativa e rotação de chaves.
+        Executa a chamada para a API Gemini, deduz um token em caso de sucesso,
+        e possui lógica de retentativa e rotação de chaves.
         """
         gen_config_override = self.generation_config.copy()
-        if not is_media and isinstance(prompt, str): # Apenas para prompts de texto/json
-             gen_config_override["response_mime_type"] = "application/json"
+        if not is_media and isinstance(prompt, str):
+            gen_config_override["response_mime_type"] = "application/json"
 
         initial_key_index = self.current_key_index
         max_attempts_per_key = 2
@@ -71,42 +79,59 @@ class GeminiService:
         while True:
             for attempt in range(max_attempts_per_key):
                 try:
-                    return self.model.generate_content(prompt, generation_config=gen_config_override)
+                    loop = asyncio.get_running_loop()
+                    response = await loop.run_in_executor(
+                        None, 
+                        lambda: self.model.generate_content(prompt, generation_config=gen_config_override)
+                    )
+                    
+                    # --- LÓGICA DE DECRÉSCIMO DE TOKEN ---
+                    # Deduz 1 token após cada chamada bem-sucedida à IA.
+                    try:
+                        await crud_user.decrement_user_tokens(db, db_user=user)
+                        await db.commit()
+                        await db.refresh(user)
+                        logger.info(f"Token deduzido para o utilizador {user.id}. Tokens restantes: {user.tokens}")
+                    except Exception as token_err:
+                        logger.error(f"Falha ao deduzir token para o utilizador {user.id} após sucesso da IA: {token_err}", exc_info=True)
+                        await db.rollback() # Garante que a sessão não fique em estado inconsistente
+                    
+                    return response
+
                 except exceptions.ResourceExhausted as e:
                     logger.warning(f"Quota da API excedida (429) com a chave {self.current_key_index} (tentativa {attempt + 1}/{max_attempts_per_key}).")
                     if attempt == max_attempts_per_key - 1:
                         break 
-                    time.sleep(5)
+                    await asyncio.sleep(5)
                 except (exceptions.InvalidArgument, genai.types.BlockedPromptException) as e:
                     logger.error(f"Erro não recuperável com a API Gemini: {type(e).__name__}. Não haverá nova tentativa. Erro: {e}", exc_info=True)
                     raise e
                 except Exception as e:
                     logger.error(f"Erro inesperado ({type(e).__name__}) na API Gemini com a chave {self.current_key_index}. Tentativa {attempt + 1}/{max_attempts_per_key}. Erro: {e}")
-                    time.sleep(5)
+                    await asyncio.sleep(5)
             
             new_key_index = self._rotate_key()
             
             if new_key_index == initial_key_index:
                 raise Exception(f"Todas as {len(self.api_keys)} chaves de API excederam a quota. Não é possível continuar.")
 
-    def transcribe_and_analyze_media(
+    async def transcribe_and_analyze_media(
         self, 
         media_data: dict, 
         db_history: List[dict], 
         config: models.Config,
-        contexto_planilha: Optional[Dict[str, Any]]
+        contexto_planilha: Optional[Dict[str, Any]],
+        db: AsyncSession,
+        user: models.User
     ) -> str:
         logger.info(f"Iniciando transcrição/análise para mídia do tipo {media_data.get('mime_type')}")
         prompt_parts = []
         
         if 'audio' in media_data['mime_type']:
-            # Para áudio, a tarefa é simples e não precisa de contexto extra
             task = "Sua única tarefa é transcrever o áudio a seguir. Retorne apenas o texto transcrito, sem adicionar nenhuma outra palavra ou formatação."
             prompt_parts.extend([task, media_data])
         else:
-            # Para imagens e documentos, construímos um prompt JSON rico em contexto
             formatted_history = self._format_history_for_prompt(db_history)
-            
             media_analysis_prompt = {
                 "instrucao_geral": "Você é um especialista em análise de documentos e imagens. Sua tarefa é analisar o arquivo enviado pelo contato e descrever seu conteúdo de forma concisa e objetiva para ser usado como uma anotação interna no CRM.",
                 "regras": [
@@ -119,13 +144,11 @@ class GeminiService:
                 "contexto_planilha": contexto_planilha or {"aviso": "Nenhum contexto de planilha foi fornecido para esta análise."},
                 "historico_conversa": formatted_history
             }
-            
             prompt_text = json.dumps(media_analysis_prompt, ensure_ascii=False, indent=2, cls=SetEncoder)
             prompt_parts.extend([prompt_text, media_data])
 
         try:
-            # Para mídias, a resposta não é JSON, então não configuramos o mime_type
-            response = self._generate_with_retry(prompt_parts, is_media=True)
+            response = await self._generate_with_retry(prompt_parts, db, user, is_media=True)
             transcription = response.text.strip()
             logger.info(f"Transcrição/Análise gerada: '{transcription[:100]}...'")
             return transcription
@@ -133,12 +156,14 @@ class GeminiService:
             logger.error(f"Erro ao transcrever/analisar mídia após todas as tentativas: {e}", exc_info=True)
             return f"[Erro ao processar mídia: {media_data.get('mime_type')}]"
 
-    def generate_conversation_action(
+    async def generate_conversation_action(
         self,
         config: models.Config,
         contact: models.Contact,
         conversation_history_db: List[dict],
-        contexto_planilha: Optional[Dict[str, Any]]
+        contexto_planilha: Optional[Dict[str, Any]],
+        db: AsyncSession,
+        user: models.User
     ) -> dict:
         try:
             formatted_history = self._format_history_for_prompt(conversation_history_db)
@@ -158,11 +183,12 @@ class GeminiService:
                     "8. *Formatação de Texto:* Quando precisar destacar palavras em negrito, utilize *texto*. Quando precisar usar itálico, utilize _texto_. Não use nenhum outro tipo de marcação.\n"
                     "9. *Fluxo de Resolução e Encaminhamento:* Seu objetivo principal é resolver a dúvida do cliente. Siga este fluxo:\n"
                     "   a. *Primeira Tentativa:* Responda à pergunta do cliente da forma mais clara e completa possível, usando o contexto disponível, imagens/documentos fornecidos ou conhecimento geral.\n"
+
                     "   b. *Segunda Tentativa (Reabordagem):* Se o cliente repetir a mesma dúvida ou disser que não entendeu, explique de forma diferente, use uma analogia ou quebre em passos menores. No fim, pergunte: 'Ficou mais claro agora?'.\n"
                     "   c. *Terceira Tentativa (Exemplo Prático):* Se o cliente ainda estiver confuso, traga um exemplo prático simples e direto, relacionado ao caso dele.\n"
                     "   d. *Encaminhamento (Último Recurso):* Se, após 3 tentativas no mesmo assunto, o cliente ainda expressar dúvida, confusão ou insatisfação, ou se a dúvida for extremamente específica e impossível de responder, você deve encaminhá-lo a um atendente humano. Nesse caso, sua resposta JSON deve conter:\n"
-                    "      - `mensagem_para_enviar`: Uma orientação para o bot pedir desculpas, informar que vai transferir para outro atendente e solicitar que o cliente aguarde um momento. (não copie exatamente este texto, use como referência)\n"
-                    "      - `nova_situacao`: 'Atendente Chamado'\n"
+                    "       - `mensagem_para_enviar`: Uma orientação para o bot pedir desculpas, informar que vai transferir para outro atendente e solicitar que o cliente aguarde um momento. (não copie exatamente este texto, use como referência)\n"
+                    "       - `nova_situacao`: 'Atendente Chamado'\n"
                 ),
                 "formato_resposta_obrigatorio": {
                     "descricao": "Sua resposta DEVE ser um único objeto JSON válido, sem nenhum texto ou formatação adicional (como ```json).",
@@ -186,26 +212,20 @@ class GeminiService:
             
             final_prompt_str = json.dumps(master_prompt, ensure_ascii=False, indent=2, cls=SetEncoder)
             
-            response = self._generate_with_retry(final_prompt_str)
+            response = await self._generate_with_retry(final_prompt_str, db, user)
             
-            # Limpa marcadores de código e espaços em branco
             clean_response = response.text.strip().replace("```json", "").replace("```", "")
-
-            # CORREÇÃO: Substitui barras invertidas únicas por barras duplas para um JSON válido
-            # Esta é a etapa crucial para evitar o erro 'Invalid \escape'
             valid_json_string = clean_response.replace('\\', '\\\\')
             
             return json.loads(valid_json_string)
 
         except json.JSONDecodeError as e:
-            # Adicionar um 'except' específico para erros de JSON pode ajudar a depurar
             logger.error(f"Erro de decodificação JSON. Resposta da IA (após limpeza):\n{clean_response}", exc_info=True)
             return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": f"Falha da IA ao gerar JSON válido: {str(e)}" }
 
         except Exception as e:
             logger.error(f"Erro ao gerar ação de conversação com Gemini após todas as tentativas: {e}", exc_info=True)
             return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": f"Falha da IA: {str(e)}" }
-
 
     def _format_history_for_prompt(self, db_history: List[dict]) -> List[Dict[str, str]]:
         history_for_ia = []
