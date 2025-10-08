@@ -212,16 +212,10 @@ class GeminiService:
             
             final_prompt_str = json.dumps(master_prompt, ensure_ascii=False, indent=2, cls=SetEncoder)
             
-            response = await self._generate_with_retry(final_prompt_str, db, user)
+            response = self._generate_with_retry(final_prompt_str)
             
             clean_response = response.text.strip().replace("```json", "").replace("```", "")
-            valid_json_string = clean_response.replace('\\', '\\\\')
-            
-            return json.loads(valid_json_string)
-
-        except json.JSONDecodeError as e:
-            logger.error(f"Erro de decodificação JSON. Resposta da IA (após limpeza):\n{clean_response}", exc_info=True)
-            return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": f"Falha da IA ao gerar JSON válido: {str(e)}" }
+            return json.loads(clean_response)
 
         except Exception as e:
             logger.error(f"Erro ao gerar ação de conversação com Gemini após todas as tentativas: {e}", exc_info=True)
