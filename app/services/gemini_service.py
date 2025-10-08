@@ -43,7 +43,7 @@ class GeminiService:
             current_key = self.api_keys[self.current_key_index]
             genai.configure(api_key=current_key)
             self.model = genai.GenerativeModel(
-                model_name='gemini-1.5-flash',
+                model_name='gemini-2.5-flash',
                 generation_config=self.generation_config
             )
             logger.info(f"✅ Cliente Gemini inicializado com sucesso (chave índice {self.current_key_index}).")
