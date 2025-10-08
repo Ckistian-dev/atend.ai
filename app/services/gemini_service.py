@@ -43,7 +43,7 @@ class GeminiService:
             current_key = self.api_keys[self.current_key_index]
             genai.configure(api_key=current_key)
             self.model = genai.GenerativeModel(
-                model_name='gemini-2.5-flash',
+                model_name='gemini-1.5-flash',
                 generation_config=self.generation_config
             )
             logger.info(f"✅ Cliente Gemini inicializado com sucesso (chave índice {self.current_key_index}).")
@@ -212,10 +212,21 @@ class GeminiService:
             
             final_prompt_str = json.dumps(master_prompt, ensure_ascii=False, indent=2, cls=SetEncoder)
             
-            response = self._generate_with_retry(final_prompt_str)
+            # CORREÇÃO: Passando 'db' e 'user' para a função _generate_with_retry
+            response = await self._generate_with_retry(final_prompt_str, db, user)
             
             clean_response = response.text.strip().replace("```json", "").replace("```", "")
-            return json.loads(clean_response)
+            valid_json_string = clean_response.replace('\\', '\\\\')
+            
+            return json.loads(valid_json_string)
+
+        except json.JSONDecodeError as e:
+            # A variável 'clean_response' pode não estar definida se o erro ocorrer antes
+            response_text = "N/A"
+            if 'response' in locals() and hasattr(response, 'text'):
+                response_text = response.text
+            logger.error(f"Erro de decodificação JSON. Resposta da IA:\n{response_text}", exc_info=True)
+            return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": f"Falha da IA ao gerar JSON válido: {str(e)}" }
 
         except Exception as e:
             logger.error(f"Erro ao gerar ação de conversação com Gemini após todas as tentativas: {e}", exc_info=True)
@@ -236,3 +247,4 @@ def get_gemini_service():
     if _gemini_service_instance is None:
         _gemini_service_instance = GeminiService()
     return _gemini_service_instance
+

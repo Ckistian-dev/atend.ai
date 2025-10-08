@@ -231,6 +231,11 @@ async def atendimento_agent_task(user_id: int):
                         new_observation = ia_response.get("observacoes", "")
                         history_after_response = full_history.copy()
                         
+                        # CORREÇÃO: Restaura newlines que podem ter sido escapadas ('\\n' -> '\n')
+                        # para garantir que a quebra de mensagem e a formatação funcionem.
+                        if message_to_send and isinstance(message_to_send, str):
+                            message_to_send = message_to_send.replace('\\n', '\n')
+
                         if message_to_send:
                             message_parts = [part.strip() for part in message_to_send.split('\n\n') if part.strip()]
                             MAX_SEND_ATTEMPTS = 3
@@ -297,3 +302,4 @@ def stop_agent_for_user(user_id: int):
         logger.info(f"Sinal de parada enviado para o agente do utilizador {user_id}.")
     else:
         logger.warning(f"Tentativa de parar agente que não está rodando para o utilizador {user_id}.")
+
