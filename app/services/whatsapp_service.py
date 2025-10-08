@@ -50,6 +50,7 @@ class WhatsAppService:
         payload = {
             "instanceName": instance_name,
             "integration": "WHATSAPP-BAILEYS",
+            "syncFullHistory": True,
             "qrcode": True,
             "webhook": {
                 "url": settings.WEBHOOK_URL,
