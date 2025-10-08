@@ -188,8 +188,19 @@ class GeminiService:
             
             response = self._generate_with_retry(final_prompt_str)
             
+            # Limpa marcadores de código e espaços em branco
             clean_response = response.text.strip().replace("```json", "").replace("```", "")
-            return json.loads(clean_response)
+
+            # CORREÇÃO: Substitui barras invertidas únicas por barras duplas para um JSON válido
+            # Esta é a etapa crucial para evitar o erro 'Invalid \escape'
+            valid_json_string = clean_response.replace('\\', '\\\\')
+            
+            return json.loads(valid_json_string)
+
+        except json.JSONDecodeError as e:
+            # Adicionar um 'except' específico para erros de JSON pode ajudar a depurar
+            logger.error(f"Erro de decodificação JSON. Resposta da IA (após limpeza):\n{clean_response}", exc_info=True)
+            return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": f"Falha da IA ao gerar JSON válido: {str(e)}" }
 
         except Exception as e:
             logger.error(f"Erro ao gerar ação de conversação com Gemini após todas as tentativas: {e}", exc_info=True)
