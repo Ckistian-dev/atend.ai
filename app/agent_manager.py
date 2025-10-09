@@ -216,18 +216,11 @@ async def atendimento_agent_task(user_id: int):
                         persona_config = await crud_config.get_config(db, config_id=atendimento.active_persona_id, user_id=user.id)
                         if not persona_config: raise ValueError("Persona não encontrada para geração de IA.")
 
-                        for attempt in range(MAX_PROCESS_ATTEMPTS):
-                            try:
-                                ia_response = await gemini_service.generate_conversation_action(
-                                    config=persona_config, contact=atendimento.contact,
-                                    conversation_history_db=full_history, contexto_planilha=persona_config.contexto_json,
-                                    db=db, user=user
-                                )
-                                break
-                            except Exception as ia_err:
-                                logger.warning(f"Falha na Geração da IA para Atendimento ID {atendimento.id} (tentativa {attempt + 1}): {ia_err}")
-                                if attempt == MAX_PROCESS_ATTEMPTS - 1: raise
-                                await asyncio.sleep(PROCESS_RETRY_DELAY)
+                        ia_response = await gemini_service.generate_conversation_action(
+                            config=persona_config, contact=atendimento.contact,
+                            conversation_history_db=full_history, contexto_planilha=persona_config.contexto_json,
+                            db=db, user=user
+                        )
                         
                         # --- ETAPA 3: ENVIO DE MENSAGEM ---
                         message_to_send = ia_response.get("mensagem_para_enviar")
@@ -241,15 +234,30 @@ async def atendimento_agent_task(user_id: int):
                         if message_to_send:
                             message_parts = [part.strip() for part in message_to_send.split('\n\n') if part.strip()]
                             
+                            MAX_SEND_ATTEMPTS = 3
+                            SEND_RETRY_DELAY = 10
+
                             for i, part in enumerate(message_parts):
-                                try:
-                                    await whatsapp_service.send_text_message(user.instance_name, atendimento.contact.whatsapp, part)
+                                part_sent = False
+                                for attempt in range(MAX_SEND_ATTEMPTS):
+                                    try:
+                                        logger.info(f"Enviando parte {i+1}/{len(message_parts)} para {atendimento.contact.whatsapp} (Tentativa {attempt + 1})...")
+                                        await whatsapp_service.send_text_message(user.instance_name, atendimento.contact.whatsapp, part)
+                                        part_sent = True
+                                        break  # Success, break from retry loop
+                                    except MessageSendError as e:
+                                        logger.warning(f"Falha na tentativa {attempt + 1} de enviar a parte {i+1}. Erro: {e}. Aguardando {SEND_RETRY_DELAY}s.")
+                                        if attempt < MAX_SEND_ATTEMPTS - 1:
+                                            await asyncio.sleep(SEND_RETRY_DELAY)
+                                
+                                if part_sent:
+                                    logger.info(f"Parte {i+1} enviada com sucesso.")
                                     pending_id = f"sent_{datetime.now(timezone.utc).isoformat()}"
                                     history_after_response.append({"id": pending_id, "role": "assistant", "content": part})
                                     if i < len(message_parts) - 1:
                                         await asyncio.sleep(random.uniform(5, 10))
-                                except MessageSendError as e:
-                                    logger.error(f"FALHA CRÍTICA ao enviar mensagem para {atendimento.contact.whatsapp}. Erro: {e}")
+                                else:
+                                    logger.error(f"FALHA CRÍTICA ao enviar parte {i+1} após {MAX_SEND_ATTEMPTS} tentativas. Abortando envio.")
                                     new_status = "Falha no Envio"
                                     new_observation += f" | Falha ao enviar parte {i+1}/{len(message_parts)}."
                                     break

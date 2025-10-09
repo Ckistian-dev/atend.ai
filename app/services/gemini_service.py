@@ -86,7 +86,6 @@ class GeminiService:
                     )
                     
                     # --- LÓGICA DE DECRÉSCIMO DE TOKEN ---
-                    # Deduz 1 token após cada chamada bem-sucedida à IA.
                     try:
                         await crud_user.decrement_user_tokens(db, db_user=user)
                         await db.commit()
@@ -94,7 +93,7 @@ class GeminiService:
                         logger.info(f"Token deduzido para o utilizador {user.id}. Tokens restantes: {user.tokens}")
                     except Exception as token_err:
                         logger.error(f"Falha ao deduzir token para o utilizador {user.id} após sucesso da IA: {token_err}", exc_info=True)
-                        await db.rollback() # Garante que a sessão não fique em estado inconsistente
+                        await db.rollback()
                     
                     return response
 
@@ -165,72 +164,81 @@ class GeminiService:
         db: AsyncSession,
         user: models.User
     ) -> dict:
-        try:
-            formatted_history = self._format_history_for_prompt(conversation_history_db)
+        max_retries = 3
+        last_response = None
 
-            master_prompt = {
-                "instrucao_geral": (
-                    "Você é um assistente de IA especialista em atendimento. Siga estas regras em ordem de prioridade:\n"
-                    "1. *Prioridade Máxima ao Contexto:* Sua principal fonte de verdade é o `contexto_planilha`. *Sempre* procure a resposta neste contexto primeiro.\n"
-                    "2. *Uso de Imagens e Documentos:* Você tem capacidade de interpretar imagens e documentos que forem fornecidos. Se o cliente enviar um arquivo ou imagem, analise e utilize as informações extraídas para auxiliar na resposta.\n"
-                    "3. *Conhecimento Geral como Alternativa:* Se a informação não estiver no `contexto_planilha`, ou se não for possível extrair totalmente da imagem/documento, utilize seu conhecimento geral para responder, mesmo que seja uma explicação mais ampla ou genérica. Só não utilize informações se for algo altamente incerto ou impossível de inferir.\n"
-                    "4. *Não Desista Fácil:* Não encaminhe para um atendente logo no início. Sempre tente responder com contexto, interpretação de imagens/documentos e/ou conhecimento geral antes.\n"
-                    "5. *Encaminhamento Somente em Casos Específicos:* Encaminhe ao atendente apenas se:\n"
-                    "   - A dúvida do cliente for extremamente específica e impossível de responder com contexto, imagens/documentos ou conhecimento geral.\n"
-                    "   - Ou se, após 3 tentativas de explicação no mesmo assunto, o cliente ainda não estiver satisfeito ou continuar em dúvida.\n"
-                    "6. *Evite Repetição de Cumprimento:* Nunca cumprimente o cliente mais de uma vez. Verifique no `historico_conversa` se já houve algum cumprimento anterior (ex: 'Olá', 'Oi', 'Bom dia', 'Boa tarde', 'Boa noite'). Se houver, não envie outro cumprimento.\n"
-                    "7. *Mantenha a Persona:* Siga sempre o tom de voz e o objetivo definidos em `configuracao_persona`.\n"
-                    "8. *Formatação de Texto:* Quando precisar destacar palavras em negrito, utilize *texto*. Quando precisar usar itálico, utilize _texto_. Não use nenhum outro tipo de marcação.\n"
-                    "9. *Fluxo de Resolução e Encaminhamento:* Seu objetivo principal é resolver a dúvida do cliente. Siga este fluxo:\n"
-                    "   a. *Primeira Tentativa:* Responda à pergunta do cliente da forma mais clara e completa possível, usando o contexto disponível, imagens/documentos fornecidos ou conhecimento geral.\n"
+        for attempt in range(max_retries):
+            try:
+                formatted_history = self._format_history_for_prompt(conversation_history_db)
 
-                    "   b. *Segunda Tentativa (Reabordagem):* Se o cliente repetir a mesma dúvida ou disser que não entendeu, explique de forma diferente, use uma analogia ou quebre em passos menores. No fim, pergunte: 'Ficou mais claro agora?'.\n"
-                    "   c. *Terceira Tentativa (Exemplo Prático):* Se o cliente ainda estiver confuso, traga um exemplo prático simples e direto, relacionado ao caso dele.\n"
-                    "   d. *Encaminhamento (Último Recurso):* Se, após 3 tentativas no mesmo assunto, o cliente ainda expressar dúvida, confusão ou insatisfação, ou se a dúvida for extremamente específica e impossível de responder, você deve encaminhá-lo a um atendente humano. Nesse caso, sua resposta JSON deve conter:\n"
-                    "       - `mensagem_para_enviar`: Uma orientação para o bot pedir desculpas, informar que vai transferir para outro atendente e solicitar que o cliente aguarde um momento. (não copie exatamente este texto, use como referência)\n"
-                    "       - `nova_situacao`: 'Atendente Chamado'\n"
-                ),
-                "formato_resposta_obrigatorio": {
-                    "descricao": "Sua resposta DEVE ser um único objeto JSON válido, sem nenhum texto ou formatação adicional (como ```json).",
-                    "chaves": {
-                        "mensagem_para_enviar": "O texto da mensagem a ser enviada ao contato. Se decidir que não deve enviar uma mensagem agora, o valor deve ser null.",
-                        "nova_situacao": "Um status curto que descreva o estado atual da conversa (ex: 'Aguardando Resposta', 'Dúvida Esclarecida', 'Atendente Chamado').",
-                        "observacoes": "Um resumo interno e conciso da interação para salvar no CRM."
+                master_prompt = {
+                    "instrucao_geral": (
+                        "Você é um assistente de IA especialista em atendimento. Siga estas regras em ordem de prioridade:\n"
+                        "1. *Prioridade Máxima ao Contexto:* Sua principal fonte de verdade é o `contexto_planilha`. *Sempre* procure a resposta neste contexto primeiro.\n"
+                        "2. *Uso de Imagens e Documentos:* Você tem capacidade de interpretar imagens e documentos que forem fornecidos. Se o cliente enviar um arquivo ou imagem, analise e utilize as informações extraídas para auxiliar na resposta.\n"
+                        "3. *Conhecimento Geral como Alternativa:* Se a informação não estiver no `contexto_planilha`, ou se não for possível extrair totalmente da imagem/documento, utilize seu conhecimento geral para responder, mesmo que seja uma explicação mais ampla ou genérica. Só não utilize informações se for algo altamente incerto ou impossível de inferir.\n"
+                        "4. *Não Desista Fácil:* Não encaminhe para um atendente logo no início. Sempre tente responder com contexto, interpretação de imagens/documentos e/ou conhecimento geral antes.\n"
+                        "5. *Encaminhamento Somente em Casos Específicos:* Encaminhe ao atendente apenas se:\n"
+                        "   - A dúvida do cliente for extremamente específica e impossível de responder com contexto, imagens/documentos ou conhecimento geral.\n"
+                        "   - Ou se, após 3 tentativas de explicação no mesmo assunto, o cliente ainda não estiver satisfeito ou continuar em dúvida.\n"
+                        "6. *Evite Repetição de Cumprimento:* Nunca cumprimente o cliente mais de uma vez. Verifique no `historico_conversa` se já houve algum cumprimento anterior (ex: 'Olá', 'Oi', 'Bom dia', 'Boa tarde', 'Boa noite'). Se houver, não envie outro cumprimento.\n"
+                        "7. *Mantenha a Persona:* Siga sempre o tom de voz e o objetivo definidos em `configuracao_persona`.\n"
+                        "8. *Formatação de Texto:* Quando precisar destacar palavras em negrito, utilize *texto*. Quando precisar usar itálico, utilize _texto_. Não use nenhum outro tipo de marcação.\n"
+                        "9. *Fluxo de Resolução e Encaminhamento:* Seu objetivo principal é resolver a dúvida do cliente. Siga este fluxo:\n"
+                        "   a. *Primeira Tentativa:* Responda à pergunta do cliente da forma mais clara e completa possível, usando o contexto disponível, imagens/documentos fornecidos ou conhecimento geral.\n"
+                        "   b. *Segunda Tentativa (Reabordagem):* Se o cliente repetir a mesma dúvida ou disser que não entendeu, explique de forma diferente, use uma analogia ou quebre em passos menores. No fim, pergunte: 'Ficou mais claro agora?'.\n"
+                        "   c. *Terceira Tentativa (Exemplo Prático):* Se o cliente ainda estiver confuso, traga um exemplo prático simples e direto, relacionado ao caso dele.\n"
+                        "   d. *Encaminhamento (Último Recurso):* Se, após 3 tentativas no mesmo assunto, o cliente ainda expressar dúvida, confusão ou insatisfação, ou se a dúvida for extremamente específica e impossível de responder, você deve encaminhá-lo a um atendente humano. Nesse caso, sua resposta JSON deve conter:\n"
+                        "       - `mensagem_para_enviar`: Uma orientação para o bot pedir desculpas, informar que vai transferir para outro atendente e solicitar que o cliente aguarde um momento. (não copie exatamente este texto, use como referência)\n"
+                        "       - `nova_situacao`: 'Atendente Chamado'\n"
+                    ),
+                    "formato_resposta_obrigatorio": {
+                        "descricao": "Sua resposta DEVE ser um único objeto JSON válido, sem nenhum texto ou formatação adicional (como ```json).",
+                        "chaves": {
+                            "mensagem_para_enviar": "O texto da mensagem a ser enviada ao contato. Se decidir que não deve enviar uma mensagem agora, o valor deve ser null.",
+                            "nova_situacao": "Um status curto que descreva o estado atual da conversa (ex: 'Aguardando Resposta', 'Dúvida Esclarecida', 'Atendente Chamado').",
+                            "observacoes": "Um resumo interno e conciso da interação para salvar no CRM."
+                        },
+                        "regras_importantes": {
+                            "Sempre escape barras invertidas (\\) com outra barra (\\\\) dentro dos valores de string do JSON.",
+                            "O JSON deve ser estritamente válido e pronto para ser processado por um parser."
+                        }
                     },
-                    "regras_importantes": {
-                        "Sempre escape barras invertidas (\\) com outra barra (\\\\) dentro dos valores de string do JSON.",
-                        "O JSON deve ser estritamente válido e pronto para ser processado por um parser."
+                    "configuracao_persona": config.prompt_config,
+                    "contexto_planilha": contexto_planilha or {"aviso": "Nenhum contexto de planilha foi fornecido."},
+                    "dados_atuais_conversa": {
+                        "tarefa_imediata": "Analisar a última mensagem do contato e formular a PRÓXIMA resposta seguindo a `instrucao_geral`.",
+                        "historico_conversa": formatted_history
                     }
-                },
-                "configuracao_persona": config.prompt_config,
-                "contexto_planilha": contexto_planilha or {"aviso": "Nenhum contexto de planilha foi fornecido."},
-                "dados_atuais_conversa": {
-                    "tarefa_imediata": "Analisar a última mensagem do contato e formular a PRÓXIMA resposta seguindo a `instrucao_geral`.",
-                    "historico_conversa": formatted_history
                 }
-            }
-            
-            final_prompt_str = json.dumps(master_prompt, ensure_ascii=False, indent=2, cls=SetEncoder)
-            
-            # CORREÇÃO: Passando 'db' e 'user' para a função _generate_with_retry
-            response = await self._generate_with_retry(final_prompt_str, db, user)
-            
-            clean_response = response.text.strip().replace("```json", "").replace("```", "")
-            valid_json_string = clean_response.replace('\\', '\\\\')
-            
-            return json.loads(valid_json_string)
+                
+                final_prompt_str = json.dumps(master_prompt, ensure_ascii=False, indent=2, cls=SetEncoder)
+                
+                response = await self._generate_with_retry(final_prompt_str, db, user)
+                last_response = response
+                
+                clean_response = response.text.strip().replace("```json", "").replace("```", "")
+                
+                return json.loads(clean_response)
 
-        except json.JSONDecodeError as e:
-            # A variável 'clean_response' pode não estar definida se o erro ocorrer antes
-            response_text = "N/A"
-            if 'response' in locals() and hasattr(response, 'text'):
-                response_text = response.text
-            logger.error(f"Erro de decodificação JSON. Resposta da IA:\n{response_text}", exc_info=True)
-            return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": f"Falha da IA ao gerar JSON válido: {str(e)}" }
-
-        except Exception as e:
-            logger.error(f"Erro ao gerar ação de conversação com Gemini após todas as tentativas: {e}", exc_info=True)
-            return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": f"Falha da IA: {str(e)}" }
+            except json.JSONDecodeError as e:
+                response_text = last_response.text if last_response else "N/A"
+                logger.warning(
+                    f"Falha ao decodificar JSON da IA (tentativa {attempt + 1}/{max_retries}). "
+                    f"Resposta: {response_text}"
+                )
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(2)  # Aguarda antes da próxima tentativa
+                else:
+                    logger.error(f"Erro de decodificação JSON após {max_retries} tentativas. Resposta final: {response_text}", exc_info=True)
+                    return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": f"Falha da IA ao gerar JSON válido após {max_retries} tentativas: {str(e)}" }
+            
+            except Exception as e:
+                logger.error(f"Erro ao gerar ação de conversação com Gemini: {e}", exc_info=True)
+                return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": f"Falha da IA: {str(e)}" }
+        
+        # Fallback caso o loop termine sem sucesso (não deve acontecer com a lógica acima)
+        return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": "Falha crítica no loop de geração de resposta da IA." }
 
     def _format_history_for_prompt(self, db_history: List[dict]) -> List[Dict[str, str]]:
         history_for_ia = []
@@ -247,4 +255,3 @@ def get_gemini_service():
     if _gemini_service_instance is None:
         _gemini_service_instance = GeminiService()
     return _gemini_service_instance
-
