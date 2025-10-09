@@ -25,10 +25,13 @@ class WhatsAppService:
         self.api_key = settings.EVOLUTION_API_KEY
         self.headers = {"apikey": self.api_key, "Content-Type": "application/json"}
         
+        # --- LÓGICA DE CONEXÃO COM BANCO DE DADOS DA EVOLUTION (DO PROSPECT AI) ---
         try:
             self.evolution_db_engine = create_async_engine(
                 settings.EVOLUTION_DATABASE_URL,
-                pool_size=5, max_overflow=10, pool_timeout=30
+                pool_size=5,
+                max_overflow=10,
+                pool_timeout=30
             )
             self.AsyncSessionLocal = sessionmaker(
                 bind=self.evolution_db_engine, class_=AsyncSession, expire_on_commit=False
@@ -50,50 +53,50 @@ class WhatsAppService:
         if len(clean_number) == 13 and clean_number.startswith("55"):
             subscriber_part = clean_number[4:]
             if subscriber_part.startswith('9'):
-                return clean_number[:4] + subscriber_part[1:]
+                normalized = clean_number[:4] + subscriber_part[1:]
+                return normalized
         return clean_number
 
+    # --- MÉTODO ATUALIZADO (DO PROSPECT AI) ---
     async def get_connection_status(self, instance_name: str) -> dict:
         if not instance_name:
             return {"status": "no_instance_name"}
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
-                    f"{self.api_url}/instance/fetchInstances",
+                    f"{self.api_url}/instance/connectionState/{instance_name}",
                     headers={"apikey": self.api_key}
                 )
                 response.raise_for_status()
-                instances = response.json()
-
-                for instance_data in instances:
-                    instance_info = instance_data.get("instance", {})
-                    if instance_info.get("instanceName") == instance_name:
-                        status = instance_info.get("status")
-                        return {
-                            "status": "connected" if status == "open" else status or "disconnected",
-                            "instance": instance_info
-                        }
+                data = response.json()
                 
-                return {"status": "disconnected", "instance": {}}
-
+                instance_info = data.get("instance", {})
+                state = instance_info.get("state")
+                
+                return {
+                    "status": "connected" if state == "open" else state or "disconnected",
+                    "instance": instance_info
+                }
         except httpx.HTTPStatusError as e:
-            return {"status": "api_error", "detail": e.response.text}
+            return {"status": "disconnected"} if e.response.status_code == 404 else {"status": "api_error", "detail": e.response.text}
         except Exception as e:
             return {"status": "api_error", "detail": str(e)}
 
-    async def _get_qrcode_and_instance_data(self, instance_name: str) -> Dict[str, Any]:
-        """Tenta obter o QR code, mas não falha se ele não estiver presente."""
+    # --- NOVO MÉTODO (DO PROSPECT AI) ---
+    async def _get_qrcode_and_instance_data(self, instance_name: str) -> Optional[Dict[str, Any]]:
         async with httpx.AsyncClient(timeout=90.0) as client:
             response = await client.get(f"{self.api_url}/instance/connect/{instance_name}", headers={"apikey": self.api_key})
             response.raise_for_status()
             data = response.json()
             qr_code_string = data.get('code') or data.get('qrcode', {}).get('code')
+            if not qr_code_string: raise Exception("API não retornou um QR Code válido.")
             
             instance_data = data.get("instance", {})
-            if qr_code_string:
-                instance_data['qrcode'] = qr_code_string
+            instance_data['qrcode'] = qr_code_string
+            
             return instance_data
 
+    # --- MÉTODO ATUALIZADO (DO PROSPECT AI) ---
     async def _create_instance(self, instance_name: str):
         payload = {
             "instanceName": instance_name,
@@ -103,7 +106,10 @@ class WhatsAppService:
             "webhook": {
                 "url": settings.WEBHOOK_URL,
                 "enabled": True,
-                "events": ["MESSAGES_UPSERT", "CONNECTION_UPDATE"]
+                "events": [
+                    "MESSAGES_UPSERT",
+                    "CONNECTION_UPDATE"
+                ]
             }
         }
         async with httpx.AsyncClient(timeout=60.0) as client:
@@ -112,52 +118,30 @@ class WhatsAppService:
             logger.info(f"Instância '{instance_name}' criada com sucesso.")
             return response.json()
 
+    # --- MÉTODO ATUALIZADO (DO PROSPECT AI) ---
     async def create_and_connect_instance(self, instance_name: str) -> dict:
-        """
-        Verifica o status, cria (se não existir) e conecta a uma instância,
-        garantindo que os dados completos, incluindo o 'instanceId', sejam retornados.
-        """
-        current_status_data = await self.get_connection_status(instance_name)
-        status = current_status_data.get("status")
-
-        if status == "connected":
-            logger.info(f"Instância '{instance_name}' já está conectada. Retornando status atual.")
-            return current_status_data
-
-        if status == "disconnected":
-            logger.info(f"Instância '{instance_name}' não encontrada. Tentando criar...")
-            try:
-                await self._create_instance(instance_name)
-                await asyncio.sleep(2)
-            except httpx.HTTPStatusError as create_e:
-                if create_e.response.status_code == 403 and "already in use" in create_e.response.text:
-                    logger.warning(f"Criação falhou porque a instância '{instance_name}' já existe. Prosseguindo para conexão.")
-                else:
-                    error_text = create_e.response.text
-                    logger.error(f"Erro ao criar a instância '{instance_name}': {error_text}")
-                    return {"status": "error", "detail": error_text}
-            except Exception as create_e:
-                 error_text = str(create_e)
-                 logger.error(f"Erro inesperado ao criar a instância '{instance_name}': {error_text}")
-                 return {"status": "error", "detail": error_text}
+        try:
+            instance_data = await self._get_qrcode_and_instance_data(instance_name)
+            return {"status": "qrcode", "instance": instance_data}
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code != 404:
+                error_detail = e.response.text if hasattr(e.response, 'text') else str(e)
+                logger.error(f"Erro ao conectar na instância '{instance_name}': {error_detail}")
+                return {"status": "error", "detail": error_detail}
 
         try:
-            logger.info(f"Tentando obter QR Code e dados da instância para '{instance_name}'...")
-            connect_data = await self._get_qrcode_and_instance_data(instance_name)
+            creation_data = await self._create_instance(instance_name)
+            new_instance_id = creation_data.get("instance", {}).get("instanceId")
+            instance_data_with_qrcode = await self._get_qrcode_and_instance_data(instance_name)
             
-            if connect_data.get("qrcode"):
-                logger.info(f"QR Code obtido para '{instance_name}'.")
-                full_instance_data = await self.get_connection_status(instance_name)
-                final_data = full_instance_data.get("instance", {})
-                final_data.update(connect_data)
-                return {"status": "qrcode", "instance": final_data}
-            else:
-                logger.warning(f"QR Code não encontrado na resposta de conexão para '{instance_name}'. Retornando status atual.")
-                return await self.get_connection_status(instance_name)
-        
+            if new_instance_id:
+                instance_data_with_qrcode['instanceId'] = new_instance_id
+            
+            return {"status": "qrcode", "instance": instance_data_with_qrcode}
         except Exception as e:
-            logger.error(f"Erro inesperado durante a conexão de '{instance_name}': {e}", exc_info=True)
-            return await self.get_connection_status(instance_name)
+            error_detail = e.response.text if hasattr(e, 'response') else str(e)
+            logger.error(f"Erro ao criar a instância '{instance_name}': {error_detail}")
+            return {"status": "error", "detail": error_detail}
 
     async def disconnect_instance(self, instance_name: str) -> dict:
         try:
@@ -166,7 +150,7 @@ class WhatsAppService:
                 if response.status_code not in [200, 201, 404]: response.raise_for_status()
                 return {"status": "disconnected"}
         except Exception as e:
-            error_detail = getattr(getattr(e, 'response', None), 'text', str(e))
+            error_detail = e.response.text if hasattr(e, 'response') else str(e)
             return {"status": "error", "detail": error_detail}
 
     async def send_text_message(self, instance_name: str, number: str, text: str):
@@ -239,6 +223,7 @@ class WhatsAppService:
             logger.error(f"Falha ao processar mídia da mensagem: {e}")
         return None
 
+    # --- LÓGICA DE BUSCA DE HISTÓRICO ATUALIZADA (DO PROSPECT AI) ---
     async def fetch_chat_history(self, instance_id: str, number: str, count: int = 32) -> List[Dict[str, Any]]:
         if not self.evolution_db_engine:
             logger.error("A conexão com o banco de dados da Evolution não foi configurada. Não é possível buscar o histórico.")
@@ -279,4 +264,3 @@ def get_whatsapp_service():
     if _whatsapp_service_instance is None:
         _whatsapp_service_instance = WhatsAppService()
     return _whatsapp_service_instance
-
