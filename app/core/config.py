@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
     EVOLUTION_API_URL: str
     EVOLUTION_API_KEY: str
+    EVOLUTION_DATABASE_URL: str
     WEBHOOK_URL: str
 
     # Alterado de List[str] para simplesmente str

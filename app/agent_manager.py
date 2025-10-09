@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from app.db.database import SessionLocal
 from app.crud import crud_atendimento, crud_user, crud_config
-from app.services.whatsapp_service import WhatsAppService, get_whatsapp_service
+from app.services.whatsapp_service import WhatsAppService, get_whatsapp_service, MessageSendError
 from app.services.gemini_service import GeminiService, get_gemini_service
 from app.db import models, schemas
 
@@ -91,6 +91,10 @@ async def _synchronize_and_process_history(
     Busca o histórico da API, remove mensagens temporárias do DB, processa as novas e retorna o histórico completo.
     """
     logger.info(f"Iniciando sincronização de histórico para o atendimento ID {atendimento.id}...")
+
+    if not user.instance_id:
+        logger.warning(f"Utilizador {user.id} não possui um instance_id configurado. Não é possível buscar o histórico.")
+        return json.loads(atendimento.conversa) if atendimento.conversa else []
     
     try:
         db_history = json.loads(atendimento.conversa) if atendimento.conversa else []
@@ -108,7 +112,7 @@ async def _synchronize_and_process_history(
     
     processed_message_ids = {msg['id'] for msg in clean_db_history}
     
-    raw_history_api = await whatsapp_service.fetch_chat_history(user.instance_name, atendimento.contact.whatsapp, count=100)
+    raw_history_api = await whatsapp_service.fetch_chat_history(user.instance_id, atendimento.contact.whatsapp, count=100)
     
     if not raw_history_api:
         logger.warning("Não foi possível buscar o histórico da API.")
@@ -231,35 +235,21 @@ async def atendimento_agent_task(user_id: int):
                         new_observation = ia_response.get("observacoes", "")
                         history_after_response = full_history.copy()
                         
-                        # CORREÇÃO: Restaura newlines que podem ter sido escapadas ('\\n' -> '\n')
-                        # para garantir que a quebra de mensagem e a formatação funcionem.
                         if message_to_send and isinstance(message_to_send, str):
                             message_to_send = message_to_send.replace('\\n', '\n')
 
                         if message_to_send:
                             message_parts = [part.strip() for part in message_to_send.split('\n\n') if part.strip()]
-                            MAX_SEND_ATTEMPTS = 3
-                            SEND_RETRY_DELAY = 5
-
+                            
                             for i, part in enumerate(message_parts):
-                                part_sent = False
-                                for attempt in range(MAX_SEND_ATTEMPTS):
-                                    logger.info(f"Enviando parte {i+1}/{len(message_parts)} para {atendimento.contact.whatsapp} (Tentativa {attempt + 1})...")
-                                    success = await whatsapp_service.send_text_message(user.instance_name, atendimento.contact.whatsapp, part)
-                                    if success:
-                                        part_sent = True
-                                        break
-                                    logger.warning(f"Falha na tentativa {attempt + 1} de enviar a parte {i+1}. Aguardando {SEND_RETRY_DELAY}s.")
-                                    await asyncio.sleep(SEND_RETRY_DELAY)
-
-                                if part_sent:
-                                    logger.info(f"Parte {i+1} enviada com sucesso.")
+                                try:
+                                    await whatsapp_service.send_text_message(user.instance_name, atendimento.contact.whatsapp, part)
                                     pending_id = f"sent_{datetime.now(timezone.utc).isoformat()}"
                                     history_after_response.append({"id": pending_id, "role": "assistant", "content": part})
                                     if i < len(message_parts) - 1:
-                                        await asyncio.sleep(random.uniform(1.5, 3.5))
-                                else:
-                                    logger.error(f"FALHA ao enviar parte {i+1} após {MAX_SEND_ATTEMPTS} tentativas. Abortando envio.")
+                                        await asyncio.sleep(random.uniform(5, 10))
+                                except MessageSendError as e:
+                                    logger.error(f"FALHA CRÍTICA ao enviar mensagem para {atendimento.contact.whatsapp}. Erro: {e}")
                                     new_status = "Falha no Envio"
                                     new_observation += f" | Falha ao enviar parte {i+1}/{len(message_parts)}."
                                     break

@@ -1,20 +1,16 @@
-# app/db/schemas.py
-
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
-# --- Schemas de Contato (Simplificado) ---
+# --- Schemas de Contato ---
 class ContactBase(BaseModel):
     whatsapp: str
-    # nome: Optional[str] = "Novo Contato"  <-- REMOVIDO
     observacoes: Optional[str] = None
 
 class ContactCreate(ContactBase):
     pass
 
 class ContactUpdate(BaseModel):
-    # nome: Optional[str] = None  <-- REMOVIDO
     observacoes: Optional[str] = None
 
 class Contact(ContactBase):
@@ -23,7 +19,7 @@ class Contact(ContactBase):
     class Config:
         from_attributes = True
 
-# --- Schemas de Configuração (Persona e Contexto) ---
+# --- Schemas de Configuração ---
 class ConfigBase(BaseModel):
     nome_config: str
     prompt_config: Dict[str, Any]
@@ -34,7 +30,7 @@ class ConfigCreate(ConfigBase):
 class ConfigUpdate(BaseModel):
     nome_config: Optional[str] = None
     prompt_config: Optional[Dict[str, Any]] = None
-    contexto_json: Optional[Dict[str, Any]] = None # Para salvar a planilha
+    contexto_json: Optional[Dict[str, Any]] = None
 
 class Config(ConfigBase):
     id: int
@@ -43,13 +39,12 @@ class Config(ConfigBase):
     class Config:
         from_attributes = True
 
-# --- Schemas de Atendimento (Substituindo Prospect) ---
+# --- Schemas de Atendimento ---
 class AtendimentoBase(BaseModel):
     status: Optional[str] = "Aguardando Resposta"
     observacoes: Optional[str] = None
     active_persona_id: int
 
-# Schema para retornar um atendimento na listagem principal
 class Atendimento(AtendimentoBase):
     id: int
     user_id: int
@@ -57,19 +52,18 @@ class Atendimento(AtendimentoBase):
     created_at: datetime
     updated_at: datetime
     conversa: str
-    contact: Contact # Inclui os dados do contato aninhados
+    contact: Contact
     
     class Config:
         from_attributes = True
 
-# Schema para atualizar um atendimento (status, persona, etc.)
 class AtendimentoUpdate(BaseModel):
     status: Optional[str] = None
     observacoes: Optional[str] = None
     active_persona_id: Optional[int] = None
     conversa: Optional[str] = None
 
-# --- Schemas de Usuário (com Persona Padrão) ---
+# --- Schemas de Usuário (ATUALIZADO) ---
 class UserBase(BaseModel):
     email: EmailStr
 
@@ -78,6 +72,8 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     instance_name: Optional[str] = None
+    # --- NOVO CAMPO ADICIONADO ---
+    instance_id: Optional[str] = None
     tokens: Optional[int] = None
     default_persona_id: Optional[int] = None
     spreadsheet_id: Optional[str] = None
@@ -86,13 +82,15 @@ class UserUpdate(BaseModel):
 class User(UserBase):
     id: int
     instance_name: Optional[str] = None
+    # --- NOVO CAMPO ADICIONADO ---
+    instance_id: Optional[str] = None
     tokens: int
     default_persona_id: Optional[int] = None
     spreadsheet_id: Optional[str] = None
     class Config:
         from_attributes = True
 
-# --- Schemas de Token (Sem alterações) ---
+# --- Schemas de Token ---
 class Token(BaseModel):
     access_token: str
     token_type: str
