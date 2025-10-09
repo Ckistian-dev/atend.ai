@@ -82,15 +82,16 @@ class WhatsAppService:
             return {"status": "api_error", "detail": str(e)}
 
     async def _get_qrcode_and_instance_data(self, instance_name: str) -> Dict[str, Any]:
+        """Tenta obter o QR code, mas não falha se ele não estiver presente."""
         async with httpx.AsyncClient(timeout=90.0) as client:
             response = await client.get(f"{self.api_url}/instance/connect/{instance_name}", headers={"apikey": self.api_key})
             response.raise_for_status()
             data = response.json()
             qr_code_string = data.get('code') or data.get('qrcode', {}).get('code')
-            if not qr_code_string: raise Exception("API não retornou um QR Code válido.")
             
             instance_data = data.get("instance", {})
-            instance_data['qrcode'] = qr_code_string
+            if qr_code_string:
+                instance_data['qrcode'] = qr_code_string
             return instance_data
 
     async def _create_instance(self, instance_name: str):
@@ -124,30 +125,38 @@ class WhatsAppService:
             return current_status_data
 
         if status == "disconnected":
-            logger.info(f"Instância '{instance_name}' não encontrada ou desconectada. Tentando criar...")
+            logger.info(f"Instância '{instance_name}' não encontrada. Tentando criar...")
             try:
                 await self._create_instance(instance_name)
-                await asyncio.sleep(3)
-            except Exception as create_e:
-                error_text = getattr(getattr(create_e, 'response', None), 'text', str(create_e))
-                if "already in use" in error_text:
+                await asyncio.sleep(2)
+            except httpx.HTTPStatusError as create_e:
+                if create_e.response.status_code == 403 and "already in use" in create_e.response.text:
                     logger.warning(f"Criação falhou porque a instância '{instance_name}' já existe. Prosseguindo para conexão.")
                 else:
+                    error_text = create_e.response.text
                     logger.error(f"Erro ao criar a instância '{instance_name}': {error_text}")
                     return {"status": "error", "detail": error_text}
-        
+            except Exception as create_e:
+                 error_text = str(create_e)
+                 logger.error(f"Erro inesperado ao criar a instância '{instance_name}': {error_text}")
+                 return {"status": "error", "detail": error_text}
+
         try:
-            logger.info(f"Tentando obter QR Code para a instância '{instance_name}'...")
-            qrcode_data = await self._get_qrcode_and_instance_data(instance_name)
+            logger.info(f"Tentando obter QR Code e dados da instância para '{instance_name}'...")
+            connect_data = await self._get_qrcode_and_instance_data(instance_name)
             
-            full_instance_data = await self.get_connection_status(instance_name)
-            
-            final_data = full_instance_data.get("instance", {})
-            final_data.update(qrcode_data)
-            
-            return {"status": "qrcode", "instance": final_data}
+            if connect_data.get("qrcode"):
+                logger.info(f"QR Code obtido para '{instance_name}'.")
+                full_instance_data = await self.get_connection_status(instance_name)
+                final_data = full_instance_data.get("instance", {})
+                final_data.update(connect_data)
+                return {"status": "qrcode", "instance": final_data}
+            else:
+                logger.warning(f"QR Code não encontrado na resposta de conexão para '{instance_name}'. Retornando status atual.")
+                return await self.get_connection_status(instance_name)
+        
         except Exception as e:
-            logger.warning(f"Não foi possível obter o QR Code para '{instance_name}' (pode estar conectando). Retornando o status mais recente. Erro: {e}")
+            logger.error(f"Erro inesperado durante a conexão de '{instance_name}': {e}", exc_info=True)
             return await self.get_connection_status(instance_name)
 
     async def disconnect_instance(self, instance_name: str) -> dict:
