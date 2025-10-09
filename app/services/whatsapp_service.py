@@ -116,7 +116,6 @@ class WhatsAppService:
         Verifica o status, cria (se não existir) e conecta a uma instância,
         garantindo que os dados completos, incluindo o 'instanceId', sejam retornados.
         """
-        # Etapa 1: Verificar o status atual.
         current_status_data = await self.get_connection_status(instance_name)
         status = current_status_data.get("status")
 
@@ -124,36 +123,32 @@ class WhatsAppService:
             logger.info(f"Instância '{instance_name}' já está conectada. Retornando status atual.")
             return current_status_data
 
-        # Etapa 2: Se a instância não existe, crie-a.
         if status == "disconnected":
-            logger.info(f"Instância '{instance_name}' não encontrada. Criando...")
+            logger.info(f"Instância '{instance_name}' não encontrada ou desconectada. Tentando criar...")
             try:
                 await self._create_instance(instance_name)
-                # Dê um tempo para a API processar a criação
                 await asyncio.sleep(3)
             except Exception as create_e:
                 error_text = getattr(getattr(create_e, 'response', None), 'text', str(create_e))
-                logger.error(f"Erro ao criar a instância '{instance_name}': {error_text}")
-                return {"status": "error", "detail": error_text}
+                if "already in use" in error_text:
+                    logger.warning(f"Criação falhou porque a instância '{instance_name}' já existe. Prosseguindo para conexão.")
+                else:
+                    logger.error(f"Erro ao criar a instância '{instance_name}': {error_text}")
+                    return {"status": "error", "detail": error_text}
         
-        # Etapa 3: Tente obter o QR Code. A instância deve existir agora.
         try:
             logger.info(f"Tentando obter QR Code para a instância '{instance_name}'...")
             qrcode_data = await self._get_qrcode_and_instance_data(instance_name)
             
-            # Enriquecer com os dados mais recentes que contêm o instanceId
             full_instance_data = await self.get_connection_status(instance_name)
             
             final_data = full_instance_data.get("instance", {})
-            final_data.update(qrcode_data) # Adiciona o qrcode ao dicionário completo
+            final_data.update(qrcode_data)
             
             return {"status": "qrcode", "instance": final_data}
         except Exception as e:
             logger.warning(f"Não foi possível obter o QR Code para '{instance_name}' (pode estar conectando). Retornando o status mais recente. Erro: {e}")
-            # Se não conseguir QR code, a instância pode estar em um estado 'connecting'.
-            # Retornar o último status conhecido é a ação correta.
             return await self.get_connection_status(instance_name)
-
 
     async def disconnect_instance(self, instance_name: str) -> dict:
         try:
