@@ -232,9 +232,6 @@ class WhatsAppService:
         if not instance_id or not number:
             return []
             
-        normalized_number = self._normalize_number(number)
-        jid = f"{normalized_number}@s.whatsapp.net"
-        
         query = text(f"""
             SELECT key, message, "messageTimestamp"
             FROM "Message"
@@ -247,12 +244,26 @@ class WhatsAppService:
         
         try:
             async with self.AsyncSessionLocal() as session:
+                # Tentativa 1: Com o número normalizado (geralmente sem o '9')
+                number_without_9 = self._normalize_number(number)
+                jid = f"{number_without_9}@s.whatsapp.net"
+                
+                logger.info(f"Buscando histórico para {jid}...")
                 result = await session.execute(query, {"instance_id": instance_id, "jid": jid, "limit": count})
                 rows = result.fetchall()
-                
+
+                # Tentativa 2: Se não encontrar e for um número móvel do Brasil, tenta com o '9'
+                if not rows and len(number_without_9) == 12 and number_without_9.startswith("55"):
+                    number_with_9 = f"{number_without_9[:4]}9{number_without_9[4:]}"
+                    jid = f"{number_with_9}@s.whatsapp.net" # Reatribui o jid para a segunda busca
+                    
+                    logger.info(f"Nenhum resultado, tentando com JID alternativo: {jid}...")
+                    result = await session.execute(query, {"instance_id": instance_id, "jid": jid, "limit": count})
+                    rows = result.fetchall()
+
                 messages = [{"key": row[0], "message": row[1], "messageTimestamp": row[2]} for row in rows]
                 
-                logger.info(f"Histórico para {jid} carregado do banco. Total de {len(messages)} mensagens encontradas.")
+                logger.info(f"Histórico para {number} ({jid}) carregado. Total de {len(messages)} mensagens encontradas.")
                 return messages
         except Exception as e:
             logger.error(f"Não foi possível buscar o histórico do banco de dados para {number}. Erro: {e}", exc_info=True)
@@ -264,4 +275,3 @@ def get_whatsapp_service():
     if _whatsapp_service_instance is None:
         _whatsapp_service_instance = WhatsAppService()
     return _whatsapp_service_instance
-
