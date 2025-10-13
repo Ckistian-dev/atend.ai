@@ -72,7 +72,7 @@ const Dashboard = () => {
         };
         fetchDashboardData();
     }, []);
-    
+
     // Skeleton para a tela de carregamento
     if (isLoading) {
         return (
@@ -101,7 +101,7 @@ const Dashboard = () => {
         { icon: CheckCircle, title: 'Finalizados (24h)', value: data.stats.finalizadosHoje, color: '#10b981' },
         { icon: XCircle, title: 'Contatos Ignorados', value: data.stats.ignorados, color: '#ef4444' },
     ];
-    
+
     // Simulação de dados para o gráfico, já que o backend não provê isso ainda.
     const chartData = [
         { name: 'Seg', ativos: 12, novos: 5 },
@@ -114,7 +114,7 @@ const Dashboard = () => {
     ];
 
     return (
-        <div className="animate-fade-in p-6 md:p-10 bg-gray-50 min-h-screen">
+        <div className="animate-fade-in p-6 md:p-10 bg-gray-50 min-h-screen max-h-screen my-auto">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard de Atendimento</h1>
             <p className="text-gray-500 mb-8">Bem-vindo(a) de volta! Aqui está um resumo da sua operação.</p>
 
@@ -130,17 +130,17 @@ const Dashboard = () => {
                         <BarChart size={20} className="mr-2 text-gray-500" />
                         Visão Geral da Atividade Semanal
                     </h3>
-                    <div className="h-72">
+                    <div className="h-96">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorAtivos" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                                     </linearGradient>
                                     <linearGradient id="colorNovos" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -154,19 +154,20 @@ const Dashboard = () => {
                         </ResponsiveContainer>
                     </div>
                 </div>
-                
+
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                     <h3 className="font-bold text-lg text-gray-800 mb-4">Atividade Recente</h3>
-                     <div className="space-y-2">
-                         {data.recentActivity && data.recentActivity.length > 0 ? (
+                    <h3 className="font-bold text-lg text-gray-800 mb-4">Atividade Recente</h3>
+                    <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                        {data.recentActivity && data.recentActivity.length > 0 ? (
                             data.recentActivity.map((activity, index) => (
-                               <RecentActivityItem key={index} {...activity} />  
+                                <RecentActivityItem key={index} {...activity} />
                             ))
-                         ) : (
+                        ) : (
                             <p className="text-center text-sm text-gray-500 pt-8">Nenhuma atividade recente para mostrar.</p>
-                         )}
-                     </div>
+                        )}
+                    </div>
                 </div>
+
             </div>
         </div>
     );

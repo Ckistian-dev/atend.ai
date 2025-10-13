@@ -86,7 +86,7 @@ const ActivityLog = ({ activities, isLoading, getPersonaName, getStatusClass, on
             </div>
             <h3 className="font-bold text-lg text-gray-800">Log de Atividade Recente</h3>
         </div>
-        <div className="overflow-x-auto -mx-6 flex-1 overflow-y-scroll">
+        <div className="overflow-x-auto -mx-6 flex-1 overflow-y-auto max-h-[560px]">
             <table className="w-full text-left">
                 <thead className="border-b-2 border-gray-200 sticky top-0 bg-white z-10">
                     <tr>
@@ -98,25 +98,44 @@ const ActivityLog = ({ activities, isLoading, getPersonaName, getStatusClass, on
                 </thead>
                 <tbody>
                     {isLoading && activities.length === 0 ? (
-                        <tr><td colSpan="4" className="text-center p-8 text-gray-500"><Loader2 className="animate-spin inline-block mr-2" />A carregar atividade...</td></tr>
-                    ) : activities.map((activity, index) => (
-                        <tr 
-                            key={index} 
-                            className="border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer"
-                            onClick={() => onRowClick(activity.whatsapp)}
-                        >
-                            <td className="p-4 font-medium text-gray-800 text-sm">{activity.whatsapp}</td>
-                            <td className="p-4"><span className={getStatusClass(activity.situacao)}>{activity.situacao}</span></td>
-                            <td className="p-4 text-sm text-gray-600 max-w-lg">
-                                <p title={activity.observacao}>{activity.observacao}</p>
+                        <tr>
+                            <td colSpan="4" className="text-center p-8 text-gray-500">
+                                <Loader2 className="animate-spin inline-block mr-2" />
+                                A carregar atividade...
                             </td>
-                            <td className="p-4 text-sm text-gray-600 font-medium">{getPersonaName(activity.active_persona_id)}</td>
                         </tr>
-                    ))}
+                    ) : (
+                        activities.map((activity, index) => (
+                            <tr
+                                key={index}
+                                className="border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer"
+                                onClick={() => onRowClick(activity.whatsapp)}
+                            >
+                                <td className="p-4 font-medium text-gray-800 text-sm">{activity.whatsapp}</td>
+                                <td className="p-4">
+                                    <span className={getStatusClass(activity.situacao)}>
+                                        {activity.situacao}
+                                    </span>
+                                </td>
+                                <td className="p-4 text-sm text-gray-600 max-w-lg truncate" title={activity.observacao}>
+                                    {activity.observacao}
+                                </td>
+                                <td className="p-4 text-sm text-gray-600 font-medium">
+                                    {getPersonaName(activity.active_persona_id)}
+                                </td>
+                            </tr>
+                        ))
+                    )}
                 </tbody>
             </table>
-            {!isLoading && activities.length === 0 && <p className="text-center text-gray-500 py-8">Nenhuma atividade recente para mostrar.</p>}
+
+            {!isLoading && activities.length === 0 && (
+                <p className="text-center text-gray-500 py-8">
+                    Nenhuma atividade recente para mostrar.
+                </p>
+            )}
         </div>
+
     </div>
 );
 
@@ -142,7 +161,7 @@ function Operacao() {
                 api.get('/auth/me'),
                 api.get('/configs/')
             ]);
-            
+
             setAgentStatus(agentRes.data.status);
             setRecentActivity(dashboardRes.data.recentActivity || []);
             setPersonas(personasRes.data);
@@ -151,8 +170,8 @@ function Operacao() {
             const minutes = userData.followup_interval_minutes || 0;
             setFollowupEnabled(minutes > 0);
             if (minutes > 0) {
-                if (minutes >= 1440 && minutes % 1440 === 0) { setFollowupValue(minutes / 1440); setFollowupUnit('days'); } 
-                else if (minutes >= 60 && minutes % 60 === 0) { setFollowupValue(minutes / 60); setFollowupUnit('hours'); } 
+                if (minutes >= 1440 && minutes % 1440 === 0) { setFollowupValue(minutes / 1440); setFollowupUnit('days'); }
+                else if (minutes >= 60 && minutes % 60 === 0) { setFollowupValue(minutes / 60); setFollowupUnit('hours'); }
                 else { setFollowupValue(minutes); setFollowupUnit('minutes'); }
             } else {
                 setFollowupValue(24);
@@ -180,12 +199,12 @@ function Operacao() {
         const interval = setInterval(fetchActivityData, 5000);
         return () => clearInterval(interval);
     }, [fetchInitialData, fetchActivityData]);
-    
+
     const getPersonaNameById = (id) => {
         const persona = personas.find(p => p.id === id);
         return persona ? persona.nome_config : 'N/D';
     };
-    
+
     const getStatusClass = (status) => {
         const baseClasses = "px-3 py-1 text-xs font-semibold rounded-full inline-block text-center min-w-[140px]";
         switch (status) {
