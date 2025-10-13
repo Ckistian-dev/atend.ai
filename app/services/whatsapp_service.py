@@ -223,7 +223,6 @@ class WhatsAppService:
             logger.error(f"Falha ao processar mídia da mensagem: {e}")
         return None
 
-    # --- LÓGICA DE BUSCA DE HISTÓRICO ATUALIZADA (DO PROSPECT AI) ---
     async def fetch_chat_history(self, instance_id: str, number: str, count: int = 32) -> List[Dict[str, Any]]:
         if not self.evolution_db_engine:
             logger.error("A conexão com o banco de dados da Evolution não foi configurada. Não é possível buscar o histórico.")
@@ -260,11 +259,30 @@ class WhatsAppService:
                     logger.info(f"Nenhum resultado, tentando com JID alternativo: {jid}...")
                     result = await session.execute(query, {"instance_id": instance_id, "jid": jid, "limit": count})
                     rows = result.fetchall()
-
-                messages = [{"key": row[0], "message": row[1], "messageTimestamp": row[2]} for row in rows]
                 
-                logger.info(f"Histórico para {number} ({jid}) carregado. Total de {len(messages)} mensagens encontradas.")
-                return messages
+                # --- NOVA LÓGICA APLICADA AQUI ---
+                # Processa as mensagens para extrair o conteúdo de mensagens efêmeras.
+                processed_messages = []
+                for row in rows:
+                    key = row[0]
+                    message_content = row[1]
+                    timestamp = row[2]
+
+                    # Verifica se é uma mensagem efêmera e extrai o conteúdo real
+                    if isinstance(message_content, dict) and "ephemeralMessage" in message_content:
+                        actual_message = message_content.get("ephemeralMessage", {}).get("message")
+                        if actual_message:
+                            message_content = actual_message  # Substitui o container pelo conteúdo
+
+                    processed_messages.append({
+                        "key": key,
+                        "message": message_content,
+                        "messageTimestamp": timestamp
+                    })
+                
+                logger.info(f"Histórico para {number} ({jid}) carregado. Total de {len(processed_messages)} mensagens encontradas.")
+                return processed_messages
+                
         except Exception as e:
             logger.error(f"Não foi possível buscar o histórico do banco de dados para {number}. Erro: {e}", exc_info=True)
             return []

@@ -25,7 +25,7 @@ const StatusDisplay = ({ statusInfo, qrCode, onConnect, onDisconnect, onRefresh,
                 return `${baseClasses} bg-gray-50 border-gray-300`;
         }
     };
-
+    
     const renderContent = () => {
         switch (statusInfo?.status) {
             case 'connected':
@@ -40,7 +40,7 @@ const StatusDisplay = ({ statusInfo, qrCode, onConnect, onDisconnect, onRefresh,
                         </button>
                     </div>
                 );
-
+            
             case 'loading':
             case 'loading_qr':
                 return <div><Loader2 size={64} className="mx-auto text-brand-blue animate-spin mb-4" /><p className="text-gray-600">{statusInfo.status === 'loading_qr' ? 'A gerar QR Code...' : 'A verificar...'}</p></div>;
@@ -49,14 +49,14 @@ const StatusDisplay = ({ statusInfo, qrCode, onConnect, onDisconnect, onRefresh,
             case 'close':
             case 'qrcode':
                 return <div><ScanLine size={32} className="mx-auto text-brand-blue mb-2" /><h2 className="text-2xl font-bold text-gray-800 mb-4">Leia o QR Code para Conectar</h2><div className="p-4 bg-white inline-block rounded-lg shadow-inner">{qrCode ? <QRCode value={qrCode} size={256} /> : <Loader2 size={64} className="animate-spin text-brand-blue" />}</div><p className="text-gray-600 mt-4">Abra o WhatsApp no seu telemóvel e leia o código.</p></div>;
-
+            
             case 'error':
             case 'api_error':
                 return <div><ServerCrash size={64} className="mx-auto text-red-500 mb-4" /><h2 className="text-2xl font-bold text-red-800">Erro</h2><p className="text-red-700 mt-2">{error}</p></div>;
-
+            
             case 'no_instance_name':
                 return <div><AlertCircle size={48} className="mx-auto text-amber-500 mb-4" /><h2 className="text-2xl font-bold text-amber-800">Ação Necessária</h2><p className="text-amber-700 mt-2">Guarde um nome para a sua instância para continuar.</p></div>;
-
+            
             default:
                 return <div><WifiOff size={64} className="mx-auto text-gray-400 mb-4" /><h2 className="text-2xl font-bold text-gray-800">Desconectado</h2><p className="text-gray-600 mt-2">A sua sessão do WhatsApp não está ativa.</p><button onClick={onConnect} disabled={disabled} className="mt-6 flex items-center gap-2 mx-auto bg-brand-blue text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-brand-blue-dark transition-all disabled:bg-gray-400">Conectar</button></div>;
         }
@@ -85,7 +85,7 @@ function Whatsapp() {
     const [instanceName, setInstanceName] = useState('');
     const [isEditing, setIsEditing] = useState(false);
     const [isChecking, setIsChecking] = useState(false);
-
+ 
     const handleConnect = useCallback(async () => {
         if (isChecking) return;
         setIsChecking(true);
@@ -130,7 +130,7 @@ function Whatsapp() {
             setIsChecking(false);
         }
     }, [instanceName, isChecking, handleConnect]);
-
+ 
     useEffect(() => {
         const init = async () => {
             try {
@@ -139,7 +139,7 @@ function Whatsapp() {
                 setInstanceName(savedName);
                 if (!savedName) {
                     setIsEditing(true);
-                    setStatusInfo({ status: 'no_instance_name' });
+                    setStatusInfo({ status: 'no_instance_name'});
                 }
             } catch {
                 setError("Não foi possível procurar as configurações.");
@@ -148,14 +148,14 @@ function Whatsapp() {
         };
         init();
     }, []);
-
+ 
     useEffect(() => {
         if (instanceName && !isEditing) {
             checkStatus();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [instanceName, isEditing]);
-
+ 
     const handleDisconnect = async () => {
         if (window.confirm('Tem a certeza que deseja desconectar e apagar a instância?')) {
             setIsChecking(true);
@@ -170,7 +170,7 @@ function Whatsapp() {
             }
         }
     };
-
+    
     const handleSaveInstanceName = async () => {
         if (!instanceName || instanceName.trim().length < 3) {
             alert('O nome da instância deve ter pelo menos 3 caracteres.');
@@ -186,38 +186,45 @@ function Whatsapp() {
             setIsChecking(false);
         }
     };
-
+ 
     return (
         <div className="p-6 md:p-10 bg-gray-50 min-h-full">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-gray-800">Conexão WhatsApp</h1>
                 <p className="text-gray-500 mt-1">Faça a gestão da conexão com a API da Evolution.</p>
             </div>
-
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 max-w-lg mx-auto">
-                {/* Nome da Instância */}
                 <div className="mb-6 p-4 bg-gray-100 rounded-lg border border-gray-200">
                     <label className="block text-sm font-medium text-gray-600 mb-2">Nome da Instância</label>
-                    <div className="px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-800 font-medium break-all">
-                        {instanceName || '—'}
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="text" value={instanceName} onChange={(e) => setInstanceName(e.target.value)} disabled={!isEditing}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue disabled:bg-gray-200 disabled:text-gray-500"
+                            placeholder="ex: meu-atendimento"
+                        />
+                        {statusInfo.status !== 'connected' && statusInfo.status !== 'open' && (
+                            isEditing ? (
+                                <button onClick={handleSaveInstanceName} title="Salvar" className="p-2 bg-green-500 text-white rounded-md hover:bg-green-600"><Save size={20}/></button>
+                            ) : (
+                                <button onClick={() => setIsEditing(true)} title="Editar" className="p-2 bg-gray-200 text-gray-600 rounded-md hover:bg-gray-300"><Edit size={20}/></button>
+                            )
+                        )}
                     </div>
+                    {isEditing && <p className="text-xs text-gray-500 mt-1">O nome deve ser único e sem espaços.</p>}
                 </div>
-
-                {/* Status */}
-                <StatusDisplay
-                    statusInfo={statusInfo}
-                    qrCode={qrCode}
-                    onConnect={handleConnect}
-                    onDisconnect={handleDisconnect}
+                <StatusDisplay 
+                    statusInfo={statusInfo} 
+                    qrCode={qrCode} 
+                    onConnect={handleConnect} 
+                    onDisconnect={handleDisconnect} 
                     onRefresh={checkStatus}
                     isChecking={isChecking}
-                    error={error}
-                    disabled={!instanceName}
+                    error={error} 
+                    disabled={!instanceName || isEditing}
                 />
             </div>
         </div>
     );
-
 }
 
 export default Whatsapp;
