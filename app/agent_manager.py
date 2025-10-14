@@ -255,7 +255,7 @@ async def atendimento_agent_task(user_id: int):
                                     pending_id = f"sent_{datetime.now(timezone.utc).isoformat()}"
                                     history_after_response.append({"id": pending_id, "role": "assistant", "content": part})
                                     if i < len(message_parts) - 1:
-                                        await asyncio.sleep(random.uniform(5, 10))
+                                        await asyncio.sleep(random.uniform(5, 30))
                                 else:
                                     logger.error(f"FALHA CRÍTICA ao enviar parte {i+1} após {MAX_SEND_ATTEMPTS} tentativas. Abortando envio.")
                                     new_status = "Falha no Envio"
