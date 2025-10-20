@@ -277,7 +277,7 @@ async def atendimento_agent_task(user_id: int):
                                     logger.info(f"Parte {i+1} enviada com sucesso para {atendimento.id}.")
                                     # Não adicionamos mais marcadores temporários aqui
                                     if i < len(message_parts) - 1:
-                                        await asyncio.sleep(random.uniform(persona_config.min_delay_seconds, persona_config.max_delay_seconds))
+                                        await asyncio.sleep(random.uniform(15, 30))
                                 else:
                                     logger.error(f"FALHA CRÍTICA ao enviar parte {i+1} para {atendimento.id} após {MAX_SEND_ATTEMPTS} tentativas. Abortando envio.")
                                     all_parts_sent = False
