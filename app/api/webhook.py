@@ -25,7 +25,13 @@ async def set_atendimento_status_to_received(data: dict):
                     logger.info(f"Mensagem de grupo ignorada: {contact_number_full}")
                 return
 
-            contact_number = contact_number_full.split('@')[0]
+            # Primeiro, isola a parte antes do '@'
+            jid_part = contact_number_full.split('@')[0]
+            # Depois, filtra para manter apenas os dígitos numéricos
+            contact_number = "".join(filter(str.isdigit, jid_part))
+            # Opcional: Log para verificar se a limpeza foi feita
+            if contact_number != jid_part:
+                logger.info(f"Número de contato limpo de '{jid_part}' para '{contact_number}'")
             
             user = await crud_user.get_user_by_instance(db, instance_name=instance_name)
             if not user:
