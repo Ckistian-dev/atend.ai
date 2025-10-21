@@ -6,6 +6,9 @@ from app.db import models, schemas
 from datetime import datetime, timedelta, timezone
 from typing import List, Tuple, Optional, Dict, Any
 
+# Importa o novo serviço Google
+from app.services import google_service
+
 logger = logging.getLogger(__name__)
 
 async def get_atendimento(db: AsyncSession, atendimento_id: int, user_id: int) -> Optional[models.Atendimento]:
@@ -33,16 +36,16 @@ async def update_atendimento(db: AsyncSession, db_atendimento: models.Atendiment
     for field, value in update_data.items():
         setattr(db_atendimento, field, value)
     
-    # Garante que o campo updated_at seja atualizado automaticamente
     db_atendimento.updated_at = datetime.now(timezone.utc)
     
-    await db.commit()
-    await db.refresh(db_atendimento)
+    # O commit é feito na camada superior (no agent ou webhook)
+    # db.add(db_atendimento)
     return db_atendimento
 
 async def get_or_create_atendimento_by_number(db: AsyncSession, number: str, user: models.User) -> Optional[Tuple[models.Atendimento, bool]]:
     """
     Busca um atendimento que não esteja permanentemente fechado. Se não encontrar, cria um novo.
+    Tenta criar o contato no Google se for um novo contato e o usuário tiver a integração ativa.
     Retorna o atendimento e um booleano 'was_created'.
     """
     contact_query = await db.execute(
@@ -56,25 +59,43 @@ async def get_or_create_atendimento_by_number(db: AsyncSession, number: str, use
             .where(
                 models.Atendimento.contact_id == contact.id,
                 models.Atendimento.user_id == user.id,
-                # --- CORREÇÃO AQUI ---
-                # Removemos 'Atendente Chamado' da lista. Agora a busca encontrará
-                # atendimentos em qualquer estado que não seja finalizado.
-                # A decisão de ignorar a mensagem será tomada no webhook.
                 models.Atendimento.status.notin_(['Concluído', 'Ignorar Contato'])
             )
-            .order_by(models.Atendimento.created_at.desc()) # Pega o mais recente se houver múltiplos
+            .order_by(models.Atendimento.created_at.desc())
         )
         existing_atendimento = atendimento_query.scalars().first()
         if existing_atendimento:
             logger.info(f"Atendimento ativo/pausado (ID: {existing_atendimento.id}) encontrado para {number}.")
             atendimento_completo = await get_atendimento(db, existing_atendimento.id, user.id)
-            return atendimento_completo, False  # Retorna False porque não foi criado agora
+            return atendimento_completo, False
 
     if not user.default_persona_id:
         logger.error(f"Utilizador {user.id} não tem persona padrão configurada. Não é possível criar novo atendimento.")
         return None
 
     if not contact:
+        # --- LÓGICA DE CRIAÇÃO DE CONTATO NO GOOGLE ---
+        if user.google_refresh_token:
+            logger.info(f"Novo contato ({number}). Tentando adicionar ao Google Agenda do usuário {user.id}...")
+            try:
+                g_service = await google_service.get_google_service_from_user(user)
+                if g_service:
+                    contact_name = f"AtendAI {number}"
+                    # Chama a função async do nosso serviço
+                    await google_service.create_google_contact(g_service, number, contact_name)
+                    # A função google_service já loga o sucesso ou falha internamente.
+                else:
+                    logger.warning(f"Não foi possível obter o serviço Google para o usuário {user.id} (token inválido?).")
+            
+            except Exception as e:
+                # É importante que uma falha aqui não pare o fluxo principal.
+                # O atendimento ainda deve ser criado localmente.
+                logger.error(f"Falha não fatal ao tentar criar contato no Google para {number}: {e}", exc_info=True)
+        else:
+            logger.info(f"Novo contato ({number}). Usuário {user.id} não tem Google Agenda conectado. Pulando etapa.")
+        # --- FIM DA LÓGICA GOOGLE ---
+
+        # O fluxo de criação de contato local continua normalmente
         contact = models.Contact(whatsapp=number, user_id=user.id)
         db.add(contact)
         await db.commit()
@@ -84,7 +105,7 @@ async def get_or_create_atendimento_by_number(db: AsyncSession, number: str, use
         contact_id=contact.id,
         user_id=user.id,
         active_persona_id=user.default_persona_id,
-        status="Novo Atendimento" # Status inicial, será atualizado pelo webhook para "Mensagem Recebida"
+        status="Novo Atendimento"
     )
     db.add(new_atendimento)
     await db.commit()
@@ -92,23 +113,20 @@ async def get_or_create_atendimento_by_number(db: AsyncSession, number: str, use
     logger.info(f"Nenhum atendimento ativo encontrado. Novo atendimento criado (ID: {new_atendimento.id}) para o contato {contact.id}.")
     
     atendimento_completo = await get_atendimento(db, new_atendimento.id, user.id)
-    return atendimento_completo, True # Retorna True porque foi criado agora
+    return atendimento_completo, True
 
 async def get_atendimentos_para_processar(db: AsyncSession, user_id: int) -> List[models.Atendimento]:
     """
-    Busca atendimentos com status 'Mensagem Recebida' que não foram atualizados nos últimos 30 segundos.
+    Busca atendimentos com status 'Mensagem Recebida'.
     """
-    cooldown_limit = datetime.now(timezone.utc) - timedelta(seconds=30)
-    
     result = await db.execute(
         select(models.Atendimento)
         .where(
             models.Atendimento.user_id == user_id,
             models.Atendimento.status == "Mensagem Recebida",
-            models.Atendimento.updated_at < cooldown_limit
         )
         .options(joinedload(models.Atendimento.contact), joinedload(models.Atendimento.active_persona))
-        .order_by(models.Atendimento.updated_at.asc()) # Processa os mais antigos primeiro
+        .order_by(models.Atendimento.updated_at.asc())
     )
     return result.scalars().all()
 
@@ -122,7 +140,6 @@ async def get_dashboard_data(db: AsyncSession, user_id: int) -> Dict[str, Any]:
     )
     status_counts = {status: count for status, count in status_counts_query.all()}
     
-    # Contagem de atendimentos finalizados (status 'Concluído') nas últimas 24h
     finalizados_hoje_query = await db.execute(
         select(func.count(models.Atendimento.id))
         .where(
@@ -133,13 +150,12 @@ async def get_dashboard_data(db: AsyncSession, user_id: int) -> Dict[str, Any]:
     )
     finalizados_hoje = finalizados_hoje_query.scalar_one_or_none() or 0
     
-    # Atividade recente para o log do dashboard
     recent_activity_query = await db.execute(
         select(models.Atendimento)
         .where(models.Atendimento.user_id == user_id)
         .options(joinedload(models.Atendimento.contact))
         .order_by(models.Atendimento.updated_at.desc())
-        .limit(20) # Limita a 20 para performance
+        .limit(20)
     )
     recent_activity = recent_activity_query.scalars().all()
     
@@ -152,12 +168,12 @@ async def get_dashboard_data(db: AsyncSession, user_id: int) -> Dict[str, Any]:
         },
         "recentActivity": [
             {
-                "id": a.id, # Adicionado ID para linkar na interface
+                "id": a.id,
                 "whatsapp": a.contact.whatsapp, 
                 "situacao": a.status, 
                 "observacao": a.observacoes,
                 "active_persona_id": a.active_persona_id,
-                "updated_at": a.updated_at.isoformat() # Adicionado para exibir data/hora
+                "updated_at": a.updated_at.isoformat()
             } 
             for a in recent_activity
         ]

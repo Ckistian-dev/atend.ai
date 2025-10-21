@@ -20,6 +20,8 @@ class User(Base):
     default_persona_id: Mapped[Optional[int]] = mapped_column(ForeignKey("configs.id"), nullable=True)
     spreadsheet_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     followup_interval_minutes: Mapped[int] = mapped_column(Integer, default=0)
+    
+    google_refresh_token: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
 
     configs: Mapped[List["Config"]] = relationship(back_populates="owner", foreign_keys="[Config.user_id]")
     atendimentos: Mapped[List["Atendimento"]] = relationship(back_populates="owner")

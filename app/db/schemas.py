@@ -78,15 +78,16 @@ class UserUpdate(BaseModel):
     default_persona_id: Optional[int] = None
     spreadsheet_id: Optional[str] = None
     followup_interval_minutes: Optional[int] = None
+    google_refresh_token: Optional[str] = None
 
 class User(UserBase):
     id: int
     instance_name: Optional[str] = None
-    # --- NOVO CAMPO ADICIONADO ---
     instance_id: Optional[str] = None
     tokens: int
     default_persona_id: Optional[int] = None
     spreadsheet_id: Optional[str] = None
+    is_google_connected: bool = False
     class Config:
         from_attributes = True
 
