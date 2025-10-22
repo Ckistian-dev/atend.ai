@@ -38,8 +38,8 @@ async def update_atendimento(db: AsyncSession, db_atendimento: models.Atendiment
     
     db_atendimento.updated_at = datetime.now(timezone.utc)
     
-    # O commit é feito na camada superior (no agent ou webhook)
-    # db.add(db_atendimento)
+    db.add(db_atendimento)
+    
     return db_atendimento
 
 async def get_or_create_atendimento_by_number(db: AsyncSession, number: str, user: models.User) -> Optional[Tuple[models.Atendimento, bool]]:
