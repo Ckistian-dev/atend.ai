@@ -23,6 +23,7 @@ class Contact(ContactBase):
 class ConfigBase(BaseModel):
     nome_config: str
     prompt_config: Dict[str, Any]
+    contexto_json: Optional[Dict[str, Any]] = None
 
 class ConfigCreate(ConfigBase):
     pass
@@ -35,35 +36,37 @@ class ConfigUpdate(BaseModel):
 class Config(ConfigBase):
     id: int
     user_id: int
-    contexto_json: Optional[Dict[str, Any]] = None
     class Config:
         from_attributes = True
 
 # --- Schemas de Atendimento ---
-class AtendimentoBase(BaseModel):
-    status: Optional[str] = "Aguardando Resposta"
+class AtendimentoUpdate(BaseModel):
+    status: Optional[str] = None
+    log: Optional[str] = None
+    active_persona_id: Optional[int] = None
+    conversa: Optional[str] = None
     observacoes: Optional[str] = None
-    active_persona_id: int
-
-class Atendimento(AtendimentoBase):
-    id: int
-    user_id: int
-    contact_id: int
-    created_at: datetime
-    updated_at: datetime
-    conversa: str
-    contact: Contact
     
     class Config:
         from_attributes = True
 
-class AtendimentoUpdate(BaseModel):
-    status: Optional[str] = None
-    observacoes: Optional[str] = None
-    active_persona_id: Optional[int] = None
-    conversa: Optional[str] = None
+class Atendimento(BaseModel):
+    id: int
+    contact_id: int
+    user_id: int
+    status: str
+    log: Optional[str] = ""
+    created_at: datetime
+    active_persona_id: int
+    conversa: Optional[str] = "[]"
+    observacoes: Optional[str] = ""
+    updated_at: datetime
+    contact: Contact  # Aninha o objeto de contato para a resposta da API
 
-# --- Schemas de Usuário (ATUALIZADO) ---
+    class Config:
+        from_attributes = True
+
+# --- Schemas de Usuário ---
 class UserBase(BaseModel):
     email: EmailStr
 
@@ -72,7 +75,6 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     instance_name: Optional[str] = None
-    # --- NOVO CAMPO ADICIONADO ---
     instance_id: Optional[str] = None
     tokens: Optional[int] = None
     default_persona_id: Optional[int] = None
@@ -87,7 +89,9 @@ class User(UserBase):
     tokens: int
     default_persona_id: Optional[int] = None
     spreadsheet_id: Optional[str] = None
+    followup_interval_minutes: int
     is_google_connected: bool = False
+
     class Config:
         from_attributes = True
 
@@ -98,3 +102,4 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None
+

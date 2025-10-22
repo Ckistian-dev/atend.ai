@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../api/axiosConfig'; 
-import { Search, MessageSquare, Edit, Trash2, XCircle, AlertTriangle, Info } from 'lucide-react';
+import { Search, MessageSquare, Edit, Trash2, AlertTriangle } from 'lucide-react';
 
 // --- MODAL GENÉRICO ---
 const Modal = ({ onClose, children }) => (
@@ -24,7 +24,7 @@ const ConversationModal = ({ onClose, conversation, contactIdentifier }) => {
 
     let messages = [];
     try {
-        messages = JSON.parse(conversation);
+        messages = conversation ? JSON.parse(conversation) : [];
     } catch (e) {
         console.error("Erro ao analisar JSON da conversa:", e);
     }
@@ -133,21 +133,31 @@ function Atendimentos() {
     const statusOptions = ["Aguardando Resposta", "Mensagem Recebida", "Ignorar Contato", "Atendente Chamado", "Concluído"];
 
     const fetchData = useCallback(async () => {
+        // Para evitar a tela piscando, não setamos isLoading aqui em atualizações de rotina
         try {
             const [atendimentosRes, personasRes] = await Promise.all([api.get('/atendimentos/'), api.get('/configs/')]);
             setAtendimentos(atendimentosRes.data);
             setPersonas(personasRes.data);
         } catch (err) {
-            setError('Não foi possível carregar os atendimentos.');
+            setError('Não foi possível carregar os dados. Verifique a sua conexão.');
+            // Para o intervalo em caso de erro para não sobrecarregar
+            clearInterval(intervalRef.current);
         } finally {
-            setIsLoading(false);
+            // Só para o loading inicial
+            if (isLoading) setIsLoading(false);
         }
-    }, []);
+    }, [isLoading]);
+
+    // Usando useRef para manter a referência do intervalo
+    const intervalRef = useRef(null);
 
     useEffect(() => {
         fetchData();
-        const interval = setInterval(fetchData, 5000);
-        return () => clearInterval(interval);
+        // Limpa o intervalo anterior se o componente for recarregado
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        intervalRef.current = setInterval(fetchData, 5000);
+        // Função de limpeza para quando o componente for desmontado
+        return () => clearInterval(intervalRef.current);
     }, [fetchData]);
 
     useEffect(() => {
@@ -164,21 +174,35 @@ function Atendimentos() {
     const handleCloseModals = () => setModalData({ type: null, data: null });
 
     const handleSaveEdit = async (atendimentoId, updates) => {
+        // --- OTIMIZAÇÃO: Atualização Otimista ---
+        setAtendimentos(prev =>
+            prev.map(at => at.id === atendimentoId ? { ...at, ...updates, updated_at: new Date().toISOString() } : at)
+        );
+
         try {
-            await api.put(`/atendimentos/${atendimentoId}`, updates);
-            fetchData();
+            // A API é chamada para persistir a alteração
+            const response = await api.put(`/atendimentos/${atendimentoId}`, updates);
+            // Opcional: Atualizar o item específico com a resposta do servidor para ter 100% de certeza
+            setAtendimentos(prev => 
+                prev.map(at => at.id === atendimentoId ? response.data : at)
+            );
         } catch (err) {
-            alert('Erro ao guardar as alterações.');
+            alert('Erro ao guardar as alterações. A interface será revertida.');
+            // Reverte a alteração em caso de erro
+            fetchData();
         }
     };
 
     const handleConfirmDelete = async (atendimentoId) => {
+        // Atualização otimista para remoção
+        setAtendimentos(prev => prev.filter(at => at.id !== atendimentoId));
+        handleCloseModals();
+
         try {
             await api.delete(`/atendimentos/${atendimentoId}`);
-            fetchData();
-            handleCloseModals();
         } catch (err) {
-            alert('Erro ao apagar o atendimento.');
+            alert('Erro ao apagar o atendimento. A lista será recarregada.');
+            fetchData(); // Recarrega a lista completa se a exclusão falhar
         }
     };
 
@@ -241,11 +265,9 @@ function Atendimentos() {
                                             {at.status}
                                         </span>
                                     </td>
-                                    <td className="p-4 text-sm text-gray-600 max-w-xl">
+                                    <td className="p-4 text-sm text-gray-600 max-w-xl truncate" title={at.observacoes}>
                                         {at.observacoes ? (
-                                            <p className="flex items-center gap-2" title={at.observacoes}>
-                                                {at.observacoes}
-                                            </p>
+                                            <p>{at.observacoes}</p>
                                         ) : (
                                             <span className="text-gray-400 italic">Nenhuma</span>
                                         )}
@@ -262,6 +284,12 @@ function Atendimentos() {
                             ))}
                         </tbody>
                     </table>
+                     {/* Mensagem para quando não há resultados */}
+                     {!isLoading && filteredAtendimentos.length === 0 && (
+                        <div className="text-center p-8 text-gray-500">
+                            Nenhum atendimento encontrado {searchTerm ? 'para a sua pesquisa' : ''}.
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -273,3 +301,4 @@ function Atendimentos() {
 }
 
 export default Atendimentos;
+

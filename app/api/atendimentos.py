@@ -1,11 +1,10 @@
-# app/api/atendimentos.py
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
 from app.db.database import get_db
 from app.db import models
+# --- Schema importado corretamente ---
 from app.db.schemas import Atendimento, AtendimentoUpdate
 from app.crud import crud_atendimento
 from app.api.dependencies import get_current_active_user
@@ -29,13 +28,18 @@ async def update_atendimento(
 ):
     """
     Atualiza manualmente a situação ou a persona de um atendimento.
-    Ex: Mudar situação para "Ignorar Contato" ou "Vendedor Chamado".
     """
     db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, user_id=current_user.id)
     if not db_atendimento:
         raise HTTPException(status_code=404, detail="Atendimento não encontrado")
     
-    return await crud_atendimento.update_atendimento(db=db, db_atendimento=db_atendimento, atendimento_in=atendimento_in)
+    updated_atendimento = await crud_atendimento.update_atendimento(db=db, db_atendimento=db_atendimento, atendimento_in=atendimento_in)
+    
+    # --- CORREÇÃO PRINCIPAL: Salva as alterações no banco de dados ---
+    await db.commit()
+    await db.refresh(updated_atendimento)
+    
+    return updated_atendimento
 
 @router.delete("/{atendimento_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Apagar um atendimento")
 async def delete_atendimento(
@@ -48,5 +52,6 @@ async def delete_atendimento(
     if not deleted_atendimento:
         raise HTTPException(status_code=404, detail="Atendimento não encontrado")
     
+    # --- CORREÇÃO: Salva a exclusão no banco de dados ---
     await db.commit()
     return
