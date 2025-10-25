@@ -14,27 +14,39 @@ class Settings(BaseSettings):
     # --- Configurações da Evolution API ---
     EVOLUTION_API_URL: str
     EVOLUTION_API_KEY: str
-    EVOLUTION_DATABASE_URL: str
-    WEBHOOK_URL: str
+    EVOLUTION_DATABASE_URL: str # URL do banco de dados da Evolution para buscar histórico
+    WEBHOOK_URL: str # URL BASE PÚBLICA onde o AtendAI está rodando + /api/v1/webhook
+
+    # --- Configurações da API Oficial (WhatsApp Business Platform) ---
+    WBP_VERIFY_TOKEN: str # Token de verificação que VOCÊ CRIA para configurar o webhook na Meta
+    WBP_WEBHOOK_URL: str # A URL COMPLETA do seu endpoint de webhook oficial (ex: https://seuapp.com/api/v1/webhook/official/webhook)
 
     # --- Configurações do Google OAuth & Criptografia ---
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
-    GOOGLE_REDIRECT_URI: str # Ex: http://localhost:8000/api/v1/auth/google/callback
-    ENCRYPTION_KEY: str      # Chave para criptografar os refresh_tokens no BD
-    
-    # --- NOVA CONFIGURAÇÃO ---
-    # URL base do seu frontend para o redirecionamento do OAuth
-    FRONTEND_URL: str        # Ex: http://localhost:3000
+    GOOGLE_REDIRECT_URI: str # Ex: https://seuapp.com/api/v1/auth/google/callback
+    ENCRYPTION_KEY: str      # Chave para criptografar tokens sensíveis (Google Refresh Token, WBP Access Token)
 
-    # Chave de API para serviços Gemini
-    GOOGLE_API_KEYS: str
+    # --- Configurações Adicionais ---
+    FRONTEND_URL: str        # URL base do seu frontend (ex: https://app.atendai.com)
+    GOOGLE_API_KEYS: str     # Chaves da API Gemini (separadas por vírgula)
 
     model_config = SettingsConfigDict(
         env_file=".env",
-        env_file_encoding="utf-8"
+        env_file_encoding="utf-8",
+        # extra='ignore' # Para ignorar variáveis extras no .env, se necessário
     )
 
 # Instância única das configurações para ser usada em toda a aplicação
 settings = Settings()
+
+# Validação adicional (opcional, mas recomendada)
+if not settings.ENCRYPTION_KEY or len(settings.ENCRYPTION_KEY) < 32:
+     raise ValueError("ENCRYPTION_KEY é obrigatória e deve ter pelo menos 32 bytes.")
+if not settings.WBP_VERIFY_TOKEN:
+     raise ValueError("WBP_VERIFY_TOKEN é obrigatório para a API Oficial.")
+if not settings.WBP_WEBHOOK_URL:
+     raise ValueError("WBP_WEBHOOK_URL é obrigatório para a API Oficial.")
+if not settings.WEBHOOK_URL:
+     raise ValueError("WEBHOOK_URL (URL base para webhooks) é obrigatória.")
 
