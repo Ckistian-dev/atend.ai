@@ -72,7 +72,7 @@ async def save_connection_info(
 
         # Retorna os dados atualizados relevantes
         return {
-            "api_type": updated_user_obj.api_type.value,
+            "api_type": updated_user_obj.api_type.value if updated_user_obj.api_type else None, # Trata caso api_type seja None
             "instance_name": updated_user_obj.instance_name,
             "wbp_phone_number_id": updated_user_obj.wbp_phone_number_id,
             "wbp_access_token_saved": bool(updated_user_obj.wbp_access_token) # Informa se token existe (configurado via BD)
@@ -91,33 +91,26 @@ async def get_status(
 ):
     if not current_user.api_type:
         logger.warning(f"Usuário {current_user.id} sem api_type definido.")
-        # Retorna um estado que indica a necessidade de configuração inicial
         return {"status": "not_configured", "detail": "Tipo de API não definido.", "api_type": None}
 
     if current_user.api_type == models.ApiType.evolution:
         if not current_user.instance_name:
-            # Estado específico para quando é Evolution mas falta o nome
             return {"status": "no_instance_name", "api_type": "evolution"}
 
-        # --- ALTERADO: Chamando o método renomeado do serviço ---
-        return await whatsapp_service.get_connection_status_evolution
-        # --- FIM DA ALTERAÇÃO ---
+        # --- CORREÇÃO: Adicionar parênteses e argumento ---
+        return await whatsapp_service.get_connection_status_evolution(current_user.instance_name)
+        # --- FIM DA CORREÇÃO ---
 
     elif current_user.api_type == models.ApiType.official:
-        # Para a API Oficial, verifica se os campos essenciais (ID do número e Token) estão preenchidos no BD
         is_configured = bool(current_user.wbp_phone_number_id and current_user.wbp_access_token)
-        # Não há um "status de conexão" real como na Evolution, apenas se está configurado ou não.
-        # A validação se o webhook está funcionando ocorre no recebimento.
         return {
             "status": "configured" if is_configured else "not_configured",
             "wbp_phone_number_id": current_user.wbp_phone_number_id,
-            "wbp_access_token_saved": bool(current_user.wbp_access_token), # Indica se o token existe no BD
+            "wbp_access_token_saved": bool(current_user.wbp_access_token),
             "api_type": "official"
         }
     else:
-        # Caso inesperado
         logger.error(f"Tipo de API desconhecido ({current_user.api_type}) encontrado para usuário {current_user.id}")
-        # Retorna o valor do enum se possível, senão o objeto enum
         api_type_value = current_user.api_type.value if hasattr(current_user.api_type, 'value') else str(current_user.api_type)
         return {"status": "error", "detail": f"Tipo de API desconhecido: {api_type_value}", "api_type": api_type_value}
 
@@ -137,33 +130,28 @@ async def connect_evolution(
 
     logger.info(f"Conexão Evolution para: {current_user.email} (Inst: {current_user.instance_name})")
 
-    # --- ALTERADO: Chamando o método renomeado do serviço ---
-    # ANTES: whatsapp_service.create_and_connect_instance_evolution
-    result = await whatsapp_service.create_and_connect_instance(current_user.instance_name)
-    # --- FIM DA ALTERAÇÃO ---
+    # --- CORREÇÃO: Nome do método ---
+    result = await whatsapp_service.create_and_connect_instance_evolution(current_user.instance_name)
+    # --- FIM DA CORREÇÃO ---
 
     if result.get("status") == "error":
         raise HTTPException(status_code=500, detail=result.get("detail", "Erro desconhecido ao conectar Evolution."))
 
-    # Salva o instance_id retornado pela API
     instance_data = result.get("instance")
     if result.get("status") == "qrcode" and instance_data:
-        # A API pode retornar 'instanceId' (novo fluxo) ou 'id' (fluxo antigo)
         instance_id_from_api = instance_data.get("instanceId") or instance_data.get("id")
         if instance_id_from_api and instance_id_from_api != current_user.instance_id:
             logger.info(f"Atualizando instance_id (Evo) para user {current_user.id}: '{instance_id_from_api}'")
             try:
-                # Cria dict apenas com o campo a ser atualizado
                 update_payload = {"instance_id": instance_id_from_api}
-                user_update = UserUpdate(**update_payload) # Passa o dict para o schema
+                user_update = UserUpdate(**update_payload)
                 updated_user_obj = await crud_user.update_user(db, db_user=current_user, user_in=user_update)
-                db.add(updated_user_obj) # Adiciona o objeto retornado pelo CRUD
+                db.add(updated_user_obj)
                 await db.commit()
-                await db.refresh(updated_user_obj) # Atualiza o objeto na sessão atual
+                await db.refresh(updated_user_obj)
             except Exception as e:
                 await db.rollback()
                 logger.error(f"Erro ao salvar instance_id (Evo) para user {current_user.id}: {e}", exc_info=True)
-                # Não levanta exceção aqui, permite que o QR code seja exibido mesmo assim
         elif not instance_id_from_api:
              logger.warning(f"Não foi possível encontrar 'id' ou 'instanceId' nos dados da instância para '{current_user.instance_name}'. Resposta: {instance_data}")
 
@@ -182,26 +170,22 @@ async def disconnect_evolution(
 
     logger.info(f"Desconexão Evolution para: {current_user.email} (Inst: {current_user.instance_name})")
 
-    # --- ALTERADO: Chamando o método renomeado do serviço ---
-    # ANTES: whatsapp_service.disconnect_instance_evolution
-    result = await whatsapp_service.disconnect_instance(current_user.instance_name)
-    # --- FIM DA ALTERAÇÃO ---
+    # --- CORREÇÃO: Nome do método ---
+    result = await whatsapp_service.disconnect_instance_evolution(current_user.instance_name)
+    # --- FIM DA CORREÇÃO ---
 
-    # Limpa o instance_id local
     if current_user.instance_id:
         logger.info(f"Limpando instance_id (Evo) para user {current_user.id}")
         try:
-             # Cria dict apenas com o campo a ser atualizado
             update_payload = {"instance_id": None}
-            user_update = UserUpdate(**update_payload) # Passa o dict para o schema
+            user_update = UserUpdate(**update_payload)
             updated_user_obj = await crud_user.update_user(db, db_user=current_user, user_in=user_update)
-            db.add(updated_user_obj) # Adiciona o objeto retornado pelo CRUD
+            db.add(updated_user_obj)
             await db.commit()
-            await db.refresh(updated_user_obj) # Atualiza o objeto na sessão atual
+            await db.refresh(updated_user_obj)
         except Exception as e:
             await db.rollback()
             logger.error(f"Erro ao limpar instance_id (Evo) local para user {current_user.id}: {e}", exc_info=True)
-            # Não levanta exceção aqui, o importante é o resultado da API
 
     if result.get("status") == "error":
         raise HTTPException(status_code=500, detail=result.get("detail", "Erro ao desconectar instância na API Evolution."))
@@ -211,34 +195,22 @@ async def disconnect_evolution(
 
 # --- ROTAS ESPECÍFICAS DA API OFICIAL ---
 
-# REMOVIDO: Rota /official/access-token
-
 @router.get("/official/config-info", summary="[Oficial] Obter informações para configurar o webhook na Meta")
 async def get_official_config_info(
-    current_user: models.User = Depends(dependencies.get_current_active_user) # Mantém dependência para contexto
+    current_user: models.User = Depends(dependencies.get_current_active_user)
 ):
     """Retorna a URL de Callback (lida do .env) e o Token de Verificação para usar no painel da Meta."""
-
-    # Usa a variável de ambiente WBP_WEBHOOK_URL diretamente
     callback_url = settings.WBP_WEBHOOK_URL
-
-    # Verifica se a URL foi definida no .env
     if not callback_url:
         logger.error("Variável de ambiente WBP_WEBHOOK_URL não está definida!")
-        # Retorna nulo ou uma mensagem de erro, dependendo de como o frontend tratará
-        # return {"wbp_webhook_url": None, "wbp_verify_token": settings.WBP_VERIFY_TOKEN}
         raise HTTPException(status_code=500, detail="Configuração interna do servidor incompleta (WBP_WEBHOOK_URL).")
 
-
-    # O Token de Verificação também vem das settings
     verify_token = settings.WBP_VERIFY_TOKEN
     if not verify_token:
         logger.error("Variável de ambiente WBP_VERIFY_TOKEN não está definida!")
         raise HTTPException(status_code=500, detail="Configuração interna do servidor incompleta (WBP_VERIFY_TOKEN).")
 
-
     return {
         "wbp_webhook_url": callback_url,
         "wbp_verify_token": verify_token
     }
-
