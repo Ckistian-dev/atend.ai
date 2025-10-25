@@ -100,8 +100,7 @@ async def get_status(
             return {"status": "no_instance_name", "api_type": "evolution"}
 
         # --- ALTERADO: Chamando o método renomeado do serviço ---
-        # ANTES: whatsapp_service.get_connection_status_evolution
-        return await whatsapp_service.get_connection_status(current_user.instance_name)
+        return await whatsapp_service.get_connection_status_evolution
         # --- FIM DA ALTERAÇÃO ---
 
     elif current_user.api_type == models.ApiType.official:
