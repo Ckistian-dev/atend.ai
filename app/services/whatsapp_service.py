@@ -140,7 +140,7 @@ class WhatsAppService:
         webhook_url = settings.WEBHOOK_URL
         webhook_config = {}
         if webhook_url:
-            webhook_url_with_path = f"{webhook_url.rstrip('/')}/evolution/messages-upsert"
+            webhook_url_with_path = webhook_url,
             webhook_config = {
                 "webhook": {
                     "url": webhook_url_with_path,
