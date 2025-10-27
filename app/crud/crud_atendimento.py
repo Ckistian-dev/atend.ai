@@ -127,7 +127,7 @@ async def get_or_create_atendimento_by_number(db: AsyncSession, number: str, use
             try:
                 g_service = await google_service.get_google_service_from_user(user)
                 if g_service:
-                    await google_service.create_google_contact(g_service, number, f"AtendAI {number}")
+                    await google_service.create_google_contact(g_service, number, f"{number} AtendAI")
             except Exception as e:
                 logger.error(f"Falha não fatal ao tentar criar contato no Google para {number}: {e}", exc_info=False) # Não mostra stacktrace completo
         else:
