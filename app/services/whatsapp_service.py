@@ -77,7 +77,7 @@ class WhatsAppService:
             subscriber_part = clean_number[4:]
             if subscriber_part.startswith('9') and len(subscriber_part) == 9:
                 normalized = clean_number[:4] + subscriber_part[1:]
-                logger.debug(f"Normalizando número BR: {clean_number} -> {normalized}")
+                logger.info(f"Normalizando número BR: {clean_number} -> {normalized}")
                 return normalized
         return clean_number
 
@@ -374,7 +374,7 @@ class WhatsAppService:
         """)
         try:
             async with self.AsyncSessionLocalEvolution() as session:
-                logger.debug(f"Evolution DB: Buscando histórico para JID(s): {jid_principal}{' ou ' + jid_alternativo if jid_alternativo else ''}...")
+                logger.info(f"Evolution DB: Buscando histórico para JID(s): {jid_principal}{' ou ' + jid_alternativo if jid_alternativo else ''}...")
                 result = await session.execute(query, params)
                 rows = result.fetchall()
                 processed_messages = []
