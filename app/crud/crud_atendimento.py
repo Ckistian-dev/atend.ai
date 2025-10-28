@@ -27,7 +27,10 @@ async def get_atendimentos_by_user(db: AsyncSession, user_id: int) -> List[model
     result = await db.execute(
         select(models.Atendimento)
         .where(models.Atendimento.user_id == user_id)
-        .options(joinedload(models.Atendimento.contact))
+        .options(
+            joinedload(models.Atendimento.contact),
+            joinedload(models.Atendimento.active_persona)
+        )
         .order_by(models.Atendimento.updated_at.desc())
     )
     return result.scalars().all()

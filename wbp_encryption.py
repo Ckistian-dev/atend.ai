@@ -8,7 +8,7 @@ load_dotenv()
 # Pegue do seu arquivo .env
 ENCRYPTION_KEY = os.getenv('ENCRYPTION_KEY')
 # Pegue do painel da Meta
-PLAIN_WBP_TOKEN = 'EAALMh6uKOfABP3EdpHvh5z8Pj1iOZCuIR3zDi4VFa0vGPRa85qDDHZBuqgKGkvHiaMH54trdkx2Q1LEei5bZCuG3y7pkVgh7GYFK89yN06GRd3Yt65Ra9RauBDA9qqseusGw7PNUvkdMlHrDaZB7I6TK5HKa4NN5D34TcnFWtvaUkfdZA170p4UMeuMZB6toZCDTAZDZD'
+PLAIN_WBP_TOKEN = 'EAAXEWE5qYO0BP31amIfn2ywWdbHCfrlrVjJFG1kTg0nygYZBwHGUCnbuIGgEWo4ePaY9MLdz4loUxCECvAgIvgkHbHqkXqxArWoK4xZBuRyN5UDeog2Vyk5prJxnWxUA3zMseEzuaD6yQpw9vkNAeZC5HuxZCdq4FusEhr38C7gUZC7P26TOfsGJgLoQJLbvlxQZDZD'
 # -----------------------------
 
 if len(ENCRYPTION_KEY) < 32:

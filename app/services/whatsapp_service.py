@@ -13,9 +13,9 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
 from app.services.security import decrypt_token
-from app.db import models # Importar models para type hinting
-from collections import deque # Import deque
-from datetime import datetime, timezone # Import datetime/timezone
+from app.db import models
+from datetime import datetime, timezone
+import mimetypes
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ class MessageSendError(Exception):
     pass
 
 class WhatsAppService:
+    
     def __init__(self):
         # --- Configurações Evolution API ---
         # Mantém nomes do exemplo anterior
@@ -81,7 +82,6 @@ class WhatsAppService:
                 return normalized
         return clean_number
 
-    # --- GARANTIDO NOME CORRETO ---
     async def get_connection_status(self, instance_name: str) -> dict:
         """Verifica status da conexão Evolution."""
         if not instance_name:
@@ -110,7 +110,6 @@ class WhatsAppService:
             logger.error(f"Evolution: Erro inesperado ao verificar status {instance_name}: {e}", exc_info=True)
             # Lógica de erro do exemplo
             return {"status": "api_error", "detail": str(e), "api_type": "evolution"}
-    # --- FIM DA GARANTIA ---
 
     async def _get_qrcode_and_instance_data(self, instance_name: str) -> Optional[Dict[str, Any]]:
         """Busca QR Code da Evolution, priorizando 'code'."""
@@ -282,7 +281,7 @@ class WhatsAppService:
                  if is_real_error:
                       logger.error(f"Evolution: FFmpeg stderr (ERRO):\n{result.stderr.strip()}")
                  else:
-                       logger.warning(f"Evolution: FFmpeg stderr (INFO):\n{result.stderr.strip()}")
+                       logger.warning(f"Evolution: FFmpeg stderr (INFO): Convertendo...")
         except FileNotFoundError:
             logger.error("Evolution: Comando 'ffmpeg' não encontrado. Certifique-se de que está instalado e no PATH do sistema.")
             raise
@@ -406,7 +405,6 @@ class WhatsAppService:
             return []
 
     # --- Funções API Oficial (WBP) ---
-    # (O código da API Oficial permanece o mesmo)
 
     async def get_media_url_official(self, media_id: str, access_token: str) -> Optional[str]:
         """Etapa B (Oficial): Pega a URL de download a partir do Media ID."""
@@ -507,23 +505,178 @@ class WhatsAppService:
                 raise MessageSendError(f"WBP: Erro inesperado envio: {e}") from e
         raise MessageSendError(f"WBP: Falha no envio para {clean_to_number} após {max_retries} tentativas. Último erro: {last_exception}")
 
-    # --- Função Adaptadora de Envio ---
+    async def _upload_media_official(
+        self, 
+        phone_number_id: str, 
+        access_token: str, 
+        file_bytes: bytes, 
+        mimetype: str, 
+        filename: str,
+        media_type: str  # Argumento adicionado
+    ) -> Optional[str]:
+        """Etapa 1 (Oficial): Faz upload da mídia, convertendo áudio para MP3 se necessário."""
+        
+        # --- INÍCIO DA LÓGICA DE CONVERSÃO ---
+        final_file_bytes = file_bytes
+        final_mimetype = mimetype
+        final_filename = filename
+
+        # Se for áudio E não for um formato que já sabemos ser seguro (como mp3), converta.
+        if media_type == 'audio' and mimetype not in ['audio/mpeg', 'audio/mp4', 'audio/aac']:
+            logger.info(f"WBP: Áudio ({mimetype}) recebido. Convertendo para MP3 para garantir compatibilidade.")
+            try:
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    # 1. Define o nome do arquivo de entrada (com a extensão original, ex: .ogg)
+                    input_ext = os.path.splitext(filename)[1] or '.bin'
+                    input_path = os.path.join(temp_dir, f"{uuid.uuid4()}{input_ext}")
+                    
+                    # 2. Define o caminho de saída
+                    mp3_path = os.path.join(temp_dir, f"{uuid.uuid4()}.mp3")
+                    
+                    # 3. Salva o áudio original (webm/ogg) no disco
+                    with open(input_path, "wb") as f:
+                        f.write(file_bytes)
+                    
+                    # 4. Roda o FFMPEG (usando a função síncrona que já existe)
+                    # _run_ffmpeg_sync espera (entrada, saida)
+                    await asyncio.to_thread(self._run_ffmpeg_sync, input_path, mp3_path)
+                    
+                    # 5. Lê os bytes do novo arquivo MP3
+                    with open(mp3_path, "rb") as f:
+                        mp3_bytes = f.read()
+                    
+                    if not mp3_bytes:
+                        raise ValueError("Arquivo MP3 resultante está vazio após conversão.")
+                        
+                    # 6. Atualiza as variáveis para o upload
+                    final_file_bytes = mp3_bytes
+                    final_mimetype = 'audio/mpeg' # Mimetype de MP3 (aceito pela WBP)
+                    final_filename = os.path.splitext(filename)[0] + ".mp3" # ex: audio_123.mp3
+                    
+                    logger.info(f"WBP: Conversão para MP3 concluída ({len(final_file_bytes)} bytes).")
+
+            except Exception as conv_e:
+                logger.error(f"WBP: Falha CRÍTICA na conversão de áudio para MP3: {conv_e}", exc_info=True)
+                # Se a conversão falhar, não interrompa. Apenas avise e tente enviar o original.
+                # (Provavelmente falhará no webhook, mas o endpoint não travará)
+                logger.warning("WBP: Tentando enviar o arquivo de áudio original sem conversão...")
+                final_file_bytes = file_bytes
+                final_mimetype = mimetype
+                final_filename = filename
+        # --- FIM DA LÓGICA DE CONVERSÃO ---
+        
+        url = f"{self.wbp_graph_url_base}/{self.wbp_api_version}/{phone_number_id}/media"
+        headers = {"Authorization": f"Bearer {access_token}"}
+        
+        # Prepara o multipart/form-data com os bytes FINAIS (convertidos ou originais)
+        files = {
+            'file': (final_filename, final_file_bytes, final_mimetype),
+            'messaging_product': (None, 'whatsapp'),
+            'type': (None, final_mimetype) # Usa o mimetype final
+        }
+        
+        logger.info(f"WBP: Iniciando upload de mídia ({final_filename}, {final_mimetype}, {len(final_file_bytes)} bytes)...")
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, files=files, timeout=120.0)
+                response.raise_for_status() # Vai falhar aqui se o upload for 400
+                response_data = response.json()
+                media_id = response_data.get("id")
+                
+                if not media_id:
+                    logger.error(f"WBP: Upload de mídia falhou. API não retornou 'id'. Resposta: {response_data}")
+                    return None
+                    
+                logger.info(f"WBP: Upload de mídia bem-sucedido. Media ID: {media_id}")
+                return media_id
+                
+        except (httpx.RequestError, httpx.HTTPStatusError) as e:
+            error_detail = str(e)
+            if isinstance(e, httpx.HTTPStatusError) and e.response:
+                error_detail = f"{e} - Response: {e.response.text}"
+            logger.error(f"WBP: Falha no upload de mídia. Erro: {error_detail}", exc_info=True)
+            return None
+        except Exception as e:
+            logger.error(f"WBP: Erro inesperado no upload de mídia: {e}", exc_info=True)
+            return None
+
+    async def send_media_message_official(
+        self, 
+        phone_number_id: str, 
+        access_token: str, 
+        to_number: str, 
+        media_type: str, # 'image', 'audio', 'document'
+        file_bytes: bytes, 
+        filename: str, 
+        mimetype: str,
+        caption: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Etapa 2 (Oficial): Envia a mídia usando o Media ID."""
+        
+        # Etapa 1: Upload
+        # --- ALTERAÇÃO AQUI ---
+        media_id = await self._upload_media_official(
+            phone_number_id, access_token, file_bytes, 
+            mimetype, filename, media_type # Passa o media_type
+        )
+        # --- FIM DA ALTERAÇÃO ---
+
+        if not media_id:
+            raise MessageSendError(f"WBP: Falha ao fazer upload da mídia ({filename}) antes do envio.")
+
+        # Etapa 2: Envio (Código restante sem alterações)
+        url = f"{self.wbp_graph_url_base}/{self.wbp_api_version}/{phone_number_id}/messages"
+        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+        clean_to_number = self._normalize_number(to_number)
+        
+        payload = {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": clean_to_number,
+            "type": media_type,
+        }
+        
+        media_payload = {"id": media_id}
+        if media_type == 'document':
+            media_payload["filename"] = filename
+        if caption and media_type != 'audio': # Áudio não suporta legenda
+             media_payload["caption"] = caption
+             
+        payload[media_type] = media_payload
+
+        logger.debug(f"WBP Send Media Payload to {clean_to_number}: {json.dumps(payload)}")
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, json=payload, timeout=30.0)
+                response.raise_for_status()
+                response_data = response.json()
+                message_id = response_data.get("messages", [{}])[0].get("id")
+                
+                logger.info(f"WBP: Mídia ({media_type}) enviada para {clean_to_number} (ID: {message_id}).")
+                return {"id": message_id, "media_id": media_id}
+                
+        except (httpx.RequestError, httpx.HTTPStatusError) as e:
+            error_detail = str(e)
+            if isinstance(e, httpx.HTTPStatusError) and e.response:
+                error_detail = f"{e} - Response: {e.response.text}"
+            logger.error(f"WBP: Falha ao enviar mídia ({media_type}) para {clean_to_number}. Erro: {error_detail}", exc_info=True)
+            raise MessageSendError(f"WBP: Falha ao enviar mídia: {error_detail}") from e
+        except Exception as e:
+            logger.error(f"WBP: Erro inesperado ao enviar mídia ({media_type}) para {clean_to_number}: {e}", exc_info=True)
+            raise MessageSendError(f"WBP: Erro inesperado no envio de mídia: {e}") from e
+
     async def send_text_message(self, user: models.User, number: str, text: str) -> Dict[str, Any]:
-        """
-        Função centralizada para enviar mensagem de texto.
-        Verifica o user.api_type e chama a função de envio correspondente.
-        Retorna um dict com {"id": ..., "timestamp": ...} (ou apenas "id" se timestamp não disponível)
-        """
+        # (Função existente sem alterações)
         if not user or not number or not text:
              raise ValueError("User, number, and text are required for sending messages.")
-
         try:
             if user.api_type == models.ApiType.evolution:
                 if not user.instance_name:
                     raise ValueError(f"Usuário {user.id} configurado para Evolution, mas 'instance_name' não definido.")
-                # Chama a função específica da Evolution
                 return await self.send_text_message_evolution(user.instance_name, number, text)
-
+            
             elif user.api_type == models.ApiType.official:
                 if not user.wbp_phone_number_id or not user.wbp_access_token:
                     raise ValueError(f"Usuário {user.id} configurado para API Oficial, mas 'wbp_phone_number_id' ou 'wbp_access_token' não definidos/criptografados.")
@@ -532,20 +685,81 @@ class WhatsAppService:
                 except Exception as decrypt_err:
                     logger.error(f"Falha ao descriptografar WBP token para user {user.id}: {decrypt_err}")
                     raise ValueError(f"Não foi possível descriptografar o token de acesso para enviar mensagem (User {user.id}).") from decrypt_err
-                # Chama a função específica da API Oficial
                 return await self.send_text_message_official(user.wbp_phone_number_id, decrypted_token, number, text)
+            
+            else:
+                raise ValueError(f"Tipo de API desconhecido ('{user.api_type}') para usuário {user.id}.")
+
+        except MessageSendError as e:
+            raise e
+        except ValueError as e:
+            logger.error(f"Erro de configuração ao tentar enviar mensagem para user {user.id}: {e}")
+            raise MessageSendError(f"Erro de configuração: {e}") from e
+        except Exception as e:
+            logger.error(f"Erro inesperado no adaptador send_text_message para user {user.id}: {e}", exc_info=True)
+            raise MessageSendError(f"Erro inesperado no envio: {e}") from e
+
+    async def send_media_message(
+        self, 
+        user: models.User, 
+        number: str, 
+        media_type: str, 
+        file_bytes: bytes, 
+        filename: str, 
+        mimetype: Optional[str] = None,
+        caption: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Função centralizada para enviar MÍDIA.
+        Verifica o user.api_type e chama a função de envio correspondente.
+        Retorna um dict com {"id": ..., "timestamp": ...} (ou "media_id")
+        """
+        if not all([user, number, media_type, file_bytes, filename]):
+            raise ValueError("User, number, media_type, file_bytes, e filename são obrigatórios.")
+
+        # Tenta adivinhar o mimetype se não for fornecido
+        if not mimetype:
+            mimetype, _ = mimetypes.guess_type(filename)
+            if not mimetype:
+                mimetype = 'application/octet-stream' # Fallback
+                logger.warning(f"Não foi possível adivinhar o mimetype de {filename}, usando {mimetype}.")
+
+        try:
+            if user.api_type == models.ApiType.evolution:
+                if not user.instance_name:
+                    raise ValueError(f"Usuário {user.id} configurado para Evolution, mas 'instance_name' não definido.")
+                
+                # A Evolution usa Base64, a função interna fará a conversão
+                return await self.send_media_message_evolution(
+                    user.instance_name, number, media_type, file_bytes, filename, caption
+                )
+
+            elif user.api_type == models.ApiType.official:
+                if not user.wbp_phone_number_id or not user.wbp_access_token:
+                    raise ValueError(f"Usuário {user.id} configurado para API Oficial, mas 'wbp_phone_number_id' ou 'wbp_access_token' não definidos.")
+                
+                try:
+                    decrypted_token = decrypt_token(user.wbp_access_token)
+                except Exception as decrypt_err:
+                    logger.error(f"Falha ao descriptografar WBP token (envio de mídia) para user {user.id}: {decrypt_err}")
+                    raise ValueError(f"Não foi possível descriptografar o token de acesso (User {user.id}).") from decrypt_err
+                
+                return await self.send_media_message_official(
+                    user.wbp_phone_number_id, decrypted_token, number, media_type, 
+                    file_bytes, filename, mimetype, caption
+                )
 
             else:
                 raise ValueError(f"Tipo de API desconhecido ('{user.api_type}') para usuário {user.id}.")
 
         except MessageSendError as e:
-             raise e # Repassa a exceção específica de envio
+            raise e
         except ValueError as e:
-             logger.error(f"Erro de configuração ao tentar enviar mensagem para user {user.id}: {e}")
-             raise MessageSendError(f"Erro de configuração: {e}") from e # Converte para MessageSendError
+            logger.error(f"Erro de configuração ao tentar enviar mídia para user {user.id}: {e}")
+            raise MessageSendError(f"Erro de configuração (mídia): {e}") from e
         except Exception as e:
-             logger.error(f"Erro inesperado no adaptador send_text_message para user {user.id}: {e}", exc_info=True)
-             raise MessageSendError(f"Erro inesperado no envio: {e}") from e # Converte para MessageSendError
+            logger.error(f"Erro inesperado no adaptador send_media_message para user {user.id}: {e}", exc_info=True)
+            raise MessageSendError(f"Erro inesperado no envio de mídia: {e}") from e
 
 # --- Singleton ---
 _whatsapp_service_instance = None
@@ -554,4 +768,3 @@ def get_whatsapp_service():
     if _whatsapp_service_instance is None:
         _whatsapp_service_instance = WhatsAppService()
     return _whatsapp_service_instance
-

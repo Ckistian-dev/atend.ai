@@ -1,18 +1,18 @@
-// src/components/Sidebar.jsx
-
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { 
-    LayoutDashboard, 
-    MessageSquareText, // Novo ícone para Atendimentos
-    Bot, 
-    Settings, 
-    LogOut, 
-    Rocket, 
-    Link as LinkIcon // Renomeado para evitar conflito
+import {
+    LayoutDashboard,
+    MessageSquareText, // Ícone para Atendimentos
+    Bot,
+    Settings,
+    LogOut,
+    Rocket,
+    Link as LinkIcon,
+    Archive // --- NOVO: Ícone para Finalizados ---
 } from 'lucide-react';
 
-const Sidebar = () => {
+// --- ALTERADO: Aceita a prop 'currentUserApiType' ---
+const Sidebar = ({ currentUserApiType }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const navigate = useNavigate();
 
@@ -21,8 +21,9 @@ const Sidebar = () => {
         navigate('/login');
     };
 
-    // Itens de navegação atualizados para Atend AI
-    const navItems = [
+    // --- LÓGICA DE NAVEGAÇÃO ATUALIZADA ---
+    // 1. Define os itens base
+    const baseNavItems = [
         { icon: LayoutDashboard, name: 'Dashboard', path: '/dashboard' },
         { icon: MessageSquareText, name: 'Atendimentos', path: '/atendimentos' },
         { icon: Rocket, name: 'Operação', path: '/operacao' },
@@ -30,8 +31,21 @@ const Sidebar = () => {
         { icon: LinkIcon, name: 'Conexão API', path: '/whatsapp' },
     ];
 
+    // 2. Cria a lista final de itens
+    const navItems = [...baseNavItems];
+
+    // 3. Adiciona o item "Finalizados" condicionalmente
+    if (currentUserApiType === 'official') {
+        navItems.splice(2, 0, { // Insere no índice 2 (logo após "Atendimentos")
+            icon: Archive,
+            name: 'Mensagens',
+            path: '/mensagens' // O novo link
+        });
+    }
+    // --- FIM DA LÓGICA DE NAVEGAÇÃO ---
+
     return (
-        <aside  
+        <aside
             className={`relative h-screen bg-brand-blue-dark text-white p-4 flex flex-col transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'}`}
             onMouseEnter={() => setIsExpanded(true)}
             onMouseLeave={() => setIsExpanded(false)}
@@ -47,12 +61,13 @@ const Sidebar = () => {
             </div>
             
             <nav className="flex-1 flex flex-col space-y-2">
+                {/* O map agora usa a lista de navItems dinâmica */}
                 {navItems.map(item => (
                     <NavLink
                         key={item.name}
                         to={item.path}
                         className={({ isActive }) =>
-                            `flex items-center p-3 rounded-lg transition-colors duration-200 ${ 
+                            `flex items-center p-3 rounded-lg transition-colors duration-200 ${
                             isActive ? 'bg-brand-blue-light/30' : 'hover:bg-brand-blue-light/20'
                         }`
                         }
