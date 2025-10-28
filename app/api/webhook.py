@@ -79,7 +79,7 @@ async def set_atendimento_status_to_received_evolution(data: dict):
 
 
             # Verifica status DEPOIS de obter/criar e commitar, usando o objeto recarregado
-            situacoes_de_parada = ["Ignorar Contato", "Atendente Chamado", "Concluído", "Gerando Resposta"]
+            situacoes_de_parada = ["Ignorar Contato", "Atendente Chamado", "Concluído"]
             if not was_created and atendimento_reloaded.status in situacoes_de_parada:
                 logger.info(f"Evo Webhook: Mensagem de {contact_number} ignorada. Atendimento ID {atendimento_reloaded.id} com status '{atendimento_reloaded.status}'.")
                 atendimento_id_to_update = None # Não atualiza
@@ -218,7 +218,7 @@ async def process_official_message_task(value_payload: dict): # Recebe 'value'
                      logger.error(f"WBP Webhook: Falha ao obter estado do atendimento {atendimento_id_log} após get/create.")
                      continue
 
-                situacoes_de_parada = ["Ignorar Contato", "Atendente Chamado", "Concluído", "Gerando Resposta"]
+                situacoes_de_parada = ["Ignorar Contato", "Atendente Chamado", "Concluído"]
                 if not was_created and atendimento_reloaded_after_create.status in situacoes_de_parada:
                     logger.info(f"WBP Webhook: Mensagem {msg_id_wamid} de {cleaned_sender_number} ignorada. Atendimento ID {atendimento_reloaded_after_create.id} com status '{atendimento_reloaded_after_create.status}'.")
                     continue

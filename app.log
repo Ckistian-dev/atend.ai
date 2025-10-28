@@ -6421,3 +6421,1242 @@ INFO 2025-10-28 16:59:30 [uvicorn.access:476] 127.0.0.1:50317 - "GET /api/v1/aut
 INFO 2025-10-28 16:59:30 [uvicorn.access:476] 127.0.0.1:50316 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
 INFO 2025-10-28 16:59:35 [uvicorn.access:476] 127.0.0.1:50316 - "GET /api/v1/auth/me HTTP/1.1" 200
 INFO 2025-10-28 16:59:35 [uvicorn.access:476] 127.0.0.1:50317 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 16:59:40 [uvicorn.access:476] 127.0.0.1:50329 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 16:59:40 [uvicorn.access:476] 127.0.0.1:50330 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 16:59:40 [uvicorn.access:476] 127.0.0.1:50331 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 16:59:45 [uvicorn.access:476] 127.0.0.1:50331 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 16:59:45 [uvicorn.access:476] 127.0.0.1:50330 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 16:59:50 [uvicorn.access:476] 127.0.0.1:50330 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 16:59:50 [uvicorn.access:476] 127.0.0.1:50340 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 16:59:50 [uvicorn.access:476] 127.0.0.1:50339 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 16:59:55 [uvicorn.access:476] 127.0.0.1:50339 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 16:59:55 [uvicorn.access:476] 127.0.0.1:50340 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:00:00 [uvicorn.access:476] 127.0.0.1:50340 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:00 [uvicorn.access:476] 127.0.0.1:50345 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:00:00 [uvicorn.access:476] 127.0.0.1:50346 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:05 [uvicorn.access:476] 127.0.0.1:50346 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:05 [uvicorn.access:476] 127.0.0.1:50346 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:05 [uvicorn.access:476] 127.0.0.1:50345 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:00:10 [uvicorn.access:476] 127.0.0.1:50345 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:10 [uvicorn.access:476] 127.0.0.1:50346 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:00:10 [uvicorn.access:476] 127.0.0.1:50369 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:15 [uvicorn.access:476] 127.0.0.1:50378 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:15 [uvicorn.access:476] 127.0.0.1:50379 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:00:20 [uvicorn.access:476] 127.0.0.1:50379 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:20 [uvicorn.access:476] 127.0.0.1:50378 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:00:20 [uvicorn.access:476] 127.0.0.1:50385 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:25 [uvicorn.access:476] 127.0.0.1:50391 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:25 [uvicorn.access:476] 127.0.0.1:50392 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:00:30 [uvicorn.access:476] 127.0.0.1:50392 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:30 [uvicorn.access:476] 127.0.0.1:50395 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:00:30 [uvicorn.access:476] 127.0.0.1:50396 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:35 [uvicorn.access:476] 127.0.0.1:50403 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:35 [uvicorn.access:476] 127.0.0.1:50404 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:00:40 [uvicorn.access:476] 127.0.0.1:50404 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:40 [uvicorn.access:476] 127.0.0.1:50403 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:00:40 [uvicorn.access:476] 127.0.0.1:50407 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:45 [uvicorn.access:476] 127.0.0.1:50412 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:45 [uvicorn.access:476] 127.0.0.1:50413 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:00:50 [uvicorn.access:476] 127.0.0.1:50413 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:50 [uvicorn.access:476] 127.0.0.1:50412 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:00:50 [uvicorn.access:476] 127.0.0.1:50416 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:55 [uvicorn.access:476] 127.0.0.1:50420 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:00:55 [uvicorn.access:476] 127.0.0.1:50421 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:01:00 [uvicorn.access:476] 127.0.0.1:50421 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:00 [uvicorn.access:476] 127.0.0.1:50424 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:01:00 [uvicorn.access:476] 127.0.0.1:50425 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:05 [uvicorn.access:476] 127.0.0.1:50434 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:05 [uvicorn.access:476] 127.0.0.1:50435 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:01:10 [uvicorn.access:476] 127.0.0.1:50435 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:10 [uvicorn.access:476] 127.0.0.1:50438 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:01:10 [uvicorn.access:476] 127.0.0.1:50439 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:15 [uvicorn.access:476] 127.0.0.1:50444 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:15 [uvicorn.access:476] 127.0.0.1:50445 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:01:20 [uvicorn.access:476] 127.0.0.1:50445 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:20 [uvicorn.access:476] 127.0.0.1:50448 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:01:20 [uvicorn.access:476] 127.0.0.1:50449 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:25 [uvicorn.access:476] 127.0.0.1:50457 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:25 [uvicorn.access:476] 127.0.0.1:50458 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:01:30 [uvicorn.access:476] 127.0.0.1:50458 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:30 [uvicorn.access:476] 127.0.0.1:50461 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:01:30 [uvicorn.access:476] 127.0.0.1:50462 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:35 [uvicorn.access:476] 127.0.0.1:50471 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:35 [uvicorn.access:476] 127.0.0.1:50472 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:01:40 [uvicorn.access:476] 127.0.0.1:50472 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:40 [uvicorn.access:476] 127.0.0.1:50476 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:01:40 [uvicorn.access:476] 127.0.0.1:50477 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:45 [uvicorn.access:476] 127.0.0.1:50481 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:45 [uvicorn.access:476] 127.0.0.1:50482 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:01:50 [uvicorn.access:476] 127.0.0.1:50482 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:50 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:01:50 [uvicorn.access:476] 127.0.0.1:50486 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:55 [uvicorn.access:476] 127.0.0.1:50494 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:01:55 [uvicorn.access:476] 127.0.0.1:50495 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:02:00 [uvicorn.access:476] 127.0.0.1:50495 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:00 [uvicorn.access:476] 127.0.0.1:50498 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:02:00 [uvicorn.access:476] 127.0.0.1:50499 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:05 [uvicorn.access:476] 127.0.0.1:50507 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:05 [uvicorn.access:476] 127.0.0.1:50508 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:02:10 [uvicorn.access:476] 127.0.0.1:50508 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:10 [uvicorn.access:476] 127.0.0.1:50517 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:10 [uvicorn.access:476] 127.0.0.1:50516 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:02:15 [uvicorn.access:476] 127.0.0.1:50521 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:15 [uvicorn.access:476] 127.0.0.1:50522 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:02:20 [uvicorn.access:476] 127.0.0.1:50522 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:20 [uvicorn.access:476] 127.0.0.1:50521 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:02:20 [uvicorn.access:476] 127.0.0.1:50525 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:25 [uvicorn.access:476] 127.0.0.1:50530 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:25 [uvicorn.access:476] 127.0.0.1:50531 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:02:30 [uvicorn.access:476] 127.0.0.1:50531 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:30 [uvicorn.access:476] 127.0.0.1:50530 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:02:30 [uvicorn.access:476] 127.0.0.1:50534 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:35 [uvicorn.access:476] 127.0.0.1:50546 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:35 [uvicorn.access:476] 127.0.0.1:50547 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:02:40 [uvicorn.access:476] 127.0.0.1:50547 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:40 [uvicorn.access:476] 127.0.0.1:50550 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:02:40 [uvicorn.access:476] 127.0.0.1:50551 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:45 [uvicorn.access:476] 127.0.0.1:50551 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:45 [uvicorn.access:476] 127.0.0.1:50550 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:02:50 [uvicorn.access:476] 127.0.0.1:50550 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:50 [uvicorn.access:476] 127.0.0.1:50556 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:02:50 [uvicorn.access:476] 127.0.0.1:50557 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:55 [uvicorn.access:476] 127.0.0.1:50557 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:02:55 [uvicorn.access:476] 127.0.0.1:50556 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:03:00 [uvicorn.access:476] 127.0.0.1:50562 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:00 [uvicorn.access:476] 127.0.0.1:50563 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:03:00 [uvicorn.access:476] 127.0.0.1:50564 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:05 [uvicorn.access:476] 127.0.0.1:50564 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:05 [uvicorn.access:476] 127.0.0.1:50563 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:03:10 [uvicorn.access:476] 127.0.0.1:50574 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:10 [uvicorn.access:476] 127.0.0.1:50575 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:03:10 [uvicorn.access:476] 127.0.0.1:50576 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:15 [uvicorn.access:476] 127.0.0.1:50576 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:15 [uvicorn.access:476] 127.0.0.1:50575 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:03:20 [uvicorn.access:476] 127.0.0.1:50581 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:20 [uvicorn.access:476] 127.0.0.1:50582 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:03:20 [uvicorn.access:476] 127.0.0.1:50583 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:25 [uvicorn.access:476] 127.0.0.1:50583 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:25 [uvicorn.access:476] 127.0.0.1:50582 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:03:30 [uvicorn.access:476] 127.0.0.1:50589 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:30 [uvicorn.access:476] 127.0.0.1:50590 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:03:30 [uvicorn.access:476] 127.0.0.1:50591 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:35 [uvicorn.access:476] 127.0.0.1:50591 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:35 [uvicorn.access:476] 127.0.0.1:50590 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:03:40 [uvicorn.access:476] 127.0.0.1:50598 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:40 [uvicorn.access:476] 127.0.0.1:50599 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:03:40 [uvicorn.access:476] 127.0.0.1:50600 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:45 [uvicorn.access:476] 127.0.0.1:50600 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:45 [uvicorn.access:476] 127.0.0.1:50599 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:03:50 [uvicorn.access:476] 127.0.0.1:50605 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:50 [uvicorn.access:476] 127.0.0.1:50606 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:03:50 [uvicorn.access:476] 127.0.0.1:50607 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:55 [uvicorn.access:476] 127.0.0.1:50607 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:03:55 [uvicorn.access:476] 127.0.0.1:50606 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:04:00 [uvicorn.access:476] 127.0.0.1:50613 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:00 [uvicorn.access:476] 127.0.0.1:50614 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:04:00 [uvicorn.access:476] 127.0.0.1:50615 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:05 [uvicorn.access:476] 127.0.0.1:50615 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:05 [uvicorn.access:476] 127.0.0.1:50614 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:04:10 [uvicorn.access:476] 127.0.0.1:50626 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:10 [uvicorn.access:476] 127.0.0.1:50628 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:10 [uvicorn.access:476] 127.0.0.1:50627 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:04:15 [uvicorn.access:476] 127.0.0.1:50627 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:15 [uvicorn.access:476] 127.0.0.1:50628 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:04:20 [uvicorn.access:476] 127.0.0.1:50637 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:20 [uvicorn.access:476] 127.0.0.1:50639 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:20 [uvicorn.access:476] 127.0.0.1:50638 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:04:25 [uvicorn.access:476] 127.0.0.1:50638 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:25 [uvicorn.access:476] 127.0.0.1:50639 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:04:30 [uvicorn.access:476] 127.0.0.1:50646 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:30 [uvicorn.access:476] 127.0.0.1:50647 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:04:30 [uvicorn.access:476] 127.0.0.1:50648 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:34 [uvicorn.access:476] 2a03:2880:10ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:04:34 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+INFO 2025-10-28 17:04:34 [app.services.whatsapp_service:54] ✅ Conexão com o banco de dados da Evolution API configurada.
+INFO 2025-10-28 17:04:34 [app.services.gemini_service:49] ✅ Cliente Gemini inicializado com sucesso (chave índice 0).
+DEBUG 2025-10-28 17:04:34 [app.crud.crud_atendimento:170] Atendimento ativo (ID: 185, Status: Mensagem Recebida) encontrado para 554599861237.
+INFO 2025-10-28 17:04:34 [app.api.webhook:243] WBP Webhook: Mídia recebida (Tipo: audio, ID: 799313279890002) para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUM4MDhGRDIzNjMzOEJBRTgzNUFDQ0NGMkY0MTAxQ0UA. Baixando...
+DEBUG 2025-10-28 17:04:35 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=5.0 socket_options=None
+DEBUG 2025-10-28 17:04:35 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x00000148548817D0>
+DEBUG 2025-10-28 17:04:35 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x00000148545F9880> server_hostname='graph.facebook.com' timeout=5.0
+DEBUG 2025-10-28 17:04:35 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x00000148544EF6D0>
+DEBUG 2025-10-28 17:04:35 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:35 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:04:35 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:35 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:04:35 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+INFO 2025-10-28 17:04:35 [uvicorn.access:476] 127.0.0.1:50648 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:35 [uvicorn.access:476] 127.0.0.1:50647 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+DEBUG 2025-10-28 17:04:36 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Encoding', b'gzip'), (b'ETag', b'"25fa9af3957cae9227903e57f62ccb478f19ae8b"'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'Accept-Encoding'), (b'x-fb-aed', b'613'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":0,"total_cputime":0,"total_time":0,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'ATO7eevaJxyAf_O1g8Jz9_U'), (b'x-fb-trace-id', b'BKbeYolNrbz'), (b'x-fb-rev', b'1029054793'), (b'X-FB-Debug', b'fXXaG8QpteoEQmot8JTlFMwWTJH1EO/yR7wBi7JgV/AHXz6XUV67SrKZANrAjy2YNWrnoGGnb6fhmcA5LsHrSg=='), (b'Date', b'Tue, 28 Oct 2025 20:04:34 GMT'), (b'X-FB-Connection-Quality', b'GOOD; q=0.7, rtt=74, rtx=0, c=10, mss=1392, tbw=3482, tp=-1, tpl=-1, uplat=844, ullat=0'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'296')])
+INFO 2025-10-28 17:04:36 [httpx:1740] HTTP Request: GET https://graph.facebook.com/v24.0/799313279890002 "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:04:36 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:36 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:04:36 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:04:36 [httpcore.http11:87] response_closed.complete
+DEBUG 2025-10-28 17:04:36 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:04:36 [httpcore.connection:87] close.complete
+DEBUG 2025-10-28 17:04:36 [httpcore.connection:87] connect_tcp.started host='lookaside.fbsbx.com' port=443 local_address=None timeout=60.0 socket_options=None
+DEBUG 2025-10-28 17:04:36 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x0000014854585C90>
+DEBUG 2025-10-28 17:04:36 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x00000148545F9D00> server_hostname='lookaside.fbsbx.com' timeout=60.0
+DEBUG 2025-10-28 17:04:36 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x00000148545639D0>
+DEBUG 2025-10-28 17:04:36 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:36 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:04:36 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:36 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:04:36 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:37 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'content-digest', b'adler32=3313177526'), (b'ETag', b'2950616504073459744'), (b'x-manifold-obj-blobsizebytes', b'4653'), (b'x-manifold-obj-canonicalpath', b'flat/1152624756991200'), (b'x-manifold-obj-ctime', b'1761681872'), (b'x-manifold-obj-entrytype', b'1'), (b'x-manifold-obj-expiresat', b'0'), (b'x-manifold-obj-isuserdata', b'0'), (b'x-manifold-obj-propertiesjson', b'{"blob_state":"created","__ctime":"1761681872"}'), (b'x-manifold-obj-symlinktarget', b''), (b'cross-origin-resource-policy', b'cross-origin'), (b'Accept-Ranges', b'bytes'), (b'Date', b'Tue, 28 Oct 2025 20:04:36 GMT'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Content-Disposition', b'inline;filename=File.ogg'), (b'Content-Type', b'audio/ogg'), (b'Connection', b'keep-alive'), (b'Content-Length', b'4493')])
+INFO 2025-10-28 17:04:37 [httpx:1740] HTTP Request: GET https://lookaside.fbsbx.com/whatsapp_business/attachments/?mid=799313279890002&source=getMedia&ext=1761682174&hash=ARkyfJ7XyMgJmQjEIcpVXV3ZJg3mTjOgFnvE1X7iaJqQBw "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:04:37 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:37 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:04:37 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:04:37 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-28 17:04:37 [app.services.whatsapp_service:444] WBP: Mídia baixada (4493 bytes).
+DEBUG 2025-10-28 17:04:37 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:04:37 [httpcore.connection:87] close.complete
+INFO 2025-10-28 17:04:37 [app.api.webhook:254] WBP Webhook: Mídia 799313279890002 ...
+INFO 2025-10-28 17:04:37 [app.services.gemini_service:126] Iniciando transcrição/análise para mídia do tipo audio/ogg; codecs=opus
+INFO 2025-10-28 17:04:39 [uvicorn.access:476] 2a03:2880:21ff:7e:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:04:39 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-28 17:04:39 [app.crud.crud_atendimento:170] Atendimento ativo (ID: 185, Status: Mensagem Recebida) encontrado para 554599861237.
+INFO 2025-10-28 17:04:39 [app.api.webhook:243] WBP Webhook: Mídia recebida (Tipo: audio, ID: 2275489852922563) para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUNDRDFEMzg2NEJENTlBREM0M0Q2Qzg1MkI1NjMwREIA. Baixando...
+DEBUG 2025-10-28 17:04:39 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=5.0 socket_options=None
+INFO 2025-10-28 17:04:39 [app.crud.crud_user:89] DEBUG: 1 token(s) deduzido(s) do utilizador 3. Restantes: 9873
+INFO 2025-10-28 17:04:39 [app.services.gemini_service:93] Token deduzido para o utilizador 3. Tokens restantes: 9873
+INFO 2025-10-28 17:04:39 [app.services.gemini_service:152] Transcrição/Análise gerada: 'Opa, tudo certo?...'
+INFO 2025-10-28 17:04:39 [app.api.webhook:349] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUM4MDhGRDIzNjMzOEJBRTgzNUFDQ0NGMkY0MTAxQ0UA adicionada e status atualizado para Atendimento 185.
+INFO 2025-10-28 17:04:40 [uvicorn.access:476] 127.0.0.1:50671 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:40 [uvicorn.access:476] 127.0.0.1:50672 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:04:40 [uvicorn.access:476] 127.0.0.1:50673 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:42 [uvicorn.access:476] 2a03:2880:10ff:2:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:04:42 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-28 17:04:42 [app.crud.crud_atendimento:170] Atendimento ativo (ID: 185, Status: Mensagem Recebida) encontrado para 554599861237.
+INFO 2025-10-28 17:04:42 [app.api.webhook:243] WBP Webhook: Mídia recebida (Tipo: audio, ID: 1368369654717200) para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUM0MzVBOTVBQzY4M0MxMTBEM0JGREM4QTBBMEYwN0EA. Baixando...
+DEBUG 2025-10-28 17:04:42 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=5.0 socket_options=None
+DEBUG 2025-10-28 17:04:42 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x00000148548B8D50>
+DEBUG 2025-10-28 17:04:42 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x00000148548BDC70> server_hostname='graph.facebook.com' timeout=5.0
+DEBUG 2025-10-28 17:04:42 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001485491F1D0>
+DEBUG 2025-10-28 17:04:42 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x0000014854197920> server_hostname='graph.facebook.com' timeout=5.0
+DEBUG 2025-10-28 17:04:42 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x0000014854933C90>
+DEBUG 2025-10-28 17:04:42 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:42 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:04:42 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:42 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:04:42 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:42 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x0000014854935AD0>
+DEBUG 2025-10-28 17:04:42 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:42 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:04:42 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:42 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:04:42 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:43 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Encoding', b'gzip'), (b'ETag', b'"a03f8a61dffd1daa474d208ec2c4072d01c1ac3d"'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'Accept-Encoding'), (b'x-fb-aed', b'613'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'ArBBPVPqah7ue9-Nua4zjqr'), (b'x-fb-trace-id', b'HCtAhtGaC16'), (b'x-fb-rev', b'1029037448'), (b'X-FB-Debug', b'BSGjE6v2Gfrc2Ie+gVrdWcEFGcVZ4bazULQPB/Sg2dX5E1yZ80nWQgALeifM8I5BeRTnnNrGjOiZ62rPLX2VKQ=='), (b'Date', b'Tue, 28 Oct 2025 20:04:41 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=38, rtx=0, c=10, mss=1392, tbw=3480, tp=-1, tpl=-1, uplat=379, ullat=0'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'294')])
+INFO 2025-10-28 17:04:43 [httpx:1740] HTTP Request: GET https://graph.facebook.com/v24.0/2275489852922563 "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:04:43 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:43 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:04:43 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:04:43 [httpcore.http11:87] response_closed.complete
+DEBUG 2025-10-28 17:04:43 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:04:43 [httpcore.connection:87] close.complete
+DEBUG 2025-10-28 17:04:43 [httpcore.connection:87] connect_tcp.started host='lookaside.fbsbx.com' port=443 local_address=None timeout=60.0 socket_options=None
+DEBUG 2025-10-28 17:04:43 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Encoding', b'gzip'), (b'ETag', b'"edc485382f87b9356e335db76355a21e81926d86"'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'Accept-Encoding'), (b'x-fb-aed', b'613'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'A9ceLP3QuBQPVgzoSQcS2Yu'), (b'x-fb-trace-id', b'C8qt4ORjXht'), (b'x-fb-rev', b'1029037448'), (b'X-FB-Debug', b'kR0YY8OnLhV6mvrStSwpO7IVkTVsZBnA1Legv7KsvBIPPcs2l1owXtS7Pu2g585dPll0oRPsMjUWnjHqmR45pw=='), (b'Date', b'Tue, 28 Oct 2025 20:04:41 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=28, rtx=1, c=10, mss=1392, tbw=3481, tp=-1, tpl=-1, uplat=401, ullat=0'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'297')])
+INFO 2025-10-28 17:04:43 [httpx:1740] HTTP Request: GET https://graph.facebook.com/v24.0/1368369654717200 "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:04:43 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:43 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:04:43 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:04:43 [httpcore.http11:87] response_closed.complete
+DEBUG 2025-10-28 17:04:43 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:04:43 [httpcore.connection:87] close.complete
+DEBUG 2025-10-28 17:04:43 [httpcore.connection:87] connect_tcp.started host='lookaside.fbsbx.com' port=443 local_address=None timeout=60.0 socket_options=None
+INFO 2025-10-28 17:04:45 [uvicorn.access:476] 127.0.0.1:50673 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:45 [uvicorn.access:476] 127.0.0.1:50672 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:04:47 [uvicorn.access:476] 2a03:2880:22ff:1:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:04:47 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-28 17:04:47 [app.crud.crud_atendimento:170] Atendimento ativo (ID: 185, Status: Mensagem Recebida) encontrado para 554599861237.
+INFO 2025-10-28 17:04:47 [app.api.webhook:243] WBP Webhook: Mídia recebida (Tipo: image, ID: 1201521342032322) para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUM2N0MwNzVDM0YzNzY0QzQ4NzY4MDhGOUZGRkFGMkYA. Baixando...
+DEBUG 2025-10-28 17:04:47 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=5.0 socket_options=None
+DEBUG 2025-10-28 17:04:48 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x00000148541C3950>
+DEBUG 2025-10-28 17:04:48 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x00000148545FB920> server_hostname='graph.facebook.com' timeout=5.0
+DEBUG 2025-10-28 17:04:48 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x0000014854882510>
+DEBUG 2025-10-28 17:04:48 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:48 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:04:48 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:48 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:04:48 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:48 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Encoding', b'gzip'), (b'ETag', b'"c2d7736ea3ec3328125337db0a839819c728cf4a"'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'Accept-Encoding'), (b'x-fb-aed', b'613'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'Agk--mLigXxFsogqwkqG3JS'), (b'x-fb-trace-id', b'E6qHn3JIXnv'), (b'x-fb-rev', b'1029037448'), (b'X-FB-Debug', b'U9hESdnDBMtoRtjGLBP9e56LBpD3lqDrKmtzDUskgfZXOUh7TCOgf4uQueDNurRkpVFRSHuDTMbm2/GW+CXXdw=='), (b'Date', b'Tue, 28 Oct 2025 20:04:47 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=31, rtx=0, c=10, mss=1392, tbw=3483, tp=-1, tpl=-1, uplat=295, ullat=0'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'295')])
+INFO 2025-10-28 17:04:48 [httpx:1740] HTTP Request: GET https://graph.facebook.com/v24.0/1201521342032322 "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:04:48 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:48 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:04:48 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:04:48 [httpcore.http11:87] response_closed.complete
+DEBUG 2025-10-28 17:04:48 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:04:48 [httpcore.connection:87] close.complete
+DEBUG 2025-10-28 17:04:49 [httpcore.connection:87] connect_tcp.started host='lookaside.fbsbx.com' port=443 local_address=None timeout=60.0 socket_options=None
+DEBUG 2025-10-28 17:04:49 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x0000014854994790>
+DEBUG 2025-10-28 17:04:49 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x00000148545FB800> server_hostname='lookaside.fbsbx.com' timeout=60.0
+DEBUG 2025-10-28 17:04:49 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x0000014854994810>
+DEBUG 2025-10-28 17:04:49 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:49 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:04:49 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:49 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:04:49 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:49 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'content-digest', b'adler32=3003833751'), (b'ETag', b'4853396607513597015'), (b'x-manifold-obj-blobsizebytes', b'78405'), (b'x-manifold-obj-canonicalpath', b'flat/1600122541351366'), (b'x-manifold-obj-ctime', b'1761681884'), (b'x-manifold-obj-entrytype', b'1'), (b'x-manifold-obj-expiresat', b'0'), (b'x-manifold-obj-isuserdata', b'0'), (b'x-manifold-obj-propertiesjson', b'{"blob_state":"created","__ctime":"1761681884"}'), (b'x-manifold-obj-symlinktarget', b''), (b'cross-origin-resource-policy', b'cross-origin'), (b'Accept-Ranges', b'bytes'), (b'Date', b'Tue, 28 Oct 2025 20:04:48 GMT'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Content-Disposition', b'inline;filename=File.jpg'), (b'Content-Type', b'image/jpeg'), (b'Connection', b'keep-alive'), (b'Content-Length', b'75941')])
+INFO 2025-10-28 17:04:49 [httpx:1740] HTTP Request: GET https://lookaside.fbsbx.com/whatsapp_business/attachments/?mid=1201521342032322&source=getMedia&ext=1761682187&hash=ARmOsA5_xzm3eQYEWeLJKqyHAUOUP1t8zhih589PirenQg "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:04:49 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:04:49 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:04:49 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:04:49 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-28 17:04:49 [app.services.whatsapp_service:444] WBP: Mídia baixada (75941 bytes).
+DEBUG 2025-10-28 17:04:49 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:04:49 [httpcore.connection:87] close.complete
+INFO 2025-10-28 17:04:49 [app.api.webhook:254] WBP Webhook: Mídia 1201521342032322 ...
+INFO 2025-10-28 17:04:49 [app.services.gemini_service:126] Iniciando transcrição/análise para mídia do tipo image/jpeg
+INFO 2025-10-28 17:04:50 [uvicorn.access:476] 127.0.0.1:50699 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:50 [uvicorn.access:476] 127.0.0.1:50702 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:50 [uvicorn.access:476] 127.0.0.1:50700 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:04:55 [uvicorn.access:476] 127.0.0.1:50700 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:04:55 [uvicorn.access:476] 127.0.0.1:50702 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:05:00 [uvicorn.access:476] 127.0.0.1:50726 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:00 [uvicorn.access:476] 127.0.0.1:50728 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:00 [uvicorn.access:476] 127.0.0.1:50727 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:05:02 [app.crud.crud_user:89] DEBUG: 1 token(s) deduzido(s) do utilizador 3. Restantes: 9872
+INFO 2025-10-28 17:05:02 [app.services.gemini_service:93] Token deduzido para o utilizador 3. Tokens restantes: 9872
+INFO 2025-10-28 17:05:02 [app.services.gemini_service:152] Transcrição/Análise gerada: 'Screenshot de uma confirmação de compra, indicando que o cliente realizou uma transação com entrega ...'
+INFO 2025-10-28 17:05:02 [app.api.webhook:349] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUM2N0MwNzVDM0YzNzY0QzQ4NzY4MDhGOUZGRkFGMkYA adicionada e status atualizado para Atendimento 185.
+DEBUG 2025-10-28 17:05:04 [httpcore.connection:87] connect_tcp.failed exception=ConnectError(OSError('All connection attempts failed'))
+ERROR 2025-10-28 17:05:04 [app.services.whatsapp_service:451] WBP: Erro ao baixar mídia: All connection attempts failed
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_async\connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_backends\auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: All connection attempts failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\services\whatsapp_service.py", line 442, in download_media_official
+    response = await client.get(media_url, headers=headers, follow_redirects=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: All connection attempts failed
+DEBUG 2025-10-28 17:05:04 [httpcore.connection:87] connect_tcp.failed exception=ConnectError(OSError('All connection attempts failed'))
+ERROR 2025-10-28 17:05:04 [app.services.whatsapp_service:451] WBP: Erro ao baixar mídia: All connection attempts failed
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_async\connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_backends\auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: All connection attempts failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\services\whatsapp_service.py", line 442, in download_media_official
+    response = await client.get(media_url, headers=headers, follow_redirects=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_client.py", line 1768, in get
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: All connection attempts failed
+INFO 2025-10-28 17:05:04 [app.api.webhook:349] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUM0MzVBOTVBQzY4M0MxMTBEM0JGREM4QTBBMEYwN0EA adicionada e status atualizado para Atendimento 185.
+INFO 2025-10-28 17:05:04 [app.api.webhook:349] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUNDRDFEMzg2NEJENTlBREM0M0Q2Qzg1MkI1NjMwREIA adicionada e status atualizado para Atendimento 185.
+INFO 2025-10-28 17:05:05 [uvicorn.access:476] 127.0.0.1:50727 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:05 [uvicorn.access:476] 127.0.0.1:50728 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:05:10 [uvicorn.access:476] 127.0.0.1:50734 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:10 [uvicorn.access:476] 127.0.0.1:50736 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:10 [uvicorn.access:476] 127.0.0.1:50735 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:05:15 [uvicorn.access:476] 127.0.0.1:50735 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:15 [uvicorn.access:476] 127.0.0.1:50736 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:05:20 [uvicorn.access:476] 127.0.0.1:50770 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:20 [uvicorn.access:476] 127.0.0.1:50771 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:05:20 [uvicorn.access:476] 127.0.0.1:50772 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:25 [uvicorn.access:476] 127.0.0.1:50772 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:25 [uvicorn.access:476] 127.0.0.1:50776 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:05:30 [uvicorn.access:476] 127.0.0.1:50782 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:30 [uvicorn.access:476] 127.0.0.1:50783 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:05:30 [uvicorn.access:476] 127.0.0.1:50784 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:35 [uvicorn.access:476] 127.0.0.1:50783 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:35 [uvicorn.access:476] 127.0.0.1:50784 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:05:40 [uvicorn.access:476] 127.0.0.1:50793 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:40 [uvicorn.access:476] 127.0.0.1:50794 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:05:40 [uvicorn.access:476] 127.0.0.1:50795 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:45 [uvicorn.access:476] 127.0.0.1:50795 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:45 [uvicorn.access:476] 127.0.0.1:50794 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:05:50 [uvicorn.access:476] 127.0.0.1:50802 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:50 [uvicorn.access:476] 127.0.0.1:50803 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:05:50 [uvicorn.access:476] 127.0.0.1:50804 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:55 [uvicorn.access:476] 127.0.0.1:50804 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:05:55 [uvicorn.access:476] 127.0.0.1:50803 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:06:00 [uvicorn.access:476] 127.0.0.1:50811 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:00 [uvicorn.access:476] 127.0.0.1:50812 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:06:00 [uvicorn.access:476] 127.0.0.1:50813 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:05 [uvicorn.access:476] 127.0.0.1:50813 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:05 [uvicorn.access:476] 127.0.0.1:50812 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:06:10 [uvicorn.access:476] 127.0.0.1:50832 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:10 [uvicorn.access:476] 127.0.0.1:50833 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:06:10 [uvicorn.access:476] 127.0.0.1:50834 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:15 [uvicorn.access:476] 127.0.0.1:50834 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:15 [uvicorn.access:476] 127.0.0.1:50833 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:06:20 [uvicorn.access:476] 127.0.0.1:50849 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:20 [uvicorn.access:476] 127.0.0.1:50850 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:06:20 [uvicorn.access:476] 127.0.0.1:50853 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:25 [uvicorn.access:476] 127.0.0.1:50853 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:25 [uvicorn.access:476] 127.0.0.1:50850 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:06:30 [uvicorn.access:476] 127.0.0.1:50860 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:30 [uvicorn.access:476] 127.0.0.1:50861 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:06:30 [uvicorn.access:476] 127.0.0.1:50862 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:33 [uvicorn.access:476] 127.0.0.1:50861 - "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:06:33 [uvicorn.access:476] 127.0.0.1:50871 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:06:33 [uvicorn.access:476] 127.0.0.1:50861 - "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:06:33 [uvicorn.access:476] 127.0.0.1:50862 - "GET /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-28 17:06:33 [uvicorn.access:476] 127.0.0.1:50872 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:06:33 [uvicorn.access:476] 127.0.0.1:50860 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:33 [uvicorn.access:476] 127.0.0.1:50861 - "GET /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-28 17:06:33 [uvicorn.access:476] 127.0.0.1:50872 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:33 [uvicorn.access:476] 127.0.0.1:50862 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:06:33 [uvicorn.access:476] 127.0.0.1:50861 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:33 [uvicorn.access:476] 127.0.0.1:50872 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:06:33 [uvicorn.access:476] 127.0.0.1:50871 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:06:33 [uvicorn.access:476] 127.0.0.1:50872 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:06:38 [uvicorn.access:476] 127.0.0.1:50877 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:06:40 [uvicorn.access:476] 127.0.0.1:50877 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:43 [uvicorn.access:476] 127.0.0.1:50877 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:06:44 [uvicorn.access:476] 127.0.0.1:50877 - "OPTIONS /api/v1/agent/start HTTP/1.1" 200
+INFO 2025-10-28 17:06:44 [app.agent_manager:583] Agente para usuário 3 adicionado à fila de inicialização.
+INFO 2025-10-28 17:06:44 [uvicorn.access:476] 127.0.0.1:50877 - "POST /api/v1/agent/start HTTP/1.1" 200
+INFO 2025-10-28 17:06:44 [app.agent_manager:252] -> Agente de atendimento INICIADO para o utilizador 3.
+INFO 2025-10-28 17:06:44 [app.agent_manager:314] Agente (User 3, API: official): Processando atendimento ID 185 (Contato: 554599861237)
+INFO 2025-10-28 17:06:44 [app.agent_manager:331] Agente: Atendimento 185 marcado como 'Gerando Resposta'.
+INFO 2025-10-28 17:06:44 [app.agent_manager:387] Agente (Oficial): Usando histórico do DB (128 msgs) para atendimento 185.
+INFO 2025-10-28 17:06:44 [app.agent_manager:422] Agente: Atendimento 185 apto para IA. Chamando Gemini...
+INFO 2025-10-28 17:06:48 [uvicorn.access:476] 127.0.0.1:50886 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:06:50 [uvicorn.access:476] 127.0.0.1:50886 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:06:53 [uvicorn.access:476] 127.0.0.1:50886 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:06:56 [uvicorn.access:476] 2a03:2880:10ff:3:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:06:56 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-28 17:06:56 [app.crud.crud_atendimento:170] Atendimento ativo (ID: 185, Status: Gerando Resposta) encontrado para 554599861237.
+INFO 2025-10-28 17:06:56 [app.api.webhook:223] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUMwOUNGRkU0NDZEQzRCNkNDMEJEQkMzOTkxMjk5N0EA de 554599861237 ignorada. Atendimento ID 185 com status 'Gerando Resposta'.
+INFO 2025-10-28 17:06:58 [uvicorn.access:476] 2a03:2880:22ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:06:58 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-28 17:06:58 [app.crud.crud_atendimento:170] Atendimento ativo (ID: 185, Status: Gerando Resposta) encontrado para 554599861237.
+INFO 2025-10-28 17:06:58 [app.api.webhook:223] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUNBRDgzQ0NDMkUzOThFQjQ4NThCODgyMDhEMTYzMDAA de 554599861237 ignorada. Atendimento ID 185 com status 'Gerando Resposta'.
+INFO 2025-10-28 17:06:58 [uvicorn.access:476] 127.0.0.1:50896 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:07:00 [uvicorn.access:476] 127.0.0.1:50896 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:07:01 [app.crud.crud_user:89] DEBUG: 1 token(s) deduzido(s) do utilizador 3. Restantes: 9871
+INFO 2025-10-28 17:07:01 [app.services.gemini_service:93] Token deduzido para o utilizador 3. Tokens restantes: 9871
+INFO 2025-10-28 17:07:01 [app.agent_manager:464] Agente: Enviando parte 1/2 para 554599861237 (Atendimento 185)...
+DEBUG 2025-10-28 17:07:01 [app.services.whatsapp_service:469] WBP Send Payload to 554599861237: {"messaging_product": "whatsapp", "recipient_type": "individual", "to": "554599861237", "type": "text", "text": {"preview_url": false, "body": "Que \u00f3tima not\u00edcia, Cristian! Fico muito feliz em ver a confirma\u00e7\u00e3o do seu pedido com a Talatto! \ud83c\udf89"}}
+DEBUG 2025-10-28 17:07:02 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=30.0 socket_options=None
+DEBUG 2025-10-28 17:07:02 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001485498DE90>
+DEBUG 2025-10-28 17:07:02 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x00000148548BDF40> server_hostname='graph.facebook.com' timeout=30.0
+DEBUG 2025-10-28 17:07:02 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001485498C690>
+DEBUG 2025-10-28 17:07:02 [httpcore.http11:87] send_request_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:07:02 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:07:02 [httpcore.http11:87] send_request_body.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:07:02 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:07:02 [httpcore.http11:87] receive_response_headers.started request=<Request [b'POST']>
+INFO 2025-10-28 17:07:02 [uvicorn.access:476] 2a03:2880:12ff:8:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:07:02 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-28 17:07:02 [app.crud.crud_atendimento:170] Atendimento ativo (ID: 185, Status: Gerando Resposta) encontrado para 554599861237.
+INFO 2025-10-28 17:07:02 [app.api.webhook:223] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUM4REYxM0ZBNzBDRDVFMDZEODdCMDVEMzZCM0Y5QjkA de 554599861237 ignorada. Atendimento ID 185 com status 'Gerando Resposta'.
+DEBUG 2025-10-28 17:07:03 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'x-fb-aed', b'613'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'AAbjXZR85BxZqqRpPQGXfE_'), (b'x-fb-trace-id', b'GlFNsSs1ICz'), (b'x-fb-rev', b'1029037448'), (b'X-FB-Debug', b'geY7xWxLN7yL+z0QxBU3PTnKOKX8/RZNUgKkPKF+G6kDWLZMvglOWtNsP8OY/odNbOpJYX/0RQeA7EGxhHV8Qg=='), (b'Date', b'Tue, 28 Oct 2025 20:07:01 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=45, rtx=0, c=10, mss=1392, tbw=3483, tp=-1, tpl=-1, uplat=740, ullat=1'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'178')])
+INFO 2025-10-28 17:07:03 [httpx:1740] HTTP Request: POST https://graph.facebook.com/v24.0/806840102518876/messages "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:07:03 [httpcore.http11:87] receive_response_body.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:07:03 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:07:03 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:07:03 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-28 17:07:03 [app.services.whatsapp_service:482] WBP: Mensagem enviada para 554599861237 (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSM0NERTMxRTNCQzA4ODdGNEExAA==, Tentativa 1).
+DEBUG 2025-10-28 17:07:03 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:07:03 [httpcore.connection:87] close.complete
+INFO 2025-10-28 17:07:03 [app.agent_manager:471] Agente: Parte 1 enviada com sucesso para 185. (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSM0NERTMxRTNCQzA4ODdGNEExAA==)
+INFO 2025-10-28 17:07:03 [uvicorn.access:476] 127.0.0.1:50896 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:07:03 [uvicorn.access:476] 2a03:2880:10ff:4a:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:07:03 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:07:03 [app.api.webhook:402] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSM0NERTMxRTNCQzA4ODdGNEExAA==.
+INFO 2025-10-28 17:07:04 [uvicorn.access:476] 2a03:2880:10ff:46:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:07:04 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:07:04 [app.api.webhook:402] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSM0NERTMxRTNCQzA4ODdGNEExAA==.
+INFO 2025-10-28 17:07:04 [uvicorn.access:476] 2a03:2880:22ff:3:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:07:04 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:07:04 [app.api.webhook:402] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSM0NERTMxRTNCQzA4ODdGNEExAA==.
+INFO 2025-10-28 17:07:05 [uvicorn.access:476] 2a03:2880:12ff:8:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:07:05 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-28 17:07:05 [app.crud.crud_atendimento:170] Atendimento ativo (ID: 185, Status: Gerando Resposta) encontrado para 554599861237.
+INFO 2025-10-28 17:07:05 [app.api.webhook:223] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUMwNDU4MEVBNTU3QzE5MkE2MEE0RTNERDIyMjJEQUUA de 554599861237 ignorada. Atendimento ID 185 com status 'Gerando Resposta'.
+INFO 2025-10-28 17:07:05 [app.agent_manager:464] Agente: Enviando parte 2/2 para 554599861237 (Atendimento 185)...
+DEBUG 2025-10-28 17:07:05 [app.services.whatsapp_service:469] WBP Send Payload to 554599861237: {"messaging_product": "whatsapp", "recipient_type": "individual", "to": "554599861237", "type": "text", "text": {"preview_url": false, "body": "Voc\u00ea precisa de alguma ajuda com a instala\u00e7\u00e3o, rastreamento ou tem alguma outra d\u00favida sobre sua compra?"}}
+DEBUG 2025-10-28 17:07:06 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=30.0 socket_options=None
+DEBUG 2025-10-28 17:07:06 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x0000014854D41D10>
+DEBUG 2025-10-28 17:07:06 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x00000148549E6D50> server_hostname='graph.facebook.com' timeout=30.0
+DEBUG 2025-10-28 17:07:06 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x0000014854D41F10>
+DEBUG 2025-10-28 17:07:06 [httpcore.http11:87] send_request_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:07:06 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:07:06 [httpcore.http11:87] send_request_body.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:07:06 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:07:06 [httpcore.http11:87] receive_response_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:07:07 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'x-fb-aed', b'613'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'AnlZNglK9_56yX_xshK7uwU'), (b'x-fb-trace-id', b'Gi+t+pI0B6u'), (b'x-fb-rev', b'1029037448'), (b'X-FB-Debug', b'rV/vqVhGnsJ3etM+FXOEaeVLnj6Fa0amjQG9dK7tiRLKC59tYI2aziKiVuVKwNngesNuxXg+cf3PZBmZFkkfug=='), (b'x-fb-server-load', b'17'), (b'Date', b'Tue, 28 Oct 2025 20:07:05 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=48, rtx=1, c=10, mss=1392, tbw=3482, tp=-1, tpl=-1, uplat=505, ullat=1'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'178')])
+INFO 2025-10-28 17:07:07 [httpx:1740] HTTP Request: POST https://graph.facebook.com/v24.0/806840102518876/messages "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:07:07 [httpcore.http11:87] receive_response_body.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:07:07 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:07:07 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:07:07 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-28 17:07:07 [app.services.whatsapp_service:482] WBP: Mensagem enviada para 554599861237 (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMjg0NTBCMzRFNTg5NjJGQ0U0AA==, Tentativa 1).
+DEBUG 2025-10-28 17:07:07 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:07:07 [httpcore.connection:87] close.complete
+INFO 2025-10-28 17:07:07 [app.agent_manager:471] Agente: Parte 2 enviada com sucesso para 185. (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMjg0NTBCMzRFNTg5NjJGQ0U0AA==)
+INFO 2025-10-28 17:07:07 [app.agent_manager:494] Agente: Verificando status atual do Atendimento 185 ANTES da atualização final.
+INFO 2025-10-28 17:07:07 [app.agent_manager:543] Agente: Atendimento 185 ainda 'Gerando Resposta'. Aplicando status: 'Compra Confirmada - Aguardando Próximo Passo'
+INFO 2025-10-28 17:07:07 [app.agent_manager:559] Agente: Atendimento 185 finalizado neste ciclo.
+INFO 2025-10-28 17:07:07 [uvicorn.access:476] 2a03:2880:22ff:72:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:07:07 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:07:07 [app.api.webhook:402] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMjg0NTBCMzRFNTg5NjJGQ0U0AA==.
+INFO 2025-10-28 17:07:07 [uvicorn.access:476] 127.0.0.1:50896 - "OPTIONS /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:07:07 [uvicorn.access:476] 127.0.0.1:50924 - "OPTIONS /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:07:07 [uvicorn.access:476] 127.0.0.1:50896 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:07:07 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:07:08 [uvicorn.access:476] 127.0.0.1:50924 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:07:08 [uvicorn.access:476] 127.0.0.1:50896 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:07:08 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:07:08 [uvicorn.access:476] 2a03:2880:12ff:6:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:07:08 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:07:08 [app.api.webhook:402] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMjg0NTBCMzRFNTg5NjJGQ0U0AA==.
+INFO 2025-10-28 17:07:08 [uvicorn.access:476] 2a03:2880:22ff:73:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:07:08 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:07:08 [app.api.webhook:402] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMjg0NTBCMzRFNTg5NjJGQ0U0AA==.
+INFO 2025-10-28 17:07:10 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:07:13 [uvicorn.access:476] 127.0.0.1:50932 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:07:13 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:07:18 [uvicorn.access:476] 127.0.0.1:50932 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:07:18 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:07:20 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:07:23 [uvicorn.access:476] 127.0.0.1:50937 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:07:23 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:07:28 [uvicorn.access:476] 127.0.0.1:50937 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:07:28 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:07:30 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:07:33 [uvicorn.access:476] 127.0.0.1:50943 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:07:33 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:07:38 [uvicorn.access:476] 127.0.0.1:50943 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:07:38 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:07:40 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:07:43 [uvicorn.access:476] 127.0.0.1:50949 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:07:43 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:07:48 [uvicorn.access:476] 127.0.0.1:50949 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:07:48 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:07:50 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:07:53 [uvicorn.access:476] 127.0.0.1:50949 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:07:53 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:07:58 [uvicorn.access:476] 127.0.0.1:50971 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:07:58 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:08:00 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:08:03 [uvicorn.access:476] 127.0.0.1:50971 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:08:03 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:08:08 [uvicorn.access:476] 127.0.0.1:50982 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:08:08 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:08:10 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:08:13 [uvicorn.access:476] 127.0.0.1:50987 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:08:13 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:08:18 [uvicorn.access:476] 127.0.0.1:50987 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:08:18 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:08:20 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:08:23 [uvicorn.access:476] 127.0.0.1:50987 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:08:23 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:08:28 [uvicorn.access:476] 127.0.0.1:51001 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:08:28 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:08:30 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:08:33 [uvicorn.access:476] 127.0.0.1:51001 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:08:33 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:08:38 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:08:38 [uvicorn.access:476] 127.0.0.1:51006 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:08:40 [uvicorn.access:476] 127.0.0.1:51006 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:08:43 [uvicorn.access:476] 127.0.0.1:50923 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:08:43 [uvicorn.access:476] 127.0.0.1:51006 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:08:48 [uvicorn.access:476] 127.0.0.1:51018 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:08:48 [uvicorn.access:476] 127.0.0.1:51017 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:08:50 [uvicorn.access:476] 127.0.0.1:51017 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:08:53 [uvicorn.access:476] 127.0.0.1:51017 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:08:53 [uvicorn.access:476] 127.0.0.1:51021 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:08:58 [uvicorn.access:476] 127.0.0.1:51017 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:08:58 [uvicorn.access:476] 127.0.0.1:51021 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:09:00 [uvicorn.access:476] 127.0.0.1:51021 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:09:03 [uvicorn.access:476] 127.0.0.1:51029 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:09:03 [uvicorn.access:476] 127.0.0.1:51028 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:09:08 [uvicorn.access:476] 127.0.0.1:51028 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:09:08 [uvicorn.access:476] 127.0.0.1:51034 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:09:10 [uvicorn.access:476] 127.0.0.1:51034 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:09:13 [uvicorn.access:476] 127.0.0.1:51047 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:09:13 [uvicorn.access:476] 127.0.0.1:51046 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:09:18 [uvicorn.access:476] 127.0.0.1:51047 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:09:18 [uvicorn.access:476] 127.0.0.1:51046 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:09:20 [uvicorn.access:476] 127.0.0.1:51046 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:09:23 [uvicorn.access:476] 127.0.0.1:51057 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:09:23 [uvicorn.access:476] 127.0.0.1:51056 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:09:24 [uvicorn.access:476] 2a03:2880:22ff:1:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:09:24 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:09:24 [app.api.webhook:402] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMjg0NTBCMzRFNTg5NjJGQ0U0AA==.
+INFO 2025-10-28 17:09:28 [uvicorn.access:476] 127.0.0.1:51056 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:09:28 [uvicorn.access:476] 127.0.0.1:51067 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:09:30 [uvicorn.access:476] 127.0.0.1:51067 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:09:33 [uvicorn.access:476] 127.0.0.1:51071 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:09:33 [uvicorn.access:476] 127.0.0.1:51070 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:09:38 [uvicorn.access:476] 127.0.0.1:51070 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:09:38 [uvicorn.access:476] 127.0.0.1:51074 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:09:40 [uvicorn.access:476] 127.0.0.1:51074 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:09:43 [uvicorn.access:476] 127.0.0.1:51080 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:09:43 [uvicorn.access:476] 127.0.0.1:51079 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:09:48 [uvicorn.access:476] 127.0.0.1:51080 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:09:48 [uvicorn.access:476] 127.0.0.1:51079 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:09:50 [uvicorn.access:476] 127.0.0.1:51079 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:09:53 [uvicorn.access:476] 127.0.0.1:51092 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:09:53 [uvicorn.access:476] 127.0.0.1:51093 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:09:58 [uvicorn.access:476] 127.0.0.1:51092 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:09:58 [uvicorn.access:476] 127.0.0.1:51093 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:10:00 [uvicorn.access:476] 127.0.0.1:51093 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:10:03 [uvicorn.access:476] 127.0.0.1:51104 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:10:03 [uvicorn.access:476] 127.0.0.1:51103 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:10:08 [uvicorn.access:476] 127.0.0.1:51104 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:10:08 [uvicorn.access:476] 127.0.0.1:51103 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:10:10 [uvicorn.access:476] 127.0.0.1:51103 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:10:10 [uvicorn.access:476] 127.0.0.1:51103 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:10:13 [uvicorn.access:476] 127.0.0.1:51111 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:10:13 [uvicorn.access:476] 127.0.0.1:51110 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:10:18 [uvicorn.access:476] 127.0.0.1:51111 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:10:18 [uvicorn.access:476] 127.0.0.1:51110 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:10:20 [uvicorn.access:476] 127.0.0.1:51110 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:10:23 [uvicorn.access:476] 127.0.0.1:51126 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:10:23 [uvicorn.access:476] 127.0.0.1:51125 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:10:28 [uvicorn.access:476] 127.0.0.1:51126 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:10:28 [uvicorn.access:476] 127.0.0.1:51125 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:10:30 [uvicorn.access:476] 127.0.0.1:51125 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:10:33 [uvicorn.access:476] 127.0.0.1:51137 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:10:33 [uvicorn.access:476] 127.0.0.1:51136 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:10:38 [uvicorn.access:476] 127.0.0.1:51137 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:10:38 [uvicorn.access:476] 127.0.0.1:51136 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:10:38 [uvicorn.error:264] Shutting down
+INFO 2025-10-28 17:10:38 [uvicorn.error:306] Waiting for background tasks to complete. (CTRL+C to force quit)
+INFO 2025-10-28 17:11:17 [uvicorn.error:94] Finished server process [26656]
+INFO 2025-10-28 17:11:17 [app.services.whatsapp_service:68] Encerrando conexões DB Evolution...
+INFO 2025-10-28 17:11:17 [app.services.whatsapp_service:70] Conexões DB Evolution encerradas.
+ERROR 2025-10-28 17:11:17 [uvicorn.error:134] Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\_compat.py", line 23, in asyncio_run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 641, in run_until_complete
+    self.run_forever()
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 608, in run_forever
+    self._run_once()
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 1936, in _run_once
+    handle._run()
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\events.py", line 84, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\server.py", line 70, in serve
+    with self.capture_signals():
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\server.py", line 331, in capture_signals
+    signal.raise_signal(captured_signal)
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\runners.py", line 157, in _on_sigint
+    raise KeyboardInterrupt()
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 701, in lifespan
+    await receive()
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\lifespan\on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+ERROR 2025-10-28 17:11:17 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\_compat.py", line 23, in asyncio_run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 641, in run_until_complete
+    self.run_forever()
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 608, in run_forever
+    self._run_once()
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 1936, in _run_once
+    handle._run()
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\events.py", line 84, in _run
+    self._context.run(self._callback, *self._args)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\server.py", line 70, in serve
+    with self.capture_signals():
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\server.py", line 331, in capture_signals
+    signal.raise_signal(captured_signal)
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\runners.py", line 157, in _on_sigint
+    raise KeyboardInterrupt()
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 76, in app
+    await response(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\responses.py", line 168, in __call__
+    await self.background()
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\background.py", line 42, in __call__
+    await task()
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\background.py", line 27, in __call__
+    await self.func(*self.args, **self.kwargs)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\agent_manager.py", line 290, in atendimento_agent_task
+    await asyncio.sleep(random.uniform(5, 15))
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\tasks.py", line 649, in sleep
+    return await future
+           ^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+INFO 2025-10-28 17:11:22 [app.main:153] Configurando CORS para as origens: ['http://localhost:5173']
+INFO 2025-10-28 17:11:22 [uvicorn.error:84] Started server process [14892]
+INFO 2025-10-28 17:11:22 [uvicorn.error:48] Waiting for application startup.
+INFO 2025-10-28 17:11:22 [app.main:131] Tabelas do banco de dados verificadas/criadas com sucesso.
+INFO 2025-10-28 17:11:22 [uvicorn.error:62] Application startup complete.
+INFO 2025-10-28 17:11:22 [uvicorn.access:476] 127.0.0.1:51157 - "OPTIONS /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-28 17:11:22 [uvicorn.access:476] 127.0.0.1:51155 - "OPTIONS /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-28 17:11:22 [uvicorn.access:476] 127.0.0.1:51156 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:22 [uvicorn.access:476] 127.0.0.1:51156 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51156 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51156 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51156 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51156 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51143 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51156 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51148 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51155 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51157 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51143 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51147 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51156 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51155 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51157 - "GET /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51147 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51148 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51143 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51155 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51157 - "GET /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51156 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51147 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51148 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51156 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51143 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51157 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51147 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:23 [uvicorn.access:476] 127.0.0.1:51157 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:26 [uvicorn.access:476] 127.0.0.1:51157 - "GET /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-28 17:11:26 [uvicorn.access:476] 127.0.0.1:51143 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:11:26 [uvicorn.access:476] 127.0.0.1:51156 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:26 [uvicorn.access:476] 127.0.0.1:51147 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:26 [uvicorn.access:476] 127.0.0.1:51148 - "GET /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-28 17:11:26 [uvicorn.access:476] 127.0.0.1:51157 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:11:26 [uvicorn.access:476] 127.0.0.1:51155 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:26 [uvicorn.access:476] 127.0.0.1:51148 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:11:26 [uvicorn.access:476] 127.0.0.1:51156 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:30 [uvicorn.access:476] 127.0.0.1:51156 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:11:31 [uvicorn.access:476] 127.0.0.1:51156 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:36 [uvicorn.access:476] 127.0.0.1:51233 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:38 [uvicorn.access:476] 2a03:2880:12ff:72:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:11:38 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+INFO 2025-10-28 17:11:38 [app.services.whatsapp_service:54] ✅ Conexão com o banco de dados da Evolution API configurada.
+INFO 2025-10-28 17:11:38 [app.services.gemini_service:49] ✅ Cliente Gemini inicializado com sucesso (chave índice 0).
+DEBUG 2025-10-28 17:11:38 [app.crud.crud_atendimento:170] Atendimento ativo (ID: 185, Status: Compra Confirmada - Aguardando Próximo Passo) encontrado para 554599861237.
+INFO 2025-10-28 17:11:38 [app.api.webhook:243] WBP Webhook: Mídia recebida (Tipo: audio, ID: 1649399136465164) para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUNBNUM1MDdFRjZFRjE2QTZCRDFGNjQ2RDMxNDlEMTEA. Baixando...
+DEBUG 2025-10-28 17:11:39 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=5.0 socket_options=None
+DEBUG 2025-10-28 17:11:39 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C681E7A090>
+DEBUG 2025-10-28 17:11:39 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000002C6826DC050> server_hostname='graph.facebook.com' timeout=5.0
+DEBUG 2025-10-28 17:11:39 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C68239F710>
+DEBUG 2025-10-28 17:11:39 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:11:39 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:11:39 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:11:39 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:11:39 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:11:39 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Encoding', b'gzip'), (b'ETag', b'"878ad5290ba895f7d7f6e315b78544f59dcd0e18"'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'Accept-Encoding'), (b'x-fb-aed', b'613'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'A5i9dCtmYzho_Fp2e05UCgy'), (b'x-fb-trace-id', b'FWNwPGDGSSJ'), (b'x-fb-rev', b'1029037448'), (b'X-FB-Debug', b'FLuwMBX59BoIrnk/4/IvqWzlcuu4sapfZ0Uk1pXdJT+JcuUIj0XJ58gkH/0XJqdLM3PodpQYSfdrWZqGJOAWxQ=='), (b'Date', b'Tue, 28 Oct 2025 20:11:38 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=30, rtx=0, c=10, mss=1392, tbw=3483, tp=-1, tpl=-1, uplat=316, ullat=0'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'296')])
+INFO 2025-10-28 17:11:39 [httpx:1740] HTTP Request: GET https://graph.facebook.com/v24.0/1649399136465164 "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:11:39 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:11:39 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:11:39 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:11:39 [httpcore.http11:87] response_closed.complete
+DEBUG 2025-10-28 17:11:39 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:11:39 [httpcore.connection:87] close.complete
+DEBUG 2025-10-28 17:11:39 [httpcore.connection:87] connect_tcp.started host='lookaside.fbsbx.com' port=443 local_address=None timeout=60.0 socket_options=None
+DEBUG 2025-10-28 17:11:39 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C6826E4910>
+DEBUG 2025-10-28 17:11:39 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000002C6826DC200> server_hostname='lookaside.fbsbx.com' timeout=60.0
+DEBUG 2025-10-28 17:11:39 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C6826E4810>
+DEBUG 2025-10-28 17:11:39 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:11:39 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:11:39 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:11:39 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:11:39 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:11:40 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'content-digest', b'adler32=2527399737'), (b'ETag', b'8272723308039845583'), (b'x-manifold-obj-blobsizebytes', b'4751'), (b'x-manifold-obj-canonicalpath', b'flat/1250903213745258'), (b'x-manifold-obj-ctime', b'1761682296'), (b'x-manifold-obj-entrytype', b'1'), (b'x-manifold-obj-expiresat', b'0'), (b'x-manifold-obj-isuserdata', b'0'), (b'x-manifold-obj-propertiesjson', b'{"blob_state":"created","__ctime":"1761682295"}'), (b'x-manifold-obj-symlinktarget', b''), (b'cross-origin-resource-policy', b'cross-origin'), (b'Accept-Ranges', b'bytes'), (b'Date', b'Tue, 28 Oct 2025 20:11:39 GMT'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Content-Disposition', b'inline;filename=File.ogg'), (b'Content-Type', b'audio/ogg'), (b'Connection', b'keep-alive'), (b'Content-Length', b'4591')])
+INFO 2025-10-28 17:11:40 [httpx:1740] HTTP Request: GET https://lookaside.fbsbx.com/whatsapp_business/attachments/?mid=1649399136465164&source=getMedia&ext=1761682598&hash=ARnumsyMSJb-7VevefzE2rBFxIcVydoO8nFN3J4OMKsXNA "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:11:40 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:11:40 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:11:40 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:11:40 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-28 17:11:40 [app.services.whatsapp_service:444] WBP: Mídia baixada (4591 bytes).
+DEBUG 2025-10-28 17:11:40 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:11:40 [httpcore.connection:87] close.complete
+INFO 2025-10-28 17:11:40 [app.api.webhook:254] WBP Webhook: Mídia 1649399136465164 ...
+INFO 2025-10-28 17:11:40 [uvicorn.access:476] 127.0.0.1:51233 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:11:40 [app.services.gemini_service:126] Iniciando transcrição/análise para mídia do tipo audio/ogg; codecs=opus
+INFO 2025-10-28 17:11:41 [uvicorn.access:476] 127.0.0.1:51233 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:43 [app.crud.crud_user:89] DEBUG: 1 token(s) deduzido(s) do utilizador 3. Restantes: 9870
+INFO 2025-10-28 17:11:43 [app.services.gemini_service:93] Token deduzido para o utilizador 3. Tokens restantes: 9870
+INFO 2025-10-28 17:11:43 [app.services.gemini_service:152] Transcrição/Análise gerada: 'Então, tenho uma dúvida....'
+INFO 2025-10-28 17:11:43 [app.api.webhook:349] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUNBNUM1MDdFRjZFRjE2QTZCRDFGNjQ2RDMxNDlEMTEA adicionada e status atualizado para Atendimento 185.
+INFO 2025-10-28 17:11:46 [uvicorn.access:476] 127.0.0.1:51246 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:50 [uvicorn.access:476] 127.0.0.1:51246 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:11:51 [uvicorn.access:476] 127.0.0.1:51246 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:11:52 [app.agent_manager:583] Agente para usuário 3 adicionado à fila de inicialização.
+INFO 2025-10-28 17:11:52 [uvicorn.access:476] 127.0.0.1:51251 - "POST /api/v1/agent/start HTTP/1.1" 200
+INFO 2025-10-28 17:11:52 [app.agent_manager:252] -> Agente de atendimento INICIADO para o utilizador 3.
+INFO 2025-10-28 17:11:56 [uvicorn.access:476] 127.0.0.1:51251 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:12:00 [uvicorn.access:476] 127.0.0.1:51251 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:12:01 [uvicorn.access:476] 127.0.0.1:51251 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:12:03 [app.agent_manager:314] Agente (User 3, API: official): Processando atendimento ID 185 (Contato: 554599861237)
+INFO 2025-10-28 17:12:03 [app.agent_manager:331] Agente: Atendimento 185 marcado como 'Gerando Resposta'.
+INFO 2025-10-28 17:12:03 [app.agent_manager:387] Agente (Oficial): Usando histórico do DB (131 msgs) para atendimento 185.
+INFO 2025-10-28 17:12:03 [app.agent_manager:422] Agente: Atendimento 185 apto para IA. Chamando Gemini...
+INFO 2025-10-28 17:12:06 [uvicorn.access:476] 127.0.0.1:51265 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:12:09 [app.crud.crud_user:89] DEBUG: 1 token(s) deduzido(s) do utilizador 3. Restantes: 9869
+INFO 2025-10-28 17:12:09 [app.services.gemini_service:93] Token deduzido para o utilizador 3. Tokens restantes: 9869
+INFO 2025-10-28 17:12:09 [app.agent_manager:464] Agente: Enviando parte 1/1 para 554599861237 (Atendimento 185)...
+DEBUG 2025-10-28 17:12:09 [app.services.whatsapp_service:469] WBP Send Payload to 554599861237: {"messaging_product": "whatsapp", "recipient_type": "individual", "to": "554599861237", "type": "text", "text": {"preview_url": false, "body": "\u00d3timo, Cristian! Pode me dizer qual \u00e9 a sua d\u00favida?"}}
+DEBUG 2025-10-28 17:12:09 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=30.0 socket_options=None
+DEBUG 2025-10-28 17:12:09 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C682711C10>
+DEBUG 2025-10-28 17:12:09 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000002C681E83DA0> server_hostname='graph.facebook.com' timeout=30.0
+DEBUG 2025-10-28 17:12:09 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C682720D50>
+DEBUG 2025-10-28 17:12:09 [httpcore.http11:87] send_request_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:12:09 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:12:09 [httpcore.http11:87] send_request_body.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:12:09 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:12:09 [httpcore.http11:87] receive_response_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:12:10 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'x-fb-aed', b'613'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'ANq7djwIbZtr7SMCd8hfWsx'), (b'x-fb-trace-id', b'ByjPHjVxPp7'), (b'x-fb-rev', b'1029037448'), (b'X-FB-Debug', b'YzmcCOX8bbi2pJU9WELnxQAcScoprQzypPMHobOxGRehNKlQclsosUn8MWg+63hTmB0HzOxT9o8WHdmL4GPFoA=='), (b'x-fb-server-load', b'9'), (b'Date', b'Tue, 28 Oct 2025 20:12:08 GMT'), (b'X-FB-Connection-Quality', b'GOOD; q=0.7, rtt=118, rtx=0, c=10, mss=1392, tbw=3483, tp=-1, tpl=-1, uplat=528, ullat=1'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'178')])
+INFO 2025-10-28 17:12:10 [httpx:1740] HTTP Request: POST https://graph.facebook.com/v24.0/806840102518876/messages "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:12:10 [httpcore.http11:87] receive_response_body.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:12:10 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:12:10 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:12:10 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-28 17:12:10 [app.services.whatsapp_service:482] WBP: Mensagem enviada para 554599861237 (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQjU5MzM4MEFFNjJEQ0I5OTdBAA==, Tentativa 1).
+DEBUG 2025-10-28 17:12:10 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:12:10 [httpcore.connection:87] close.complete
+INFO 2025-10-28 17:12:10 [app.agent_manager:471] Agente: Parte 1 enviada com sucesso para 185. (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQjU5MzM4MEFFNjJEQ0I5OTdBAA==)
+INFO 2025-10-28 17:12:10 [app.agent_manager:494] Agente: Verificando status atual do Atendimento 185 ANTES da atualização final.
+INFO 2025-10-28 17:12:10 [app.agent_manager:543] Agente: Atendimento 185 ainda 'Gerando Resposta'. Aplicando status: 'Aguardando Resposta'
+INFO 2025-10-28 17:12:10 [app.agent_manager:559] Agente: Atendimento 185 finalizado neste ciclo.
+INFO 2025-10-28 17:12:10 [uvicorn.access:476] 127.0.0.1:51265 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:12:10 [uvicorn.access:476] 2a03:2880:10ff:73:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:12:10 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-28 17:12:10 [app.crud.crud_atendimento:170] Atendimento ativo (ID: 185, Status: Aguardando Resposta) encontrado para 554599861237.
+INFO 2025-10-28 17:12:10 [app.api.webhook:243] WBP Webhook: Mídia recebida (Tipo: audio, ID: 1122599353420728) para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUNEQzJCQzczN0U4NUNFN0Y4N0Y1NUVBNTM2NjA4OUYA. Baixando...
+DEBUG 2025-10-28 17:12:10 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=5.0 socket_options=None
+DEBUG 2025-10-28 17:12:10 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C682B00590>
+DEBUG 2025-10-28 17:12:10 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000002C6823AC4D0> server_hostname='graph.facebook.com' timeout=5.0
+DEBUG 2025-10-28 17:12:10 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C6827F7F90>
+DEBUG 2025-10-28 17:12:10 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:10 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:12:10 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:10 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:12:10 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+INFO 2025-10-28 17:12:11 [uvicorn.access:476] 2a03:2880:10ff:3:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:12:11 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:12:11 [app.api.webhook:402] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQjU5MzM4MEFFNjJEQ0I5OTdBAA==.
+INFO 2025-10-28 17:12:11 [uvicorn.access:476] 2a03:2880:10ff:73:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:12:11 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:12:11 [app.api.webhook:402] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQjU5MzM4MEFFNjJEQ0I5OTdBAA==.
+DEBUG 2025-10-28 17:12:11 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Encoding', b'gzip'), (b'ETag', b'"1d7ba35a14cb2fe226b32fb43967ffbdeae6ea9b"'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'Accept-Encoding'), (b'x-fb-aed', b'613'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'AcQIqslmWuFHKOKnN0XYRRH'), (b'x-fb-trace-id', b'Gib0ysrZhEe'), (b'x-fb-rev', b'1029037448'), (b'X-FB-Debug', b'iymTFu9/RjYD017NCCi7U3ckpdm7W3w8S10CJJrdfB1d5mi2HvmVgeH6gSoFMxEd+XlLNUzRIlJTPApDgYl15g=='), (b'Date', b'Tue, 28 Oct 2025 20:12:09 GMT'), (b'X-FB-Connection-Quality', b'GOOD; q=0.7, rtt=103, rtx=0, c=10, mss=1392, tbw=3482, tp=-1, tpl=-1, uplat=291, ullat=0'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'299')])
+INFO 2025-10-28 17:12:11 [httpx:1740] HTTP Request: GET https://graph.facebook.com/v24.0/1122599353420728 "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:12:11 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:11 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:12:11 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:12:11 [httpcore.http11:87] response_closed.complete
+DEBUG 2025-10-28 17:12:11 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:12:11 [httpcore.connection:87] close.complete
+DEBUG 2025-10-28 17:12:11 [httpcore.connection:87] connect_tcp.started host='lookaside.fbsbx.com' port=443 local_address=None timeout=60.0 socket_options=None
+INFO 2025-10-28 17:12:11 [uvicorn.access:476] 2a03:2880:12ff:8:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:12:11 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:12:11 [app.api.webhook:402] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQjU5MzM4MEFFNjJEQ0I5OTdBAA==.
+INFO 2025-10-28 17:12:11 [uvicorn.access:476] 127.0.0.1:51265 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+DEBUG 2025-10-28 17:12:11 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C6827D5C10>
+DEBUG 2025-10-28 17:12:11 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000002C6827D88C0> server_hostname='lookaside.fbsbx.com' timeout=60.0
+DEBUG 2025-10-28 17:12:11 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C6827856D0>
+DEBUG 2025-10-28 17:12:11 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:11 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:12:11 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:11 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:12:11 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:12 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'content-digest', b'adler32=3257973204'), (b'ETag', b'7869524683383626441'), (b'x-manifold-obj-blobsizebytes', b'4492'), (b'x-manifold-obj-canonicalpath', b'flat/1756169371751993'), (b'x-manifold-obj-ctime', b'1761682328'), (b'x-manifold-obj-entrytype', b'1'), (b'x-manifold-obj-expiresat', b'0'), (b'x-manifold-obj-isuserdata', b'0'), (b'x-manifold-obj-propertiesjson', b'{"blob_state":"created","__ctime":"1761682328"}'), (b'x-manifold-obj-symlinktarget', b''), (b'cross-origin-resource-policy', b'cross-origin'), (b'Accept-Ranges', b'bytes'), (b'Date', b'Tue, 28 Oct 2025 20:12:11 GMT'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Content-Disposition', b'inline;filename=File.ogg'), (b'Content-Type', b'audio/ogg'), (b'Connection', b'keep-alive'), (b'Content-Length', b'4348')])
+INFO 2025-10-28 17:12:12 [httpx:1740] HTTP Request: GET https://lookaside.fbsbx.com/whatsapp_business/attachments/?mid=1122599353420728&source=getMedia&ext=1761682629&hash=ARmH8kNrRQ4BVqvqBCmJox5nUt-6WQtaVFh63S3P5WYTHw "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:12:12 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:12 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:12:12 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:12:12 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-28 17:12:12 [app.services.whatsapp_service:444] WBP: Mídia baixada (4348 bytes).
+DEBUG 2025-10-28 17:12:12 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:12:12 [httpcore.connection:87] close.complete
+INFO 2025-10-28 17:12:12 [app.api.webhook:254] WBP Webhook: Mídia 1122599353420728 ...
+INFO 2025-10-28 17:12:12 [app.services.gemini_service:126] Iniciando transcrição/análise para mídia do tipo audio/ogg; codecs=opus
+INFO 2025-10-28 17:12:14 [uvicorn.access:476] 2a03:2880:12ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:12:14 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-28 17:12:14 [app.crud.crud_atendimento:170] Atendimento ativo (ID: 185, Status: Aguardando Resposta) encontrado para 554599861237.
+INFO 2025-10-28 17:12:14 [app.api.webhook:243] WBP Webhook: Mídia recebida (Tipo: audio, ID: 1258254422735495) para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUM2ODFCMDBCMjdGREQwMEVBNDBCMTFDQjI5Mjg2MzIA. Baixando...
+DEBUG 2025-10-28 17:12:14 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=5.0 socket_options=None
+INFO 2025-10-28 17:12:14 [app.crud.crud_user:89] DEBUG: 1 token(s) deduzido(s) do utilizador 3. Restantes: 9868
+DEBUG 2025-10-28 17:12:14 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C682B3B450>
+DEBUG 2025-10-28 17:12:14 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000002C6827DA9F0> server_hostname='graph.facebook.com' timeout=5.0
+INFO 2025-10-28 17:12:14 [app.services.gemini_service:93] Token deduzido para o utilizador 3. Tokens restantes: 9868
+INFO 2025-10-28 17:12:14 [app.services.gemini_service:152] Transcrição/Análise gerada: 'Eu comprei um produto....'
+INFO 2025-10-28 17:12:14 [app.api.webhook:349] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUNEQzJCQzczN0U4NUNFN0Y4N0Y1NUVBNTM2NjA4OUYA adicionada e status atualizado para Atendimento 185.
+DEBUG 2025-10-28 17:12:14 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C6827103D0>
+DEBUG 2025-10-28 17:12:14 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:14 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:12:14 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:14 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:12:14 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:14 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Encoding', b'gzip'), (b'ETag', b'"5f1bf41aba1fb586c1f4f78e25f09378e1d6edd4"'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'Accept-Encoding'), (b'x-fb-aed', b'613'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'A1tZx0ArApgnWu-E0BFfT0O'), (b'x-fb-trace-id', b'Ez1BPgAw8SP'), (b'x-fb-rev', b'1029037448'), (b'X-FB-Debug', b'Mq0ANM/UPy/P8w632My4XQQ9HSO6EWTwUjszXu7Dhqi+S7T+WfiWmjEc4jmqgPiGpzIhjIGFWWSW+Ta6Eueznw=='), (b'Date', b'Tue, 28 Oct 2025 20:12:13 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=37, rtx=0, c=10, mss=1392, tbw=3435, tp=-1, tpl=-1, uplat=287, ullat=0'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'291')])
+INFO 2025-10-28 17:12:14 [httpx:1740] HTTP Request: GET https://graph.facebook.com/v24.0/1258254422735495 "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:12:14 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:14 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:12:14 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:12:14 [httpcore.http11:87] response_closed.complete
+DEBUG 2025-10-28 17:12:14 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:12:14 [httpcore.connection:87] close.complete
+DEBUG 2025-10-28 17:12:15 [httpcore.connection:87] connect_tcp.started host='lookaside.fbsbx.com' port=443 local_address=None timeout=60.0 socket_options=None
+DEBUG 2025-10-28 17:12:15 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C682B22AD0>
+DEBUG 2025-10-28 17:12:15 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000002C6827DB020> server_hostname='lookaside.fbsbx.com' timeout=60.0
+DEBUG 2025-10-28 17:12:15 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C680350A10>
+DEBUG 2025-10-28 17:12:15 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:15 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:12:15 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:15 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:12:15 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:15 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'content-digest', b'adler32=2061188545'), (b'ETag', b'7709964194606061410'), (b'x-manifold-obj-blobsizebytes', b'3729'), (b'x-manifold-obj-canonicalpath', b'flat/1489656118934368'), (b'x-manifold-obj-ctime', b'1761682331'), (b'x-manifold-obj-entrytype', b'1'), (b'x-manifold-obj-expiresat', b'0'), (b'x-manifold-obj-isuserdata', b'0'), (b'x-manifold-obj-propertiesjson', b'{"blob_state":"created","__ctime":"1761682331"}'), (b'x-manifold-obj-symlinktarget', b''), (b'cross-origin-resource-policy', b'cross-origin'), (b'Accept-Ranges', b'bytes'), (b'Date', b'Tue, 28 Oct 2025 20:12:14 GMT'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Content-Disposition', b'inline;filename=File.ogg'), (b'Content-Type', b'audio/ogg'), (b'Connection', b'keep-alive'), (b'Content-Length', b'3601')])
+INFO 2025-10-28 17:12:15 [httpx:1740] HTTP Request: GET https://lookaside.fbsbx.com/whatsapp_business/attachments/?mid=1258254422735495&source=getMedia&ext=1761682633&hash=ARmLUgr2N2FoTWKmtv6Fr9t4bba781ZIBfJ8m-8clhqt7g "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:12:15 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:15 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:12:15 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:12:15 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-28 17:12:15 [app.services.whatsapp_service:444] WBP: Mídia baixada (3601 bytes).
+DEBUG 2025-10-28 17:12:15 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:12:15 [httpcore.connection:87] close.complete
+INFO 2025-10-28 17:12:15 [app.api.webhook:254] WBP Webhook: Mídia 1258254422735495 ...
+INFO 2025-10-28 17:12:15 [app.services.gemini_service:126] Iniciando transcrição/análise para mídia do tipo audio/ogg; codecs=opus
+INFO 2025-10-28 17:12:16 [uvicorn.access:476] 127.0.0.1:51265 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:12:17 [uvicorn.access:476] 2a03:2880:22ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:12:17 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-28 17:12:17 [app.crud.crud_atendimento:170] Atendimento ativo (ID: 185, Status: Mensagem Recebida) encontrado para 554599861237.
+INFO 2025-10-28 17:12:17 [app.api.webhook:243] WBP Webhook: Mídia recebida (Tipo: audio, ID: 832337316154295) para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUM3MEY4ODc2NzJBNzA3QTJCMEU4Q0JDRjQ1MjM0NjcA. Baixando...
+DEBUG 2025-10-28 17:12:17 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=5.0 socket_options=None
+DEBUG 2025-10-28 17:12:17 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C682B4EC10>
+DEBUG 2025-10-28 17:12:17 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000002C6827D9C70> server_hostname='graph.facebook.com' timeout=5.0
+DEBUG 2025-10-28 17:12:17 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C682B4CB90>
+DEBUG 2025-10-28 17:12:17 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:17 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:12:17 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:17 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:12:17 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+INFO 2025-10-28 17:12:17 [app.crud.crud_user:89] DEBUG: 1 token(s) deduzido(s) do utilizador 3. Restantes: 9867
+INFO 2025-10-28 17:12:17 [app.services.gemini_service:93] Token deduzido para o utilizador 3. Tokens restantes: 9867
+INFO 2025-10-28 17:12:17 [app.services.gemini_service:152] Transcrição/Análise gerada: 'tudo certo com o Rio Negro....'
+INFO 2025-10-28 17:12:17 [app.api.webhook:349] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUM2ODFCMDBCMjdGREQwMEVBNDBCMTFDQjI5Mjg2MzIA adicionada e status atualizado para Atendimento 185.
+DEBUG 2025-10-28 17:12:18 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Encoding', b'gzip'), (b'ETag', b'"763cf17b489f625422557d5eb2615aa1a085d612"'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'Accept-Encoding'), (b'x-fb-aed', b'613'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'AYwTWHEWqWUUN2yEgMbX1xy'), (b'x-fb-trace-id', b'GaIDVjEiEin'), (b'x-fb-rev', b'1029037448'), (b'X-FB-Debug', b'kzglivqHEED2SrOvFqO4QCfsUb5ijfp0EiQ3ek7SnQ9HMUzVzu6i7irCEQ+dy/a46q1uimpBB7oWNZVEcxNaJQ=='), (b'Date', b'Tue, 28 Oct 2025 20:12:16 GMT'), (b'X-FB-Connection-Quality', b'GOOD; q=0.7, rtt=121, rtx=0, c=10, mss=1392, tbw=3483, tp=-1, tpl=-1, uplat=278, ullat=0'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'293')])
+INFO 2025-10-28 17:12:18 [httpx:1740] HTTP Request: GET https://graph.facebook.com/v24.0/832337316154295 "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:12:18 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:18 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:12:18 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:12:18 [httpcore.http11:87] response_closed.complete
+DEBUG 2025-10-28 17:12:18 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:12:18 [httpcore.connection:87] close.complete
+DEBUG 2025-10-28 17:12:18 [httpcore.connection:87] connect_tcp.started host='lookaside.fbsbx.com' port=443 local_address=None timeout=60.0 socket_options=None
+DEBUG 2025-10-28 17:12:18 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C6827F7790>
+DEBUG 2025-10-28 17:12:18 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000002C6827DBC80> server_hostname='lookaside.fbsbx.com' timeout=60.0
+DEBUG 2025-10-28 17:12:18 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C6827F7510>
+DEBUG 2025-10-28 17:12:18 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:18 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:12:18 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:18 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:12:18 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:19 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'content-digest', b'adler32=3569456581'), (b'ETag', b'-9068030505629115984'), (b'x-manifold-obj-blobsizebytes', b'3365'), (b'x-manifold-obj-canonicalpath', b'flat/1143422117919265'), (b'x-manifold-obj-ctime', b'1761682334'), (b'x-manifold-obj-entrytype', b'1'), (b'x-manifold-obj-expiresat', b'0'), (b'x-manifold-obj-isuserdata', b'0'), (b'x-manifold-obj-propertiesjson', b'{"blob_state":"created","__ctime":"1761682334"}'), (b'x-manifold-obj-symlinktarget', b''), (b'cross-origin-resource-policy', b'cross-origin'), (b'Accept-Ranges', b'bytes'), (b'Date', b'Tue, 28 Oct 2025 20:12:17 GMT'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Content-Disposition', b'inline;filename=File.ogg'), (b'Content-Type', b'audio/ogg'), (b'Connection', b'keep-alive'), (b'Content-Length', b'3253')])
+INFO 2025-10-28 17:12:19 [httpx:1740] HTTP Request: GET https://lookaside.fbsbx.com/whatsapp_business/attachments/?mid=832337316154295&source=getMedia&ext=1761682636&hash=ARlQ89AT96o_euif95AzQD4nZmivi-vurRb3oEhBNBCVSQ "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:12:19 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-28 17:12:19 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:12:19 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:12:19 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-28 17:12:19 [app.services.whatsapp_service:444] WBP: Mídia baixada (3253 bytes).
+DEBUG 2025-10-28 17:12:19 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:12:19 [httpcore.connection:87] close.complete
+INFO 2025-10-28 17:12:19 [app.api.webhook:254] WBP Webhook: Mídia 832337316154295 ...
+INFO 2025-10-28 17:12:19 [app.services.gemini_service:126] Iniciando transcrição/análise para mídia do tipo audio/ogg; codecs=opus
+INFO 2025-10-28 17:12:20 [uvicorn.access:476] 127.0.0.1:51265 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:12:21 [uvicorn.access:476] 127.0.0.1:51265 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:12:21 [app.crud.crud_user:89] DEBUG: 1 token(s) deduzido(s) do utilizador 3. Restantes: 9866
+INFO 2025-10-28 17:12:21 [app.services.gemini_service:93] Token deduzido para o utilizador 3. Tokens restantes: 9866
+INFO 2025-10-28 17:12:21 [app.services.gemini_service:152] Transcrição/Análise gerada: 'Onde é que ele tá?...'
+INFO 2025-10-28 17:12:21 [app.api.webhook:349] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhggQUM3MEY4ODc2NzJBNzA3QTJCMEU4Q0JDRjQ1MjM0NjcA adicionada e status atualizado para Atendimento 185.
+INFO 2025-10-28 17:12:26 [uvicorn.access:476] 127.0.0.1:51265 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:12:30 [uvicorn.access:476] 127.0.0.1:51265 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:12:31 [uvicorn.access:476] 127.0.0.1:51265 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:12:36 [uvicorn.access:476] 127.0.0.1:51310 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 17:12:38 [uvicorn.access:476] 127.0.0.1:51512 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:12:38 [uvicorn.access:476] 127.0.0.1:51513 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:12:38 [uvicorn.access:476] 127.0.0.1:51310 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:12:38 [uvicorn.access:476] 127.0.0.1:51514 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:12:38 [uvicorn.access:476] 127.0.0.1:51513 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:12:39 [app.agent_manager:314] Agente (User 3, API: official): Processando atendimento ID 185 (Contato: 554599861237)
+INFO 2025-10-28 17:12:39 [app.agent_manager:331] Agente: Atendimento 185 marcado como 'Gerando Resposta'.
+INFO 2025-10-28 17:12:39 [app.agent_manager:387] Agente (Oficial): Usando histórico do DB (135 msgs) para atendimento 185.
+INFO 2025-10-28 17:12:39 [app.agent_manager:422] Agente: Atendimento 185 apto para IA. Chamando Gemini...
+INFO 2025-10-28 17:12:40 [uvicorn.access:476] 127.0.0.1:51513 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:12:43 [uvicorn.access:476] 127.0.0.1:51520 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:12:43 [uvicorn.access:476] 127.0.0.1:51519 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:12:48 [uvicorn.access:476] 127.0.0.1:51523 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:12:48 [uvicorn.access:476] 127.0.0.1:51519 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:12:50 [uvicorn.access:476] 127.0.0.1:51519 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:12:52 [app.crud.crud_user:89] DEBUG: 1 token(s) deduzido(s) do utilizador 3. Restantes: 9865
+INFO 2025-10-28 17:12:52 [app.services.gemini_service:93] Token deduzido para o utilizador 3. Tokens restantes: 9865
+INFO 2025-10-28 17:12:52 [app.agent_manager:464] Agente: Enviando parte 1/3 para 554599861237 (Atendimento 185)...
+DEBUG 2025-10-28 17:12:52 [app.services.whatsapp_service:469] WBP Send Payload to 554599861237: {"messaging_product": "whatsapp", "recipient_type": "individual", "to": "554599861237", "type": "text", "text": {"preview_url": false, "body": "Cristian, para te ajudar com o rastreamento do seu pedido, vou te transferir para o nosso setor de P\u00f3s Venda. Eles ter\u00e3o as informa\u00e7\u00f5es mais precisas sobre onde seu produto est\u00e1."}}
+DEBUG 2025-10-28 17:12:52 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=30.0 socket_options=None
+DEBUG 2025-10-28 17:12:53 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C6827E9B90>
+DEBUG 2025-10-28 17:12:53 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000002C6826DF2F0> server_hostname='graph.facebook.com' timeout=30.0
+DEBUG 2025-10-28 17:12:53 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C6827F7950>
+DEBUG 2025-10-28 17:12:53 [httpcore.http11:87] send_request_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:12:53 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:12:53 [httpcore.http11:87] send_request_body.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:12:53 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:12:53 [httpcore.http11:87] receive_response_headers.started request=<Request [b'POST']>
+INFO 2025-10-28 17:12:53 [uvicorn.access:476] 127.0.0.1:51527 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:12:53 [uvicorn.access:476] 127.0.0.1:51519 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+DEBUG 2025-10-28 17:12:53 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'x-fb-aed', b'613'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'AgovLtL5DIHSv8hejNbTeZm'), (b'x-fb-trace-id', b'G0WiIuitQVk'), (b'x-fb-rev', b'1029037448'), (b'X-FB-Debug', b'PLk2dXYPAzXjU09jx2SCDCpYRhiW1Kfrqc1QawgKoh2SsrVQ6DoiVAOqtY4y4EpGQFNR6M9kaL0SQpieoL29JQ=='), (b'x-fb-server-load', b'9'), (b'Date', b'Tue, 28 Oct 2025 20:12:52 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=30, rtx=0, c=10, mss=1392, tbw=3482, tp=-1, tpl=-1, uplat=437, ullat=0'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'178')])
+INFO 2025-10-28 17:12:53 [httpx:1740] HTTP Request: POST https://graph.facebook.com/v24.0/806840102518876/messages "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:12:53 [httpcore.http11:87] receive_response_body.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:12:53 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:12:53 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:12:53 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-28 17:12:53 [app.services.whatsapp_service:482] WBP: Mensagem enviada para 554599861237 (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQzJBQTgzRDc0NEQwNjVFNjczAA==, Tentativa 1).
+DEBUG 2025-10-28 17:12:53 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:12:53 [httpcore.connection:87] close.complete
+INFO 2025-10-28 17:12:53 [app.agent_manager:471] Agente: Parte 1 enviada com sucesso para 185. (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQzJBQTgzRDc0NEQwNjVFNjczAA==)
+INFO 2025-10-28 17:12:54 [uvicorn.access:476] 2a03:2880:21ff:42:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:12:54 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:12:54 [app.api.webhook:402] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQzJBQTgzRDc0NEQwNjVFNjczAA==.
+INFO 2025-10-28 17:12:55 [uvicorn.access:476] 2a03:2880:21ff:4a:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:12:55 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:12:55 [app.api.webhook:402] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQzJBQTgzRDc0NEQwNjVFNjczAA==.
+INFO 2025-10-28 17:12:55 [uvicorn.access:476] 2a03:2880:10ff:44:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:12:55 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:12:55 [app.api.webhook:402] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQzJBQTgzRDc0NEQwNjVFNjczAA==.
+INFO 2025-10-28 17:12:57 [app.agent_manager:464] Agente: Enviando parte 2/3 para 554599861237 (Atendimento 185)...
+DEBUG 2025-10-28 17:12:57 [app.services.whatsapp_service:469] WBP Send Payload to 554599861237: {"messaging_product": "whatsapp", "recipient_type": "individual", "to": "554599861237", "type": "text", "text": {"preview_url": false, "body": "Nosso hor\u00e1rio de atendimento \u00e9 de Segunda a Sexta, das 09:00 \u00e0s 17:00."}}
+DEBUG 2025-10-28 17:12:57 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=30.0 socket_options=None
+DEBUG 2025-10-28 17:12:57 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C682B601D0>
+DEBUG 2025-10-28 17:12:57 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000002C6826DF5C0> server_hostname='graph.facebook.com' timeout=30.0
+DEBUG 2025-10-28 17:12:57 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C6827C8690>
+DEBUG 2025-10-28 17:12:57 [httpcore.http11:87] send_request_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:12:57 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:12:57 [httpcore.http11:87] send_request_body.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:12:57 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:12:57 [httpcore.http11:87] receive_response_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:12:58 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'x-fb-aed', b'613'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'Au5HXrJwe1_4wvKPupqsrSl'), (b'x-fb-trace-id', b'HdOXrzbW1Qg'), (b'x-fb-rev', b'1029037448'), (b'X-FB-Debug', b'Y2Vqf9InLC1fyqaKpp1njlNOm8F0LwYwr+Hafx14Csnu/6dxrnzT89WNnSYSns/fZ8FHVpBQsDxMo4+MXIMxoA=='), (b'x-fb-server-load', b'13'), (b'Date', b'Tue, 28 Oct 2025 20:12:56 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=31, rtx=1, c=10, mss=1392, tbw=3482, tp=-1, tpl=-1, uplat=506, ullat=0'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'178')])
+INFO 2025-10-28 17:12:58 [httpx:1740] HTTP Request: POST https://graph.facebook.com/v24.0/806840102518876/messages "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:12:58 [httpcore.http11:87] receive_response_body.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:12:58 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:12:58 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:12:58 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-28 17:12:58 [app.services.whatsapp_service:482] WBP: Mensagem enviada para 554599861237 (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMkVEREU1Rjc5RjcxM0U2RUNGAA==, Tentativa 1).
+DEBUG 2025-10-28 17:12:58 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:12:58 [httpcore.connection:87] close.complete
+INFO 2025-10-28 17:12:58 [app.agent_manager:471] Agente: Parte 2 enviada com sucesso para 185. (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMkVEREU1Rjc5RjcxM0U2RUNGAA==)
+INFO 2025-10-28 17:12:58 [uvicorn.access:476] 127.0.0.1:51538 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 17:12:58 [uvicorn.access:476] 127.0.0.1:51519 - "GET /api/v1/atendimentos/?search=554599861237&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 17:12:59 [uvicorn.access:476] 2a03:2880:10ff:4b:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:12:59 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:12:59 [app.api.webhook:402] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMkVEREU1Rjc5RjcxM0U2RUNGAA==.
+INFO 2025-10-28 17:12:59 [uvicorn.access:476] 2a03:2880:10ff:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:12:59 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:12:59 [app.api.webhook:402] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMkVEREU1Rjc5RjcxM0U2RUNGAA==.
+INFO 2025-10-28 17:12:59 [uvicorn.access:476] 2a03:2880:10ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:12:59 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:12:59 [app.api.webhook:402] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMkVEREU1Rjc5RjcxM0U2RUNGAA==.
+INFO 2025-10-28 17:13:00 [uvicorn.access:476] 127.0.0.1:51519 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:13:01 [app.agent_manager:464] Agente: Enviando parte 3/3 para 554599861237 (Atendimento 185)...
+DEBUG 2025-10-28 17:13:01 [app.services.whatsapp_service:469] WBP Send Payload to 554599861237: {"messaging_product": "whatsapp", "recipient_type": "individual", "to": "554599861237", "type": "text", "text": {"preview_url": false, "body": "Por favor, aguarde um momento que um especialista j\u00e1 vir\u00e1 te atender!"}}
+DEBUG 2025-10-28 17:13:01 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=30.0 socket_options=None
+INFO 2025-10-28 17:13:02 [uvicorn.access:476] 127.0.0.1:51554 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:13:02 [uvicorn.access:476] 127.0.0.1:51555 - "OPTIONS /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:13:02 [uvicorn.access:476] 127.0.0.1:51556 - "OPTIONS /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:13:02 [uvicorn.access:476] 127.0.0.1:51557 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:13:02 [uvicorn.access:476] 127.0.0.1:51554 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:13:02 [uvicorn.access:476] 127.0.0.1:51556 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:13:02 [uvicorn.access:476] 127.0.0.1:51554 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+DEBUG 2025-10-28 17:13:02 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C682778750>
+DEBUG 2025-10-28 17:13:02 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000002C6826DF5C0> server_hostname='graph.facebook.com' timeout=30.0
+DEBUG 2025-10-28 17:13:02 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002C6827B5E90>
+DEBUG 2025-10-28 17:13:02 [httpcore.http11:87] send_request_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:13:02 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-28 17:13:02 [httpcore.http11:87] send_request_body.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:13:02 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-28 17:13:02 [httpcore.http11:87] receive_response_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:13:03 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'x-fb-aed', b'613'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'AycUBypvXxCaEMv5AX5_Wfy'), (b'x-fb-trace-id', b'FB40n7MP5IX'), (b'x-fb-rev', b'1029037448'), (b'X-FB-Debug', b'Z8Hh+CHNwcYSvFp/B7PKQt4dAjFBssx8HRpqPX6QK+ma1AfxyFM0XIDgttXCsbFHosJqWBul9E+/6Sp9xTHGHw=='), (b'Date', b'Tue, 28 Oct 2025 20:13:02 GMT'), (b'X-FB-Connection-Quality', b'GOOD; q=0.7, rtt=113, rtx=0, c=10, mss=1392, tbw=3482, tp=-1, tpl=-1, uplat=540, ullat=2'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'178')])
+INFO 2025-10-28 17:13:03 [httpx:1740] HTTP Request: POST https://graph.facebook.com/v24.0/806840102518876/messages "HTTP/1.1 200 OK"
+DEBUG 2025-10-28 17:13:03 [httpcore.http11:87] receive_response_body.started request=<Request [b'POST']>
+DEBUG 2025-10-28 17:13:03 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-28 17:13:03 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-28 17:13:03 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-28 17:13:03 [app.services.whatsapp_service:482] WBP: Mensagem enviada para 554599861237 (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSODk1OUU5QTdEMzRDNjdFN0RCAA==, Tentativa 1).
+DEBUG 2025-10-28 17:13:03 [httpcore.connection:87] close.started
+DEBUG 2025-10-28 17:13:03 [httpcore.connection:87] close.complete
+INFO 2025-10-28 17:13:03 [app.agent_manager:471] Agente: Parte 3 enviada com sucesso para 185. (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSODk1OUU5QTdEMzRDNjdFN0RCAA==)
+INFO 2025-10-28 17:13:03 [app.agent_manager:494] Agente: Verificando status atual do Atendimento 185 ANTES da atualização final.
+INFO 2025-10-28 17:13:03 [app.agent_manager:543] Agente: Atendimento 185 ainda 'Gerando Resposta'. Aplicando status: 'Atendente Chamado'
+INFO 2025-10-28 17:13:03 [app.agent_manager:559] Agente: Atendimento 185 finalizado neste ciclo.
+INFO 2025-10-28 17:13:04 [uvicorn.access:476] 2a03:2880:22ff:44:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:13:04 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:13:04 [app.api.webhook:402] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSODk1OUU5QTdEMzRDNjdFN0RCAA==.
+INFO 2025-10-28 17:13:04 [uvicorn.access:476] 2a03:2880:10ff:9:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:13:04 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:13:04 [app.api.webhook:402] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSODk1OUU5QTdEMzRDNjdFN0RCAA==.
+INFO 2025-10-28 17:13:04 [uvicorn.access:476] 2a03:2880:12ff:72:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-28 17:13:04 [app.api.webhook:369] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-28 17:13:04 [app.api.webhook:402] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSODk1OUU5QTdEMzRDNjdFN0RCAA==.
+INFO 2025-10-28 17:13:07 [uvicorn.access:476] 127.0.0.1:51554 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:13:07 [uvicorn.access:476] 127.0.0.1:51556 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:13:10 [uvicorn.access:476] 127.0.0.1:51556 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:13:12 [uvicorn.access:476] 127.0.0.1:51569 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:13:12 [uvicorn.access:476] 127.0.0.1:51570 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:13:17 [uvicorn.access:476] 127.0.0.1:51570 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:13:17 [uvicorn.access:476] 127.0.0.1:51576 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:13:20 [uvicorn.access:476] 127.0.0.1:51576 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:13:22 [uvicorn.access:476] 127.0.0.1:51579 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:13:22 [uvicorn.access:476] 127.0.0.1:51580 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-28 17:13:27 [uvicorn.access:476] 127.0.0.1:51580 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 17:13:27 [uvicorn.access:476] 127.0.0.1:51584 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
