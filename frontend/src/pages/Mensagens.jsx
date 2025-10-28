@@ -206,7 +206,7 @@ const ContactItem = ({ atendimento, isSelected, onSelect }) => {
         >
             <img
                 className="w-12 h-12 rounded-full mr-3 flex-shrink-0 mt-3"
-                src={`https://i.sstatic.net/Hq8za.jpg`}
+                src={`https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSTip18a5vyLJJXYZgGE44WTFaislpkAcvQURSqLik0tsv8DuPggkyib-NrlShXqM2mO9k&usqp=CAU`}
                 alt="Avatar"
             />
             <div className="flex-1 min-w-0 border-gray-100 pt-3">
