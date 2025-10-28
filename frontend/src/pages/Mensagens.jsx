@@ -225,7 +225,7 @@ const ContactItem = ({ atendimento, isSelected, onSelect }) => {
 // --- SUB-COMPONENTE: Conteúdo da Mensagem (MODIFICADO PARA BOTÕES) ---
 const MessageContent = ({ msg, atendimentoId, onViewMedia, isDownloading }) => {
     // Props adicionadas: onViewMedia, isDownloading
-    
+
     // --- FUNÇÃO PARA GERAR URL DE DOWNLOAD ---
     const getDownloadUrl = (mediaId) => {
         // Certifique-se que a base da URL está correta para sua API
@@ -237,7 +237,7 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, isDownloading }) => {
     // Verifica se a mensagem tem um status de 'failed'/'error' vindo do backend (via webhook)
     // OU se o tipo local é 'error' (para falhas de envio imediatas no frontend)
     if (msg.status === 'failed' || msg.status === 'error' || msg.type === 'error') {
-        
+
         // Tenta montar uma mensagem de erro descritiva
         let errorMessage = 'Falha no envio'; // Padrão
         if (msg.error_title) {
@@ -245,15 +245,15 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, isDownloading }) => {
         } else if (msg.content) {
             errorMessage = msg.content; // Erro do frontend (ex: 'Falha ao enviar mensagem.')
         }
-        
+
         const errorCode = msg.error_code ? ` (Cód: ${msg.error_code})` : '';
-        
+
         return (
             <div className="flex items-center gap-2 text-red-600">
                 <AlertTriangle size={16} />
                 <span className="text-sm">
                     {errorMessage}{errorCode}
-                    
+
                     {/* Se a falha foi em uma mensagem que *tinha* conteúdo, mostra abaixo */}
                     {msg.type !== 'error' && msg.content && (
                         <p className="text-xs text-gray-500 italic mt-1">Mensagem original: "{msg.content}"</p>
@@ -432,12 +432,12 @@ const ChatBody = ({ atendimento, onViewMedia, isDownloadingMedia }) => {
             className="flex-1 p-4 md:p-6 overflow-y-auto space-y-3 bg-gray-100"
             style={{
                 backgroundImage: `
-                linear-gradient(rgba(173, 216, 230, 0.6), rgba(173, 216, 230, 0.6)),
+                linear-gradient(rgba(173, 216, 230, 0.6), rgba(173, 216, 230, 0.9)),
                 url('https://static.vecteezy.com/system/resources/previews/021/736/713/non_2x/doodle-lines-arrows-circles-and-curves-hand-drawn-design-elements-isolated-on-white-background-for-infographic-illustration-vector.jpg')
                 `,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                backgroundBlendMode: 'overlay'  
+                backgroundBlendMode: 'overlay'
             }}
         >
             {messages.map((msg) => {
@@ -819,7 +819,25 @@ function Atendimentos() {
                 api.get('/atendimentos/')
             ]);
             setCurrentUser(userRes.data);
-            setAtendimentos(atendimentosRes.data);
+
+            // --- CORREÇÃO ---
+            const data = atendimentosRes.data;
+
+            // Verifica se a resposta JÁ É um array
+            if (Array.isArray(data)) {
+                setAtendimentos(data);
+            }
+            // Se não for, verifica se é um objeto com a propriedade 'data' (ex: { data: [...] })
+            else if (data && Array.isArray(data.data)) {
+                setAtendimentos(data.data);
+            }
+            // Se for qualquer outra coisa, seta um array vazio para evitar o crash
+            else {
+                console.warn("A API /atendimentos/ não retornou um array.", data);
+                setAtendimentos([]);
+            }
+            // --- FIM DA CORREÇÃO ---
+
         } catch (err) {
             console.error("Erro ao carregar dados:", err);
             setError('Não foi possível carregar os dados. Verifique a sua conexão.');
