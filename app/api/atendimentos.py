@@ -1,7 +1,7 @@
 import logging
 import json
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, Body, Response
+from fastapi import APIRouter, Depends, HTTPException, Body, Response, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
@@ -12,6 +12,9 @@ from fastapi import (
 )
 from starlette.responses import RedirectResponse
 import httpx
+
+from sqlalchemy import select, func
+from sqlalchemy.orm import joinedload
 
 from app.api import dependencies
 from app.db.database import get_db
@@ -24,14 +27,61 @@ from app.services.gemini_service import GeminiService, get_gemini_service
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-@router.get("/", response_model=List[schemas.Atendimento])
+@router.get("/", response_model=schemas.AtendimentoPage)
 async def get_atendimentos(
     db: AsyncSession = Depends(get_db),
-    current_user: models.User = Depends(dependencies.get_current_active_user)
+    current_user: models.User = Depends(dependencies.get_current_active_user),
+    # --- 5. ADICIONAR PARÂMETROS DE PAGINAÇÃO E FILTRO ---
+    search: Optional[str] = Query(None, description="Termo de busca para contato, status ou observação"),
+    page: int = Query(1, ge=1, description="Número da página"),
+    limit: int = Query(20, ge=1, le=100, description="Itens por página")
+    # ------------------------------------------------------
 ):
     """Lista todos os atendimentos (com contatos) para o usuário."""
-    # Usando a função que você já tinha no crud_atendimento.py
-    return await crud_atendimento.get_atendimentos_by_user(db, user_id=current_user.id)
+    
+    # --- 6. SUBSTITUIR A LÓGICA ANTIGA PELA NOVA LÓGICA DE QUERY ---
+    
+    # Calcular offset
+    skip = (page - 1) * limit
+
+    # Query base com join no contato
+    stmt_base = (
+        select(models.Atendimento)
+        .join(models.Atendimento.contact) # Faz o join
+        .where(models.Atendimento.user_id == current_user.id)
+    )
+
+    # Aplicar filtro de busca se existir
+    if search:
+        search_term = f"%{search.lower()}%"
+        stmt_base = stmt_base.where(
+            (models.Contact.whatsapp.ilike(search_term)) |
+            (models.Atendimento.status.ilike(search_term)) |
+            (models.Atendimento.observacoes.ilike(search_term))
+        )
+
+    # Query para contar o total de itens (com filtro, mas sem paginação)
+    stmt_count = select(func.count()).select_from(stmt_base.subquery())
+    total_result = await db.execute(stmt_count)
+    total = total_result.scalar() or 0
+
+    # Query para buscar os dados da página (com filtro, ordenação e paginação)
+    stmt_data = (
+        stmt_base
+        .order_by(models.Atendimento.updated_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .options(
+            joinedload(models.Atendimento.contact), 
+            joinedload(models.Atendimento.active_persona) # <-- ADICIONAR ESTA LINHA
+        )
+    )
+    
+    data_result = await db.execute(stmt_data)
+    items = data_result.scalars().unique().all() # .unique() para evitar duplicatas do join
+
+    return {"total": total, "items": items}
+    # -----------------------------------------------------------------
 
 @router.put("/{atendimento_id}", response_model=schemas.Atendimento)
 async def update_atendimento(

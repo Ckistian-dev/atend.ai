@@ -77,6 +77,13 @@ class Atendimento(BaseModel):
         "from_attributes": True
     }
 
+class AtendimentoPage(BaseModel):
+    total: int
+    items: List[Atendimento]
+
+    class Config:
+        from_attributes = True 
+
 # --- Schemas de Usuário ---
 class UserBase(BaseModel):
     email: EmailStr

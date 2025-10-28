@@ -4416,3 +4416,1134 @@ INFO 2025-10-28 15:20:12 [uvicorn.access:476] 127.0.0.1:59286 - "GET /api/v1/aut
 INFO 2025-10-28 15:20:12 [uvicorn.access:476] 127.0.0.1:59291 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
 INFO 2025-10-28 15:20:17 [uvicorn.access:476] 127.0.0.1:59291 - "GET /api/v1/auth/me HTTP/1.1" 200
 INFO 2025-10-28 15:20:17 [uvicorn.access:476] 127.0.0.1:59292 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:21:01 [uvicorn.access:476] 127.0.0.1:59301 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:21:01 [uvicorn.access:476] 127.0.0.1:59302 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:21:01 [uvicorn.access:476] 127.0.0.1:59303 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:21:43 [uvicorn.access:476] 127.0.0.1:59315 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:21:43 [uvicorn.access:476] 127.0.0.1:59316 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:21:43 [uvicorn.access:476] 127.0.0.1:59317 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:21:46 [uvicorn.access:476] 127.0.0.1:59317 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:21:46 [uvicorn.access:476] 127.0.0.1:59316 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:21:49 [uvicorn.access:476] 127.0.0.1:59316 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:21:51 [uvicorn.access:476] 127.0.0.1:59316 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:21:51 [uvicorn.access:476] 127.0.0.1:59322 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:21:56 [uvicorn.access:476] 127.0.0.1:59322 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:21:56 [uvicorn.access:476] 127.0.0.1:59325 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:21:59 [uvicorn.access:476] 127.0.0.1:59325 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:01 [uvicorn.access:476] 127.0.0.1:59325 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:01 [uvicorn.access:476] 127.0.0.1:59322 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:22:06 [uvicorn.access:476] 127.0.0.1:59328 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:06 [uvicorn.access:476] 127.0.0.1:59329 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:22:09 [uvicorn.access:476] 127.0.0.1:59329 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:11 [uvicorn.access:476] 127.0.0.1:59329 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:11 [uvicorn.access:476] 127.0.0.1:59330 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:22:16 [uvicorn.access:476] 127.0.0.1:59330 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:16 [uvicorn.access:476] 127.0.0.1:59332 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:22:19 [uvicorn.access:476] 127.0.0.1:59332 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:21 [uvicorn.access:476] 127.0.0.1:59332 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:21 [uvicorn.access:476] 127.0.0.1:59333 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:22:26 [uvicorn.access:476] 127.0.0.1:59333 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:26 [uvicorn.access:476] 127.0.0.1:59334 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:22:29 [uvicorn.access:476] 127.0.0.1:59334 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:31 [uvicorn.access:476] 127.0.0.1:59334 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:31 [uvicorn.access:476] 127.0.0.1:59335 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:22:36 [uvicorn.access:476] 127.0.0.1:59335 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:36 [uvicorn.access:476] 127.0.0.1:59335 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:36 [uvicorn.access:476] 127.0.0.1:59337 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:22:39 [uvicorn.access:476] 127.0.0.1:59337 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:41 [uvicorn.access:476] 127.0.0.1:59337 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:41 [uvicorn.access:476] 127.0.0.1:59338 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:22:46 [uvicorn.access:476] 127.0.0.1:59338 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:46 [uvicorn.access:476] 127.0.0.1:59339 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:22:49 [uvicorn.access:476] 127.0.0.1:59339 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:51 [uvicorn.access:476] 127.0.0.1:59339 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:51 [uvicorn.access:476] 127.0.0.1:59343 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:22:56 [uvicorn.access:476] 127.0.0.1:59343 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:22:56 [uvicorn.access:476] 127.0.0.1:59344 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:22:59 [uvicorn.access:476] 127.0.0.1:59344 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:01 [uvicorn.access:476] 127.0.0.1:59344 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:01 [uvicorn.access:476] 127.0.0.1:59343 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:23:06 [uvicorn.access:476] 127.0.0.1:59343 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:06 [uvicorn.access:476] 127.0.0.1:59347 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:23:09 [uvicorn.access:476] 127.0.0.1:59347 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:11 [uvicorn.access:476] 127.0.0.1:59347 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:11 [uvicorn.access:476] 127.0.0.1:59351 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:23:16 [uvicorn.access:476] 127.0.0.1:59351 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:16 [uvicorn.access:476] 127.0.0.1:59358 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:23:19 [uvicorn.access:476] 127.0.0.1:59358 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:21 [uvicorn.access:476] 127.0.0.1:59358 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:21 [uvicorn.access:476] 127.0.0.1:59359 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:23:26 [uvicorn.access:476] 127.0.0.1:59359 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:26 [uvicorn.access:476] 127.0.0.1:59360 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:23:29 [uvicorn.access:476] 127.0.0.1:59360 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:31 [uvicorn.access:476] 127.0.0.1:59360 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:31 [uvicorn.access:476] 127.0.0.1:59362 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:23:36 [uvicorn.access:476] 127.0.0.1:59362 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:36 [uvicorn.access:476] 127.0.0.1:59366 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:23:39 [uvicorn.access:476] 127.0.0.1:59366 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:42 [uvicorn.access:476] 127.0.0.1:59366 - "OPTIONS /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:23:42 [uvicorn.access:476] 127.0.0.1:59368 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:42 [uvicorn.access:476] 127.0.0.1:59366 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:23:47 [uvicorn.access:476] 127.0.0.1:59366 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:47 [uvicorn.access:476] 127.0.0.1:59370 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:23:50 [uvicorn.access:476] 127.0.0.1:59370 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:52 [uvicorn.access:476] 127.0.0.1:59370 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:52 [uvicorn.access:476] 127.0.0.1:59371 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:23:57 [uvicorn.access:476] 127.0.0.1:59371 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:23:57 [uvicorn.access:476] 127.0.0.1:59372 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:24:00 [uvicorn.access:476] 127.0.0.1:59372 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:24:02 [uvicorn.access:476] 127.0.0.1:59372 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:24:02 [uvicorn.access:476] 127.0.0.1:59371 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:24:07 [uvicorn.access:476] 127.0.0.1:59371 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:24:07 [uvicorn.access:476] 127.0.0.1:59372 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:24:10 [uvicorn.access:476] 127.0.0.1:59372 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:24:12 [uvicorn.access:476] 127.0.0.1:59372 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:24:12 [uvicorn.access:476] 127.0.0.1:59371 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:24:17 [uvicorn.access:476] 127.0.0.1:59371 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:24:17 [uvicorn.access:476] 127.0.0.1:59379 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:24:20 [uvicorn.access:476] 127.0.0.1:59379 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:24:22 [uvicorn.access:476] 127.0.0.1:59379 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:24:22 [uvicorn.access:476] 127.0.0.1:59389 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:24:27 [uvicorn.access:476] 127.0.0.1:59389 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:24:27 [uvicorn.access:476] 127.0.0.1:59379 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:24:30 [uvicorn.access:476] 127.0.0.1:59379 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:24:32 [uvicorn.access:476] 127.0.0.1:59379 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:24:32 [uvicorn.access:476] 127.0.0.1:59391 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:24:37 [uvicorn.access:476] 127.0.0.1:59391 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:24:37 [uvicorn.access:476] 127.0.0.1:59394 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:24:40 [uvicorn.access:476] 127.0.0.1:59394 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:25:01 [uvicorn.access:476] 127.0.0.1:59396 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:25:01 [uvicorn.access:476] 127.0.0.1:59397 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:25:01 [uvicorn.access:476] 127.0.0.1:59398 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:26:01 [uvicorn.access:476] 127.0.0.1:59433 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:26:01 [uvicorn.access:476] 127.0.0.1:59434 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:26:01 [uvicorn.access:476] 127.0.0.1:59435 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:27:01 [uvicorn.access:476] 127.0.0.1:59452 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:27:01 [uvicorn.access:476] 127.0.0.1:59453 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:27:01 [uvicorn.access:476] 127.0.0.1:59454 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:01 [uvicorn.access:476] 127.0.0.1:59462 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:01 [uvicorn.access:476] 127.0.0.1:59463 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:01 [uvicorn.access:476] 127.0.0.1:59464 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:27 [uvicorn.access:476] 127.0.0.1:59476 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:27 [uvicorn.access:476] 127.0.0.1:59477 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:27 [uvicorn.access:476] 127.0.0.1:59476 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:29 [uvicorn.access:476] 127.0.0.1:59476 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:31 [uvicorn.access:476] 127.0.0.1:59476 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:31 [uvicorn.access:476] 127.0.0.1:59477 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:34 [uvicorn.access:476] 127.0.0.1:59477 - "OPTIONS /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-28 15:28:34 [uvicorn.access:476] 127.0.0.1:59476 - "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:34 [uvicorn.access:476] 127.0.0.1:59487 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:34 [uvicorn.access:476] 127.0.0.1:59477 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:34 [uvicorn.access:476] 127.0.0.1:59489 - "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:34 [uvicorn.access:476] 127.0.0.1:59488 - "OPTIONS /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-28 15:28:34 [uvicorn.access:476] 127.0.0.1:59477 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:34 [uvicorn.access:476] 127.0.0.1:59476 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:34 [uvicorn.access:476] 127.0.0.1:59489 - "GET /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-28 15:28:34 [uvicorn.access:476] 127.0.0.1:59477 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:34 [uvicorn.access:476] 127.0.0.1:59488 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:34 [uvicorn.access:476] 127.0.0.1:59476 - "GET /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-28 15:28:34 [uvicorn.access:476] 127.0.0.1:59477 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:34 [uvicorn.access:476] 127.0.0.1:59487 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:34 [uvicorn.access:476] 127.0.0.1:59477 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:35 [uvicorn.access:476] 127.0.0.1:59477 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:35 [uvicorn.access:476] 127.0.0.1:59476 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:35 [uvicorn.access:476] 127.0.0.1:59487 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:35 [uvicorn.access:476] 127.0.0.1:59477 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:35 [uvicorn.access:476] 127.0.0.1:59488 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:39 [uvicorn.access:476] 127.0.0.1:59488 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:40 [uvicorn.access:476] 127.0.0.1:59488 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:40 [uvicorn.access:476] 127.0.0.1:59477 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:45 [uvicorn.access:476] 127.0.0.1:59477 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:45 [uvicorn.access:476] 127.0.0.1:59488 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:49 [uvicorn.access:476] 127.0.0.1:59488 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:50 [uvicorn.access:476] 127.0.0.1:59488 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:50 [uvicorn.access:476] 127.0.0.1:59491 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:55 [uvicorn.access:476] 127.0.0.1:59491 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:28:55 [uvicorn.access:476] 127.0.0.1:59488 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:28:59 [uvicorn.access:476] 127.0.0.1:59488 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:00 [uvicorn.access:476] 127.0.0.1:59488 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:00 [uvicorn.access:476] 127.0.0.1:59492 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:29:05 [uvicorn.access:476] 127.0.0.1:59492 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:05 [uvicorn.access:476] 127.0.0.1:59488 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:29:09 [uvicorn.access:476] 127.0.0.1:59488 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:10 [uvicorn.access:476] 127.0.0.1:59488 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:10 [uvicorn.access:476] 127.0.0.1:59495 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:29:15 [uvicorn.access:476] 127.0.0.1:59495 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:15 [uvicorn.access:476] 127.0.0.1:59501 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:29:19 [uvicorn.access:476] 127.0.0.1:59501 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:20 [uvicorn.access:476] 127.0.0.1:59501 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:20 [uvicorn.access:476] 127.0.0.1:59495 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:29:25 [uvicorn.access:476] 127.0.0.1:59495 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:25 [uvicorn.access:476] 127.0.0.1:59501 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:29:29 [uvicorn.access:476] 127.0.0.1:59501 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:30 [uvicorn.access:476] 127.0.0.1:59501 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:30 [uvicorn.access:476] 127.0.0.1:59495 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:29:35 [uvicorn.access:476] 127.0.0.1:59495 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:35 [uvicorn.access:476] 127.0.0.1:59505 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:29:39 [uvicorn.access:476] 127.0.0.1:59505 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:40 [uvicorn.access:476] 127.0.0.1:59505 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:40 [uvicorn.access:476] 127.0.0.1:59506 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:29:45 [uvicorn.access:476] 127.0.0.1:59506 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:45 [uvicorn.access:476] 127.0.0.1:59505 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:29:49 [uvicorn.access:476] 127.0.0.1:59505 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:50 [uvicorn.access:476] 127.0.0.1:59505 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:50 [uvicorn.access:476] 127.0.0.1:59507 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:29:55 [uvicorn.access:476] 127.0.0.1:59507 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:29:55 [uvicorn.access:476] 127.0.0.1:59508 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:29:59 [uvicorn.access:476] 127.0.0.1:59508 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:00 [uvicorn.access:476] 127.0.0.1:59508 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:00 [uvicorn.access:476] 127.0.0.1:59507 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:30:05 [uvicorn.access:476] 127.0.0.1:59511 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:05 [uvicorn.access:476] 127.0.0.1:59512 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:30:09 [uvicorn.access:476] 127.0.0.1:59512 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:10 [uvicorn.access:476] 127.0.0.1:59512 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:10 [uvicorn.access:476] 127.0.0.1:59511 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:30:15 [uvicorn.access:476] 127.0.0.1:59511 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:15 [uvicorn.access:476] 127.0.0.1:59512 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:30:19 [uvicorn.access:476] 127.0.0.1:59512 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:20 [uvicorn.access:476] 127.0.0.1:59512 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:20 [uvicorn.access:476] 127.0.0.1:59513 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:30:25 [uvicorn.access:476] 127.0.0.1:59513 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:25 [uvicorn.access:476] 127.0.0.1:59514 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:30:29 [uvicorn.access:476] 127.0.0.1:59514 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:30 [uvicorn.access:476] 127.0.0.1:59514 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:30 [uvicorn.access:476] 127.0.0.1:59513 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:30:35 [uvicorn.access:476] 127.0.0.1:59516 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:35 [uvicorn.access:476] 127.0.0.1:59515 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:30:39 [uvicorn.access:476] 127.0.0.1:59515 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:40 [uvicorn.access:476] 127.0.0.1:59515 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:40 [uvicorn.access:476] 127.0.0.1:59516 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:30:45 [uvicorn.access:476] 127.0.0.1:59517 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:45 [uvicorn.access:476] 127.0.0.1:59518 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:30:49 [uvicorn.access:476] 127.0.0.1:59518 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:50 [uvicorn.access:476] 127.0.0.1:59518 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:50 [uvicorn.access:476] 127.0.0.1:59519 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:30:55 [uvicorn.access:476] 127.0.0.1:59519 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:30:55 [uvicorn.access:476] 127.0.0.1:59518 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:30:59 [uvicorn.access:476] 127.0.0.1:59518 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:00 [uvicorn.access:476] 127.0.0.1:59518 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:00 [uvicorn.access:476] 127.0.0.1:59519 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:31:05 [uvicorn.access:476] 127.0.0.1:59519 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:05 [uvicorn.access:476] 127.0.0.1:59518 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:31:09 [uvicorn.access:476] 127.0.0.1:59518 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:10 [uvicorn.access:476] 127.0.0.1:59518 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:10 [uvicorn.access:476] 127.0.0.1:59519 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:31:15 [uvicorn.access:476] 127.0.0.1:59519 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:15 [uvicorn.access:476] 127.0.0.1:59527 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:31:19 [uvicorn.access:476] 127.0.0.1:59527 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:20 [uvicorn.access:476] 127.0.0.1:59527 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:20 [uvicorn.access:476] 127.0.0.1:59530 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:31:25 [uvicorn.access:476] 127.0.0.1:59530 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:25 [uvicorn.access:476] 127.0.0.1:59531 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:31:30 [uvicorn.access:476] 127.0.0.1:59531 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:31 [uvicorn.access:476] 127.0.0.1:59531 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:31 [uvicorn.access:476] 127.0.0.1:59540 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:31:36 [uvicorn.access:476] 127.0.0.1:59540 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:36 [uvicorn.access:476] 127.0.0.1:59541 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:31:40 [uvicorn.access:476] 127.0.0.1:59541 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:41 [uvicorn.access:476] 127.0.0.1:59541 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:41 [uvicorn.access:476] 127.0.0.1:59543 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:31:46 [uvicorn.access:476] 127.0.0.1:59543 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:46 [uvicorn.access:476] 127.0.0.1:59541 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:31:50 [uvicorn.access:476] 127.0.0.1:59541 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:51 [uvicorn.access:476] 127.0.0.1:59541 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:51 [uvicorn.access:476] 127.0.0.1:59547 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:31:56 [uvicorn.access:476] 127.0.0.1:59547 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:31:56 [uvicorn.access:476] 127.0.0.1:59548 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:32:00 [uvicorn.access:476] 127.0.0.1:59548 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:32:01 [uvicorn.access:476] 127.0.0.1:59548 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:32:01 [uvicorn.access:476] 127.0.0.1:59549 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:32:06 [uvicorn.access:476] 127.0.0.1:59549 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:32:06 [uvicorn.access:476] 127.0.0.1:59558 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:32:10 [uvicorn.access:476] 127.0.0.1:59558 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:32:11 [uvicorn.access:476] 127.0.0.1:59558 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:32:11 [uvicorn.access:476] 127.0.0.1:59559 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:32:16 [uvicorn.access:476] 127.0.0.1:59559 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:32:16 [uvicorn.access:476] 127.0.0.1:59558 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:32:20 [uvicorn.access:476] 127.0.0.1:59558 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:32:21 [uvicorn.access:476] 127.0.0.1:59558 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:32:21 [uvicorn.access:476] 127.0.0.1:59567 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:33:01 [uvicorn.access:476] 127.0.0.1:59579 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:33:01 [uvicorn.access:476] 127.0.0.1:59580 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:33:01 [uvicorn.access:476] 127.0.0.1:59579 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:33:01 [uvicorn.access:476] 127.0.0.1:59581 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:33:01 [uvicorn.access:476] 127.0.0.1:59580 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:34:01 [uvicorn.access:476] 127.0.0.1:59602 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:34:01 [uvicorn.access:476] 127.0.0.1:59602 - "OPTIONS /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:34:01 [uvicorn.access:476] 127.0.0.1:59603 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:34:01 [uvicorn.access:476] 127.0.0.1:59602 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:35:01 [uvicorn.access:476] 127.0.0.1:59631 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:35:01 [uvicorn.access:476] 127.0.0.1:59632 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:35:01 [uvicorn.access:476] 127.0.0.1:59633 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:36:01 [uvicorn.access:476] 127.0.0.1:59647 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:36:01 [uvicorn.access:476] 127.0.0.1:59648 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:36:01 [uvicorn.access:476] 127.0.0.1:59651 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:37:01 [uvicorn.access:476] 127.0.0.1:59671 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:37:01 [uvicorn.access:476] 127.0.0.1:59672 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:37:01 [uvicorn.access:476] 127.0.0.1:59673 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:37:39 [uvicorn.error:264] Shutting down
+INFO 2025-10-28 15:37:39 [uvicorn.error:67] Waiting for application shutdown.
+INFO 2025-10-28 15:37:39 [app.services.whatsapp_service:68] Encerrando conexões DB Evolution...
+INFO 2025-10-28 15:37:39 [app.services.whatsapp_service:70] Conexões DB Evolution encerradas.
+INFO 2025-10-28 15:37:39 [uvicorn.error:76] Application shutdown complete.
+INFO 2025-10-28 15:37:39 [uvicorn.error:94] Finished server process [1428]
+INFO 2025-10-28 15:37:45 [app.main:153] Configurando CORS para as origens: ['http://localhost:5173']
+INFO 2025-10-28 15:37:45 [uvicorn.error:84] Started server process [8308]
+INFO 2025-10-28 15:37:45 [uvicorn.error:48] Waiting for application startup.
+INFO 2025-10-28 15:37:45 [app.main:131] Tabelas do banco de dados verificadas/criadas com sucesso.
+INFO 2025-10-28 15:37:45 [uvicorn.error:62] Application startup complete.
+INFO 2025-10-28 15:38:01 [uvicorn.access:476] 127.0.0.1:59688 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:38:01 [uvicorn.access:476] 127.0.0.1:59691 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:38:01 [uvicorn.access:476] 127.0.0.1:59689 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:39:01 [uvicorn.access:476] 127.0.0.1:59703 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:01 [uvicorn.access:476] 127.0.0.1:59704 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:39:01 [uvicorn.access:476] 127.0.0.1:59705 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:15 [uvicorn.access:476] 127.0.0.1:59709 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:15 [uvicorn.access:476] 127.0.0.1:59711 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:15 [uvicorn.access:476] 127.0.0.1:59710 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:39:19 [uvicorn.access:476] 127.0.0.1:59710 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:20 [uvicorn.access:476] 127.0.0.1:59710 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:20 [uvicorn.access:476] 127.0.0.1:59716 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:39:25 [uvicorn.access:476] 127.0.0.1:59716 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:25 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:39:29 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:30 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:30 [uvicorn.access:476] 127.0.0.1:59719 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:39:35 [uvicorn.access:476] 127.0.0.1:59719 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:35 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:39:39 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:40 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:40 [uvicorn.access:476] 127.0.0.1:59729 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:39:45 [uvicorn.access:476] 127.0.0.1:59729 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:45 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:39:49 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:50 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:50 [uvicorn.access:476] 127.0.0.1:59730 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:39:55 [uvicorn.access:476] 127.0.0.1:59730 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:39:55 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:39:59 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:00 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:00 [uvicorn.access:476] 127.0.0.1:59731 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:40:05 [uvicorn.access:476] 127.0.0.1:59731 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:05 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:40:09 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:10 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:10 [uvicorn.access:476] 127.0.0.1:59734 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:40:15 [uvicorn.access:476] 127.0.0.1:59734 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:15 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:40:19 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:20 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:20 [uvicorn.access:476] 127.0.0.1:59734 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:40:25 [uvicorn.access:476] 127.0.0.1:59734 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:25 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:40:29 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:30 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:30 [uvicorn.access:476] 127.0.0.1:59734 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:40:35 [uvicorn.access:476] 127.0.0.1:59734 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:35 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:40:39 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:40 [uvicorn.access:476] 127.0.0.1:59718 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:40 [uvicorn.access:476] 127.0.0.1:59735 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:40:45 [uvicorn.access:476] 127.0.0.1:59735 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:45 [uvicorn.access:476] 127.0.0.1:59736 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:40:49 [uvicorn.access:476] 127.0.0.1:59736 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:50 [uvicorn.access:476] 127.0.0.1:59736 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:50 [uvicorn.access:476] 127.0.0.1:59737 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:40:55 [uvicorn.access:476] 127.0.0.1:59737 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:40:55 [uvicorn.access:476] 127.0.0.1:59736 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:40:59 [uvicorn.access:476] 127.0.0.1:59736 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:00 [uvicorn.access:476] 127.0.0.1:59736 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:00 [uvicorn.access:476] 127.0.0.1:59760 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:41:05 [uvicorn.access:476] 127.0.0.1:59760 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:05 [uvicorn.access:476] 127.0.0.1:59767 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:41:09 [uvicorn.access:476] 127.0.0.1:59767 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:10 [uvicorn.access:476] 127.0.0.1:59767 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:10 [uvicorn.access:476] 127.0.0.1:59760 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:41:15 [uvicorn.access:476] 127.0.0.1:59760 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:15 [uvicorn.access:476] 127.0.0.1:59767 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:41:19 [uvicorn.access:476] 127.0.0.1:59767 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:20 [uvicorn.access:476] 127.0.0.1:59767 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:20 [uvicorn.access:476] 127.0.0.1:59760 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:41:25 [uvicorn.access:476] 127.0.0.1:59760 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:25 [uvicorn.access:476] 127.0.0.1:59767 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:41:29 [uvicorn.access:476] 127.0.0.1:59767 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:30 [uvicorn.access:476] 127.0.0.1:59767 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:30 [uvicorn.access:476] 127.0.0.1:59781 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:41:35 [uvicorn.access:476] 127.0.0.1:59781 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:35 [uvicorn.access:476] 127.0.0.1:59782 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:41:39 [uvicorn.access:476] 127.0.0.1:59782 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:40 [uvicorn.access:476] 127.0.0.1:59782 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:40 [uvicorn.access:476] 127.0.0.1:59784 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:41:45 [uvicorn.access:476] 127.0.0.1:59784 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:45 [uvicorn.access:476] 127.0.0.1:59787 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:41:49 [uvicorn.access:476] 127.0.0.1:59787 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:50 [uvicorn.access:476] 127.0.0.1:59787 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:50 [uvicorn.access:476] 127.0.0.1:59784 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:41:55 [uvicorn.access:476] 127.0.0.1:59784 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:41:55 [uvicorn.access:476] 127.0.0.1:59790 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:41:59 [uvicorn.access:476] 127.0.0.1:59790 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:42:00 [uvicorn.access:476] 127.0.0.1:59790 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:42:00 [uvicorn.access:476] 127.0.0.1:59793 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:42:05 [uvicorn.access:476] 127.0.0.1:59793 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:42:05 [uvicorn.access:476] 127.0.0.1:59790 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:42:09 [uvicorn.access:476] 127.0.0.1:59790 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:42:10 [uvicorn.access:476] 127.0.0.1:59790 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:42:10 [uvicorn.access:476] 127.0.0.1:59800 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:42:15 [uvicorn.access:476] 127.0.0.1:59800 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:42:15 [uvicorn.access:476] 127.0.0.1:59790 - "GET /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:42:18 [uvicorn.error:264] Shutting down
+INFO 2025-10-28 15:42:18 [uvicorn.error:67] Waiting for application shutdown.
+INFO 2025-10-28 15:42:18 [app.services.whatsapp_service:54] ✅ Conexão com o banco de dados da Evolution API configurada.
+INFO 2025-10-28 15:42:18 [app.services.whatsapp_service:68] Encerrando conexões DB Evolution...
+INFO 2025-10-28 15:42:18 [app.services.whatsapp_service:70] Conexões DB Evolution encerradas.
+INFO 2025-10-28 15:42:18 [uvicorn.error:76] Application shutdown complete.
+INFO 2025-10-28 15:42:18 [uvicorn.error:94] Finished server process [8308]
+INFO 2025-10-28 15:42:21 [app.main:153] Configurando CORS para as origens: ['http://localhost:5173']
+INFO 2025-10-28 15:42:21 [uvicorn.error:84] Started server process [10364]
+INFO 2025-10-28 15:42:21 [uvicorn.error:48] Waiting for application startup.
+INFO 2025-10-28 15:42:21 [app.main:131] Tabelas do banco de dados verificadas/criadas com sucesso.
+INFO 2025-10-28 15:42:21 [uvicorn.error:62] Application startup complete.
+INFO 2025-10-28 15:42:22 [uvicorn.access:476] 127.0.0.1:59806 - "GET /api/v1/atendimentos/ HTTP/1.1" 500
+ERROR 2025-10-28 15:42:22 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 334, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 183, in serialize_response
+    raise ResponseValidationError(
+fastapi.exceptions.ResponseValidationError: 5 validation errors:
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 0, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023038F04BD0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 1, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023038F04C90>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 2, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023038F04D90>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 3, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023038F04E90>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 4, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023038F04FD0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+
+INFO 2025-10-28 15:42:22 [uvicorn.access:476] 127.0.0.1:59803 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:42:22 [uvicorn.access:476] 127.0.0.1:59809 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:42:29 [uvicorn.access:476] 127.0.0.1:59811 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:42:39 [uvicorn.access:476] 127.0.0.1:59812 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:42:49 [uvicorn.access:476] 127.0.0.1:59813 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:42:59 [uvicorn.access:476] 127.0.0.1:59814 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:43:09 [uvicorn.access:476] 127.0.0.1:59819 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:43:09 [uvicorn.access:476] 127.0.0.1:59819 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:43:19 [uvicorn.access:476] 127.0.0.1:59820 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:43:29 [uvicorn.access:476] 127.0.0.1:59825 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:43:39 [uvicorn.access:476] 127.0.0.1:59826 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:43:49 [uvicorn.access:476] 127.0.0.1:59827 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:43:59 [uvicorn.access:476] 127.0.0.1:59828 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:44:09 [uvicorn.access:476] 127.0.0.1:59832 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:44:19 [uvicorn.access:476] 127.0.0.1:59833 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:44:29 [uvicorn.access:476] 127.0.0.1:59836 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:44:39 [uvicorn.access:476] 127.0.0.1:59837 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:44:49 [uvicorn.access:476] 127.0.0.1:59838 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:44:59 [uvicorn.access:476] 127.0.0.1:59842 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:45:09 [uvicorn.access:476] 127.0.0.1:59848 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:45:19 [uvicorn.access:476] 127.0.0.1:59849 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:45:29 [uvicorn.access:476] 127.0.0.1:59856 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:45:39 [uvicorn.access:476] 127.0.0.1:59857 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:45:49 [uvicorn.access:476] 127.0.0.1:59858 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:45:59 [uvicorn.access:476] 127.0.0.1:59861 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:46:09 [uvicorn.access:476] 127.0.0.1:59867 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:46:12 [uvicorn.access:476] 127.0.0.1:59869 - "OPTIONS /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:46:12 [uvicorn.access:476] 127.0.0.1:59870 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:46:12 [uvicorn.access:476] 127.0.0.1:59869 - "OPTIONS /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:46:12 [uvicorn.access:476] 127.0.0.1:59871 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:46:12 [uvicorn.access:476] 127.0.0.1:59872 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:46:12 [uvicorn.access:476] 127.0.0.1:59869 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:46:12 [uvicorn.access:476] 127.0.0.1:59871 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 500
+ERROR 2025-10-28 15:46:12 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 334, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 183, in serialize_response
+    raise ResponseValidationError(
+fastapi.exceptions.ResponseValidationError: 5 validation errors:
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 0, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039349290>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 1, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039349350>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 2, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x00000230393493D0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 3, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x00000230393495D0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 4, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039349650>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+
+INFO 2025-10-28 15:46:12 [uvicorn.access:476] 127.0.0.1:59872 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:46:12 [uvicorn.access:476] 127.0.0.1:59869 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 500
+ERROR 2025-10-28 15:46:12 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 334, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 183, in serialize_response
+    raise ResponseValidationError(
+fastapi.exceptions.ResponseValidationError: 5 validation errors:
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 0, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039339150>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 1, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x00000230393395D0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 2, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039338710>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 3, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x000002303933B390>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 4, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x000002303933BB90>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+
+INFO 2025-10-28 15:46:19 [uvicorn.access:476] 127.0.0.1:59875 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:46:19 [uvicorn.access:476] 127.0.0.1:59875 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:46:19 [uvicorn.access:476] 127.0.0.1:59876 - "OPTIONS /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:46:19 [uvicorn.access:476] 127.0.0.1:59878 - "OPTIONS /api/v1/atendimentos/ HTTP/1.1" 200
+INFO 2025-10-28 15:46:19 [uvicorn.access:476] 127.0.0.1:59877 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:46:19 [uvicorn.access:476] 127.0.0.1:59876 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:46:19 [uvicorn.access:476] 127.0.0.1:59878 - "GET /api/v1/atendimentos/ HTTP/1.1" 500
+ERROR 2025-10-28 15:46:19 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 334, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 183, in serialize_response
+    raise ResponseValidationError(
+fastapi.exceptions.ResponseValidationError: 5 validation errors:
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 0, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x000002303933BC50>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 1, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x000002303933B450>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 2, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x000002303933B4D0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 3, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x000002303933B550>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 4, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x000002303933B690>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+
+INFO 2025-10-28 15:46:19 [uvicorn.access:476] 127.0.0.1:59876 - "GET /api/v1/atendimentos/ HTTP/1.1" 500
+ERROR 2025-10-28 15:46:19 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 334, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 183, in serialize_response
+    raise ResponseValidationError(
+fastapi.exceptions.ResponseValidationError: 5 validation errors:
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 0, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x00000230393564D0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 1, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039356190>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 2, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039356350>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 3, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039356AD0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 4, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039356790>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+
+INFO 2025-10-28 15:46:20 [uvicorn.access:476] 127.0.0.1:59877 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 500
+ERROR 2025-10-28 15:46:20 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 334, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 183, in serialize_response
+    raise ResponseValidationError(
+fastapi.exceptions.ResponseValidationError: 5 validation errors:
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 0, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039338450>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 1, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039357510>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 2, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039356FD0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 3, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x00000230393557D0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 4, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039357550>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+
+INFO 2025-10-28 15:46:20 [uvicorn.access:476] 127.0.0.1:59875 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:46:20 [uvicorn.access:476] 127.0.0.1:59881 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 500
+ERROR 2025-10-28 15:46:20 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 334, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 183, in serialize_response
+    raise ResponseValidationError(
+fastapi.exceptions.ResponseValidationError: 5 validation errors:
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 0, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039379010>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 1, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039378ED0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 2, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023038E59110>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 3, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023038E59FD0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 4, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023038F06A50>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+
+INFO 2025-10-28 15:46:20 [uvicorn.access:476] 127.0.0.1:59882 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:46:20 [uvicorn.access:476] 127.0.0.1:59879 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:46:29 [uvicorn.access:476] 127.0.0.1:59883 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:46:39 [uvicorn.access:476] 127.0.0.1:59884 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:46:49 [uvicorn.access:476] 127.0.0.1:59890 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:46:49 [uvicorn.access:476] 127.0.0.1:59891 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:46:49 [uvicorn.access:476] 127.0.0.1:59890 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 500
+ERROR 2025-10-28 15:46:49 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 334, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 183, in serialize_response
+    raise ResponseValidationError(
+fastapi.exceptions.ResponseValidationError: 5 validation errors:
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 0, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039390BD0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 1, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x0000023039390E10>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 2, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x000002303931F9D0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 3, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x000002303936EBD0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 4, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x000002303831F990>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+
+INFO 2025-10-28 15:46:50 [uvicorn.access:476] 127.0.0.1:59892 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:46:50 [uvicorn.access:476] 127.0.0.1:59891 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 500
+ERROR 2025-10-28 15:46:50 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 334, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 183, in serialize_response
+    raise ResponseValidationError(
+fastapi.exceptions.ResponseValidationError: 5 validation errors:
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 0, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x000002303936E810>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 1, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x000002303936D250>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 2, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x000002303936D610>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 3, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x000002303936D7D0>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+  {'type': 'get_attribute_error', 'loc': ('response', 'items', 4, 'active_persona'), 'msg': "Error extracting attribute: MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)", 'input': <app.db.models.Atendimento object at 0x000002303936D390>, 'ctx': {'error': "MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)"}}
+
+INFO 2025-10-28 15:46:52 [uvicorn.error:264] Shutting down
+INFO 2025-10-28 15:46:52 [uvicorn.error:67] Waiting for application shutdown.
+INFO 2025-10-28 15:46:52 [app.services.whatsapp_service:54] ✅ Conexão com o banco de dados da Evolution API configurada.
+INFO 2025-10-28 15:46:52 [app.services.whatsapp_service:68] Encerrando conexões DB Evolution...
+INFO 2025-10-28 15:46:52 [app.services.whatsapp_service:70] Conexões DB Evolution encerradas.
+INFO 2025-10-28 15:46:52 [uvicorn.error:76] Application shutdown complete.
+INFO 2025-10-28 15:46:52 [uvicorn.error:94] Finished server process [10364]
+INFO 2025-10-28 15:46:55 [app.main:153] Configurando CORS para as origens: ['http://localhost:5173']
+INFO 2025-10-28 15:46:55 [uvicorn.error:84] Started server process [20544]
+INFO 2025-10-28 15:46:55 [uvicorn.error:48] Waiting for application startup.
+INFO 2025-10-28 15:46:55 [app.main:131] Tabelas do banco de dados verificadas/criadas com sucesso.
+INFO 2025-10-28 15:46:55 [uvicorn.error:62] Application startup complete.
+INFO 2025-10-28 15:46:59 [uvicorn.access:476] 127.0.0.1:59899 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:47:09 [uvicorn.access:476] 127.0.0.1:59903 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:47:19 [uvicorn.access:476] 127.0.0.1:59904 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:47:29 [uvicorn.access:476] 127.0.0.1:59912 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:47:39 [uvicorn.access:476] 127.0.0.1:59913 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:47:49 [uvicorn.access:476] 127.0.0.1:59917 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:47:55 [uvicorn.error:264] Shutting down
+INFO 2025-10-28 15:47:55 [uvicorn.error:67] Waiting for application shutdown.
+INFO 2025-10-28 15:47:55 [app.services.whatsapp_service:54] ✅ Conexão com o banco de dados da Evolution API configurada.
+INFO 2025-10-28 15:47:55 [app.services.whatsapp_service:68] Encerrando conexões DB Evolution...
+INFO 2025-10-28 15:47:55 [app.services.whatsapp_service:70] Conexões DB Evolution encerradas.
+INFO 2025-10-28 15:47:55 [uvicorn.error:76] Application shutdown complete.
+INFO 2025-10-28 15:47:55 [uvicorn.error:94] Finished server process [20544]
+INFO 2025-10-28 15:47:58 [app.main:153] Configurando CORS para as origens: ['http://localhost:5173']
+INFO 2025-10-28 15:47:58 [uvicorn.error:84] Started server process [24164]
+INFO 2025-10-28 15:47:58 [uvicorn.error:48] Waiting for application startup.
+INFO 2025-10-28 15:47:58 [app.main:131] Tabelas do banco de dados verificadas/criadas com sucesso.
+INFO 2025-10-28 15:47:58 [uvicorn.error:62] Application startup complete.
+INFO 2025-10-28 15:47:59 [uvicorn.access:476] 127.0.0.1:59935 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:47:59 [uvicorn.access:476] 127.0.0.1:59936 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:47:59 [uvicorn.access:476] 127.0.0.1:59936 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:47:59 [uvicorn.access:476] 127.0.0.1:59940 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:47:59 [uvicorn.access:476] 127.0.0.1:59937 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:47:59 [uvicorn.access:476] 127.0.0.1:59935 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:47:59 [uvicorn.access:476] 127.0.0.1:59940 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:47:59 [uvicorn.access:476] 127.0.0.1:59937 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:04 [uvicorn.access:476] 127.0.0.1:59945 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:04 [uvicorn.access:476] 127.0.0.1:59944 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+DEBUG 2025-10-28 15:48:07 [python_multipart.multipart:628] Calling on_field_start with no data
+DEBUG 2025-10-28 15:48:07 [python_multipart.multipart:625] Calling on_field_name with data[0:8]
+DEBUG 2025-10-28 15:48:07 [python_multipart.multipart:625] Calling on_field_data with data[9:37]
+DEBUG 2025-10-28 15:48:07 [python_multipart.multipart:628] Calling on_field_end with no data
+DEBUG 2025-10-28 15:48:07 [python_multipart.multipart:628] Calling on_field_start with no data
+DEBUG 2025-10-28 15:48:07 [python_multipart.multipart:625] Calling on_field_name with data[38:46]
+DEBUG 2025-10-28 15:48:07 [python_multipart.multipart:625] Calling on_field_data with data[47:58]
+DEBUG 2025-10-28 15:48:07 [python_multipart.multipart:628] Calling on_field_end with no data
+DEBUG 2025-10-28 15:48:07 [python_multipart.multipart:628] Calling on_end with no data
+WARNING 2025-10-28 15:48:07 [passlib.handlers.bcrypt:622] (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+DEBUG 2025-10-28 15:48:07 [passlib.handlers.bcrypt:625] detected 'bcrypt' backend, version '<unknown>'
+DEBUG 2025-10-28 15:48:07 [passlib.handlers.bcrypt:406] 'bcrypt' backend lacks $2$ support, enabling workaround
+INFO 2025-10-28 15:48:07 [uvicorn.access:476] 127.0.0.1:59944 - "POST /api/v1/auth/token HTTP/1.1" 200
+INFO 2025-10-28 15:48:08 [uvicorn.access:476] 127.0.0.1:59944 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:48:08 [uvicorn.access:476] 127.0.0.1:59945 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:48:08 [uvicorn.access:476] 127.0.0.1:59944 - "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:08 [uvicorn.access:476] 127.0.0.1:59946 - "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:08 [uvicorn.access:476] 127.0.0.1:59945 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:48:08 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:48:08 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:08 [uvicorn.access:476] 127.0.0.1:59945 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:09 [uvicorn.access:476] 127.0.0.1:59946 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:48:09 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:09 [uvicorn.access:476] 127.0.0.1:59945 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:09 [uvicorn.access:476] 127.0.0.1:59946 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:09 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:12 [uvicorn.access:476] 127.0.0.1:59947 - "OPTIONS /api/v1/atendimentos/?search=&page=2&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:12 [uvicorn.access:476] 127.0.0.1:59945 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:12 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/atendimentos/?search=&page=2&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:13 [uvicorn.access:476] 127.0.0.1:59947 - "OPTIONS /api/v1/atendimentos/?search=&page=3&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:13 [uvicorn.access:476] 127.0.0.1:59945 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:13 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/atendimentos/?search=&page=3&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:14 [uvicorn.access:476] 127.0.0.1:59947 - "OPTIONS /api/v1/atendimentos/?search=&page=4&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:14 [uvicorn.access:476] 127.0.0.1:59945 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:14 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/atendimentos/?search=&page=4&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:18 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:48:19 [uvicorn.access:476] 127.0.0.1:59945 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:19 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/atendimentos/?search=&page=4&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:24 [uvicorn.access:476] 127.0.0.1:59945 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:24 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/atendimentos/?search=&page=4&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:28 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:48:29 [uvicorn.access:476] 127.0.0.1:59949 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:29 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/atendimentos/?search=&page=4&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:34 [uvicorn.access:476] 127.0.0.1:59949 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:34 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/atendimentos/?search=&page=4&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:38 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:48:39 [uvicorn.access:476] 127.0.0.1:59949 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:39 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/atendimentos/?search=&page=4&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:41 [uvicorn.access:476] 127.0.0.1:59949 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:41 [uvicorn.access:476] 127.0.0.1:59947 - "GET /api/v1/atendimentos/?search=&page=4&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:41 [uvicorn.access:476] 127.0.0.1:59952 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:41 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:46 [uvicorn.access:476] 127.0.0.1:59952 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:46 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:48 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:48:51 [uvicorn.access:476] 127.0.0.1:59953 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:51 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:56 [uvicorn.access:476] 127.0.0.1:59953 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:56 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:48:58 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:48:59 [uvicorn.access:476] 127.0.0.1:59953 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:48:59 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:49:04 [uvicorn.access:476] 127.0.0.1:59953 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:49:04 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:49:08 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:49:09 [uvicorn.access:476] 127.0.0.1:59953 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:49:09 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:49:14 [uvicorn.access:476] 127.0.0.1:59953 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:49:14 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:49:16 [uvicorn.access:476] 127.0.0.1:59953 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:49:16 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:49:18 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:49:21 [uvicorn.access:476] 127.0.0.1:59970 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:49:21 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:49:24 [uvicorn.access:476] 127.0.0.1:59970 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:49:24 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:49:28 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:49:29 [uvicorn.access:476] 127.0.0.1:59970 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:49:29 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:49:34 [uvicorn.access:476] 127.0.0.1:59979 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:49:34 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:49:38 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:49:39 [uvicorn.access:476] 127.0.0.1:59980 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:49:39 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:49:44 [uvicorn.access:476] 127.0.0.1:59981 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:49:44 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:49:46 [uvicorn.access:476] 127.0.0.1:59981 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:49:46 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:49:48 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:49:51 [uvicorn.access:476] 127.0.0.1:59981 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:49:51 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:49:56 [uvicorn.access:476] 127.0.0.1:59981 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:49:56 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:49:58 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:50:00 [uvicorn.access:476] 127.0.0.1:59981 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:00 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=2&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:01 [uvicorn.access:476] 127.0.0.1:59981 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:01 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=&page=3&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:04 [uvicorn.access:476] 127.0.0.1:59951 - "OPTIONS /api/v1/atendimentos/?search=a&page=3&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:59981 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=a&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:60002 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/atendimentos/?search=a&page=3&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=a&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=ag&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=ag&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=agu&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=agu&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=agua&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=agua&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=aguar&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguar&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=aguard&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:05 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguard&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:06 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=aguarda&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:06 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:06 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguarda&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:06 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=aguardan&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:06 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:06 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguardan&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:06 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=aguardand&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:06 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:06 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguardand&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:06 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=aguardando&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:06 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:06 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguardando&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:07 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=aguardando+&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:07 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:07 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguardando+&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:07 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=aguardando+r&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:07 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:07 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguardando+r&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:07 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=aguardando+re&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:07 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:07 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguardando+re&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:07 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=aguardando+res&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:07 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:08 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguardando+res&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:08 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:50:08 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=aguardando+resp&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:08 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:08 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguardando+resp&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:08 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=aguardando+respo&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:08 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:08 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguardando+respo&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:08 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=aguardando+respos&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:08 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:08 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguardando+respos&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:08 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=aguardando+respost&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:08 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:08 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguardando+respost&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:09 [uvicorn.access:476] 127.0.0.1:60001 - "OPTIONS /api/v1/atendimentos/?search=aguardando+resposta&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:09 [uvicorn.access:476] 127.0.0.1:59951 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:09 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguardando+resposta&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:14 [uvicorn.access:476] 127.0.0.1:60005 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:14 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguardando+resposta&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:14 [uvicorn.access:476] 127.0.0.1:60005 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:14 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguardando+resposta&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-10-28 15:50:18 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-28 15:50:19 [uvicorn.access:476] 127.0.0.1:60008 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-28 15:50:19 [uvicorn.access:476] 127.0.0.1:60001 - "GET /api/v1/atendimentos/?search=aguardando+resposta&page=1&limit=20 HTTP/1.1" 200

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import api from '../api/axiosConfig'; 
-import { Search, MessageSquare, Edit, Trash2, AlertTriangle } from 'lucide-react';
+import api from '../api/axiosConfig';
+import { Search, MessageSquare, Edit, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // --- MODAL GENÉRICO ---
 const Modal = ({ onClose, children }) => (
@@ -56,6 +56,36 @@ const ConversationModal = ({ onClose, conversation, contactIdentifier }) => {
                 </div>
             </div>
         </Modal>
+    );
+};
+
+const Pagination = ({ currentPage, totalPages, onPageChange, totalItems }) => {
+    if (totalPages <= 1) return null;
+
+    return (
+        <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
+            <p className="text-sm text-gray-600">
+                Mostrando página <span className="font-semibold">{currentPage}</span> de <span className="font-semibold">{totalPages}</span> (<span className="font-semibold">{totalItems}</span> {totalItems === 1 ? 'atendimento' : 'atendimentos'})
+            </p>
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 flex items-center gap-1 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <ChevronLeft size={16} />
+                    Anterior
+                </button>
+                <button
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 flex items-center gap-1 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Próxima
+                    <ChevronRight size={16} />
+                </button>
+            </div>
+        </div>
     );
 };
 
@@ -124,7 +154,7 @@ function Atendimentos() {
     const [personas, setPersonas] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    
+
     const [searchParams] = useSearchParams();
     const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
 
@@ -132,46 +162,78 @@ function Atendimentos() {
 
     const statusOptions = ["Aguardando Resposta", "Mensagem Recebida", "Ignorar Contato", "Atendente Chamado", "Concluído"];
 
-    const fetchData = useCallback(async () => {
-        // Para evitar a tela piscando, não setamos isLoading aqui em atualizações de rotina
+    // --- 4. ADICIONAR ESTADOS DE PAGINAÇÃO ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalAtendimentos, setTotalAtendimentos] = useState(0);
+    const [limit] = useState(20); // Define o limite (deve ser o mesmo do backend)
+    // ----------------------------------------
+
+    // --- 5. MODIFICAR FETCHDATA ---
+    const fetchData = useCallback(async (isInitialLoad = false) => {
+        if (isInitialLoad) setIsLoading(true);
         try {
-            const [atendimentosRes, personasRes] = await Promise.all([api.get('/atendimentos/'), api.get('/configs/')]);
-            setAtendimentos(atendimentosRes.data);
+            // Modifica a chamada para enviar parâmetros de paginação e busca
+            const [atendimentosRes, personasRes] = await Promise.all([
+                api.get('/atendimentos/', {
+                    params: {
+                        search: searchTerm,
+                        page: currentPage,
+                        limit: limit
+                    }
+                }),
+                api.get('/configs/')
+            ]);
+
+            // Atualiza o estado com a resposta paginada
+            setAtendimentos(atendimentosRes.data.items);
+            setTotalAtendimentos(atendimentosRes.data.total);
+            setTotalPages(Math.ceil(atendimentosRes.data.total / limit));
             setPersonas(personasRes.data);
+
         } catch (err) {
             setError('Não foi possível carregar os dados. Verifique a sua conexão.');
-            // Para o intervalo em caso de erro para não sobrecarregar
             clearInterval(intervalRef.current);
         } finally {
-            // Só para o loading inicial
-            if (isLoading) setIsLoading(false);
+            if (isInitialLoad) setIsLoading(false);
         }
-    }, [isLoading]);
+    }, [searchTerm, currentPage, limit]); // <-- Adiciona dependências
+    // ---------------------------------
 
-    // Usando useRef para manter a referência do intervalo
     const intervalRef = useRef(null);
 
     useEffect(() => {
-        fetchData();
-        // Limpa o intervalo anterior se o componente for recarregado
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        intervalRef.current = setInterval(fetchData, 5000);
-        // Função de limpeza para quando o componente for desmontado
-        return () => clearInterval(intervalRef.current);
-    }, [fetchData]);
+        fetchData(true); // <-- 6. MODIFICAR: Chama com 'true' para o loading inicial
 
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        intervalRef.current = setInterval(() => fetchData(false), 5000); // Poll busca a página atual
+
+        return () => clearInterval(intervalRef.current);
+    }, [fetchData]); // <-- Dependência correta é [fetchData]
+
+    // --- 7. REMOVER USEEFFECT DE FILTRAGEM LOCAL ---
+    // useEffect(() => {
+    //     ...
+    // }, [searchTerm, atendimentos]);
+    // -----------------------------------------------
+
+    // --- 8. ADICIONAR USEEFFECT PARA RESETAR PÁGINA AO BUSCAR ---
     useEffect(() => {
-        const lowercasedFilter = searchTerm.toLowerCase();
-        const filtered = atendimentos.filter(item =>
-            item.contact.whatsapp.toLowerCase().includes(lowercasedFilter) ||
-            item.status.toLowerCase().includes(lowercasedFilter) ||
-            (item.observacoes && item.observacoes.toLowerCase().includes(lowercasedFilter))
-        );
-        setFilteredAtendimentos(filtered);
-    }, [searchTerm, atendimentos]);
+        setCurrentPage(1); // Reseta para a página 1 sempre que o termo de busca mudar
+    }, [searchTerm]);
+    // ---------------------------------------------------------
+
 
     const getPersonaNameById = (id) => personas.find(p => p.id === id)?.nome_config || 'N/A';
     const handleCloseModals = () => setModalData({ type: null, data: null });
+
+    // --- 9. ADICIONAR HANDLER DE MUDANÇA DE PÁGINA ---
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
+        }
+    };
+    // ------------------------------------------------
 
     const handleSaveEdit = async (atendimentoId, updates) => {
         // --- OTIMIZAÇÃO: Atualização Otimista ---
@@ -183,7 +245,7 @@ function Atendimentos() {
             // A API é chamada para persistir a alteração
             const response = await api.put(`/atendimentos/${atendimentoId}`, updates);
             // Opcional: Atualizar o item específico com a resposta do servidor para ter 100% de certeza
-            setAtendimentos(prev => 
+            setAtendimentos(prev =>
                 prev.map(at => at.id === atendimentoId ? response.data : at)
             );
         } catch (err) {
@@ -247,32 +309,32 @@ function Atendimentos() {
                             <tr>
                                 <th className="p-4 text-sm font-semibold text-gray-600">Contato (WhatsApp)</th>
                                 <th className="p-4 text-sm font-semibold text-gray-600">Última Atualização</th>
-                                <th className="p-4 text-sm font-semibold text-gray-600">Situação</th>
+                                <th className="p-4 text-sm font-semibold text-gray-600 text-center">Situação</th>
                                 <th className="p-4 text-sm font-semibold text-gray-600">Observação da IA</th>
-                                <th className="p-4 text-sm font-semibold text-gray-600">Persona Ativa</th>
+                                <th className="p-4 text-sm font-semibold text-gray-600 text-center">Persona Ativa</th>
                                 <th className="p-4 text-sm font-semibold text-gray-600 text-center">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             {isLoading ? (
                                 <tr><td colSpan="6" className="text-center p-8 text-gray-500">A carregar atendimentos...</td></tr>
-                            ) : filteredAtendimentos.map((at) => (
+                            ) : atendimentos.map((at) => (
                                 <tr key={at.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                                     <td className="p-4 font-medium text-gray-800">{at.contact.whatsapp}</td>
                                     <td className="p-4 text-sm text-gray-600">{new Date(at.updated_at).toLocaleString('pt-BR')}</td>
-                                    <td className="p-4">
+                                    <td className="p-4 text-center">
                                         <span className={getStatusClass(at.status)}>
                                             {at.status}
                                         </span>
                                     </td>
-                                    <td className="p-4 text-sm text-gray-600 max-w-xl truncate" title={at.observacoes}>
+                                    <td className="p-4 text-sm text-gray-600 max-w-xl" title={at.observacoes}>
                                         {at.observacoes ? (
                                             <p>{at.observacoes}</p>
                                         ) : (
                                             <span className="text-gray-400 italic">Nenhuma</span>
                                         )}
                                     </td>
-                                    <td className="p-4 text-sm text-gray-600">{getPersonaNameById(at.active_persona_id)}</td>
+                                    <td className="p-4 text-sm text-gray-600 text-center">{getPersonaNameById(at.active_persona_id)}</td>
                                     <td className="p-4 text-center">
                                         <div className="flex justify-center items-center gap-2">
                                             <button onClick={() => setModalData({ type: 'conversation', data: at })} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors" title="Ver conversa"><MessageSquare size={18} /></button>
@@ -284,13 +346,23 @@ function Atendimentos() {
                             ))}
                         </tbody>
                     </table>
-                     {/* Mensagem para quando não há resultados */}
-                     {!isLoading && filteredAtendimentos.length === 0 && (
+                    {/* --- 11. MENSAGEM DE "NÃO ENCONTRADO" ATUALIZADA --- */}
+                    {!isLoading && atendimentos.length === 0 && (
                         <div className="text-center p-8 text-gray-500">
                             Nenhum atendimento encontrado {searchTerm ? 'para a sua pesquisa' : ''}.
                         </div>
                     )}
                 </div>
+
+                {/* --- 12. ADICIONAR CONTROLES DE PAGINAÇÃO --- */}
+                {!isLoading && (
+                    <Pagination 
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        totalItems={totalAtendimentos}
+                    />
+                )}
             </div>
 
             {modalData.type === 'conversation' && <ConversationModal onClose={handleCloseModals} conversation={modalData.data.conversa} contactIdentifier={modalData.data.contact.whatsapp} />}
