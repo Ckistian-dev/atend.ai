@@ -34,7 +34,7 @@ async def get_atendimentos(
     # --- 5. ADICIONAR PARÂMETROS DE PAGINAÇÃO E FILTRO ---
     search: Optional[str] = Query(None, description="Termo de busca para contato, status ou observação"),
     page: int = Query(1, ge=1, description="Número da página"),
-    limit: int = Query(20, ge=1, le=100, description="Itens por página")
+    limit: int = Query(20, ge=1, le=1000, description="Itens por página")
     # ------------------------------------------------------
 ):
     """Lista todos os atendimentos (com contatos) para o usuário."""

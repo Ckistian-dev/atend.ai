@@ -802,6 +802,7 @@ function Atendimentos() {
     const [searchTerm, setSearchTerm] = useState('');
     const [activeFilter, setActiveFilter] = useState('ativos');
     const [selectedAtendimento, setSelectedAtendimento] = useState(null);
+    const [totalAtendimentos, setTotalAtendimentos] = useState(0);
 
     const [modalMedia, setModalMedia] = useState(null); // { url: blobUrl, type: 'image'|'audio', filename: string }
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -816,25 +817,29 @@ function Atendimentos() {
         try {
             const [userRes, atendimentosRes] = await Promise.all([
                 api.get('/auth/me'),
-                api.get('/atendimentos/')
+                // --- CORREÇÃO DA CHAMADA ---
+                api.get('/atendimentos/', {
+                    params: {
+                        search: searchTerm, // Envia o termo de busca para o backend
+                        limit: 1000 // Pede todos os resultados (para o filtro de status local)
+                    }
+                })
+                // --- FIM DA CORREÇÃO ---
             ]);
             setCurrentUser(userRes.data);
 
-            // --- CORREÇÃO ---
+            // --- CORREÇÃO DA LEITURA DA RESPOSTA ---
             const data = atendimentosRes.data;
 
-            // Verifica se a resposta JÁ É um array
-            if (Array.isArray(data)) {
-                setAtendimentos(data);
-            }
-            // Se não for, verifica se é um objeto com a propriedade 'data' (ex: { data: [...] })
-            else if (data && Array.isArray(data.data)) {
-                setAtendimentos(data.data);
-            }
-            // Se for qualquer outra coisa, seta um array vazio para evitar o crash
-            else {
-                console.warn("A API /atendimentos/ não retornou um array.", data);
-                setAtendimentos([]);
+            // Verifica se a resposta tem o formato { total: X, items: [...] }
+            if (data && Array.isArray(data.items)) {
+                setAtendimentos(data.items);
+                setTotalAtendimentos(data.total);
+            } else {
+                // Fallback para o caso de erro ou formato antigo
+                console.warn("A API /atendimentos/ não retornou o formato esperado.", data);
+                setAtendimentos(Array.isArray(data) ? data : []); // Garante que seja um array
+                setTotalAtendimentos(0);
             }
             // --- FIM DA CORREÇÃO ---
 
@@ -845,7 +850,7 @@ function Atendimentos() {
         } finally {
             if (isInitialLoad) setIsLoading(false);
         }
-    }, []);
+    }, [searchTerm]); // <-- ADICIONAR 'searchTerm' COMO DEPENDÊNCIA
 
     // --- Efeito: Polling ---
     useEffect(() => {
@@ -855,42 +860,53 @@ function Atendimentos() {
         return () => clearInterval(intervalRef.current);
     }, [fetchData]);
 
-    // --- Efeito: Filtragem da Lista ---
+    // --- Efeito: Filtragem da Lista (MODIFICADO) ---
     useEffect(() => {
+        // Guarda de segurança (continua importante)
+        if (!Array.isArray(atendimentos)) {
+            setFilteredAtendimentos([]);
+            return;
+        }
+
+        // 'atendimentos' já veio filtrado pelo search E ordenado pela API
         let filtered = atendimentos;
 
+        // 1. O filtro de STATUS (activeFilter) ainda é feito no cliente
         if (activeFilter === 'Atendente Chamado') {
             filtered = atendimentos.filter(at => at.status === 'Atendente Chamado');
         } else if (activeFilter === 'Concluído') {
             filtered = atendimentos.filter(at => at.status === 'Concluído');
         }
 
-        const lowercasedFilter = searchTerm.toLowerCase();
+        // 2. REMOVER o filtro por searchTerm (o backend já fez)
+        /*         const lowercasedFilter = searchTerm.toLowerCase();
         if (lowercasedFilter) {
             filtered = filtered.filter(item =>
-                item.contact.whatsapp.toLowerCase().includes(lowercasedFilter) ||
-                item.status.toLowerCase().includes(lowercasedFilter)
+                ...
             );
         }
+        */ // <-- ISSO NÃO É MAIS NECESSÁRIO
 
-        filtered.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+        // 3. REMOVER a ordenação .sort() (o backend já fez)
+        // filtered.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+        // <-- ISSO NÃO É MAIS NECESSÁRIO (filter preserva a ordem)
+
         setFilteredAtendimentos(filtered);
 
         if (selectedAtendimento) {
             const updatedSelected = filtered.find(at => at.id === selectedAtendimento.id);
-            // Mantém o objeto local se o update da API ainda não chegou, mas atualiza se chegou
             if (updatedSelected) {
-                // Compara timestamps para evitar "piscar" a UI com dados otimistas antigos
+                // ... (lógica de atualização do 'selectedAtendimento' continua igual) ...
                 const localDate = new Date(selectedAtendimento.updated_at).getTime();
                 const serverDate = new Date(updatedSelected.updated_at).getTime();
                 if (serverDate >= localDate) {
                     setSelectedAtendimento(updatedSelected);
                 }
             } else {
-                setSelectedAtendimento(null); // Desseleciona se não estiver mais na lista
+                setSelectedAtendimento(null);
             }
         }
-    }, [searchTerm, atendimentos, activeFilter]); // Removido selectedAtendimento das deps para evitar loop
+    }, [atendimentos, activeFilter]); // <-- REMOVER 'searchTerm' DAS DEPENDÊNCIAS
 
     // --- FUNÇÃO CORRIGIDA PARA USAR AXIOS (api) ---
     const handleViewMedia = async (mediaId, type, filename) => {
