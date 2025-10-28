@@ -36,7 +36,7 @@ const ConversationModal = ({ onClose, conversation, contactIdentifier }) => {
                     <h2 className="text-lg font-semibold text-gray-800">Conversa com {contactIdentifier}</h2>
                 </div>
                 <div ref={chatContainerRef} className="flex-1 p-4 md:p-6 overflow-y-auto space-y-4 bg-[url('https://i.redd.it/qwd83nc4xxf41.jpg')] bg-cover bg-center">
-                    {messages.map((msg, index) => {
+                    {(messages || []).map((msg, index) => { // Added fallback just in case
                         const isAssistant = msg.role === 'assistant';
                         return (
                             <div key={index} className={`flex items-end gap-2 w-full ${isAssistant ? 'justify-end' : 'justify-start'}`}>
@@ -59,8 +59,10 @@ const ConversationModal = ({ onClose, conversation, contactIdentifier }) => {
     );
 };
 
+// --- COMPONENTE DE PAGINAÇÃO ---
 const Pagination = ({ currentPage, totalPages, onPageChange, totalItems }) => {
-    if (totalPages <= 1) return null;
+    // Não renderiza se não houver páginas suficientes
+    if (!totalPages || totalPages <= 1) return null;
 
     return (
         <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
@@ -78,7 +80,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange, totalItems }) => {
                 </button>
                 <button
                     onClick={() => onPageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
+                    disabled={!totalPages || currentPage === totalPages} // Verifica totalPages aqui também
                     className="px-3 py-1.5 flex items-center gap-1 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Próxima
@@ -92,12 +94,20 @@ const Pagination = ({ currentPage, totalPages, onPageChange, totalItems }) => {
 // --- MODAL DE EDIÇÃO ---
 const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose }) => {
     const [status, setStatus] = useState(atendimento.status);
-    const [personaId, setPersonaId] = useState(atendimento.active_persona_id);
+    // Garante que personaId tenha um valor padrão (null ou o primeiro ID) se o atual for inválido
+    const [personaId, setPersonaId] = useState(atendimento.active_persona_id ?? (personas?.[0]?.id ?? null));
 
     const handleSave = () => {
-        onSave(atendimento.id, { status, active_persona_id: personaId });
+        // Converte personaId para número ao salvar, tratando null/undefined
+        const finalPersonaId = personaId ? parseInt(personaId, 10) : null;
+        onSave(atendimento.id, { status, active_persona_id: finalPersonaId });
         onClose();
     };
+
+    // Calcula as opções de persona com segurança
+    const personaOptions = Array.isArray(personas)
+        ? personas.map(p => <option key={p.id} value={p.id}>{p.nome_config}</option>)
+        : [<option key="loading" value="" disabled>Carregando...</option>]; // Adiciona um fallback visual
 
     return (
         <Modal onClose={onClose}>
@@ -108,13 +118,15 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose }) =>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Situação</label>
                         <select value={status} onChange={e => setStatus(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                            {statusOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            {(statusOptions || []).map(opt => <option key={opt} value={opt}>{opt}</option>)}
                         </select>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Persona Ativa</label>
-                        <select value={personaId} onChange={e => setPersonaId(parseInt(e.target.value))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                            {personas.map(p => <option key={p.id} value={p.id}>{p.nome_config}</option>)}
+                        {/* Garante que o valor do select seja uma string ou vazio */}
+                        <select value={personaId ?? ''} onChange={e => setPersonaId(e.target.value === '' ? null : parseInt(e.target.value, 10))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            <option value="">-- Nenhuma --</option> {/* Opção para selecionar nenhuma persona */}
+                            {personaOptions}
                         </select>
                     </div>
                 </div>
@@ -136,11 +148,11 @@ const DeleteConfirmationModal = ({ atendimento, onConfirm, onClose }) => (
             </div>
             <h3 className="mt-4 text-lg font-semibold text-gray-900">Apagar Atendimento</h3>
             <p className="mt-2 text-sm text-gray-500">
-                Tem a certeza que quer apagar o atendimento de <strong className="text-gray-700">{atendimento?.contact?.whatsapp}</strong>? Esta ação não pode ser desfeita.
+                Tem a certeza que quer apagar o atendimento de <strong className="text-gray-700">{atendimento?.contact?.whatsapp ?? 'Contato Desconhecido'}</strong>? Esta ação não pode ser desfeita.
             </p>
             <div className="mt-6 flex justify-center gap-4">
                 <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">Cancelar</button>
-                <button type="button" onClick={() => onConfirm(atendimento.id)} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition">Sim, Apagar</button>
+                <button type="button" onClick={() => atendimento && onConfirm(atendimento.id)} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition" disabled={!atendimento}>Sim, Apagar</button>
             </div>
         </div>
     </Modal>
@@ -150,141 +162,159 @@ const DeleteConfirmationModal = ({ atendimento, onConfirm, onClose }) => (
 // --- COMPONENTE PRINCIPAL DA PÁGINA ---
 function Atendimentos() {
     const [atendimentos, setAtendimentos] = useState([]);
-    const [filteredAtendimentos, setFilteredAtendimentos] = useState([]);
+    // Removido filteredAtendimentos
     const [personas, setPersonas] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams(); // Adicionado setSearchParams
     const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
 
     const [modalData, setModalData] = useState({ type: null, data: null });
 
     const statusOptions = ["Aguardando Resposta", "Mensagem Recebida", "Ignorar Contato", "Atendente Chamado", "Concluído"];
 
-    // --- 4. ADICIONAR ESTADOS DE PAGINAÇÃO ---
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1', 10)); // Lê a página da URL
     const [totalPages, setTotalPages] = useState(0);
     const [totalAtendimentos, setTotalAtendimentos] = useState(0);
-    const [limit] = useState(20); // Define o limite (deve ser o mesmo do backend)
-    // ----------------------------------------
+    const [limit] = useState(20);
 
-    // --- 5. MODIFICAR FETCHDATA ---
+    // Ref para evitar fetch duplicado no modo Strict do React
+    const initialFetchDone = useRef(false);
+
     const fetchData = useCallback(async (isInitialLoad = false) => {
-        if (isInitialLoad) setIsLoading(true);
+        // Evita loading piscando em polls
+        if (isInitialLoad && !initialFetchDone.current) {
+            setIsLoading(true);
+        }
+        setError(''); // Limpa erro anterior
         try {
-            // Modifica a chamada para enviar parâmetros de paginação e busca
+            const params = {
+                search: searchTerm,
+                page: currentPage,
+                limit: limit
+            };
             const [atendimentosRes, personasRes] = await Promise.all([
-                api.get('/atendimentos/', {
-                    params: {
-                        search: searchTerm,
-                        page: currentPage,
-                        limit: limit
-                    }
-                }),
-                api.get('/configs/')
+                api.get('/atendimentos/', { params }),
+                api.get('/configs/') // Considerar buscar personas só uma vez se não mudam
             ]);
 
-            // Atualiza o estado com a resposta paginada
             setAtendimentos(atendimentosRes.data.items);
             setTotalAtendimentos(atendimentosRes.data.total);
             setTotalPages(Math.ceil(atendimentosRes.data.total / limit));
             setPersonas(personasRes.data);
 
+            // Atualiza a URL com os parâmetros atuais
+            setSearchParams(params, { replace: true });
+
         } catch (err) {
-            setError('Não foi possível carregar os dados. Verifique a sua conexão.');
-            clearInterval(intervalRef.current);
+            console.error("Erro ao buscar dados:", err); // Log mais detalhado
+            setError('Não foi possível carregar os dados. Verifique a sua conexão ou tente recarregar a página.');
+            // Não limpa o intervalo aqui, pode ser um erro temporário
         } finally {
-            if (isInitialLoad) setIsLoading(false);
+            if (isInitialLoad) {
+                setIsLoading(false);
+                initialFetchDone.current = true; // Marca que o fetch inicial foi feito
+            }
         }
-    }, [searchTerm, currentPage, limit]); // <-- Adiciona dependências
-    // ---------------------------------
+    }, [searchTerm, currentPage, limit, setSearchParams]); // Adiciona setSearchParams
 
     const intervalRef = useRef(null);
 
+    // Efeito para buscar dados e configurar polling
     useEffect(() => {
-        fetchData(true); // <-- 6. MODIFICAR: Chama com 'true' para o loading inicial
+        // Só executa o fetch inicial uma vez no modo Strict
+        if (!initialFetchDone.current) {
+             fetchData(true);
+        }
 
+        // Configura o polling
         if (intervalRef.current) clearInterval(intervalRef.current);
         intervalRef.current = setInterval(() => fetchData(false), 5000); // Poll busca a página atual
 
+        // Limpeza do polling ao desmontar
         return () => clearInterval(intervalRef.current);
-    }, [fetchData]); // <-- Dependência correta é [fetchData]
+    }, [fetchData]); // Depende do fetchData que agora inclui searchTerm e currentPage
 
-    // --- 7. REMOVER USEEFFECT DE FILTRAGEM LOCAL ---
-    // useEffect(() => {
-    //     ...
-    // }, [searchTerm, atendimentos]);
-    // -----------------------------------------------
-
-    // --- 8. ADICIONAR USEEFFECT PARA RESETAR PÁGINA AO BUSCAR ---
+    // Efeito para resetar página quando a busca mudar
     useEffect(() => {
-        setCurrentPage(1); // Reseta para a página 1 sempre que o termo de busca mudar
-    }, [searchTerm]);
-    // ---------------------------------------------------------
+        // Verifica se a página atual é 1 antes de setar para evitar loop
+        if (currentPage !== 1) {
+             setCurrentPage(1);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchTerm]); // Só depende do searchTerm
 
 
-    const getPersonaNameById = (id) => personas.find(p => p.id === id)?.nome_config || 'N/A';
+    const getPersonaNameById = (id) => {
+         // Adiciona verificação se personas é array
+        if (!Array.isArray(personas)) return 'Carregando...';
+        return personas.find(p => p.id === id)?.nome_config || 'Nenhuma';
+    };
+    
     const handleCloseModals = () => setModalData({ type: null, data: null });
 
-    // --- 9. ADICIONAR HANDLER DE MUDANÇA DE PÁGINA ---
     const handlePageChange = (newPage) => {
-        if (newPage >= 1 && newPage <= totalPages) {
+        // Verifica limites antes de mudar a página
+        if (newPage >= 1 && (!totalPages || newPage <= totalPages)) {
             setCurrentPage(newPage);
+            initialFetchDone.current = false; // Força recarregar com loading ao mudar de página
         }
     };
-    // ------------------------------------------------
 
     const handleSaveEdit = async (atendimentoId, updates) => {
-        // --- OTIMIZAÇÃO: Atualização Otimista ---
+        const originalAtendimentos = [...atendimentos]; // Guarda estado original
+        // Atualização Otimista
         setAtendimentos(prev =>
             prev.map(at => at.id === atendimentoId ? { ...at, ...updates, updated_at: new Date().toISOString() } : at)
         );
+        handleCloseModals(); // Fecha modal otimistamente
 
         try {
-            // A API é chamada para persistir a alteração
             const response = await api.put(`/atendimentos/${atendimentoId}`, updates);
-            // Opcional: Atualizar o item específico com a resposta do servidor para ter 100% de certeza
+            // Atualiza com dados do servidor (garante consistência)
             setAtendimentos(prev =>
                 prev.map(at => at.id === atendimentoId ? response.data : at)
             );
         } catch (err) {
+            console.error("Erro ao salvar edição:", err);
             alert('Erro ao guardar as alterações. A interface será revertida.');
-            // Reverte a alteração em caso de erro
-            fetchData();
+            setAtendimentos(originalAtendimentos); // Reverte
         }
     };
 
     const handleConfirmDelete = async (atendimentoId) => {
-        // Atualização otimista para remoção
+        const originalAtendimentos = [...atendimentos]; // Guarda estado original
+        // Atualização otimista
         setAtendimentos(prev => prev.filter(at => at.id !== atendimentoId));
+        setTotalAtendimentos(prev => prev -1); // Atualiza contador otimista
         handleCloseModals();
 
         try {
             await api.delete(`/atendimentos/${atendimentoId}`);
+             // Opcional: Forçar refetch para garantir consistência total se a paginação for afetada
+             // fetchData(false); 
         } catch (err) {
+            console.error("Erro ao apagar atendimento:", err);
             alert('Erro ao apagar o atendimento. A lista será recarregada.');
-            fetchData(); // Recarrega a lista completa se a exclusão falhar
+            setAtendimentos(originalAtendimentos); // Reverte
+            setTotalAtendimentos(prev => prev + 1); // Reverte contador
+             // Força refetch em caso de erro
+            initialFetchDone.current = false;
+            fetchData(true);
         }
     };
 
     const getStatusClass = (status) => {
         const baseClasses = "px-3 py-1 text-xs font-semibold rounded-full inline-block text-center min-w-[140px]";
         switch (status) {
-            case 'Mensagem Recebida':
-                return `${baseClasses} bg-blue-100 text-blue-800`;
-            case 'Concluído':
-                return `${baseClasses} bg-green-100 text-green-800`;
-            case 'Aguardando Resposta':
-                return `${baseClasses} bg-yellow-100 text-yellow-800`;
-            case 'Atendente Chamado':
-                return `${baseClasses} bg-orange-100 text-orange-800`;
-            case 'Erro IA':
-                return `${baseClasses} bg-red-200 text-red-800`;
-            case 'Ignorar Contato':
-                return `${baseClasses} bg-gray-200 text-gray-700`;
-            default:
-                return `${baseClasses} bg-gray-100 text-gray-600`;
+            case 'Mensagem Recebida': return `${baseClasses} bg-blue-100 text-blue-800`;
+            case 'Concluído': return `${baseClasses} bg-green-100 text-green-800`;
+            case 'Aguardando Resposta': return `${baseClasses} bg-yellow-100 text-yellow-800`;
+            case 'Atendente Chamado': return `${baseClasses} bg-orange-100 text-orange-800`;
+            case 'Erro IA': return `${baseClasses} bg-red-200 text-red-800`;
+            case 'Ignorar Contato': return `${baseClasses} bg-gray-200 text-gray-700`;
+            default: return `${baseClasses} bg-gray-100 text-gray-600`;
         }
     };
 
@@ -297,10 +327,25 @@ function Atendimentos() {
                 </div>
             </div>
 
+            {/* Mostra erro global se houver */}
+            {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <strong className="font-bold">Erro: </strong>
+                    <span className="block sm:inline">{error}</span>
+                </div>
+            )}
+
+
             <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
                 <div className="relative mb-4">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                    <input type="text" placeholder="Pesquisar por telefone, situação ou observação..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input
+                        type="text"
+                        placeholder="Pesquisar por telefone, situação ou observação..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                 </div>
 
                 <div className="overflow-x-auto">
@@ -318,59 +363,62 @@ function Atendimentos() {
                         <tbody>
                             {isLoading ? (
                                 <tr><td colSpan="6" className="text-center p-8 text-gray-500">A carregar atendimentos...</td></tr>
-                            ) : atendimentos.map((at) => (
-                                <tr key={at.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                    <td className="p-4 font-medium text-gray-800">{at.contact.whatsapp}</td>
-                                    <td className="p-4 text-sm text-gray-600">{new Date(at.updated_at).toLocaleString('pt-BR')}</td>
-                                    <td className="p-4 text-center">
-                                        <span className={getStatusClass(at.status)}>
-                                            {at.status}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 text-sm text-gray-600 max-w-xl" title={at.observacoes}>
-                                        {at.observacoes ? (
-                                            <p>{at.observacoes}</p>
-                                        ) : (
-                                            <span className="text-gray-400 italic">Nenhuma</span>
-                                        )}
-                                    </td>
-                                    <td className="p-4 text-sm text-gray-600 text-center">{getPersonaNameById(at.active_persona_id)}</td>
-                                    <td className="p-4 text-center">
-                                        <div className="flex justify-center items-center gap-2">
-                                            <button onClick={() => setModalData({ type: 'conversation', data: at })} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors" title="Ver conversa"><MessageSquare size={18} /></button>
-                                            <button onClick={() => setModalData({ type: 'edit', data: at })} className="p-2 text-gray-500 hover:text-green-600 hover:bg-gray-100 rounded-full transition-colors" title="Editar Situação/Persona"><Edit size={18} /></button>
-                                            <button onClick={() => setModalData({ type: 'delete', data: at })} className="p-2 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded-full transition-colors" title="Apagar Atendimento"><Trash2 size={18} /></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                            ) : (
+                                (atendimentos || []).map((at) => ( // Fallback principal aqui
+                                    <tr key={at.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                                        <td className="p-4 font-medium text-gray-800">{at.contact?.whatsapp ?? 'N/A'}</td> {/* Fallback para contato */}
+                                        <td className="p-4 text-sm text-gray-600">{at.updated_at ? new Date(at.updated_at).toLocaleString('pt-BR') : 'N/A'}</td> {/* Fallback para data */}
+                                        <td className="p-4 text-center">
+                                            <span className={getStatusClass(at.status)}>
+                                                {at.status ?? 'N/A'} {/* Fallback para status */}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-sm text-gray-600 max-w-xl truncate" title={at.observacoes}> {/* Removido truncate */}
+                                            {at.observacoes ? (
+                                                <p className="line-clamp-2">{at.observacoes}</p> // Usa line-clamp se quiser limitar visualmente
+                                            ) : (
+                                                <span className="text-gray-400 italic">Nenhuma</span>
+                                            )}
+                                        </td>
+                                        <td className="p-4 text-sm text-gray-600 text-center">{getPersonaNameById(at.active_persona_id)}</td>
+                                        <td className="p-4 text-center">
+                                            <div className="flex justify-center items-center gap-2">
+                                                <button onClick={() => setModalData({ type: 'conversation', data: at })} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors" title="Ver conversa"><MessageSquare size={18} /></button>
+                                                <button onClick={() => setModalData({ type: 'edit', data: at })} className="p-2 text-gray-500 hover:text-green-600 hover:bg-gray-100 rounded-full transition-colors" title="Editar Situação/Persona"><Edit size={18} /></button>
+                                                <button onClick={() => setModalData({ type: 'delete', data: at })} className="p-2 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded-full transition-colors" title="Apagar Atendimento"><Trash2 size={18} /></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
-                    {/* --- 11. MENSAGEM DE "NÃO ENCONTRADO" ATUALIZADA --- */}
-                    {!isLoading && atendimentos.length === 0 && (
+                    
+                    {/* Mensagem de "Não encontrado" */}
+                    {!isLoading && (!atendimentos || atendimentos.length === 0) && (
                         <div className="text-center p-8 text-gray-500">
                             Nenhum atendimento encontrado {searchTerm ? 'para a sua pesquisa' : ''}.
                         </div>
                     )}
                 </div>
 
-                {/* --- 12. ADICIONAR CONTROLES DE PAGINAÇÃO --- */}
-                {!isLoading && (
-                    <Pagination 
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                        totalItems={totalAtendimentos}
-                    />
-                )}
+                {/* Controles de Paginação */}
+                {/* Renderiza mesmo se isLoading for true para evitar CLS, mas botões ficam desabilitados pelo componente Pagination */}
+                 <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    totalItems={totalAtendimentos}
+                />
+
             </div>
 
-            {modalData.type === 'conversation' && <ConversationModal onClose={handleCloseModals} conversation={modalData.data.conversa} contactIdentifier={modalData.data.contact.whatsapp} />}
-            {modalData.type === 'edit' && <EditModal onClose={handleCloseModals} atendimento={modalData.data} personas={personas} statusOptions={statusOptions} onSave={handleSaveEdit} />}
-            {modalData.type === 'delete' && <DeleteConfirmationModal onClose={handleCloseModals} atendimento={modalData.data} onConfirm={handleConfirmDelete} />}
+            {/* Modais */}
+            {modalData.type === 'conversation' && modalData.data && <ConversationModal onClose={handleCloseModals} conversation={modalData.data.conversa} contactIdentifier={modalData.data.contact?.whatsapp} />}
+            {modalData.type === 'edit' && modalData.data && <EditModal onClose={handleCloseModals} atendimento={modalData.data} personas={personas} statusOptions={statusOptions} onSave={handleSaveEdit} />}
+            {modalData.type === 'delete' && modalData.data && <DeleteConfirmationModal onClose={handleCloseModals} atendimento={modalData.data} onConfirm={handleConfirmDelete} />}
         </div>
     );
 }
 
 export default Atendimentos;
-
