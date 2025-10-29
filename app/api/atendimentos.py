@@ -174,19 +174,10 @@ async def send_manual_message(
         if not atendimento_atualizado:
              # Isso não deve acontecer se o get_atendimento funcionou, mas é uma segurança
             raise HTTPException(status_code=500, detail="Falha ao salvar mensagem no histórico após envio")
-
-        # 5. Define o status como "Aguardando Resposta"
-        # Usando o AtendimentoUpdate para garantir que 'updated_at' seja atualizado
-        update_schema = schemas.AtendimentoUpdate(status="Aguardando Resposta")
-        atendimento_final = await crud_atendimento.update_atendimento(
-            db=db,
-            db_atendimento=atendimento_atualizado,
-            atendimento_in=update_schema
-        )
         
-        await db.commit() # Commita a adição da msg e a mudança de status
-        await db.refresh(atendimento_final)
-        return atendimento_final
+        await db.commit() # Commita APENAS a adição da msg 
+        await db.refresh(atendimento_atualizado) # Faz o refresh no objeto que já tínhamos
+        return atendimento_atualizado # Retorna o objeto atualizado (sem mudança de status)
 
     except MessageSendError as e:
         logger.error(f"Erro ao ENVIAR mensagem manual para {contact_number} (Atendimento ID: {atendimento_id}): {e}", exc_info=True)
@@ -346,17 +337,9 @@ async def send_manual_media_message(
         if not atendimento_atualizado:
              raise HTTPException(status_code=500, detail="Falha ao salvar mídia no histórico após envio")
 
-        # 6. Define o status como "Aguardando Resposta" 
-        update_schema = schemas.AtendimentoUpdate(status="Aguardando Resposta")
-        atendimento_final = await crud_atendimento.update_atendimento(
-            db=db,
-            db_atendimento=atendimento_atualizado,
-            atendimento_in=update_schema
-        )
-        
-        await db.commit()
-        await db.refresh(atendimento_final)
-        return atendimento_final
+        await db.commit() # Commita APENAS a adição da msg
+        await db.refresh(atendimento_atualizado) # Faz o refresh no objeto que já tínhamos
+        return atendimento_atualizado # Retorna o objeto atualizado (sem mudança de status)
 
     except MessageSendError as e:
         logger.error(f"Erro ao ENVIAR mídia manual (Atendimento ID: {atendimento_id}): {e}", exc_info=True)
