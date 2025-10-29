@@ -219,9 +219,11 @@ async def process_official_message_task(value_payload: dict): # Recebe 'value'
                      continue
 
                 situacoes_de_parada = ["Ignorar Contato", "Atendente Chamado", "Concluído"]
+                deve_mudar_status = True # Por padrão, sempre mudamos o status
+
                 if not was_created and atendimento_reloaded_after_create.status in situacoes_de_parada:
-                    logger.info(f"WBP Webhook: Mensagem {msg_id_wamid} de {cleaned_sender_number} ignorada. Atendimento ID {atendimento_reloaded_after_create.id} com status '{atendimento_reloaded_after_create.status}'.")
-                    continue
+                    logger.info(f"WBP Webhook: Mensagem {msg_id_wamid} de {cleaned_sender_number} processada. Atendimento ID {atendimento_reloaded_after_create.id} está em '{atendimento_reloaded_after_create.status}', status NÃO será alterado.")
+                    deve_mudar_status = False # Encontrou situação de parada, não muda o status
 
                 formatted_msg_content = ""
                 media_info_gemini = None
@@ -342,11 +344,16 @@ async def process_official_message_task(value_payload: dict): # Recebe 'value'
                                 current_conversa_list.append(formatted_msg.model_dump())
                                 current_conversa_list.sort(key=lambda x: x.get('timestamp') or 0)
 
-                                atendimento_to_update.conversa = json.dumps(current_conversa_list, ensure_ascii=False)
-                                atendimento_to_update.status = "Mensagem Recebida"
+                                logger_status_msg = ""
+                                if deve_mudar_status:
+                                    atendimento_to_update.status = "Mensagem Recebida"
+                                    logger_status_msg = "e status atualizado"
+                                else:
+                                    logger_status_msg = f"(status '{atendimento_to_update.status}' mantido)"
+                                
                                 atendimento_to_update.updated_at = datetime.now(timezone.utc)
 
-                            logger.info(f"WBP Webhook: Mensagem {msg_id_wamid} adicionada e status atualizado para Atendimento {atendimento_id}.")
+                            logger.info(f"WBP Webhook: Mensagem {msg_id_wamid} adicionada {logger_status_msg} para Atendimento {atendimento_id}.")
 
                     except Exception as save_err:
                         logger.error(f"WBP Webhook: Erro na TRANSAÇÃO ao salvar msg {msg_id_wamid} no Atendimento {atendimento_id}: {save_err}", exc_info=True)
