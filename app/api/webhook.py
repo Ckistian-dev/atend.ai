@@ -218,12 +218,14 @@ async def process_official_message_task(value_payload: dict): # Recebe 'value'
                      logger.error(f"WBP Webhook: Falha ao obter estado do atendimento {atendimento_id_log} após get/create.")
                      continue
 
+                # --- INÍCIO DA ALTERAÇÃO ---
                 situacoes_de_parada = ["Ignorar Contato", "Atendente Chamado", "Concluído"]
                 deve_mudar_status = True # Por padrão, sempre mudamos o status
 
                 if not was_created and atendimento_reloaded_after_create.status in situacoes_de_parada:
                     logger.info(f"WBP Webhook: Mensagem {msg_id_wamid} de {cleaned_sender_number} processada. Atendimento ID {atendimento_reloaded_after_create.id} está em '{atendimento_reloaded_after_create.status}', status NÃO será alterado.")
                     deve_mudar_status = False # Encontrou situação de parada, não muda o status
+                # --- FIM DA ALTERAÇÃO --- (O 'continue' foi removido)
 
                 formatted_msg_content = ""
                 media_info_gemini = None
@@ -344,6 +346,8 @@ async def process_official_message_task(value_payload: dict): # Recebe 'value'
                                 current_conversa_list.append(formatted_msg.model_dump())
                                 current_conversa_list.sort(key=lambda x: x.get('timestamp') or 0)
 
+                                atendimento_to_update.conversa = json.dumps(current_conversa_list, ensure_ascii=False)
+                                
                                 logger_status_msg = ""
                                 if deve_mudar_status:
                                     atendimento_to_update.status = "Mensagem Recebida"
