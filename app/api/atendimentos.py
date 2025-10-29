@@ -222,7 +222,7 @@ async def send_manual_media_message(
     else:
         persona_config = db_atendimento.active_persona # Usa a persona do atendimento
 
-    if type not in ['image', 'audio', 'document']:
+    if type not in ['image', 'audio', 'document', 'video']: # <-- ADICIONADO 'video'
         raise HTTPException(status_code=400, detail="Tipo de mídia inválido.")
 
     contact_number = db_atendimento.contact.whatsapp
@@ -241,7 +241,7 @@ async def send_manual_media_message(
         logger.info(f"Enviando mídia manual (Tipo: {type}, Nome: {filename}) para Atendimento {atendimento_id}")
 
         # --- INÍCIO: GERAR CONTEÚDO COM GEMINI (PARA IMAGEM/ÁUDIO/DOCUMENTO ENVIADOS) ---
-        if type in ['image', 'audio', 'document'] and persona_config: # <-- MUDANÇA 1
+        if type in ['image', 'audio', 'document', 'video'] and persona_config: # <-- MUDANÇA 1 (adicionado 'video')
             logger.info(f"Gerando análise/transcrição para mídia enviada ({type})...")
             try:
                 media_info_for_gemini = {"mime_type": mimetype, "data": file_bytes}
@@ -262,7 +262,8 @@ async def send_manual_media_message(
                     prefix = "[Áudio transcrito]"
                 elif type == 'document':
                     prefix = "[Documento transcrito]"
-                # --- FIM MUDANÇA 2 ---
+                elif type == 'video': # <-- ADICIONADO
+                    prefix = "[Vídeo analisado]" # <-- ADICIONADO
                 
                 generated_content = f"{prefix}: {analysis_result or 'Não foi possível processar'}"
                 logger.info("Análise/transcrição da mídia enviada concluída.")
@@ -275,6 +276,7 @@ async def send_manual_media_message(
                 if type == 'audio': error_type_text = "Áudio"
                 elif type == 'image': error_type_text = "Imagem"
                 elif type == 'document': error_type_text = "Documento"
+                elif type == 'video': error_type_text = "Vídeo" # <-- ADICIONADO
                 generated_content = f"[{error_type_text} enviada, erro na análise/transcrição]"
                 # --- FIM MUDANÇA 3 ---
         
@@ -284,6 +286,7 @@ async def send_manual_media_message(
             fallback_type_text = "Mídia"
             if type == 'audio': fallback_type_text = "Áudio"
             elif type == 'image': fallback_type_text = "Imagem"
+            elif type == 'video': fallback_type_text = "Vídeo"
             
             # O 'elif' de documento foi removido, então o fallback para doc (sem persona)
             # deve ser o comportamento antigo.
@@ -353,10 +356,7 @@ async def send_manual_media_message(
         await file.close() # Importante fechar o arquivo
         
         
-@router.get(
-    "/{atendimento_id}/media/{media_id}",
-    summary="Baixar mídia diretamente (API Oficial)",
-)
+@router.get( "/{atendimento_id}/media/{media_id}", summary="Baixar mídia diretamente (API Oficial)", )
 async def download_media_directly(
     atendimento_id: int,
     media_id: str,

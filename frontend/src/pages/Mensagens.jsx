@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../api/axiosConfig'; // Presumindo que você tenha este arquivo de configuração do Axios
 import {
     Search, MessageSquareText, CheckCircle, Clock, UserCheck, Paperclip, Mic, Send, Image as ImageIcon, FileText, CircleDashed, ChevronDown,
-    Play, Download, Loader2, StopCircle, Trash2, AlertTriangle // Ícones adicionados
+    Play, Download, Loader2, StopCircle, Trash2, AlertTriangle, FileVideo // <-- ADICIONE FileVideo
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -95,6 +95,26 @@ const MediaModal = ({ isOpen, onClose, mediaUrl, mediaType, filename }) => {
                     </div>
                 )}
 
+                {/* --- INÍCIO DA ADIÇÃO (VÍDEO) --- */}
+                {mediaType === 'video' && (
+                    <div className="flex flex-col items-center space-y-3 p-4">
+                        <p className="text-sm text-gray-600">{filename || 'Vídeo'}</p>
+                        <video
+                            src={mediaUrl}
+                            controls
+                            className="w-full max-w-full max-h-[70vh] object-contain mx-auto"
+                            onError={(e) => console.error("[MediaModal] Erro ao carregar tag <video>. SRC:", e.target.src, "Error Code:", e.target.error?.code)}
+                        />
+                        <button
+                            onClick={handleDownload}
+                            className="mt-2 px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 flex items-center gap-1"
+                        >
+                            <Download size={16} /> Baixar Vídeo
+                        </button>
+                    </div>
+                )}
+                {/* --- FIM DA ADIÇÃO --- */}
+
                 {/* Botão de download para imagem */}
                 {mediaType === 'image' && (
                     <div className="text-center mt-3">
@@ -164,6 +184,8 @@ const ContactItem = ({ atendimento, isSelected, onSelect }) => {
                 lastMessage = lastMsgObj.content ? `[Imagem] ${lastMsgObj.content}` : '[Imagem]';
             } else if (msgType === 'audio') {
                 lastMessage = '[Mensagem de áudio]';
+            } else if (msgType === 'video') {
+                lastMessage = '[Vídeo]';
             } else if (msgType === 'document') {
                 lastMessage = `[Documento] ${lastMsgObj.filename || 'arquivo'}`;
             } else {
@@ -267,16 +289,17 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, isDownloading }) => {
 
     // Se não for um erro, continua a renderização normal
     const type = msg.type || 'text';
-    const hasMedia = msg.media_id && ['image', 'audio', 'document'].includes(type);
+    const hasMedia = msg.media_id && ['image', 'audio', 'document', 'video'].includes(type); // <-- 1. ADICIONADO 'video'
 
     // Texto a ser exibido (transcrição, análise ou mensagem original)
     // Mostra um placeholder se for mídia sem conteúdo textual ainda
-    const displayText = msg.content || (hasMedia ? `[${type === 'image' ? 'Imagem' : type === 'audio' ? 'Áudio' : 'Documento'}${msg.filename ? `: ${msg.filename}` : ''}]` : '');
+    const displayText = msg.content || (hasMedia ? `[${type === 'image' ? 'Imagem' : type === 'audio' ? 'Áudio' : type === 'video' ? 'Vídeo' : 'Documento'}${msg.filename ? `: ${msg.filename}` : ''}]` : ''); // <-- 2. ADICIONADO 'video'
 
     // Texto do botão
     let buttonText = '';
     if (type === 'image') buttonText = 'Ver Imagem';
     else if (type === 'audio') buttonText = 'Ouvir Áudio';
+    else if (type === 'video') buttonText = 'Ver Vídeo';
     else if (type === 'document') buttonText = 'Baixar Documento';
 
     // URL de download direto (só para documentos por enquanto)
@@ -289,6 +312,7 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, isDownloading }) => {
     switch (type) {
         case 'image':
         case 'audio':
+        case 'video':
         case 'document':
             return (
                 <div className="space-y-1">
@@ -343,6 +367,11 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, isDownloading }) => {
                     {msg.localUrl && type === 'audio' && (
                         <audio src={msg.localUrl} controls className="h-8 w-40" />
                     )}
+                    {/* --- INÍCIO DA ADIÇÃO (VÍDEO PREVIEW) --- */}
+                    {msg.localUrl && type === 'video' && (
+                        <video src={msg.localUrl} controls muted className="h-20 w-32 rounded" />
+                    )}
+                    {/* --- FIM DA ADIÇÃO --- */}
                     <span>{msg.content || `Enviando ${msg.filename || 'mídia'}...`}</span>
                 </div>
             );
@@ -477,7 +506,6 @@ const ChatBody = ({ atendimento, onViewMedia, isDownloadingMedia }) => {
 
 const ChatFooter = ({ onSendMessage, onSendMedia }) => {
     const [text, setText] = useState('');
-    const [isSending, setIsSending] = useState(false);
     const [showAttachMenu, setShowAttachMenu] = useState(false);
 
     // --- Novos estados para mídia ---
@@ -490,10 +518,13 @@ const ChatFooter = ({ onSendMessage, onSendMedia }) => {
     const audioChunksRef = useRef([]);
     const recordingIntervalRef = useRef(null);
     const recordingMimeTypeRef = useRef('audio/webm'); // Guarda o tipo usado
+    const didCancelRecordingRef = useRef(false);
+    const textInputRef = useRef(null);
 
     // Refs para os inputs de arquivo
     const imageInputRef = useRef(null);
     const docInputRef = useRef(null);
+    const videoInputRef = useRef(null);
 
     // --- Lógica de Gravação de Áudio (MODIFICADA) ---
     const startRecording = async () => {
@@ -531,11 +562,25 @@ const ChatFooter = ({ onSendMessage, onSendMedia }) => {
             };
 
             mediaRecorderRef.current.onstop = () => {
-                // Para o timer
+                // 1. Limpa o timer e o estado de gravação em TODOS os casos
                 clearInterval(recordingIntervalRef.current);
                 setRecordingTime(0);
+                setIsRecording(false);
 
-                // --- INÍCIO DA CORREÇÃO ---
+                // 2. Limpa a stream (microfone) em TODOS os casos
+                stream.getTracks().forEach(track => track.stop());
+
+                // 3. VERIFICA A BANDEIRA DE CANCELAMENTO
+                if (didCancelRecordingRef.current) {
+                    console.log("onStop: Cancelamento detectado, não enviando.");
+                    didCancelRecordingRef.current = false; // Reseta a flag
+                    audioChunksRef.current = []; // Descarta os dados
+                    return; // Para aqui
+                }
+
+                // 4. Se NÃO foi cancelado, prossegue com o envio
+
+                // --- INÍCIO DA CORREÇÃO (Lógica que você já tinha) ---
                 let targetMimeType = 'audio/ogg'; // O tipo que a WBP aceita
                 let targetExtension = '.ogg';
 
@@ -569,9 +614,8 @@ const ChatFooter = ({ onSendMessage, onSendMedia }) => {
                     console.log("Gravação muito curta, descartada.");
                 }
 
-                // Limpa a stream
-                stream.getTracks().forEach(track => track.stop());
-                setIsRecording(false);
+                // Limpa os chunks APÓS o envio/descarte
+                audioChunksRef.current = [];
             };
 
             mediaRecorderRef.current.start();
@@ -591,20 +635,17 @@ const ChatFooter = ({ onSendMessage, onSendMedia }) => {
 
     const stopRecording = () => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+            didCancelRecordingRef.current = false; // <-- Define a flag (NÃO cancelar)
             mediaRecorderRef.current.stop();
         }
     };
 
     const cancelRecording = () => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-            mediaRecorderRef.current.stop(); // Chama onstop, mas não enviamos o blob
-            // Limpa os tracks
-            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+            didCancelRecordingRef.current = true; // <-- Define a flag (SIM, cancelar)
+            mediaRecorderRef.current.stop(); // O 'onstop' vai pegar essa flag
         }
-        clearInterval(recordingIntervalRef.current);
-        setRecordingTime(0);
-        setIsRecording(false);
-        audioChunksRef.current = [];
+        // O resto da limpeza (timer, state, chunks) agora é feito no 'onstop'
     };
 
     const handleMicClick = () => {
@@ -633,6 +674,7 @@ const ChatFooter = ({ onSendMessage, onSendMedia }) => {
             // Limpa o valor dos inputs de arquivo
             if (imageInputRef.current) imageInputRef.current.value = null;
             if (docInputRef.current) docInputRef.current.value = null;
+            if (videoInputRef.current) videoInputRef.current.value = null;
         }
     };
 
@@ -646,20 +688,25 @@ const ChatFooter = ({ onSendMessage, onSendMedia }) => {
     };
 
     // --- Lógica de Envio de Texto ---
-    const handleSubmitText = async (e) => {
+    const handleSubmitText = (e) => {
         e.preventDefault();
-        if (!text.trim() || isSending || isRecording) return;
 
-        setIsSending(true);
-        try {
-            await onSendMessage(text);
-            setText('');
-        } catch (error) {
-            console.error("Erro ao enviar mensagem:", error);
-            alert("Erro ao enviar mensagem.");
-        } finally {
-            setIsSending(false);
-        }
+        // 1. Pega o texto e faz as verificações
+        const textToSend = text.trim();
+        if (!textToSend || isRecording || isSendingMedia) return;
+
+        // 2. Limpa o input IMEDIATAMENTE
+        setText('');
+
+        // 3. Foca no input IMEDIATAMENTE (usando o setTimeout que funcionou)
+        setTimeout(() => {
+            textInputRef.current?.focus();
+        }, 0);
+
+        // 4. Dispara o envio em segundo plano (sem 'await')
+        // O componente 'Atendimentos' (pai) já cuida da lógica
+        // otimista e do tratamento de erro da API.
+        onSendMessage(textToSend);
     };
 
     // Formata o tempo de gravação (ex: 00:05)
@@ -688,6 +735,17 @@ const ChatFooter = ({ onSendMessage, onSendMedia }) => {
                 onChange={(e) => handleFileChange(e, 'document')}
                 disabled={isSendingMedia || isRecording}
             />
+
+            {/* --- INÍCIO DA ADIÇÃO --- */}
+            <input
+                type="file"
+                ref={videoInputRef}
+                accept="video/mp4,video/3gpp"
+                className="hidden"
+                onChange={(e) => handleFileChange(e, 'video')}
+                disabled={isSendingMedia || isRecording}
+            />
+            {/* --- FIM DA ADIÇÃO --- */}
 
             {/* Se estiver gravando, mostra a UI de gravação */}
             {isRecording ? (
@@ -726,6 +784,10 @@ const ChatFooter = ({ onSendMessage, onSendMedia }) => {
                                     <ImageIcon size={20} className="text-purple-500" />
                                     Imagem
                                 </button>
+                                <button type="button" onClick={() => videoInputRef.current?.click()} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
+                                    <FileVideo size={20} className="text-red-500" />
+                                    Vídeo
+                                </button>
                                 <button type="button" onClick={() => docInputRef.current?.click()} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
                                     <FileText size={20} className="text-blue-500" />
                                     Documento
@@ -739,12 +801,13 @@ const ChatFooter = ({ onSendMessage, onSendMedia }) => {
 
                     {/* Input de Texto */}
                     <input
+                        ref={textInputRef} // <-- ADICIONE ESTA LINHA
                         type="text"
                         placeholder="Digite uma mensagem"
                         className="flex-1 px-4 py-2 border border-gray-300 bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
                         value={text}
                         onChange={(e) => setText(e.target.value)}
-                        disabled={isSending || isSendingMedia}
+                        disabled={isSendingMedia}
                     />
 
                     {/* Botão Enviar ou Mic */}
@@ -752,7 +815,7 @@ const ChatFooter = ({ onSendMessage, onSendMedia }) => {
                         <button
                             type="submit"
                             className="p-2 text-white bg-blue-600 rounded-full hover:bg-blue-700 transition-colors disabled:bg-gray-400"
-                            disabled={isSending || isSendingMedia}
+                            disabled={isSendingMedia}
                             title="Enviar"
                         >
                             <Send size={22} />
