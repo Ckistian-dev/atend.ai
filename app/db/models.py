@@ -1,7 +1,7 @@
 from sqlalchemy import ( Column, Integer, String, ForeignKey, Text, DateTime, func, Enum as SQLEnum ) # Adicionado SQLEnum
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import JSONB
-from typing import List, Optional
+from typing import List, Optional, Dict
 from datetime import datetime, timezone # Adicionado timezone
 import enum # Adicionado enum
 
@@ -70,6 +70,7 @@ class Config(Base):
     nome_config: Mapped[str] = mapped_column(String(100), nullable=False)
     prompt_config: Mapped[dict] = mapped_column(JSONB, nullable=False)
     contexto_json: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    situacoes_disponiveis: Mapped[Optional[List[Dict[str, str]]]] = mapped_column(JSONB, nullable=True, comment="Lista de situações e suas cores. Ex: [{'nome': 'Aguardando', 'cor': '#FF0000'}]")
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
     owner: Mapped["User"] = relationship(back_populates="configs", foreign_keys=[user_id])

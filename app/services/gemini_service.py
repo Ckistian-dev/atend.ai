@@ -161,11 +161,27 @@ class GeminiService:
         contact: models.Contact,
         conversation_history_db: List[dict],
         contexto_planilha: Optional[Dict[str, Any]],
+        situacoes_disponiveis: Optional[List[Dict[str, str]]],
         db: AsyncSession,
         user: models.User
     ) -> dict:
         max_retries = 3
         last_response = None
+        
+        # Cria a instrução para a IA baseada nas situações disponíveis
+        if situacoes_disponiveis:
+            # Extrai apenas os nomes das situações, que é o que a IA precisa
+            nomes_situacoes = [s.get("nome") for s in situacoes_disponiveis if s.get("nome")]
+            situacao_prompt = (
+                f"Escolha *exatamente* um dos seguintes status da lista: {nomes_situacoes}. "
+                "Este é o único valor permitido."
+            )
+        else:
+            # Fallback caso a lista não seja fornecida
+            situacao_prompt = (
+                "Um status curto que descreva o estado atual da conversa "
+                "(ex: 'Aguardando Resposta', 'Dúvida Esclarecida', 'Atendente Chamado')."
+            )
 
         for attempt in range(max_retries):
             try:
@@ -196,7 +212,7 @@ class GeminiService:
                         "descricao": "Sua resposta DEVE ser um único objeto JSON válido, sem nenhum texto ou formatação adicional (como ```json).",
                         "chaves": {
                             "mensagem_para_enviar": "O texto da mensagem a ser enviada ao contato. Se decidir que não deve enviar uma mensagem agora, o valor deve ser null.",
-                            "nova_situacao": "Um status curto que descreva o estado atual da conversa (ex: 'Aguardando Resposta', 'Dúvida Esclarecida', 'Atendente Chamado').",
+                            "nova_situacao": situacao_prompt,
                             "observacoes": "Um resumo interno e conciso da interação para salvar no CRM."
                         },
                         "regras_importantes": {

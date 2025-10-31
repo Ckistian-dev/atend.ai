@@ -3,7 +3,9 @@ import api from '../api/axiosConfig';
 import TextareaAutosize from 'react-textarea-autosize';
 import {
     Plus, Save, Trash2, FileText, ChevronRight, Loader2, X,
-    User as UserIcon, Bot, Link as LinkIcon, Star, CheckCircle
+    User as UserIcon, Bot, Link as LinkIcon, Star, CheckCircle,
+    Palette, // <-- NOVO ÍCONE
+    PlusCircle // <-- NOVO ÍCONE
 } from 'lucide-react';
 
 const initialFormData = {
@@ -17,11 +19,84 @@ const initialFormData = {
     contexto_json: null
 };
 
+// --- NOVO: Componente para a Aba de Situações ---
+const SituacoesTab = ({ situacoes, setSituacoes }) => {
+
+    const handleAddSituacao = () => {
+        // Adiciona um valor padrão vibrante para a cor
+        const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+        setSituacoes([...situacoes, { nome: '', cor: randomColor }]);
+    };
+
+    const handleSituacaoChange = (index, field, value) => {
+        const newSituacoes = [...situacoes];
+        newSituacoes[index][field] = value;
+        setSituacoes(newSituacoes);
+    };
+
+    const handleRemoveSituacao = (index) => {
+        const newSituacoes = situacoes.filter((_, i) => i !== index);
+        setSituacoes(newSituacoes);
+    };
+
+    return (
+        <div className="animate-fade-in space-y-4">
+            <div className="p-4 bg-gray-50 rounded-lg border text-sm text-gray-600">
+                <h4 className="font-semibold text-gray-800">Gerenciar Situações</h4>
+                <p className="mt-1">
+                    Crie as situações (status) que a IA poderá atribuir a um atendimento.
+                    Estas situações e suas cores aparecerão nas telas de Atendimento.
+                </p>
+            </div>
+            
+            <div className="space-y-3">
+                {situacoes.map((situacao, index) => (
+                    <div key={index} className="flex items-center gap-3 p-3 bg-white border rounded-lg shadow-sm">
+                        <input
+                            type="color"
+                            value={situacao.cor}
+                            onChange={(e) => handleSituacaoChange(index, 'cor', e.target.value)}
+                            className="w-10 h-10 border-none rounded cursor-pointer"
+                            title="Escolher cor"
+                        />
+                        <input
+                            type="text"
+                            placeholder="Nome da Situação (Ex: Aguardando Pagamento)"
+                            value={situacao.nome}
+                            onChange={(e) => handleSituacaoChange(index, 'nome', e.target.value)}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => handleRemoveSituacao(index)}
+                            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                            title="Remover situação"
+                        >
+                            <Trash2 size={18} />
+                        </button>
+                    </div>
+                ))}
+            </div>
+
+            <button
+                type="button"
+                onClick={handleAddSituacao}
+                className="flex items-center gap-2 text-sm font-semibold text-brand-blue hover:text-brand-blue-dark transition-colors"
+            >
+                <PlusCircle size={18} />
+                Adicionar Nova Situação
+            </button>
+        </div>
+    );
+};
+
 function Configs() {
     const [configs, setConfigs] = useState([]);
     const [selectedConfig, setSelectedConfig] = useState(null);
     const [formData, setFormData] = useState(initialFormData);
     const [userData, setUserData] = useState(null);
+
+    const [situacoes, setSituacoes] = useState([]);
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -67,6 +142,7 @@ function Configs() {
             contexto_json: config.contexto_json || null
         });
         setSyncedSheets(config.contexto_json ? Object.keys(config.contexto_json) : []);
+        setSituacoes(config.situacoes_disponiveis || []);
         setActiveTab('persona');
     };
 
@@ -74,6 +150,7 @@ function Configs() {
         setSelectedConfig(null);
         setFormData(initialFormData);
         setSyncedSheets([]);
+        setSituacoes([]);
         setActiveTab('persona');
     };
 
@@ -88,7 +165,8 @@ function Configs() {
         setError('');
         const payload = {
             nome_config: formData.nome_config,
-            prompt_config: formData.prompt_config
+            prompt_config: formData.prompt_config,
+            situacoes_disponiveis: situacoes
         };
         try {
             let updatedConfig;
@@ -201,6 +279,9 @@ function Configs() {
                                 <button type="button" onClick={() => setActiveTab('contexto')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'contexto' ? 'border-b-2 border-brand-blue text-brand-blue' : 'text-gray-500 hover:text-gray-800'}`}>
                                     <LinkIcon size={18} /> Contexto (Google Sheets)
                                 </button>
+                                <button type="button" onClick={() => setActiveTab('situacoes')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'situacoes' ? 'border-b-2 border-brand-blue text-brand-blue' : 'text-gray-500 hover:text-gray-800'}`}>
+                                    <Palette size={18} /> Situações Disponíveis
+                                </button>
                             </div>
 
                             {activeTab === 'persona' && (
@@ -264,6 +345,11 @@ function Configs() {
                                     )}
                                 </div>
                             )}
+
+                            {activeTab === 'situacoes' && (
+                                <SituacoesTab situacoes={situacoes} setSituacoes={setSituacoes} />
+                            )}
+                            
                         </div>
 
                         <div className="flex justify-end items-center gap-4 pt-6 mt-auto">

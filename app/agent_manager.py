@@ -340,6 +340,7 @@ async def atendimento_agent_task(user_id: int):
             conversation_history: List[Dict[str, Any]] = [] # Zera para cada ciclo
             persona_config: Optional[models.Config] = None
             contact_para_ia: Optional[models.Contact] = None # Para passar para Gemini
+            situacoes_para_ia: Optional[List[Dict[str, str]]] = None
 
             try:
                 async with SessionLocal() as db_read_context:
@@ -363,6 +364,25 @@ async def atendimento_agent_task(user_id: int):
                             persona_config = await crud_config.get_config(db_read_context, user_data_for_agent.default_persona_id, user_id)
                     if not persona_config:
                         raise ValueError(f"Nenhuma persona ativa ou padrão encontrada para atendimento {atendimento_id_para_processar}.")
+                    
+                    # --- NOVO: Carregar persona PADRÃO para as SITUAÇÕES ---
+                    default_persona_for_situations: Optional[models.Config] = None
+                    if user_data_for_agent.default_persona_id:
+                        if user_data_for_agent.default_persona_id == persona_config.id:
+                            # Se a persona ativa JÁ é a padrão, reutiliza
+                            default_persona_for_situations = persona_config
+                        else:
+                            # Busca a persona padrão separadamente
+                            default_persona_for_situations = await crud_config.get_config(db_read_context, user_data_for_agent.default_persona_id, user_id)
+                    
+                    # Se não achou a padrão, usa a ativa como fallback
+                    if not default_persona_for_situations:
+                        default_persona_for_situations = persona_config
+
+                    # Extrai as situações
+                    if default_persona_for_situations:
+                        situacoes_para_ia = default_persona_for_situations.situacoes_disponiveis
+                    # ----------------------------------------------------
 
                     # Obter histórico (sincronizar se for Evolution)
                     if user_data_for_agent.api_type == models.ApiType.evolution:
@@ -428,6 +448,7 @@ async def atendimento_agent_task(user_id: int):
                         config=persona_config, contact=contact_para_ia,
                         conversation_history_db=conversation_history, # Usa o histórico lido
                         contexto_planilha=persona_config.contexto_json,
+                        situacoes_disponiveis=situacoes_para_ia,
                         db=db_gemini_deduct, user=user_for_gemini
                     )
                 if not ia_response: raise ValueError("IA não retornou resposta.")

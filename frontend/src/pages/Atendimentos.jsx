@@ -118,7 +118,9 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose }) =>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Situação</label>
                         <select value={status} onChange={e => setStatus(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                            {(statusOptions || []).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            {(statusOptions || []).map(opt => (
+                                <option key={opt.nome} value={opt.nome}>{opt.nome}</option>
+                            ))}
                         </select>
                     </div>
                     <div>
@@ -162,7 +164,6 @@ const DeleteConfirmationModal = ({ atendimento, onConfirm, onClose }) => (
 // --- COMPONENTE PRINCIPAL DA PÁGINA ---
 function Atendimentos() {
     const [atendimentos, setAtendimentos] = useState([]);
-    // Removido filteredAtendimentos
     const [personas, setPersonas] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
@@ -172,7 +173,8 @@ function Atendimentos() {
 
     const [modalData, setModalData] = useState({ type: null, data: null });
 
-    const statusOptions = ["Aguardando Resposta", "Mensagem Recebida", "Ignorar Contato", "Atendente Chamado", "Concluído"];
+    const [statusOptions, setStatusOptions] = useState([]); // Agora é dinâmico
+    const [userData, setUserData] = useState(null); // Novo
 
     const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1', 10)); // Lê a página da URL
     const [totalPages, setTotalPages] = useState(0);
@@ -194,15 +196,17 @@ function Atendimentos() {
                 page: currentPage,
                 limit: limit
             };
-            const [atendimentosRes, personasRes] = await Promise.all([
+            const [atendimentosRes, personasRes, userRes] = await Promise.all([
                 api.get('/atendimentos/', { params }),
-                api.get('/configs/') // Considerar buscar personas só uma vez se não mudam
+                api.get('/configs/'),
+                api.get('/auth/me')
             ]);
 
             setAtendimentos(atendimentosRes.data.items);
             setTotalAtendimentos(atendimentosRes.data.total);
             setTotalPages(Math.ceil(atendimentosRes.data.total / limit));
             setPersonas(personasRes.data);
+            setUserData(userRes.data);
 
             // Atualiza a URL com os parâmetros atuais
             setSearchParams(params, { replace: true });
@@ -221,11 +225,31 @@ function Atendimentos() {
 
     const intervalRef = useRef(null);
 
+    useEffect(() => {
+        if (userData && personas.length > 0) {
+            const defaultPersona = personas.find(p => p.id === userData.default_persona_id);
+
+            if (defaultPersona && defaultPersona.situacoes_disponiveis && defaultPersona.situacoes_disponiveis.length > 0) {
+                setStatusOptions(defaultPersona.situacoes_disponiveis);
+            } else {
+                // Fallback para os status antigos se não houver config
+                const legacyStatusOptions = [
+                    { nome: "Aguardando Resposta", cor: "#fef08a" }, // yellow-200
+                    { nome: "Mensagem Recebida", cor: "#dbeafe" }, // blue-200
+                    { nome: "Ignorar Contato", cor: "#e5e7eb" }, // gray-200
+                    { nome: "Atendente Chamado", cor: "#ffedd5" }, // orange-200
+                    { nome: "Concluído", cor: "#dcfce7" } // green-200
+                ];
+                setStatusOptions(legacyStatusOptions);
+            }
+        }
+    }, [userData, personas]);
+
     // Efeito para buscar dados e configurar polling
     useEffect(() => {
         // Só executa o fetch inicial uma vez no modo Strict
         if (!initialFetchDone.current) {
-             fetchData(true);
+            fetchData(true);
         }
 
         // Configura o polling
@@ -240,18 +264,18 @@ function Atendimentos() {
     useEffect(() => {
         // Verifica se a página atual é 1 antes de setar para evitar loop
         if (currentPage !== 1) {
-             setCurrentPage(1);
+            setCurrentPage(1);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchTerm]); // Só depende do searchTerm
 
 
     const getPersonaNameById = (id) => {
-         // Adiciona verificação se personas é array
+        // Adiciona verificação se personas é array
         if (!Array.isArray(personas)) return 'Carregando...';
         return personas.find(p => p.id === id)?.nome_config || 'Nenhuma';
     };
-    
+
     const handleCloseModals = () => setModalData({ type: null, data: null });
 
     const handlePageChange = (newPage) => {
@@ -287,24 +311,25 @@ function Atendimentos() {
         const originalAtendimentos = [...atendimentos]; // Guarda estado original
         // Atualização otimista
         setAtendimentos(prev => prev.filter(at => at.id !== atendimentoId));
-        setTotalAtendimentos(prev => prev -1); // Atualiza contador otimista
+        setTotalAtendimentos(prev => prev - 1); // Atualiza contador otimista
         handleCloseModals();
 
         try {
             await api.delete(`/atendimentos/${atendimentoId}`);
-             // Opcional: Forçar refetch para garantir consistência total se a paginação for afetada
-             // fetchData(false); 
+            // Opcional: Forçar refetch para garantir consistência total se a paginação for afetada
+            // fetchData(false); 
         } catch (err) {
             console.error("Erro ao apagar atendimento:", err);
             alert('Erro ao apagar o atendimento. A lista será recarregada.');
             setAtendimentos(originalAtendimentos); // Reverte
             setTotalAtendimentos(prev => prev + 1); // Reverte contador
-             // Força refetch em caso de erro
+            // Força refetch em caso de erro
             initialFetchDone.current = false;
             fetchData(true);
         }
     };
 
+    // --- FUNÇÃO DE ESTILO ANTIGA (PARA FALLBACK) ---
     const getStatusClass = (status) => {
         const baseClasses = "px-3 py-1 text-xs font-semibold rounded-full inline-block text-center min-w-[140px]";
         switch (status) {
@@ -316,6 +341,33 @@ function Atendimentos() {
             case 'Ignorar Contato': return `${baseClasses} bg-gray-200 text-gray-700`;
             default: return `${baseClasses} bg-gray-100 text-gray-600`;
         }
+    };
+
+    // --- NOVA FUNÇÃO DE ESTILO (DINÂMICA) ---
+    const getStatusStyleAndClass = (status) => {
+        const baseClasses = "px-3 py-1 text-xs font-semibold rounded-full inline-block text-center min-w-[140px]";
+        const situacao = statusOptions.find(opt => opt.nome === status);
+
+        if (situacao && situacao.cor) {
+            try {
+                const hex = situacao.cor.replace('#', '');
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                // Calcula luminância
+                const textColorClass = 'text-white';
+
+                return {
+                    style: { backgroundColor: situacao.cor },
+                    className: `${baseClasses} ${textColorClass}`
+                };
+            } catch (e) {
+                // Cor inválida, usa fallback
+                return { style: {}, className: getStatusClass(status) };
+            }
+        }
+        // Fallback para o sistema antigo
+        return { style: {}, className: getStatusClass(status) };
     };
 
     return (
@@ -364,13 +416,15 @@ function Atendimentos() {
                             {isLoading ? (
                                 <tr><td colSpan="6" className="text-center p-8 text-gray-500">A carregar atendimentos...</td></tr>
                             ) : (
-                                (atendimentos || []).map((at) => ( // Fallback principal aqui
+                                (atendimentos || []).map((at) => { // Fallback principal aqui
+                                    const renderProps = getStatusStyleAndClass(at.status);
+                                    return (
                                     <tr key={at.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                                         <td className="p-4 font-medium text-gray-800">{at.contact?.whatsapp ?? 'N/A'}</td> {/* Fallback para contato */}
                                         <td className="p-4 text-sm text-gray-600">{at.updated_at ? new Date(at.updated_at).toLocaleString('pt-BR') : 'N/A'}</td> {/* Fallback para data */}
                                         <td className="p-4 text-center">
-                                            <span className={getStatusClass(at.status)}>
-                                                {at.status ?? 'N/A'} {/* Fallback para status */}
+                                            <span className={renderProps.className} style={renderProps.style}>
+                                                {at.status ?? 'N/A'}
                                             </span>
                                         </td>
                                         <td className="p-4 text-sm text-gray-600 max-w-xl truncate" title={at.observacoes}> {/* Removido truncate */}
@@ -389,11 +443,11 @@ function Atendimentos() {
                                             </div>
                                         </td>
                                     </tr>
-                                ))
+                                )})
                             )}
                         </tbody>
                     </table>
-                    
+
                     {/* Mensagem de "Não encontrado" */}
                     {!isLoading && (!atendimentos || atendimentos.length === 0) && (
                         <div className="text-center p-8 text-gray-500">
@@ -404,7 +458,7 @@ function Atendimentos() {
 
                 {/* Controles de Paginação */}
                 {/* Renderiza mesmo se isLoading for true para evitar CLS, mas botões ficam desabilitados pelo componente Pagination */}
-                 <Pagination
+                <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
                     onPageChange={handlePageChange}

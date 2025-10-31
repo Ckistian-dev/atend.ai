@@ -323,6 +323,7 @@ async def process_official_message_task(value_payload: dict): # Recebe 'value'
                         role='user',
                         content=formatted_msg_content or None, # <--- Usa o content gerado
                         timestamp=timestamp_s,
+                        status='unread',
                         type=msg_type if msg_type in ['image', 'audio', 'document', 'video', 'sticker'] else 'text',
                         media_id=media_id_from_payload, # <<-- SALVA O media_id
                         mime_type=mime_type_original,   # <<-- SALVA O mime_type

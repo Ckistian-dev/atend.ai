@@ -47,7 +47,7 @@ async def get_atendimentos(
     # Query base com join no contato
     stmt_base = (
         select(models.Atendimento)
-        .join(models.Atendimento.contact) # Faz o join
+        .join(models.Atendimento.contact, isouter=True)
         .where(models.Atendimento.user_id == current_user.id)
     )
 

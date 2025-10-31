@@ -28,6 +28,7 @@ class ConfigBase(BaseModel):
     nome_config: str
     prompt_config: Dict[str, Any]
     contexto_json: Optional[Dict[str, Any]] = None
+    situacoes_disponiveis: Optional[List[Dict[str, str]]] = None # <-- NOVO
 
 class ConfigCreate(ConfigBase):
     pass
@@ -36,6 +37,7 @@ class ConfigUpdate(BaseModel):
     nome_config: Optional[str] = None
     prompt_config: Optional[Dict[str, Any]] = None
     contexto_json: Optional[Dict[str, Any]] = None
+    situacoes_disponiveis: Optional[List[Dict[str, str]]] = None # <-- NOVO
 
 class Config(ConfigBase):
     id: int
@@ -144,6 +146,7 @@ class FormattedMessage(BaseModel):
     role: str
     content: Optional[str] = None 
     timestamp: Optional[Any] = Field(default_factory=lambda: int(datetime.now(timezone.utc).timestamp()))
+    status: Optional[str] = None
     
     type: str = "text" 
     url: Optional[str] = None 

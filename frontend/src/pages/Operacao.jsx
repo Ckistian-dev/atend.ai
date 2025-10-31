@@ -78,7 +78,7 @@ const FollowUpCard = ({ enabled, setEnabled, value, setValue, unit, setUnit, onS
 );
 
 // --- SUB-COMPONENTE: Log de Atividade Recente ---
-const ActivityLog = ({ activities, isLoading, getPersonaName, getStatusClass, onRowClick }) => (
+const ActivityLog = ({ activities, isLoading, getPersonaName, getStatusStyleAndClass, onRowClick }) => (
     <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-md border flex flex-col">
         <div className="flex items-center gap-3 mb-4">
             <div className="p-2 rounded-lg bg-purple-100">
@@ -105,7 +105,9 @@ const ActivityLog = ({ activities, isLoading, getPersonaName, getStatusClass, on
                             </td>
                         </tr>
                     ) : (
-                        activities.map((activity, index) => (
+                        activities.map((activity, index) => {
+                            const renderProps = getStatusStyleAndClass(activity.situacao);
+                            return (
                             <tr
                                 key={index}
                                 className="border-b border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer"
@@ -113,7 +115,7 @@ const ActivityLog = ({ activities, isLoading, getPersonaName, getStatusClass, on
                             >
                                 <td className="p-4 font-medium text-gray-800 text-sm">{activity.whatsapp}</td>
                                 <td className="p-4">
-                                    <span className={getStatusClass(activity.situacao)}>
+                                    <span className={renderProps.className} style={renderProps.style}>
                                         {activity.situacao}
                                     </span>
                                 </td>
@@ -124,7 +126,7 @@ const ActivityLog = ({ activities, isLoading, getPersonaName, getStatusClass, on
                                     {getPersonaName(activity.active_persona_id)}
                                 </td>
                             </tr>
-                        ))
+                        )})
                     )}
                 </tbody>
             </table>
@@ -151,6 +153,9 @@ function Operacao() {
     const [followupValue, setFollowupValue] = useState(24);
     const [followupUnit, setFollowupUnit] = useState('hours');
     const [personas, setPersonas] = useState([]);
+    const [statusOptions, setStatusOptions] = useState([]);
+    const [userData, setUserData] = useState(null);
+
 
     const fetchInitialData = useCallback(async () => {
         setIsLoading(true);
@@ -165,6 +170,7 @@ function Operacao() {
             setAgentStatus(agentRes.data.status);
             setRecentActivity(dashboardRes.data.recentActivity || []);
             setPersonas(personasRes.data);
+            setUserData(userRes.data);
 
             const userData = userRes.data;
             const minutes = userData.followup_interval_minutes || 0;
@@ -200,6 +206,26 @@ function Operacao() {
         return () => clearInterval(interval);
     }, [fetchInitialData, fetchActivityData]);
 
+    useEffect(() => {
+        if (userData && personas.length > 0) {
+            const defaultPersona = personas.find(p => p.id === userData.default_persona_id);
+            
+            if (defaultPersona && defaultPersona.situacoes_disponiveis && defaultPersona.situacoes_disponiveis.length > 0) {
+                setStatusOptions(defaultPersona.situacoes_disponiveis);
+            } else {
+                // Fallback
+                const legacyStatusOptions = [
+                    { nome: "Aguardando Resposta", cor: "#fef08a" },
+                    { nome: "Mensagem Recebida", cor: "#dbeafe" },
+                    { nome: "Ignorar Contato", cor: "#e5e7eb" },
+                    { nome: "Atendente Chamado", cor: "#ffedd5" },
+                    { nome: "Concluído", cor: "#dcfce7" }
+                ];
+                setStatusOptions(legacyStatusOptions);
+            }
+        }
+    }, [userData, personas]);
+
     const getPersonaNameById = (id) => {
         const persona = personas.find(p => p.id === id);
         return persona ? persona.nome_config : 'N/D';
@@ -208,14 +234,33 @@ function Operacao() {
     const getStatusClass = (status) => {
         const baseClasses = "px-3 py-1 text-xs font-semibold rounded-full inline-block text-center min-w-[140px]";
         switch (status) {
-            case 'Mensagem Recebida': return `${baseClasses} bg-blue-100 text-blue-800`;
-            case 'Concluído': return `${baseClasses} bg-green-100 text-green-800`;
-            case 'Aguardando Resposta': return `${baseClasses} bg-yellow-100 text-yellow-800`;
-            case 'Atendente Chamado': return `${baseClasses} bg-orange-100 text-orange-800`;
-            case 'Erro IA': return `${baseClasses} bg-red-200 text-red-800`;
-            case 'Ignorar Contato': return `${baseClasses} bg-gray-200 text-gray-700`;
-            default: return `${baseClasses} bg-gray-100 text-gray-600`;
+            case 'Mensagem Recebida': return `${baseClasses} bg-blue-500 text-blue-800`;
+            case 'Concluído': return `${baseClasses} bg-green-500 text-green-800`;
+            case 'Aguardando Resposta': return `${baseClasses} bg-yellow-500 text-yellow-800`;
+            case 'Atendente Chamado': return `${baseClasses} bg-orange-500 text-orange-800`;
+            case 'Erro IA': return `${baseClasses} bg-red-500 text-red-800`;
+            case 'Ignorar Contato': return `${baseClasses} bg-gray-500 text-gray-700`;
+            default: return `${baseClasses} bg-gray-500 text-gray-600`;
         }
+    };
+
+    const getStatusStyleAndClass = (status) => {
+        const baseClasses = "px-3 py-1 text-xs font-semibold rounded-full inline-block text-center min-w-[140px]";
+        const situacao = statusOptions.find(opt => opt.nome === status);
+
+        if (situacao && situacao.cor) {
+            try {
+                const textColor = '#FFFFFF'; // Usa hex para style
+                
+                return {
+                    style: { backgroundColor: situacao.cor, color: textColor },
+                    className: `${baseClasses}` // Remove classes de texto/bg
+                };
+            } catch (e) {
+                return { style: {}, className: getStatusClass(status) };
+            }
+        }
+        return { style: {}, className: getStatusClass(status) };
     };
 
     const handleStartAgent = async () => {
@@ -295,7 +340,7 @@ function Operacao() {
                     activities={recentActivity}
                     isLoading={isActivityLoading}
                     getPersonaName={getPersonaNameById}
-                    getStatusClass={getStatusClass}
+                    getStatusStyleAndClass={getStatusStyleAndClass}
                     onRowClick={handleActivityClick}
                 />
             </div>
