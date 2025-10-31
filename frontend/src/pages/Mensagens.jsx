@@ -1210,7 +1210,7 @@ function Atendimentos() {
                 api.get('/atendimentos/', {
                     params: {
                         search: searchTerm,
-                        limit: 1000
+                        limit: 50
                     }
                 }),
                 api.get('/configs/')
