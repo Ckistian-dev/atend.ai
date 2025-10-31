@@ -320,6 +320,13 @@ const ContactItem = ({ atendimento, isSelected, onSelect, statusOptions, onUpdat
                 lastMessage = `Você: ${lastMessage}`;
             }
 
+            if (lastMsgObj.timestamp) {
+                const ts = lastMsgObj.timestamp;
+                // Converte de segundos (Unix) ou ISO string para um Date object
+                const dateObj = (typeof ts === 'number') ? new Date(ts * 1000) : new Date(ts);
+                lastMessageTime = dateObj.toISOString(); // Passa ISO string para a formatTimestamp
+            }
+
         }
     } catch (e) {
         console.error("Erro ao parsear conversa no ContactItem:", e);
@@ -1105,6 +1112,27 @@ const ChatPlaceholder = () => (
     </div>
 );
 
+const getLastMessageTimestamp = (at) => {
+    try {
+        const conversa = JSON.parse(at.conversa || '[]');
+        if (conversa.length === 0) {
+            return new Date(at.updated_at).getTime(); // Fallback se conversa vazia
+        }
+        const lastMsg = conversa[conversa.length - 1];
+        const ts = lastMsg.timestamp;
+
+        if (!ts) {
+            return new Date(at.updated_at).getTime(); // Fallback se msg não tiver timestamp
+        }
+
+        // Converte timestamp (seja unix/segundos ou ISO string) para ms
+        return (typeof ts === 'number') ? (ts * 1000) : new Date(ts).getTime();
+    } catch (e) {
+        // Fallback em caso de JSON inválido ou erro
+        return new Date(at.updated_at).getTime();
+    }
+};
+
 
 // --- COMPONENTE PRINCIPAL DA PÁGINA ---
 function Atendimentos() {
@@ -1255,7 +1283,6 @@ function Atendimentos() {
         return () => clearInterval(intervalRef.current);
     }, [fetchData]);
 
-    // --- Efeito: Filtragem da Lista (MODIFICADO PARA SELEÇÃO AUTOMÁTICA) ---
     useEffect(() => {
         if (!Array.isArray(atendimentos)) {
             setFilteredAtendimentos([]);
@@ -1264,27 +1291,39 @@ function Atendimentos() {
 
         let filtered = atendimentos;
 
-        // Lógica de filtro simplificada
+        // Lógica de filtro (original)
         if (activeFilter === 'todos') {
             filtered = atendimentos;
         } else {
             filtered = atendimentos.filter(at => at.status === activeFilter);
         }
 
-        setFilteredAtendimentos(filtered);
+        // --- INÍCIO DA MODIFICAÇÃO (SORT) ---
+        // Ordena a lista filtrada (b - a para decrescente, mais novo primeiro)
+        const sortedFiltered = filtered.sort((a, b) => {
+            // Usa a função helper definida fora do componente
+            const timeA = getLastMessageTimestamp(a);
+            const timeB = getLastMessageTimestamp(b);
+            return timeB - timeA;
+        });
+        // --- FIM DA MODIFICAÇÃO (SORT) ---
 
-        // --- INÍCIO DA MODIFICAÇÃO ---
-        // Se nada estiver selecionado (carga inicial) E a lista filtrada tiver itens
-        if (!selectedAtendimento && filtered.length > 0) {
+        // Usa a lista ORDENADA
+        setFilteredAtendimentos(sortedFiltered);
+
+        // --- INÍCIO DA MODIFICAÇÃO (SELEÇÃO) ---
+        // (Modificado para usar sortedFiltered)
+        // Se nada estiver selecionado (carga inicial) E a lista ORDENADA tiver itens
+        if (!selectedAtendimento && sortedFiltered.length > 0) {
             // Seleciona o primeiro da lista
-            setSelectedAtendimento(filtered[0]);
+            setSelectedAtendimento(sortedFiltered[0]);
         }
-        // --- FIM DA MODIFICAÇÃO ---
+        // --- FIM DA MODIFICAÇÃO (SELEÇÃO) ---
 
         // Lógica para atualizar a seleção (se ainda estiver na lista filtrada)
-        // Esta lógica só rodará *após* a seleção inicial, nas próximas renderizações
+        // (Modificado para usar sortedFiltered)
         else if (selectedAtendimento) {
-            const updatedSelected = filtered.find(at => at.id === selectedAtendimento.id);
+            const updatedSelected = sortedFiltered.find(at => at.id === selectedAtendimento.id);
             if (updatedSelected) {
                 // Compara timestamps para evitar sobrescrever a UI com dados antigos
                 const localDate = new Date(selectedAtendimento.updated_at).getTime();
@@ -1297,7 +1336,7 @@ function Atendimentos() {
                 setSelectedAtendimento(null);
             }
         }
-    }, [atendimentos, activeFilter, selectedAtendimento]); // Adicione selectedAtendimento às dependências
+    }, [atendimentos, activeFilter, selectedAtendimento]); // Dependências originais
 
     // --- FUNÇÃO CORRIGIDA PARA USAR AXIOS (api) ---
     const handleViewMedia = async (mediaId, type, filename) => {
