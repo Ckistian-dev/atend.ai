@@ -52,7 +52,7 @@ class AtendimentoUpdate(BaseModel):
     status: Optional[str] = None
     active_persona_id: Optional[int] = None
     observacoes: Optional[str] = None
-    conversa: Optional[Dict[str, Any]] = None
+    conversa: Optional[Any] = None
     log: Optional[str] = None
 
     model_config = {

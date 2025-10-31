@@ -38,36 +38,49 @@ async def get_atendimentos_by_user(db: AsyncSession, user_id: int) -> List[model
 async def update_atendimento(db: AsyncSession, db_atendimento: models.Atendimento, atendimento_in: schemas.AtendimentoUpdate) -> models.Atendimento:
     """Atualiza os dados de um atendimento. Não faz commit."""
     update_data = atendimento_in.model_dump(exclude_unset=True)
-    needs_refresh = False
+    
     for field, value in update_data.items():
-        # --- NOVO: Lógica para adicionar mensagem à conversa ---
-        if field == 'conversa' and isinstance(value, dict) and 'add_message' in value:
-            try:
-                current_conversa_str = db_atendimento.conversa or "[]"
-                current_conversa_list = json.loads(current_conversa_str)
-                new_message = value['add_message'] # Espera um dict de mensagem formatado
-                # Garante que a nova mensagem tenha timestamp para ordenação
-                if 'timestamp' not in new_message:
-                     new_message['timestamp'] = datetime.now(timezone.utc).isoformat()
-                current_conversa_list.append(new_message)
-                # Ordena por timestamp antes de salvar
-                current_conversa_list.sort(key=lambda x: x.get('timestamp') or '1970-01-01T00:00:00+00:00')
-                setattr(db_atendimento, 'conversa', json.dumps(current_conversa_list, ensure_ascii=False))
-                needs_refresh = True # Precisa recarregar para ver a conversa atualizada
-            except (json.JSONDecodeError, TypeError) as e:
-                logger.error(f"Erro ao adicionar mensagem à conversa (Atendimento ID {db_atendimento.id}): {e}. Conversa atual: {db_atendimento.conversa}")
-                # Opcional: definir um estado de erro ou logar mais detalhes
-        # ---------------------------------------------------
+        
+        # --- INÍCIO DA MODIFICAÇÃO ---
+        
+        if field == 'conversa':
+            
+            # CASO 1: É um dict (lógica antiga de 'add_message')
+            if isinstance(value, dict) and 'add_message' in value:
+                try:
+                    current_conversa_str = db_atendimento.conversa or "[]"
+                    current_conversa_list = json.loads(current_conversa_str)
+                    new_message = value['add_message'] # Espera um dict de mensagem formatado
+                    
+                    if 'timestamp' not in new_message:
+                        new_message['timestamp'] = datetime.now(timezone.utc).isoformat()
+                    
+                    current_conversa_list.append(new_message)
+                    current_conversa_list.sort(key=lambda x: x.get('timestamp') or '1970-01-01T00:00:00+00:00')
+                    
+                    setattr(db_atendimento, 'conversa', json.dumps(current_conversa_list, ensure_ascii=False))
+                    needs_refresh = True 
+                
+                except (json.JSONDecodeError, TypeError) as e:
+                    logger.error(f"Erro ao adicionar mensagem à conversa (Atendimento ID {db_atendimento.id}): {e}. Conversa atual: {db_atendimento.conversa}")
+            
+            # CASO 2: É uma string (nova lógica de 'mark_as_read' / substituição total)
+            elif isinstance(value, str):
+                # Simplesmente define o valor, pois já é uma string JSON
+                setattr(db_atendimento, field, value)
+            
+            # CASO 3: É outra coisa (ex: None ou um tipo inesperado)
+            elif value is not None:
+                # Loga um aviso se não for um dict esperado ou uma string
+                logger.warning(f"Tipo inesperado para 'conversa' no update (Atendimento ID {db_atendimento.id}): {type(value)}")
+        
+        # Para todos os outros campos (status, active_persona_id, etc.)
         else:
             setattr(db_atendimento, field, value)
+            
 
     db_atendimento.updated_at = datetime.now(timezone.utc)
     db.add(db_atendimento)
-    # O commit será feito pela rota/serviço que chamou esta função.
-    # Se precisar do objeto atualizado imediatamente após esta chamada (antes do commit),
-    # pode ser necessário fazer flush e refresh, mas geralmente não é o caso aqui.
-    # await db.flush()
-    # await db.refresh(db_atendimento)
     return db_atendimento
 
 

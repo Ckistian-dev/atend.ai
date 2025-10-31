@@ -28118,3 +28118,541 @@ INFO 2025-10-31 10:53:56 [uvicorn.access:476] 127.0.0.1:55815 - "GET /api/v1/aut
 INFO 2025-10-31 10:53:56 [uvicorn.access:476] 127.0.0.1:55816 - "GET /api/v1/auth/me HTTP/1.1" 200
 INFO 2025-10-31 10:53:56 [uvicorn.access:476] 127.0.0.1:55817 - "GET /api/v1/configs/ HTTP/1.1" 200
 INFO 2025-10-31 10:53:56 [uvicorn.access:476] 127.0.0.1:55815 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:54:43 [uvicorn.access:476] 127.0.0.1:55874 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:54:43 [uvicorn.access:476] 127.0.0.1:55876 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:54:43 [uvicorn.access:476] 127.0.0.1:55875 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:54:43 [uvicorn.access:476] 127.0.0.1:55874 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:54:47 [uvicorn.access:476] 127.0.0.1:55874 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:54:47 [uvicorn.access:476] 127.0.0.1:55876 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:54:47 [uvicorn.access:476] 127.0.0.1:55875 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:54:52 [uvicorn.access:476] 127.0.0.1:55875 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:54:52 [uvicorn.access:476] 127.0.0.1:55874 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:54:52 [uvicorn.access:476] 127.0.0.1:55876 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:54:52 [uvicorn.access:476] 127.0.0.1:55888 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:54:57 [uvicorn.access:476] 127.0.0.1:55888 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:54:57 [uvicorn.access:476] 127.0.0.1:55874 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:54:57 [uvicorn.access:476] 127.0.0.1:55876 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:55:02 [uvicorn.access:476] 127.0.0.1:55876 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:55:02 [uvicorn.access:476] 127.0.0.1:55897 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:55:02 [uvicorn.access:476] 127.0.0.1:55896 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:55:02 [uvicorn.access:476] 127.0.0.1:55898 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:55:07 [uvicorn.access:476] 127.0.0.1:55898 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:55:07 [uvicorn.access:476] 127.0.0.1:55897 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:55:07 [uvicorn.access:476] 127.0.0.1:55896 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:55:12 [uvicorn.access:476] 127.0.0.1:55896 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:55:12 [uvicorn.access:476] 127.0.0.1:55897 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:55:12 [uvicorn.access:476] 127.0.0.1:55898 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:55:12 [uvicorn.access:476] 127.0.0.1:55905 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:55:17 [uvicorn.access:476] 127.0.0.1:55905 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:55:17 [uvicorn.access:476] 127.0.0.1:55898 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:55:17 [uvicorn.access:476] 127.0.0.1:55897 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:55:22 [uvicorn.access:476] 127.0.0.1:55897 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:55:22 [uvicorn.access:476] 127.0.0.1:55911 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:55:22 [uvicorn.access:476] 127.0.0.1:55910 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:55:22 [uvicorn.access:476] 127.0.0.1:55912 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:55:24 [uvicorn.access:476] 2a03:2880:22ff:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 10:55:24 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+INFO 2025-10-31 10:55:24 [app.services.whatsapp_service:54] ✅ Conexão com o banco de dados da Evolution API configurada.
+INFO 2025-10-31 10:55:24 [app.services.gemini_service:49] ✅ Cliente Gemini inicializado com sucesso (chave índice 0).
+DEBUG 2025-10-31 10:55:24 [app.crud.crud_atendimento:170] Atendimento ativo (ID: 188, Status: Aguardando Resposta) encontrado para 554591497839.
+INFO 2025-10-31 10:55:25 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU0NTkxNDk3ODM5FQIAEhgUM0ZDRDJGOUNDQ0JGOEI5NkRBQ0YA adicionada e status atualizado para Atendimento 188.
+INFO 2025-10-31 10:55:25 [uvicorn.access:476] 2a03:2880:22ff:9:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 10:55:25 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 10:55:25 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSMTkzRDNCMDU1QUI0MTM2NkQ5AA==.
+INFO 2025-10-31 10:55:27 [uvicorn.access:476] 127.0.0.1:55912 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:55:27 [uvicorn.access:476] 127.0.0.1:55911 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:55:27 [uvicorn.access:476] 127.0.0.1:55910 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:55:32 [uvicorn.access:476] 127.0.0.1:55910 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:55:32 [uvicorn.access:476] 127.0.0.1:55921 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:55:32 [uvicorn.access:476] 127.0.0.1:55911 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:55:32 [uvicorn.access:476] 127.0.0.1:55922 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:55:37 [uvicorn.access:476] 127.0.0.1:55922 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:55:37 [uvicorn.access:476] 127.0.0.1:55921 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:55:37 [uvicorn.access:476] 127.0.0.1:55911 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:55:42 [uvicorn.access:476] 127.0.0.1:55911 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:55:42 [uvicorn.access:476] 127.0.0.1:55922 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:55:42 [uvicorn.access:476] 127.0.0.1:55921 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:55:42 [uvicorn.access:476] 127.0.0.1:55929 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:55:56 [uvicorn.access:476] 127.0.0.1:55939 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:55:56 [uvicorn.access:476] 127.0.0.1:55940 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:55:56 [uvicorn.access:476] 127.0.0.1:55941 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:55:56 [uvicorn.access:476] 127.0.0.1:55942 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:56:56 [uvicorn.access:476] 127.0.0.1:55971 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:56:56 [uvicorn.access:476] 127.0.0.1:55972 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:56:56 [uvicorn.access:476] 127.0.0.1:55971 - "OPTIONS /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:56:56 [uvicorn.access:476] 127.0.0.1:55972 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:56:56 [uvicorn.access:476] 127.0.0.1:55972 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:56:56 [uvicorn.access:476] 127.0.0.1:55973 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:56:56 [uvicorn.access:476] 127.0.0.1:55971 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:56:56 [uvicorn.access:476] 127.0.0.1:55974 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:57:56 [uvicorn.access:476] 127.0.0.1:56117 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:57:56 [uvicorn.access:476] 127.0.0.1:56119 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:57:56 [uvicorn.access:476] 127.0.0.1:56118 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:57:56 [uvicorn.access:476] 127.0.0.1:56120 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:58:56 [uvicorn.access:476] 127.0.0.1:56197 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:58:56 [uvicorn.access:476] 127.0.0.1:56199 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:58:56 [uvicorn.access:476] 127.0.0.1:56198 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:58:56 [uvicorn.access:476] 127.0.0.1:56200 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:59:37 [uvicorn.access:476] 127.0.0.1:56284 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:59:37 [uvicorn.access:476] 127.0.0.1:56285 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:59:37 [uvicorn.access:476] 127.0.0.1:56286 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:59:37 [uvicorn.access:476] 127.0.0.1:56284 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:59:41 [uvicorn.access:476] 127.0.0.1:56284 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:59:42 [uvicorn.access:476] 127.0.0.1:56284 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:59:42 [uvicorn.access:476] 127.0.0.1:56285 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:59:42 [uvicorn.access:476] 127.0.0.1:56286 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:59:43 [uvicorn.access:476] 127.0.0.1:56286 - "OPTIONS /api/v1/atendimentos/188 HTTP/1.1" 200
+INFO 2025-10-31 10:59:43 [uvicorn.access:476] 127.0.0.1:56286 - "PUT /api/v1/atendimentos/188 HTTP/1.1" 422
+INFO 2025-10-31 10:59:46 [uvicorn.access:476] 127.0.0.1:56286 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:59:46 [uvicorn.access:476] 127.0.0.1:56284 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:59:46 [uvicorn.access:476] 127.0.0.1:56285 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:59:52 [uvicorn.access:476] 127.0.0.1:56298 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:59:52 [uvicorn.access:476] 127.0.0.1:56300 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:59:52 [uvicorn.access:476] 127.0.0.1:56299 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 10:59:52 [uvicorn.access:476] 127.0.0.1:56301 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:59:57 [uvicorn.access:476] 127.0.0.1:56301 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 10:59:57 [uvicorn.access:476] 127.0.0.1:56300 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 10:59:57 [uvicorn.access:476] 127.0.0.1:56299 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:00:02 [uvicorn.access:476] 127.0.0.1:56299 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:02 [uvicorn.access:476] 127.0.0.1:56312 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:00:02 [uvicorn.access:476] 127.0.0.1:56300 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:00:02 [uvicorn.access:476] 127.0.0.1:56313 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:07 [uvicorn.access:476] 127.0.0.1:56313 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:07 [uvicorn.access:476] 127.0.0.1:56312 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:00:07 [uvicorn.access:476] 127.0.0.1:56300 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:00:12 [uvicorn.access:476] 127.0.0.1:56300 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:12 [uvicorn.access:476] 127.0.0.1:56353 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:12 [uvicorn.access:476] 127.0.0.1:56352 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:00:12 [uvicorn.access:476] 127.0.0.1:56351 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:00:17 [uvicorn.access:476] 127.0.0.1:56360 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:17 [uvicorn.access:476] 127.0.0.1:56362 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:00:17 [uvicorn.access:476] 127.0.0.1:56361 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:00:22 [uvicorn.access:476] 127.0.0.1:56361 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:22 [uvicorn.access:476] 127.0.0.1:56367 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:00:22 [uvicorn.access:476] 127.0.0.1:56362 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:00:22 [uvicorn.access:476] 127.0.0.1:56368 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:27 [uvicorn.access:476] 127.0.0.1:56373 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:27 [uvicorn.access:476] 127.0.0.1:56375 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:00:27 [uvicorn.access:476] 127.0.0.1:56374 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:00:32 [uvicorn.access:476] 127.0.0.1:56374 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:32 [uvicorn.access:476] 127.0.0.1:56373 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:00:32 [uvicorn.access:476] 127.0.0.1:56375 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:00:32 [uvicorn.access:476] 127.0.0.1:56382 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:37 [uvicorn.access:476] 127.0.0.1:56375 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:37 [uvicorn.access:476] 127.0.0.1:56373 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:00:37 [uvicorn.access:476] 127.0.0.1:56382 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:00:42 [uvicorn.access:476] 127.0.0.1:56382 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:42 [uvicorn.access:476] 127.0.0.1:56375 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:00:42 [uvicorn.access:476] 127.0.0.1:56373 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:00:42 [uvicorn.access:476] 127.0.0.1:56387 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:47 [uvicorn.access:476] 127.0.0.1:56387 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:47 [uvicorn.access:476] 127.0.0.1:56375 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:00:47 [uvicorn.access:476] 127.0.0.1:56373 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:00:56 [uvicorn.access:476] 127.0.0.1:56397 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:00:56 [uvicorn.access:476] 127.0.0.1:56399 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:00:56 [uvicorn.access:476] 127.0.0.1:56398 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:00:56 [uvicorn.access:476] 127.0.0.1:56400 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:01:56 [uvicorn.access:476] 127.0.0.1:56451 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:01:56 [uvicorn.access:476] 127.0.0.1:56452 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:01:56 [uvicorn.access:476] 127.0.0.1:56453 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:01:56 [uvicorn.access:476] 127.0.0.1:56451 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:02:56 [uvicorn.access:476] 127.0.0.1:56510 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:02:56 [uvicorn.access:476] 127.0.0.1:56512 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:02:56 [uvicorn.access:476] 127.0.0.1:56511 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:02:56 [uvicorn.access:476] 127.0.0.1:56513 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:03:56 [uvicorn.access:476] 127.0.0.1:56601 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:03:56 [uvicorn.access:476] 127.0.0.1:56606 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:03:56 [uvicorn.access:476] 127.0.0.1:56605 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:03:56 [uvicorn.access:476] 127.0.0.1:56604 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:04:00 [uvicorn.access:476] 127.0.0.1:56604 - "PUT /api/v1/atendimentos/188 HTTP/1.1" 422
+INFO 2025-10-31 11:04:02 [uvicorn.access:476] 127.0.0.1:56604 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:02 [uvicorn.access:476] 127.0.0.1:56618 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:04:02 [uvicorn.access:476] 127.0.0.1:56617 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:04:02 [uvicorn.access:476] 127.0.0.1:56619 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:07 [uvicorn.access:476] 127.0.0.1:56629 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:07 [uvicorn.access:476] 127.0.0.1:56631 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:04:07 [uvicorn.access:476] 127.0.0.1:56630 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:04:12 [uvicorn.access:476] 127.0.0.1:56630 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:12 [uvicorn.access:476] 127.0.0.1:56629 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:04:12 [uvicorn.access:476] 127.0.0.1:56631 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:04:12 [uvicorn.access:476] 127.0.0.1:56636 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:17 [uvicorn.access:476] 127.0.0.1:56636 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:17 [uvicorn.access:476] 127.0.0.1:56629 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:04:17 [uvicorn.access:476] 127.0.0.1:56631 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:04:22 [uvicorn.access:476] 127.0.0.1:56631 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:22 [uvicorn.access:476] 127.0.0.1:56636 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:04:22 [uvicorn.access:476] 127.0.0.1:56629 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:04:22 [uvicorn.access:476] 127.0.0.1:56642 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:27 [uvicorn.access:476] 127.0.0.1:56642 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:27 [uvicorn.access:476] 127.0.0.1:56636 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:04:27 [uvicorn.access:476] 127.0.0.1:56629 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:04:32 [uvicorn.access:476] 127.0.0.1:56629 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:32 [uvicorn.access:476] 127.0.0.1:56642 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:04:32 [uvicorn.access:476] 127.0.0.1:56636 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:04:32 [uvicorn.access:476] 127.0.0.1:56655 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:37 [uvicorn.access:476] 127.0.0.1:56655 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:37 [uvicorn.access:476] 127.0.0.1:56642 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:04:37 [uvicorn.access:476] 127.0.0.1:56636 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:04:42 [uvicorn.access:476] 127.0.0.1:56636 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:42 [uvicorn.access:476] 127.0.0.1:56661 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:42 [uvicorn.access:476] 127.0.0.1:56660 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:04:42 [uvicorn.access:476] 127.0.0.1:56642 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:04:48 [uvicorn.access:476] 127.0.0.1:56670 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:48 [uvicorn.access:476] 127.0.0.1:56669 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:04:48 [uvicorn.access:476] 127.0.0.1:56673 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:04:52 [uvicorn.access:476] 127.0.0.1:56673 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:52 [uvicorn.access:476] 127.0.0.1:56670 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:04:52 [uvicorn.access:476] 127.0.0.1:56669 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:04:52 [uvicorn.access:476] 127.0.0.1:56680 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:57 [uvicorn.access:476] 127.0.0.1:56680 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:04:57 [uvicorn.access:476] 127.0.0.1:56670 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:04:57 [uvicorn.access:476] 127.0.0.1:56669 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:05:02 [uvicorn.access:476] 127.0.0.1:56669 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:05:02 [uvicorn.access:476] 127.0.0.1:56687 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:05:02 [uvicorn.access:476] 127.0.0.1:56670 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:05:02 [uvicorn.access:476] 127.0.0.1:56688 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:05:56 [uvicorn.access:476] 127.0.0.1:56764 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:05:56 [uvicorn.access:476] 127.0.0.1:56765 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:05:56 [uvicorn.access:476] 127.0.0.1:56769 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:05:56 [uvicorn.access:476] 127.0.0.1:56766 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:06:56 [uvicorn.access:476] 127.0.0.1:56835 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:06:56 [uvicorn.access:476] 127.0.0.1:56840 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:06:56 [uvicorn.access:476] 127.0.0.1:56839 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:06:56 [uvicorn.access:476] 127.0.0.1:56838 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:07:56 [uvicorn.access:476] 127.0.0.1:56894 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:07:56 [uvicorn.access:476] 127.0.0.1:56896 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:07:56 [uvicorn.access:476] 127.0.0.1:56894 - "OPTIONS /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:07:56 [uvicorn.access:476] 127.0.0.1:56896 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:07:56 [uvicorn.access:476] 127.0.0.1:56894 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:07:56 [uvicorn.access:476] 127.0.0.1:56897 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:07:56 [uvicorn.access:476] 127.0.0.1:56896 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:07:56 [uvicorn.access:476] 127.0.0.1:56898 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:08:26 [uvicorn.error:264] Shutting down
+INFO 2025-10-31 11:08:26 [uvicorn.error:67] Waiting for application shutdown.
+INFO 2025-10-31 11:08:26 [app.services.whatsapp_service:68] Encerrando conexões DB Evolution...
+INFO 2025-10-31 11:08:26 [app.services.whatsapp_service:70] Conexões DB Evolution encerradas.
+INFO 2025-10-31 11:08:26 [uvicorn.error:76] Application shutdown complete.
+INFO 2025-10-31 11:08:26 [uvicorn.error:94] Finished server process [18852]
+INFO 2025-10-31 11:08:46 [app.main:153] Configurando CORS para as origens: ['http://localhost:5173']
+INFO 2025-10-31 11:08:46 [uvicorn.error:84] Started server process [5004]
+INFO 2025-10-31 11:08:46 [uvicorn.error:48] Waiting for application startup.
+INFO 2025-10-31 11:08:46 [app.main:131] Tabelas do banco de dados verificadas/criadas com sucesso.
+INFO 2025-10-31 11:08:46 [uvicorn.error:62] Application startup complete.
+INFO 2025-10-31 11:08:56 [uvicorn.access:476] 127.0.0.1:59399 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:08:56 [uvicorn.access:476] 127.0.0.1:59406 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:08:56 [uvicorn.access:476] 127.0.0.1:59401 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:08:56 [uvicorn.access:476] 127.0.0.1:59400 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:09:25 [uvicorn.error:264] Shutting down
+INFO 2025-10-31 11:09:25 [uvicorn.error:67] Waiting for application shutdown.
+INFO 2025-10-31 11:09:25 [app.services.whatsapp_service:54] ✅ Conexão com o banco de dados da Evolution API configurada.
+INFO 2025-10-31 11:09:25 [app.services.whatsapp_service:68] Encerrando conexões DB Evolution...
+INFO 2025-10-31 11:09:25 [app.services.whatsapp_service:70] Conexões DB Evolution encerradas.
+INFO 2025-10-31 11:09:25 [uvicorn.error:76] Application shutdown complete.
+INFO 2025-10-31 11:09:25 [uvicorn.error:94] Finished server process [5004]
+INFO 2025-10-31 11:09:27 [app.main:153] Configurando CORS para as origens: ['http://localhost:5173']
+INFO 2025-10-31 11:09:27 [uvicorn.error:84] Started server process [18000]
+INFO 2025-10-31 11:09:27 [uvicorn.error:48] Waiting for application startup.
+INFO 2025-10-31 11:09:27 [app.main:131] Tabelas do banco de dados verificadas/criadas com sucesso.
+INFO 2025-10-31 11:09:27 [uvicorn.error:62] Application startup complete.
+INFO 2025-10-31 11:09:28 [uvicorn.access:476] 127.0.0.1:57449 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:09:28 [uvicorn.access:476] 127.0.0.1:57467 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:09:28 [uvicorn.access:476] 127.0.0.1:57467 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:09:28 [uvicorn.access:476] 127.0.0.1:57449 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:09:28 [uvicorn.access:476] 127.0.0.1:57467 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:09:28 [uvicorn.access:476] 127.0.0.1:57469 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:09:28 [uvicorn.access:476] 127.0.0.1:57468 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:09:28 [uvicorn.access:476] 127.0.0.1:57467 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:09:28 [uvicorn.access:476] 127.0.0.1:57468 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:09:28 [uvicorn.access:476] 127.0.0.1:57469 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:09:33 [uvicorn.access:476] 127.0.0.1:53687 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:09:33 [uvicorn.access:476] 127.0.0.1:53689 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:09:33 [uvicorn.access:476] 127.0.0.1:53688 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:09:36 [uvicorn.error:264] Shutting down
+INFO 2025-10-31 11:09:36 [uvicorn.error:67] Waiting for application shutdown.
+INFO 2025-10-31 11:09:36 [app.services.whatsapp_service:54] ✅ Conexão com o banco de dados da Evolution API configurada.
+INFO 2025-10-31 11:09:36 [app.services.whatsapp_service:68] Encerrando conexões DB Evolution...
+INFO 2025-10-31 11:09:36 [app.services.whatsapp_service:70] Conexões DB Evolution encerradas.
+INFO 2025-10-31 11:09:36 [uvicorn.error:76] Application shutdown complete.
+INFO 2025-10-31 11:09:36 [uvicorn.error:94] Finished server process [18000]
+INFO 2025-10-31 11:09:39 [app.main:153] Configurando CORS para as origens: ['http://localhost:5173']
+INFO 2025-10-31 11:09:39 [uvicorn.error:84] Started server process [11560]
+INFO 2025-10-31 11:09:39 [uvicorn.error:48] Waiting for application startup.
+INFO 2025-10-31 11:09:39 [app.main:131] Tabelas do banco de dados verificadas/criadas com sucesso.
+INFO 2025-10-31 11:09:39 [uvicorn.error:62] Application startup complete.
+INFO 2025-10-31 11:09:39 [uvicorn.access:476] 127.0.0.1:53702 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:09:39 [uvicorn.access:476] 127.0.0.1:53701 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:09:39 [uvicorn.access:476] 127.0.0.1:53703 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:09:39 [uvicorn.access:476] 127.0.0.1:53702 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:09:43 [uvicorn.access:476] 127.0.0.1:53702 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:09:43 [uvicorn.access:476] 127.0.0.1:53701 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:09:43 [uvicorn.access:476] 127.0.0.1:53703 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:09:48 [uvicorn.access:476] 127.0.0.1:53703 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:09:48 [uvicorn.access:476] 127.0.0.1:53702 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:09:48 [uvicorn.access:476] 127.0.0.1:53728 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:09:48 [uvicorn.access:476] 127.0.0.1:53701 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:09:53 [uvicorn.access:476] 127.0.0.1:53701 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:09:53 [uvicorn.access:476] 127.0.0.1:53702 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:09:53 [uvicorn.access:476] 127.0.0.1:53728 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:09:58 [uvicorn.access:476] 127.0.0.1:53728 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:09:58 [uvicorn.access:476] 127.0.0.1:53742 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:09:58 [uvicorn.access:476] 127.0.0.1:53741 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:09:58 [uvicorn.access:476] 127.0.0.1:53743 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:10:03 [uvicorn.access:476] 127.0.0.1:53743 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:10:03 [uvicorn.access:476] 127.0.0.1:53742 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:10:03 [uvicorn.access:476] 127.0.0.1:53741 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:10:08 [uvicorn.access:476] 127.0.0.1:53741 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:10:18 [uvicorn.access:476] 127.0.0.1:53756 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:10:28 [uvicorn.access:476] 127.0.0.1:53765 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:10:56 [uvicorn.access:476] 127.0.0.1:53791 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:10:56 [uvicorn.access:476] 127.0.0.1:53792 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:10:56 [uvicorn.access:476] 127.0.0.1:53793 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:10:56 [uvicorn.access:476] 127.0.0.1:53796 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:11:56 [uvicorn.access:476] 127.0.0.1:53837 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:11:56 [uvicorn.access:476] 127.0.0.1:53839 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:11:56 [uvicorn.access:476] 127.0.0.1:53838 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:11:56 [uvicorn.access:476] 127.0.0.1:53840 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:12:33 [uvicorn.error:264] Shutting down
+INFO 2025-10-31 11:12:33 [uvicorn.error:67] Waiting for application shutdown.
+INFO 2025-10-31 11:12:33 [app.services.whatsapp_service:54] ✅ Conexão com o banco de dados da Evolution API configurada.
+INFO 2025-10-31 11:12:33 [app.services.whatsapp_service:68] Encerrando conexões DB Evolution...
+INFO 2025-10-31 11:12:33 [app.services.whatsapp_service:70] Conexões DB Evolution encerradas.
+INFO 2025-10-31 11:12:33 [uvicorn.error:76] Application shutdown complete.
+INFO 2025-10-31 11:12:33 [uvicorn.error:94] Finished server process [11560]
+INFO 2025-10-31 11:12:35 [app.main:153] Configurando CORS para as origens: ['http://localhost:5173']
+INFO 2025-10-31 11:12:35 [uvicorn.error:84] Started server process [28340]
+INFO 2025-10-31 11:12:35 [uvicorn.error:48] Waiting for application startup.
+INFO 2025-10-31 11:12:36 [app.main:131] Tabelas do banco de dados verificadas/criadas com sucesso.
+INFO 2025-10-31 11:12:36 [uvicorn.error:62] Application startup complete.
+INFO 2025-10-31 11:12:38 [uvicorn.error:264] Shutting down
+INFO 2025-10-31 11:12:38 [uvicorn.error:67] Waiting for application shutdown.
+INFO 2025-10-31 11:12:38 [app.services.whatsapp_service:54] ✅ Conexão com o banco de dados da Evolution API configurada.
+INFO 2025-10-31 11:12:38 [app.services.whatsapp_service:68] Encerrando conexões DB Evolution...
+INFO 2025-10-31 11:12:38 [app.services.whatsapp_service:70] Conexões DB Evolution encerradas.
+INFO 2025-10-31 11:12:38 [uvicorn.error:76] Application shutdown complete.
+INFO 2025-10-31 11:12:38 [uvicorn.error:94] Finished server process [28340]
+INFO 2025-10-31 11:12:41 [app.main:153] Configurando CORS para as origens: ['http://localhost:5173']
+INFO 2025-10-31 11:12:41 [uvicorn.error:84] Started server process [21048]
+INFO 2025-10-31 11:12:41 [uvicorn.error:48] Waiting for application startup.
+INFO 2025-10-31 11:12:41 [app.main:131] Tabelas do banco de dados verificadas/criadas com sucesso.
+INFO 2025-10-31 11:12:41 [uvicorn.error:62] Application startup complete.
+INFO 2025-10-31 11:12:56 [uvicorn.access:476] 127.0.0.1:53893 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:12:56 [uvicorn.access:476] 127.0.0.1:53898 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:12:56 [uvicorn.access:476] 127.0.0.1:53895 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:12:56 [uvicorn.access:476] 127.0.0.1:53894 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:13:56 [uvicorn.access:476] 127.0.0.1:53953 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:13:56 [uvicorn.access:476] 127.0.0.1:53955 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:13:56 [uvicorn.access:476] 127.0.0.1:53956 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:13:56 [uvicorn.access:476] 127.0.0.1:53954 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:14:06 [uvicorn.access:476] 2a03:2880:12ff:44:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:14:06 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:14:06 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSQkU0RjQxOTJGNkI3Q0QyOUE3AA==.
+INFO 2025-10-31 11:14:35 [uvicorn.error:264] Shutting down
+INFO 2025-10-31 11:14:35 [uvicorn.error:67] Waiting for application shutdown.
+INFO 2025-10-31 11:14:35 [app.services.whatsapp_service:54] ✅ Conexão com o banco de dados da Evolution API configurada.
+INFO 2025-10-31 11:14:35 [app.services.whatsapp_service:68] Encerrando conexões DB Evolution...
+INFO 2025-10-31 11:14:35 [app.services.whatsapp_service:70] Conexões DB Evolution encerradas.
+INFO 2025-10-31 11:14:35 [uvicorn.error:76] Application shutdown complete.
+INFO 2025-10-31 11:14:35 [uvicorn.error:94] Finished server process [21048]
+INFO 2025-10-31 11:14:38 [app.main:153] Configurando CORS para as origens: ['http://localhost:5173']
+INFO 2025-10-31 11:14:38 [uvicorn.error:84] Started server process [4452]
+INFO 2025-10-31 11:14:38 [uvicorn.error:48] Waiting for application startup.
+INFO 2025-10-31 11:14:38 [app.main:131] Tabelas do banco de dados verificadas/criadas com sucesso.
+INFO 2025-10-31 11:14:38 [uvicorn.error:62] Application startup complete.
+INFO 2025-10-31 11:14:49 [uvicorn.access:476] 127.0.0.1:53998 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:14:49 [uvicorn.access:476] 127.0.0.1:54003 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:14:49 [uvicorn.access:476] 127.0.0.1:54000 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:14:49 [uvicorn.access:476] 127.0.0.1:53999 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:14:50 [uvicorn.access:476] 127.0.0.1:53999 - "OPTIONS /api/v1/atendimentos/188 HTTP/1.1" 200
+INFO 2025-10-31 11:14:50 [uvicorn.access:476] 127.0.0.1:53999 - "PUT /api/v1/atendimentos/188 HTTP/1.1" 200
+INFO 2025-10-31 11:14:53 [uvicorn.access:476] 127.0.0.1:54010 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:14:53 [uvicorn.access:476] 127.0.0.1:54012 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:14:53 [uvicorn.access:476] 127.0.0.1:54011 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:14:55 [uvicorn.access:476] 127.0.0.1:54011 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:14:55 [uvicorn.access:476] 127.0.0.1:54012 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:14:55 [uvicorn.access:476] 127.0.0.1:54012 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:14:55 [uvicorn.access:476] 127.0.0.1:54010 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:14:55 [uvicorn.access:476] 127.0.0.1:54011 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:14:55 [uvicorn.access:476] 127.0.0.1:54012 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:14:55 [uvicorn.access:476] 127.0.0.1:54025 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:14:55 [uvicorn.access:476] 127.0.0.1:54011 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:14:55 [uvicorn.access:476] 127.0.0.1:54012 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:14:55 [uvicorn.access:476] 127.0.0.1:54010 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:15:00 [uvicorn.access:476] 127.0.0.1:54010 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:00 [uvicorn.access:476] 127.0.0.1:54011 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:00 [uvicorn.access:476] 127.0.0.1:54012 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:15:05 [uvicorn.access:476] 127.0.0.1:54033 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:05 [uvicorn.access:476] 127.0.0.1:54033 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:05 [uvicorn.access:476] 127.0.0.1:54034 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:15:05 [uvicorn.access:476] 127.0.0.1:54033 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:10 [uvicorn.access:476] 127.0.0.1:54033 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:10 [uvicorn.access:476] 127.0.0.1:54042 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:10 [uvicorn.access:476] 127.0.0.1:54034 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:15:15 [uvicorn.access:476] 127.0.0.1:54053 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:15 [uvicorn.access:476] 127.0.0.1:54055 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:15 [uvicorn.access:476] 127.0.0.1:54054 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:15:15 [uvicorn.access:476] 127.0.0.1:54056 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:18 [uvicorn.access:476] 127.0.0.1:54056 - "OPTIONS /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-31 11:15:18 [uvicorn.access:476] 127.0.0.1:54054 - "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:18 [uvicorn.access:476] 127.0.0.1:54055 - "OPTIONS /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-31 11:15:18 [uvicorn.access:476] 127.0.0.1:54053 - "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:18 [uvicorn.access:476] 127.0.0.1:54056 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:18 [uvicorn.access:476] 127.0.0.1:54054 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:18 [uvicorn.access:476] 127.0.0.1:54055 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:18 [uvicorn.access:476] 127.0.0.1:54053 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:18 [uvicorn.access:476] 127.0.0.1:54056 - "GET /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-31 11:15:18 [uvicorn.access:476] 127.0.0.1:54054 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:18 [uvicorn.access:476] 127.0.0.1:54055 - "GET /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-31 11:15:18 [uvicorn.access:476] 127.0.0.1:54059 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:18 [uvicorn.access:476] 127.0.0.1:54055 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:19 [uvicorn.access:476] 127.0.0.1:54055 - "OPTIONS /api/v1/agent/start HTTP/1.1" 200
+INFO 2025-10-31 11:15:19 [app.agent_manager:604] Agente para usuário 3 adicionado à fila de inicialização.
+INFO 2025-10-31 11:15:19 [uvicorn.access:476] 127.0.0.1:54055 - "POST /api/v1/agent/start HTTP/1.1" 200
+INFO 2025-10-31 11:15:19 [app.agent_manager:252] -> Agente de atendimento INICIADO para o utilizador 3.
+INFO 2025-10-31 11:15:19 [app.services.whatsapp_service:54] ✅ Conexão com o banco de dados da Evolution API configurada.
+INFO 2025-10-31 11:15:19 [app.services.gemini_service:49] ✅ Cliente Gemini inicializado com sucesso (chave índice 0).
+INFO 2025-10-31 11:15:19 [app.agent_manager:314] Agente (User 3, API: official): Processando atendimento ID 188 (Contato: 554591497839)
+INFO 2025-10-31 11:15:19 [app.agent_manager:331] Agente: Atendimento 188 marcado como 'Gerando Resposta'.
+INFO 2025-10-31 11:15:19 [app.agent_manager:407] Agente (Oficial): Usando histórico do DB (6 msgs) para atendimento 188.
+WARNING 2025-10-31 11:15:19 [app.agent_manager:427] Agente: Atendimento 188 marcado como 'Gerando Resposta', mas última msg já é 'assistant' (após ler contexto). Revertendo para 'Aguardando Resposta'.
+INFO 2025-10-31 11:15:23 [uvicorn.access:476] 127.0.0.1:54063 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:25 [uvicorn.access:476] 127.0.0.1:54063 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:26 [uvicorn.access:476] 2a03:2880:12ff:4a:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:15:26 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 11:15:26 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 191, Status: Gerando Resposta) encontrado para 554599861237.
+INFO 2025-10-31 11:15:26 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhgUM0Y3QTcxNUQxN0QyODIwNUMwQ0UA adicionada e status atualizado para Atendimento 191.
+INFO 2025-10-31 11:15:28 [uvicorn.access:476] 127.0.0.1:54063 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:28 [uvicorn.access:476] 127.0.0.1:54068 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:15:28 [uvicorn.access:476] 127.0.0.1:54069 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:28 [uvicorn.access:476] 127.0.0.1:54070 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:28 [uvicorn.access:476] 127.0.0.1:54063 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:15:28 [uvicorn.access:476] 127.0.0.1:54068 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:28 [uvicorn.access:476] 127.0.0.1:54071 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:32 [uvicorn.access:476] 127.0.0.1:54076 - "GET /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-31 11:15:32 [uvicorn.access:476] 127.0.0.1:54077 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:32 [uvicorn.access:476] 127.0.0.1:54075 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:32 [uvicorn.access:476] 127.0.0.1:54080 - "GET /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-31 11:15:32 [uvicorn.access:476] 127.0.0.1:54076 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:32 [uvicorn.access:476] 127.0.0.1:54081 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:32 [uvicorn.access:476] 127.0.0.1:54078 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:32 [uvicorn.access:476] 127.0.0.1:54081 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:32 [uvicorn.access:476] 127.0.0.1:54078 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:34 [uvicorn.access:476] 127.0.0.1:54078 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:34 [uvicorn.access:476] 127.0.0.1:54080 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:34 [uvicorn.access:476] 127.0.0.1:54076 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:34 [uvicorn.access:476] 127.0.0.1:54081 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:15:34 [uvicorn.access:476] 127.0.0.1:54078 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:34 [uvicorn.access:476] 127.0.0.1:54077 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:34 [uvicorn.access:476] 127.0.0.1:54076 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:15:35 [uvicorn.access:476] 127.0.0.1:54076 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:37 [uvicorn.access:476] 127.0.0.1:54085 - "OPTIONS /api/v1/atendimentos/191 HTTP/1.1" 200
+INFO 2025-10-31 11:15:37 [uvicorn.access:476] 127.0.0.1:54085 - "PUT /api/v1/atendimentos/191 HTTP/1.1" 200
+INFO 2025-10-31 11:15:39 [uvicorn.access:476] 127.0.0.1:54085 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:39 [uvicorn.access:476] 127.0.0.1:54089 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:39 [uvicorn.access:476] 127.0.0.1:54088 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:15:44 [uvicorn.access:476] 127.0.0.1:54097 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:44 [uvicorn.access:476] 127.0.0.1:54099 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:44 [uvicorn.access:476] 127.0.0.1:54098 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:15:45 [uvicorn.access:476] 127.0.0.1:54098 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:45 [uvicorn.access:476] 127.0.0.1:54098 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:45 [uvicorn.access:476] 127.0.0.1:54099 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:46 [uvicorn.access:476] 127.0.0.1:54099 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:46 [uvicorn.access:476] 127.0.0.1:54097 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:46 [uvicorn.access:476] 127.0.0.1:54098 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:15:46 [uvicorn.access:476] 127.0.0.1:54108 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:46 [uvicorn.access:476] 127.0.0.1:54099 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:46 [uvicorn.access:476] 127.0.0.1:54108 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:46 [uvicorn.access:476] 127.0.0.1:54097 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:15:46 [uvicorn.access:476] 127.0.0.1:54099 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:51 [uvicorn.access:476] 127.0.0.1:54099 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:51 [uvicorn.access:476] 127.0.0.1:54108 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:51 [uvicorn.access:476] 127.0.0.1:54097 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:15:56 [uvicorn.access:476] 127.0.0.1:54118 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:15:56 [uvicorn.access:476] 127.0.0.1:54120 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:15:56 [uvicorn.access:476] 127.0.0.1:54119 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:15:56 [uvicorn.access:476] 127.0.0.1:54121 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:01 [uvicorn.access:476] 127.0.0.1:54121 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:01 [uvicorn.access:476] 127.0.0.1:54120 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:16:01 [uvicorn.access:476] 127.0.0.1:54119 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:16:05 [uvicorn.access:476] 127.0.0.1:54119 - "GET /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-31 11:16:05 [uvicorn.access:476] 127.0.0.1:54121 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:05 [uvicorn.access:476] 127.0.0.1:54129 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:16:05 [uvicorn.access:476] 127.0.0.1:54120 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-31 11:16:05 [uvicorn.access:476] 127.0.0.1:54119 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:05 [uvicorn.access:476] 127.0.0.1:54130 - "GET /api/v1/agent/status HTTP/1.1" 200
+INFO 2025-10-31 11:16:05 [uvicorn.access:476] 127.0.0.1:54121 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:16:05 [uvicorn.access:476] 127.0.0.1:54131 - "GET /api/v1/dashboard/ HTTP/1.1" 200
+INFO 2025-10-31 11:16:05 [uvicorn.access:476] 127.0.0.1:54120 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:05 [app.agent_manager:314] Agente (User 3, API: official): Processando atendimento ID 191 (Contato: 554599861237)
+INFO 2025-10-31 11:16:05 [app.agent_manager:331] Agente: Atendimento 191 marcado como 'Gerando Resposta'.
+INFO 2025-10-31 11:16:05 [app.agent_manager:407] Agente (Oficial): Usando histórico do DB (36 msgs) para atendimento 191.
+INFO 2025-10-31 11:16:05 [app.agent_manager:442] Agente: Atendimento 191 apto para IA. Chamando Gemini...
+INFO 2025-10-31 11:16:06 [uvicorn.access:476] 127.0.0.1:54135 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:07 [uvicorn.access:476] 127.0.0.1:54135 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:07 [uvicorn.access:476] 127.0.0.1:54139 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:07 [uvicorn.access:476] 127.0.0.1:54138 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:16:07 [uvicorn.access:476] 127.0.0.1:54136 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:16:07 [uvicorn.access:476] 127.0.0.1:54135 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:07 [uvicorn.access:476] 127.0.0.1:54139 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:16:07 [uvicorn.access:476] 127.0.0.1:54140 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:16:12 [uvicorn.access:476] 127.0.0.1:54140 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:12 [uvicorn.access:476] 127.0.0.1:54135 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:16:12 [uvicorn.access:476] 127.0.0.1:54139 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:16:14 [app.crud.crud_user:89] DEBUG: 1 token(s) deduzido(s) do utilizador 3. Restantes: 9846
+INFO 2025-10-31 11:16:14 [app.services.gemini_service:93] Token deduzido para o utilizador 3. Tokens restantes: 9846
+INFO 2025-10-31 11:16:14 [app.agent_manager:485] Agente: Enviando parte 1/1 para 554599861237 (Atendimento 191)...
+DEBUG 2025-10-31 11:16:14 [app.services.whatsapp_service:469] WBP Send Payload to 554599861237: {"messaging_product": "whatsapp", "recipient_type": "individual", "to": "554599861237", "type": "text", "text": {"preview_url": false, "body": "Fico feliz em te atender, Cris! Como posso te ajudar hoje com os produtos da Talatto?"}}
+DEBUG 2025-10-31 11:16:14 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=30.0 socket_options=None
+DEBUG 2025-10-31 11:16:14 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D8581E9150>
+DEBUG 2025-10-31 11:16:14 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000001D858A2FBF0> server_hostname='graph.facebook.com' timeout=30.0
+DEBUG 2025-10-31 11:16:14 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D85859B010>
+DEBUG 2025-10-31 11:16:14 [httpcore.http11:87] send_request_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:16:14 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-31 11:16:14 [httpcore.http11:87] send_request_body.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:16:14 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-31 11:16:14 [httpcore.http11:87] receive_response_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:16:16 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'x-fb-aed', b'621'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'AO9CqWJcVfsAdlY5AIahwfB'), (b'x-fb-trace-id', b'HbEGFtzVAHD'), (b'x-fb-rev', b'1029220230'), (b'X-FB-Debug', b'KFbOaA5FoMg/CUbrC96q1vodpQZkQB/O3FOR1tsk/c5dyCGr5S4TrJbJjrHeZdv7KuBr41qV4d44sOm3ijYQwA=='), (b'Date', b'Fri, 31 Oct 2025 14:16:14 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=32, rtx=0, c=10, mss=1392, tbw=3479, tp=-1, tpl=-1, uplat=1225, ullat=1'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'178')])
+INFO 2025-10-31 11:16:16 [httpx:1740] HTTP Request: POST https://graph.facebook.com/v24.0/806840102518876/messages "HTTP/1.1 200 OK"
+DEBUG 2025-10-31 11:16:16 [httpcore.http11:87] receive_response_body.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:16:16 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-31 11:16:16 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-31 11:16:16 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-31 11:16:16 [app.services.whatsapp_service:482] WBP: Mensagem enviada para 554599861237 (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQTcwRkM3Qjc1QzM4MDc3ODA5AA==, Tentativa 1).
+DEBUG 2025-10-31 11:16:16 [httpcore.connection:87] close.started
+DEBUG 2025-10-31 11:16:16 [httpcore.connection:87] close.complete
+INFO 2025-10-31 11:16:16 [app.agent_manager:492] Agente: Parte 1 enviada com sucesso para 191. (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQTcwRkM3Qjc1QzM4MDc3ODA5AA==)
+INFO 2025-10-31 11:16:16 [app.agent_manager:515] Agente: Verificando status atual do Atendimento 191 ANTES da atualização final.
+INFO 2025-10-31 11:16:16 [app.agent_manager:564] Agente: Atendimento 191 ainda 'Gerando Resposta'. Aplicando status: 'Aguardando Resposta'
+INFO 2025-10-31 11:16:16 [app.agent_manager:580] Agente: Atendimento 191 finalizado neste ciclo.
+INFO 2025-10-31 11:16:16 [uvicorn.access:476] 127.0.0.1:54146 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:17 [uvicorn.access:476] 127.0.0.1:54146 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:17 [uvicorn.access:476] 127.0.0.1:54149 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:16:17 [uvicorn.access:476] 2a03:2880:22ff:7e:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:16:17 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:16:17 [uvicorn.access:476] 127.0.0.1:54148 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:16:17 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQTcwRkM3Qjc1QzM4MDc3ODA5AA==.
+INFO 2025-10-31 11:16:17 [uvicorn.access:476] 2a03:2880:10ff:70:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:16:17 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:16:17 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQTcwRkM3Qjc1QzM4MDc3ODA5AA==.
+INFO 2025-10-31 11:16:17 [uvicorn.access:476] 2a03:2880:22ff:4b:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:16:17 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:16:17 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQTcwRkM3Qjc1QzM4MDc3ODA5AA==.
+INFO 2025-10-31 11:16:17 [uvicorn.access:476] 2a03:2880:12ff:7d:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:16:17 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:16:17 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQTcwRkM3Qjc1QzM4MDc3ODA5AA==.
+INFO 2025-10-31 11:16:19 [uvicorn.access:476] 2a03:2880:22ff:44:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:16:19 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:16:19 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQTcwRkM3Qjc1QzM4MDc3ODA5AA==.
+INFO 2025-10-31 11:16:22 [uvicorn.access:476] 127.0.0.1:54148 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:22 [uvicorn.access:476] 127.0.0.1:54146 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:16:22 [uvicorn.access:476] 127.0.0.1:54149 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:16:26 [uvicorn.access:476] 127.0.0.1:54149 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:27 [uvicorn.access:476] 127.0.0.1:54149 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:27 [uvicorn.access:476] 127.0.0.1:54164 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:16:27 [uvicorn.access:476] 127.0.0.1:54146 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:16:32 [uvicorn.access:476] 127.0.0.1:54146 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:32 [uvicorn.access:476] 127.0.0.1:54170 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:16:32 [uvicorn.access:476] 127.0.0.1:54164 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:16:36 [uvicorn.access:476] 127.0.0.1:54164 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:37 [uvicorn.access:476] 127.0.0.1:54164 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:16:37 [uvicorn.access:476] 127.0.0.1:54170 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:16:37 [uvicorn.access:476] 127.0.0.1:54175 - "GET /api/v1/configs/ HTTP/1.1" 200
