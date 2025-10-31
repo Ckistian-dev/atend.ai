@@ -28858,3 +28858,1333 @@ INFO 2025-10-31 11:30:09 [uvicorn.access:476] 127.0.0.1:55248 - "GET /api/v1/ate
 INFO 2025-10-31 11:30:14 [uvicorn.access:476] 127.0.0.1:55248 - "GET /api/v1/auth/me HTTP/1.1" 200
 INFO 2025-10-31 11:30:14 [uvicorn.access:476] 127.0.0.1:55247 - "GET /api/v1/configs/ HTTP/1.1" 200
 INFO 2025-10-31 11:30:14 [uvicorn.access:476] 127.0.0.1:55249 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:30:16 [uvicorn.access:476] 127.0.0.1:55249 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:30:17 [app.agent_manager:314] Agente (User 3, API: official): Processando atendimento ID 191 (Contato: 554599861237)
+INFO 2025-10-31 11:30:17 [app.agent_manager:331] Agente: Atendimento 191 marcado como 'Gerando Resposta'.
+INFO 2025-10-31 11:30:17 [app.agent_manager:407] Agente (Oficial): Usando histórico do DB (38 msgs) para atendimento 191.
+INFO 2025-10-31 11:30:17 [app.agent_manager:442] Agente: Atendimento 191 apto para IA. Chamando Gemini...
+INFO 2025-10-31 11:30:18 [uvicorn.access:476] 127.0.0.1:55260 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:30:18 [uvicorn.access:476] 127.0.0.1:55261 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:30:18 [uvicorn.access:476] 127.0.0.1:55259 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:30:24 [uvicorn.access:476] 127.0.0.1:55269 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:30:24 [uvicorn.access:476] 127.0.0.1:55271 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:30:24 [uvicorn.access:476] 127.0.0.1:55270 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:30:26 [uvicorn.access:476] 127.0.0.1:55270 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:30:29 [uvicorn.access:476] 127.0.0.1:55280 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:30:29 [uvicorn.access:476] 127.0.0.1:55282 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:30:29 [uvicorn.access:476] 127.0.0.1:55281 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:30:34 [uvicorn.access:476] 127.0.0.1:55281 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:30:34 [uvicorn.access:476] 127.0.0.1:55286 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:30:34 [uvicorn.access:476] 127.0.0.1:55285 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:30:36 [uvicorn.access:476] 127.0.0.1:55285 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:30:39 [uvicorn.access:476] 127.0.0.1:55289 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:30:39 [uvicorn.access:476] 127.0.0.1:55291 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:30:39 [uvicorn.access:476] 127.0.0.1:55290 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:30:40 [app.crud.crud_user:89] DEBUG: 1 token(s) deduzido(s) do utilizador 3. Restantes: 9845
+INFO 2025-10-31 11:30:40 [app.services.gemini_service:93] Token deduzido para o utilizador 3. Tokens restantes: 9845
+INFO 2025-10-31 11:30:40 [app.agent_manager:485] Agente: Enviando parte 1/4 para 554599861237 (Atendimento 191)...
+DEBUG 2025-10-31 11:30:40 [app.services.whatsapp_service:469] WBP Send Payload to 554599861237: {"messaging_product": "whatsapp", "recipient_type": "individual", "to": "554599861237", "type": "text", "text": {"preview_url": false, "body": "Que \u00f3timo que voc\u00ea quer ver pain\u00e9is, Cris!"}}
+DEBUG 2025-10-31 11:30:41 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=30.0 socket_options=None
+DEBUG 2025-10-31 11:30:41 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D858A54CD0>
+DEBUG 2025-10-31 11:30:41 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000001D8585D85F0> server_hostname='graph.facebook.com' timeout=30.0
+DEBUG 2025-10-31 11:30:41 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D8581C3CD0>
+DEBUG 2025-10-31 11:30:41 [httpcore.http11:87] send_request_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:30:41 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-31 11:30:41 [httpcore.http11:87] send_request_body.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:30:41 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-31 11:30:41 [httpcore.http11:87] receive_response_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:30:42 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'x-fb-aed', b'621'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'AS_SaivHBbeywyeDMdQ2bZ2'), (b'x-fb-trace-id', b'BrGlWrbonNe'), (b'x-fb-rev', b'1029220230'), (b'X-FB-Debug', b'iDZwHQ6CjGPRX2mUrwMVq/LggOsxuU8q3znEcp1YbEhD9dPsFVDDWb5I1MpjzRSRUselzY/sZvMOra42pcI3Pw=='), (b'x-fb-server-load', b'1'), (b'Date', b'Fri, 31 Oct 2025 14:30:40 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=26, rtx=0, c=10, mss=1392, tbw=3479, tp=-1, tpl=-1, uplat=935, ullat=0'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'178')])
+INFO 2025-10-31 11:30:42 [httpx:1740] HTTP Request: POST https://graph.facebook.com/v24.0/806840102518876/messages "HTTP/1.1 200 OK"
+DEBUG 2025-10-31 11:30:42 [httpcore.http11:87] receive_response_body.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:30:42 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-31 11:30:42 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-31 11:30:42 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-31 11:30:42 [app.services.whatsapp_service:482] WBP: Mensagem enviada para 554599861237 (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMEE1MjU2QkZFMTY2Q0Y0NUVFAA==, Tentativa 1).
+DEBUG 2025-10-31 11:30:42 [httpcore.connection:87] close.started
+DEBUG 2025-10-31 11:30:42 [httpcore.connection:87] close.complete
+INFO 2025-10-31 11:30:42 [app.agent_manager:492] Agente: Parte 1 enviada com sucesso para 191. (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMEE1MjU2QkZFMTY2Q0Y0NUVFAA==)
+INFO 2025-10-31 11:30:43 [uvicorn.access:476] 2a03:2880:12ff:9:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:43 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:43 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMEE1MjU2QkZFMTY2Q0Y0NUVFAA==.
+INFO 2025-10-31 11:30:43 [uvicorn.access:476] 2a03:2880:10ff:74:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:43 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:43 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMEE1MjU2QkZFMTY2Q0Y0NUVFAA==.
+INFO 2025-10-31 11:30:43 [uvicorn.access:476] 2a03:2880:12ff:54:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:43 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:43 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMEE1MjU2QkZFMTY2Q0Y0NUVFAA==.
+INFO 2025-10-31 11:30:44 [uvicorn.access:476] 127.0.0.1:55290 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:30:44 [uvicorn.access:476] 127.0.0.1:55301 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:30:44 [uvicorn.access:476] 127.0.0.1:55291 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:30:44 [app.agent_manager:485] Agente: Enviando parte 2/4 para 554599861237 (Atendimento 191)...
+DEBUG 2025-10-31 11:30:44 [app.services.whatsapp_service:469] WBP Send Payload to 554599861237: {"messaging_product": "whatsapp", "recipient_type": "individual", "to": "554599861237", "type": "text", "text": {"preview_url": false, "body": "Na Talatto, temos diversas op\u00e7\u00f5es para transformar seu ambiente. Voc\u00ea est\u00e1 procurando por:"}}
+DEBUG 2025-10-31 11:30:44 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=30.0 socket_options=None
+INFO 2025-10-31 11:30:44 [uvicorn.access:476] 2a03:2880:22ff:6:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:44 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:44 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMEE1MjU2QkZFMTY2Q0Y0NUVFAA==.
+DEBUG 2025-10-31 11:30:44 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D858B6FE50>
+DEBUG 2025-10-31 11:30:44 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000001D8585D95B0> server_hostname='graph.facebook.com' timeout=30.0
+DEBUG 2025-10-31 11:30:44 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D858BD9350>
+DEBUG 2025-10-31 11:30:44 [httpcore.http11:87] send_request_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:30:44 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-31 11:30:44 [httpcore.http11:87] send_request_body.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:30:44 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-31 11:30:44 [httpcore.http11:87] receive_response_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:30:45 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'x-fb-aed', b'621'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'AyCy2rtW94w4vPzcrFGNZF2'), (b'x-fb-trace-id', b'BrjSITzbNVJ'), (b'x-fb-rev', b'1029220230'), (b'X-FB-Debug', b'6dYbaZqQbJzpFMoptYHvhVwojL6vNWO/SukU2ux9ri+lvLz028tQS20BmEibOFPqBdNEI67XSWc/CJ7OJ/UZdw=='), (b'x-fb-server-load', b'14'), (b'Date', b'Fri, 31 Oct 2025 14:30:43 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=26, rtx=0, c=10, mss=1392, tbw=3480, tp=-1, tpl=-1, uplat=623, ullat=3'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'178')])
+INFO 2025-10-31 11:30:45 [httpx:1740] HTTP Request: POST https://graph.facebook.com/v24.0/806840102518876/messages "HTTP/1.1 200 OK"
+DEBUG 2025-10-31 11:30:45 [httpcore.http11:87] receive_response_body.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:30:45 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-31 11:30:45 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-31 11:30:45 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-31 11:30:45 [app.services.whatsapp_service:482] WBP: Mensagem enviada para 554599861237 (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSRkI4QUQzMUU5ODRCQ0VGRDVCAA==, Tentativa 1).
+DEBUG 2025-10-31 11:30:45 [httpcore.connection:87] close.started
+DEBUG 2025-10-31 11:30:45 [httpcore.connection:87] close.complete
+INFO 2025-10-31 11:30:45 [app.agent_manager:492] Agente: Parte 2 enviada com sucesso para 191. (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSRkI4QUQzMUU5ODRCQ0VGRDVCAA==)
+INFO 2025-10-31 11:30:46 [uvicorn.access:476] 127.0.0.1:55291 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:30:46 [uvicorn.access:476] 2a03:2880:10ff:41:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:46 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:46 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSRkI4QUQzMUU5ODRCQ0VGRDVCAA==.
+INFO 2025-10-31 11:30:46 [uvicorn.access:476] 2a03:2880:12ff:74:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:46 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:46 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSRkI4QUQzMUU5ODRCQ0VGRDVCAA==.
+INFO 2025-10-31 11:30:47 [uvicorn.access:476] 2a03:2880:12ff:58:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:47 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:47 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSRkI4QUQzMUU5ODRCQ0VGRDVCAA==.
+INFO 2025-10-31 11:30:47 [uvicorn.access:476] 2a03:2880:22ff:1:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:47 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:47 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSRkI4QUQzMUU5ODRCQ0VGRDVCAA==.
+INFO 2025-10-31 11:30:48 [uvicorn.access:476] 127.0.0.1:55318 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:30:48 [uvicorn.access:476] 127.0.0.1:55320 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:30:48 [uvicorn.access:476] 127.0.0.1:55319 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:30:48 [uvicorn.access:476] 2a03:2880:22ff:72:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:48 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:48 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSRkI4QUQzMUU5ODRCQ0VGRDVCAA==.
+INFO 2025-10-31 11:30:48 [app.agent_manager:485] Agente: Enviando parte 3/4 para 554599861237 (Atendimento 191)...
+DEBUG 2025-10-31 11:30:48 [app.services.whatsapp_service:469] WBP Send Payload to 554599861237: {"messaging_product": "whatsapp", "recipient_type": "individual", "to": "554599861237", "type": "text", "text": {"preview_url": false, "body": "*   Pain\u00e9is Ripados: Com relevo e efeito tridimensional moderno.\n*   Shiplap: Com um visual cl\u00e1ssico de t\u00e1buas sobrepostas.\n*   Pain\u00e9is de Pedra Leve: Que reproduzem a textura natural da pedra.\n*   Estofados: Como as nossas cabeceiras estofadas, para um toque de conforto."}}
+DEBUG 2025-10-31 11:30:48 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=30.0 socket_options=None
+DEBUG 2025-10-31 11:30:48 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D858133DD0>
+DEBUG 2025-10-31 11:30:48 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000001D8585D9490> server_hostname='graph.facebook.com' timeout=30.0
+DEBUG 2025-10-31 11:30:48 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D858A92B10>
+DEBUG 2025-10-31 11:30:48 [httpcore.http11:87] send_request_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:30:48 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-31 11:30:48 [httpcore.http11:87] send_request_body.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:30:48 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-31 11:30:48 [httpcore.http11:87] receive_response_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:30:49 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'x-fb-aed', b'621'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'Alnc5Jwi1HQXVVlX3rLHK5X'), (b'x-fb-trace-id', b'AVs6znUhc4N'), (b'x-fb-rev', b'1029220230'), (b'X-FB-Debug', b'jVUYOeV3yBpmsYiEVjPaSYCewXiDNDMEnQguSXICWhc0E9Ipvl+PAy4TYVZlsqrnmQRju87Av7UyykgLvbbpqA=='), (b'Date', b'Fri, 31 Oct 2025 14:30:48 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=28, rtx=0, c=10, mss=1392, tbw=3479, tp=-1, tpl=-1, uplat=937, ullat=3'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'178')])
+INFO 2025-10-31 11:30:49 [httpx:1740] HTTP Request: POST https://graph.facebook.com/v24.0/806840102518876/messages "HTTP/1.1 200 OK"
+DEBUG 2025-10-31 11:30:49 [httpcore.http11:87] receive_response_body.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:30:49 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-31 11:30:49 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-31 11:30:49 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-31 11:30:49 [app.services.whatsapp_service:482] WBP: Mensagem enviada para 554599861237 (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQTExRkY1OEY4Mjk5QUVCNkJBAA==, Tentativa 1).
+DEBUG 2025-10-31 11:30:49 [httpcore.connection:87] close.started
+DEBUG 2025-10-31 11:30:49 [httpcore.connection:87] close.complete
+INFO 2025-10-31 11:30:49 [app.agent_manager:492] Agente: Parte 3 enviada com sucesso para 191. (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQTExRkY1OEY4Mjk5QUVCNkJBAA==)
+INFO 2025-10-31 11:30:50 [uvicorn.access:476] 2a03:2880:10ff:1:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:50 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:50 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQTExRkY1OEY4Mjk5QUVCNkJBAA==.
+INFO 2025-10-31 11:30:51 [uvicorn.access:476] 2a03:2880:10ff:9:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:51 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:51 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQTExRkY1OEY4Mjk5QUVCNkJBAA==.
+INFO 2025-10-31 11:30:51 [uvicorn.access:476] 2a03:2880:22ff:3:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:51 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:51 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQTExRkY1OEY4Mjk5QUVCNkJBAA==.
+INFO 2025-10-31 11:30:53 [app.agent_manager:485] Agente: Enviando parte 4/4 para 554599861237 (Atendimento 191)...
+DEBUG 2025-10-31 11:30:53 [app.services.whatsapp_service:469] WBP Send Payload to 554599861237: {"messaging_product": "whatsapp", "recipient_type": "individual", "to": "554599861237", "type": "text", "text": {"preview_url": false, "body": "Para qual ambiente voc\u00ea est\u00e1 pensando em instalar o painel? Assim consigo te ajudar a encontrar a op\u00e7\u00e3o perfeita! \ud83d\ude0a"}}
+DEBUG 2025-10-31 11:30:53 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=30.0 socket_options=None
+DEBUG 2025-10-31 11:30:54 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D858A66290>
+DEBUG 2025-10-31 11:30:54 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000001D8585DB2F0> server_hostname='graph.facebook.com' timeout=30.0
+DEBUG 2025-10-31 11:30:54 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D858A675D0>
+DEBUG 2025-10-31 11:30:54 [httpcore.http11:87] send_request_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:30:54 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-31 11:30:54 [httpcore.http11:87] send_request_body.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:30:54 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-31 11:30:54 [httpcore.http11:87] receive_response_headers.started request=<Request [b'POST']>
+INFO 2025-10-31 11:30:54 [uvicorn.access:476] 127.0.0.1:55342 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:30:54 [uvicorn.access:476] 127.0.0.1:55346 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:30:54 [uvicorn.access:476] 127.0.0.1:55345 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+DEBUG 2025-10-31 11:30:54 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'x-fb-aed', b'621'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'AFA526krkex2gFLeSE6FUSt'), (b'x-fb-trace-id', b'CPh3sMNoqQF'), (b'x-fb-rev', b'1029220230'), (b'X-FB-Debug', b'BMuB0JnQ4ICATQV7JoIER4xHGNQoM20EGgblSF8EfOXxUm+igluHOTa45mb3fmJXyHrNhwYvOEXtFUmvc3ILCQ=='), (b'x-fb-server-load', b'12'), (b'Date', b'Fri, 31 Oct 2025 14:30:53 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=27, rtx=0, c=10, mss=1392, tbw=3480, tp=-1, tpl=-1, uplat=603, ullat=1'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'178')])
+INFO 2025-10-31 11:30:54 [httpx:1740] HTTP Request: POST https://graph.facebook.com/v24.0/806840102518876/messages "HTTP/1.1 200 OK"
+DEBUG 2025-10-31 11:30:54 [httpcore.http11:87] receive_response_body.started request=<Request [b'POST']>
+DEBUG 2025-10-31 11:30:54 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-31 11:30:54 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-31 11:30:54 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-31 11:30:54 [app.services.whatsapp_service:482] WBP: Mensagem enviada para 554599861237 (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSN0Y2NjI0MjhGNkFDREYxOEFGAA==, Tentativa 1).
+DEBUG 2025-10-31 11:30:54 [httpcore.connection:87] close.started
+DEBUG 2025-10-31 11:30:54 [httpcore.connection:87] close.complete
+INFO 2025-10-31 11:30:54 [app.agent_manager:492] Agente: Parte 4 enviada com sucesso para 191. (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSN0Y2NjI0MjhGNkFDREYxOEFGAA==)
+INFO 2025-10-31 11:30:54 [app.agent_manager:515] Agente: Verificando status atual do Atendimento 191 ANTES da atualização final.
+INFO 2025-10-31 11:30:54 [app.agent_manager:564] Agente: Atendimento 191 ainda 'Gerando Resposta'. Aplicando status: 'Gerando Resposta'
+INFO 2025-10-31 11:30:54 [app.agent_manager:580] Agente: Atendimento 191 finalizado neste ciclo.
+INFO 2025-10-31 11:30:55 [uvicorn.access:476] 2a03:2880:22ff:4f:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:55 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:55 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSN0Y2NjI0MjhGNkFDREYxOEFGAA==.
+INFO 2025-10-31 11:30:56 [uvicorn.access:476] 2a03:2880:22ff:46:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:56 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:56 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSN0Y2NjI0MjhGNkFDREYxOEFGAA==.
+INFO 2025-10-31 11:30:56 [uvicorn.access:476] 2a03:2880:12ff:5f:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:56 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:56 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSN0Y2NjI0MjhGNkFDREYxOEFGAA==.
+INFO 2025-10-31 11:30:56 [uvicorn.access:476] 127.0.0.1:55345 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:30:59 [uvicorn.access:476] 127.0.0.1:55364 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:30:59 [uvicorn.access:476] 127.0.0.1:55366 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:30:59 [uvicorn.access:476] 127.0.0.1:55365 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:30:59 [uvicorn.access:476] 2a03:2880:22ff:9:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:30:59 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:30:59 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSQTExRkY1OEY4Mjk5QUVCNkJBAA==.
+INFO 2025-10-31 11:31:00 [uvicorn.access:476] 2a03:2880:22ff:6:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 11:31:00 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 11:31:00 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSN0Y2NjI0MjhGNkFDREYxOEFGAA==.
+INFO 2025-10-31 11:31:04 [uvicorn.access:476] 127.0.0.1:55365 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:04 [uvicorn.access:476] 127.0.0.1:55373 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:31:04 [uvicorn.access:476] 127.0.0.1:55374 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:31:06 [uvicorn.access:476] 127.0.0.1:55374 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:09 [uvicorn.access:476] 127.0.0.1:55384 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:09 [uvicorn.access:476] 127.0.0.1:55386 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:31:09 [uvicorn.access:476] 127.0.0.1:55385 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:31:14 [uvicorn.access:476] 127.0.0.1:55385 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:14 [uvicorn.access:476] 127.0.0.1:55384 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:31:14 [uvicorn.access:476] 127.0.0.1:55386 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:31:16 [uvicorn.access:476] 127.0.0.1:55386 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:19 [uvicorn.access:476] 127.0.0.1:55395 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:19 [uvicorn.access:476] 127.0.0.1:55397 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:31:19 [uvicorn.access:476] 127.0.0.1:55396 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:31:24 [uvicorn.access:476] 127.0.0.1:55396 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:24 [uvicorn.access:476] 127.0.0.1:55395 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:31:24 [uvicorn.access:476] 127.0.0.1:55397 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:31:26 [uvicorn.access:476] 127.0.0.1:55397 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:29 [uvicorn.access:476] 127.0.0.1:55406 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:29 [uvicorn.access:476] 127.0.0.1:55408 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:31:29 [uvicorn.access:476] 127.0.0.1:55407 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:31:34 [uvicorn.access:476] 127.0.0.1:55407 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:34 [uvicorn.access:476] 127.0.0.1:55412 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:31:34 [uvicorn.access:476] 127.0.0.1:55411 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:31:36 [uvicorn.access:476] 127.0.0.1:55411 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:39 [uvicorn.access:476] 127.0.0.1:55418 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:39 [uvicorn.access:476] 127.0.0.1:55420 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:31:39 [uvicorn.access:476] 127.0.0.1:55419 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:31:44 [uvicorn.access:476] 127.0.0.1:55419 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:44 [uvicorn.access:476] 127.0.0.1:55428 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:31:44 [uvicorn.access:476] 127.0.0.1:55420 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:31:46 [uvicorn.access:476] 127.0.0.1:55420 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:49 [uvicorn.access:476] 127.0.0.1:55432 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:49 [uvicorn.access:476] 127.0.0.1:55434 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:31:49 [uvicorn.access:476] 127.0.0.1:55433 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:31:56 [uvicorn.access:476] 127.0.0.1:55441 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:56 [uvicorn.access:476] 127.0.0.1:55444 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:31:56 [uvicorn.access:476] 127.0.0.1:55443 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:31:56 [uvicorn.access:476] 127.0.0.1:55442 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:32:56 [uvicorn.access:476] 127.0.0.1:55499 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:32:56 [uvicorn.access:476] 127.0.0.1:55501 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:32:56 [uvicorn.access:476] 127.0.0.1:55500 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:32:56 [uvicorn.access:476] 127.0.0.1:55502 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:33:56 [uvicorn.access:476] 127.0.0.1:55560 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:33:56 [uvicorn.access:476] 127.0.0.1:55561 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:33:56 [uvicorn.access:476] 127.0.0.1:55562 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:33:56 [uvicorn.access:476] 127.0.0.1:55563 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:34:56 [uvicorn.access:476] 127.0.0.1:55660 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 11:34:56 [uvicorn.access:476] 127.0.0.1:55662 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 11:34:56 [uvicorn.access:476] 127.0.0.1:55661 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 11:34:56 [uvicorn.access:476] 127.0.0.1:55663 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:26:09 [uvicorn.access:476] 127.0.0.1:62964 - "OPTIONS /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:26:09 [uvicorn.access:476] 127.0.0.1:62961 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:26:09 [uvicorn.access:476] 127.0.0.1:62962 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:26:09 [uvicorn.access:476] 127.0.0.1:62963 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:26:11 [uvicorn.access:476] 127.0.0.1:63033 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:26:11 [uvicorn.access:476] 127.0.0.1:63034 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:26:11 [uvicorn.access:476] 127.0.0.1:63032 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:26:11 [uvicorn.access:476] 127.0.0.1:63033 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:26:29 [uvicorn.access:476] 2a03:2880:22ff:49:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:26:29 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:26:29 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSOEQ4MERGMUU4RDlFNERBMEJBAA==.
+INFO 2025-10-31 12:26:29 [uvicorn.access:476] 2a03:2880:10ff:3:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:26:29 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:26:29 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSOEQ4MERGMUU4RDlFNERBMEJBAA==.
+INFO 2025-10-31 12:26:56 [uvicorn.access:476] 127.0.0.1:63173 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:26:56 [uvicorn.access:476] 127.0.0.1:63175 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:26:56 [uvicorn.access:476] 127.0.0.1:63174 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:26:56 [uvicorn.access:476] 127.0.0.1:63176 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:27:56 [uvicorn.access:476] 127.0.0.1:63199 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:27:56 [uvicorn.access:476] 127.0.0.1:63201 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:27:56 [uvicorn.access:476] 127.0.0.1:63200 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:27:56 [uvicorn.access:476] 127.0.0.1:63202 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:28:56 [uvicorn.access:476] 127.0.0.1:63236 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:28:56 [uvicorn.access:476] 127.0.0.1:63238 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:28:56 [uvicorn.access:476] 127.0.0.1:63237 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:28:56 [uvicorn.access:476] 127.0.0.1:63239 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:29:56 [uvicorn.access:476] 127.0.0.1:63243 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:29:56 [uvicorn.access:476] 127.0.0.1:63245 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:29:56 [uvicorn.access:476] 127.0.0.1:63244 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:29:56 [uvicorn.access:476] 127.0.0.1:63246 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:30:22 [uvicorn.access:476] 2a03:2880:12ff:1:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:30:22 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:30:22 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:30:22 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0ZDRjk2Q0MwODE0ODhGMkEzN0YA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:30:22 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0ZDRjk2Q0MwODE0ODhGMkEzN0YA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:30:56 [uvicorn.access:476] 127.0.0.1:63367 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:30:56 [uvicorn.access:476] 127.0.0.1:63369 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:30:56 [uvicorn.access:476] 127.0.0.1:63368 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:30:56 [uvicorn.access:476] 127.0.0.1:63370 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:31:08 [uvicorn.access:476] 2a03:2880:10ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:31:08 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:31:08 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRDYzNkQ5MDhGMjJDODJEN0Y4AA==.
+INFO 2025-10-31 12:31:09 [uvicorn.access:476] 2a03:2880:22ff:4c:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:31:09 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:31:09 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRDYzNkQ5MDhGMjJDODJEN0Y4AA==.
+INFO 2025-10-31 12:31:56 [uvicorn.access:476] 127.0.0.1:63378 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:31:56 [uvicorn.access:476] 127.0.0.1:63380 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:31:56 [uvicorn.access:476] 127.0.0.1:63379 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:31:56 [uvicorn.access:476] 127.0.0.1:63381 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:32:00 [uvicorn.access:476] 2a03:2880:22ff:73:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:32:00 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:32:00 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:32:00 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0ZENEUxRDU4RDJCQkM0RDA5RUYA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:32:00 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0ZENEUxRDU4RDJCQkM0RDA5RUYA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:32:39 [uvicorn.access:476] 2a03:2880:22ff:3:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:32:39 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:32:39 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRjQwRTMyNzRFRkZERTYwNUM2AA==.
+INFO 2025-10-31 12:32:40 [uvicorn.access:476] 2a03:2880:10ff:45:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:32:40 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:32:40 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRjQwRTMyNzRFRkZERTYwNUM2AA==.
+INFO 2025-10-31 12:32:45 [uvicorn.access:476] 2a03:2880:22ff:4d:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:32:45 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:32:45 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQjFDMEJFMDVFNTEzRjU5Q0E0AA==.
+INFO 2025-10-31 12:32:45 [uvicorn.access:476] 2a03:2880:10ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:32:45 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:32:45 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQjFDMEJFMDVFNTEzRjU5Q0E0AA==.
+INFO 2025-10-31 12:32:45 [uvicorn.access:476] 2a03:2880:12ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:32:45 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:32:45 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQjFDMEJFMDVFNTEzRjU5Q0E0AA==.
+INFO 2025-10-31 12:32:56 [uvicorn.access:476] 127.0.0.1:63443 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:32:56 [uvicorn.access:476] 127.0.0.1:63445 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:32:56 [uvicorn.access:476] 127.0.0.1:63444 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:32:56 [uvicorn.access:476] 127.0.0.1:63446 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:33:56 [uvicorn.access:476] 127.0.0.1:63450 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:33:56 [uvicorn.access:476] 127.0.0.1:63452 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:33:56 [uvicorn.access:476] 127.0.0.1:63451 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:33:56 [uvicorn.access:476] 127.0.0.1:63450 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:34:21 [uvicorn.access:476] 2a03:2880:10ff:2:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:34:21 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:34:21 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRjQwRTMyNzRFRkZERTYwNUM2AA==.
+INFO 2025-10-31 12:34:21 [uvicorn.access:476] 2a03:2880:22ff:8:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:34:21 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:34:21 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQjFDMEJFMDVFNTEzRjU5Q0E0AA==.
+INFO 2025-10-31 12:34:21 [uvicorn.access:476] 2a03:2880:12ff:50:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:34:21 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:34:21 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRDYzNkQ5MDhGMjJDODJEN0Y4AA==.
+INFO 2025-10-31 12:34:56 [uvicorn.access:476] 127.0.0.1:63453 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:34:56 [uvicorn.access:476] 127.0.0.1:63468 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:34:56 [uvicorn.access:476] 127.0.0.1:63467 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:34:56 [uvicorn.access:476] 127.0.0.1:63469 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:35:56 [uvicorn.access:476] 127.0.0.1:63474 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:35:56 [uvicorn.access:476] 127.0.0.1:63476 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:35:56 [uvicorn.access:476] 127.0.0.1:63475 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:35:56 [uvicorn.access:476] 127.0.0.1:63477 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:36:34 [uvicorn.access:476] 2a03:2880:22ff:72:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:36:34 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:36:34 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:36:34 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YzN0VDNjUxMDFCM0VFNTI4MUYA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:36:34 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YzN0VDNjUxMDFCM0VFNTI4MUYA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:36:56 [uvicorn.access:476] 127.0.0.1:63502 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:36:56 [uvicorn.access:476] 127.0.0.1:63503 - "OPTIONS /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:36:56 [uvicorn.access:476] 127.0.0.1:63502 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:36:56 [uvicorn.access:476] 127.0.0.1:63504 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:36:56 [uvicorn.access:476] 127.0.0.1:63502 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:36:56 [uvicorn.access:476] 127.0.0.1:63503 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:36:56 [uvicorn.access:476] 127.0.0.1:63504 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:36:56 [uvicorn.access:476] 127.0.0.1:63505 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:37:11 [uvicorn.access:476] 2a03:2880:22ff:74:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:37:11 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:37:11 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMkIzN0IyOTFENDA1MzE1MEFGAA==.
+INFO 2025-10-31 12:37:12 [uvicorn.access:476] 2a03:2880:10ff:43:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:37:12 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:37:12 [uvicorn.access:476] 2a03:2880:10ff:4c:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:37:12 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:37:12 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMkIzN0IyOTFENDA1MzE1MEFGAA==.
+INFO 2025-10-31 12:37:12 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMkIzN0IyOTFENDA1MzE1MEFGAA==.
+INFO 2025-10-31 12:37:26 [uvicorn.access:476] 2a03:2880:22ff:8:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:37:26 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:37:26 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMkIzN0IyOTFENDA1MzE1MEFGAA==.
+INFO 2025-10-31 12:37:33 [uvicorn.access:476] 2a03:2880:12ff:51:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:37:33 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:37:33 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:37:33 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YwM0UzQjk2OTY0ODk1OTMwQTAA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:37:33 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YwM0UzQjk2OTY0ODk1OTMwQTAA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:37:56 [uvicorn.access:476] 127.0.0.1:63542 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:37:56 [uvicorn.access:476] 127.0.0.1:63544 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:37:56 [uvicorn.access:476] 127.0.0.1:63543 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:37:56 [uvicorn.access:476] 127.0.0.1:63545 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:37:57 [uvicorn.access:476] 2a03:2880:22ff:72:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:37:57 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:37:57 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMTgyQjQ4RUFFQTNBRjQwRDlBAA==.
+INFO 2025-10-31 12:37:57 [uvicorn.access:476] 2a03:2880:21ff:9:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:37:57 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:37:57 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMTgyQjQ4RUFFQTNBRjQwRDlBAA==.
+INFO 2025-10-31 12:37:58 [uvicorn.access:476] 2a03:2880:10ff:2:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:37:58 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:37:58 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMTgyQjQ4RUFFQTNBRjQwRDlBAA==.
+INFO 2025-10-31 12:38:02 [uvicorn.access:476] 2a03:2880:22ff:4b:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:38:02 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:38:02 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:38:02 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0Y4RjgxQjcyQUI2M0E2OTcwRkQA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:38:02 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0Y4RjgxQjcyQUI2M0E2OTcwRkQA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:38:48 [uvicorn.access:476] 2a03:2880:21ff:70:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:38:48 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:38:48 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMkU4QTVDQkIzNjFEQjZGRURDAA==.
+INFO 2025-10-31 12:38:49 [uvicorn.access:476] 2a03:2880:10ff:4:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:38:49 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:38:49 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMkU4QTVDQkIzNjFEQjZGRURDAA==.
+INFO 2025-10-31 12:38:49 [uvicorn.access:476] 2a03:2880:22ff:74:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:38:49 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:38:49 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMkU4QTVDQkIzNjFEQjZGRURDAA==.
+INFO 2025-10-31 12:38:53 [uvicorn.access:476] 2a03:2880:10ff:3:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:38:53 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:38:53 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNTFGNzdCNzk1MDNDMEVFNjJFAA==.
+INFO 2025-10-31 12:38:53 [uvicorn.access:476] 2a03:2880:21ff:4c:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:38:53 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:38:53 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNTFGNzdCNzk1MDNDMEVFNjJFAA==.
+INFO 2025-10-31 12:38:53 [uvicorn.access:476] 2a03:2880:21ff:c:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:38:53 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:38:53 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNTFGNzdCNzk1MDNDMEVFNjJFAA==.
+INFO 2025-10-31 12:38:54 [uvicorn.access:476] 2a03:2880:10ff:47:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:38:54 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:38:54 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNTFGNzdCNzk1MDNDMEVFNjJFAA==.
+INFO 2025-10-31 12:38:56 [uvicorn.access:476] 127.0.0.1:63625 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:38:56 [uvicorn.access:476] 127.0.0.1:63627 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:38:56 [uvicorn.access:476] 127.0.0.1:63626 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:38:56 [uvicorn.access:476] 127.0.0.1:63628 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:39:08 [uvicorn.access:476] 2a03:2880:21ff:3:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:39:08 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:39:08 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMkU4QTVDQkIzNjFEQjZGRURDAA==.
+INFO 2025-10-31 12:39:08 [uvicorn.access:476] 2a03:2880:22ff:4f:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:39:08 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:39:08 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNTFGNzdCNzk1MDNDMEVFNjJFAA==.
+INFO 2025-10-31 12:39:56 [uvicorn.access:476] 127.0.0.1:63764 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:39:56 [uvicorn.access:476] 127.0.0.1:63766 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:39:56 [uvicorn.access:476] 127.0.0.1:63765 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:39:56 [uvicorn.access:476] 127.0.0.1:63767 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:40:56 [uvicorn.access:476] 127.0.0.1:63834 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:40:56 [uvicorn.access:476] 127.0.0.1:63836 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:40:56 [uvicorn.access:476] 127.0.0.1:63835 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:40:56 [uvicorn.access:476] 127.0.0.1:63837 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:41:25 [uvicorn.access:476] 2a03:2880:22ff:6:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:41:25 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:41:25 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:41:25 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0Y3QUY2Mzk4MTI3NkEwQUQ2RjEA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:41:25 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0Y3QUY2Mzk4MTI3NkEwQUQ2RjEA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:41:56 [uvicorn.access:476] 127.0.0.1:63932 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:41:56 [uvicorn.access:476] 127.0.0.1:63933 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:41:56 [uvicorn.access:476] 127.0.0.1:63934 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:41:56 [uvicorn.access:476] 127.0.0.1:63935 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:42:01 [uvicorn.access:476] 2a03:2880:10ff:7:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:42:01 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:42:01 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMkUyRkU3NDZENDUwMzdEMkY2AA==.
+INFO 2025-10-31 12:42:01 [uvicorn.access:476] 2a03:2880:10ff:47:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:42:01 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:42:01 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMkUyRkU3NDZENDUwMzdEMkY2AA==.
+INFO 2025-10-31 12:42:01 [uvicorn.access:476] 2a03:2880:12ff:1:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:42:01 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:42:01 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMkUyRkU3NDZENDUwMzdEMkY2AA==.
+INFO 2025-10-31 12:42:01 [uvicorn.access:476] 2a03:2880:12ff:5b:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:42:01 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:42:01 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMkUyRkU3NDZENDUwMzdEMkY2AA==.
+INFO 2025-10-31 12:42:05 [uvicorn.access:476] 2a03:2880:10ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:42:05 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:42:05 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSREM2MkRBN0FDMjA0QTIxRTY4AA==.
+INFO 2025-10-31 12:42:05 [uvicorn.access:476] 2a03:2880:10ff:43:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:42:05 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:42:05 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSREM2MkRBN0FDMjA0QTIxRTY4AA==.
+INFO 2025-10-31 12:42:05 [uvicorn.access:476] 2a03:2880:10ff:73:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:42:05 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:42:05 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSREM2MkRBN0FDMjA0QTIxRTY4AA==.
+INFO 2025-10-31 12:42:06 [uvicorn.access:476] 2a03:2880:22ff:4:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:42:06 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:42:06 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSREM2MkRBN0FDMjA0QTIxRTY4AA==.
+INFO 2025-10-31 12:42:06 [uvicorn.access:476] 2a03:2880:22ff:4d:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:42:06 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:42:06 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSREM2MkRBN0FDMjA0QTIxRTY4AA==.
+INFO 2025-10-31 12:42:29 [uvicorn.access:476] 2a03:2880:22ff:7:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:42:29 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:42:29 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSMEMwOUMwNTlFQzk4QThCMzBGAA==.
+INFO 2025-10-31 12:42:56 [uvicorn.access:476] 127.0.0.1:63962 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:42:56 [uvicorn.access:476] 127.0.0.1:63964 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:42:56 [uvicorn.access:476] 127.0.0.1:63963 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:42:56 [uvicorn.access:476] 127.0.0.1:63965 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:43:28 [uvicorn.access:476] 2a03:2880:12ff:2:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:43:28 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:43:28 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:43:28 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YyMjEyNzQ0MUY5ODgzQTRCREIA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:43:28 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YyMjEyNzQ0MUY5ODgzQTRCREIA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:43:56 [uvicorn.access:476] 127.0.0.1:63969 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:43:56 [uvicorn.access:476] 127.0.0.1:63971 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:43:56 [uvicorn.access:476] 127.0.0.1:63972 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:43:56 [uvicorn.access:476] 127.0.0.1:63970 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:44:12 [uvicorn.access:476] 2a03:2880:12ff:42:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:44:12 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:44:12 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRUYyNjJEMjA5QjFCMjUzRTIxAA==.
+INFO 2025-10-31 12:44:12 [uvicorn.access:476] 2a03:2880:10ff:73:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:44:12 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:44:12 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRUYyNjJEMjA5QjFCMjUzRTIxAA==.
+INFO 2025-10-31 12:44:12 [uvicorn.access:476] 2a03:2880:22ff:4c:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:44:12 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:44:12 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRUYyNjJEMjA5QjFCMjUzRTIxAA==.
+INFO 2025-10-31 12:44:14 [uvicorn.access:476] 2a03:2880:10ff:4:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:44:14 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:44:14 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRUYyNjJEMjA5QjFCMjUzRTIxAA==.
+INFO 2025-10-31 12:44:37 [uvicorn.access:476] 2a03:2880:21ff:72:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:44:37 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:44:37 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:44:37 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YwQTc3QzcwQ0NBQjEyRDdGOTAA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:44:37 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YwQTc3QzcwQ0NBQjEyRDdGOTAA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:44:56 [uvicorn.access:476] 127.0.0.1:64008 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:44:56 [uvicorn.access:476] 127.0.0.1:64010 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:44:56 [uvicorn.access:476] 127.0.0.1:64009 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:44:56 [uvicorn.access:476] 127.0.0.1:64011 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:45:13 [uvicorn.access:476] 2a03:2880:10ff:4e:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:45:13 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:45:13 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQkEzNkM2QTVBMTFBMEI2RkM3AA==.
+INFO 2025-10-31 12:45:13 [uvicorn.access:476] 2a03:2880:22ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:45:13 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:45:13 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQkEzNkM2QTVBMTFBMEI2RkM3AA==.
+INFO 2025-10-31 12:45:15 [uvicorn.access:476] 2a03:2880:12ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:45:15 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:45:15 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQkEzNkM2QTVBMTFBMEI2RkM3AA==.
+INFO 2025-10-31 12:45:18 [uvicorn.access:476] 2a03:2880:22ff:49:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:45:18 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:45:18 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:45:18 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0ZCMDUzRUU0QzZEODZCQzIyMkUA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:45:18 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0ZCMDUzRUU0QzZEODZCQzIyMkUA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:45:56 [uvicorn.access:476] 127.0.0.1:64032 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:45:56 [uvicorn.access:476] 127.0.0.1:64034 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:45:56 [uvicorn.access:476] 127.0.0.1:64033 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:45:56 [uvicorn.access:476] 127.0.0.1:64035 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:45:57 [uvicorn.access:476] 2a03:2880:12ff:51:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:45:57 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:45:57 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQzdDNkUzMTk1OTM2MDhEODNDAA==.
+INFO 2025-10-31 12:45:57 [uvicorn.access:476] 2a03:2880:10ff:8:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:45:57 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:45:57 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQzdDNkUzMTk1OTM2MDhEODNDAA==.
+INFO 2025-10-31 12:45:57 [uvicorn.access:476] 2a03:2880:21ff:49:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:45:57 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:45:57 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQzdDNkUzMTk1OTM2MDhEODNDAA==.
+INFO 2025-10-31 12:45:57 [uvicorn.access:476] 2a03:2880:22ff:71:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:45:57 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:45:57 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQzdDNkUzMTk1OTM2MDhEODNDAA==.
+INFO 2025-10-31 12:45:57 [uvicorn.access:476] 2a03:2880:10ff:4c:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:45:57 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:45:57 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQzdDNkUzMTk1OTM2MDhEODNDAA==.
+INFO 2025-10-31 12:46:01 [uvicorn.access:476] 2a03:2880:22ff:73:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:46:01 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:46:01 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRkZGNDRDRDUwRTEyNTI5MkUxAA==.
+INFO 2025-10-31 12:46:01 [uvicorn.access:476] 2a03:2880:22ff:49:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:46:01 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:46:01 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRkZGNDRDRDUwRTEyNTI5MkUxAA==.
+INFO 2025-10-31 12:46:01 [uvicorn.access:476] 2a03:2880:10ff:4e:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:46:01 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:46:01 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRkZGNDRDRDUwRTEyNTI5MkUxAA==.
+INFO 2025-10-31 12:46:01 [uvicorn.access:476] 2a03:2880:10ff:4e:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:46:01 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:46:01 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRkZGNDRDRDUwRTEyNTI5MkUxAA==.
+INFO 2025-10-31 12:46:01 [uvicorn.access:476] 2a03:2880:12ff:57:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:46:01 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:46:01 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRkZGNDRDRDUwRTEyNTI5MkUxAA==.
+INFO 2025-10-31 12:46:56 [uvicorn.access:476] 127.0.0.1:64071 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:46:56 [uvicorn.access:476] 127.0.0.1:64072 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:46:56 [uvicorn.access:476] 127.0.0.1:64073 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:46:56 [uvicorn.access:476] 127.0.0.1:64074 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:47:56 [uvicorn.access:476] 127.0.0.1:64080 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:47:56 [uvicorn.access:476] 127.0.0.1:64081 - "OPTIONS /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:47:56 [uvicorn.access:476] 127.0.0.1:64080 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:47:56 [uvicorn.access:476] 127.0.0.1:64082 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:47:56 [uvicorn.access:476] 127.0.0.1:64080 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:47:56 [uvicorn.access:476] 127.0.0.1:64082 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:47:56 [uvicorn.access:476] 127.0.0.1:64081 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:47:56 [uvicorn.access:476] 127.0.0.1:64083 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:48:04 [uvicorn.access:476] 2a03:2880:21ff:6:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:48:04 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:48:04 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:48:04 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YyOUQ0MEYyQzVDNTM5M0YzNkEA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:48:04 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YyOUQ0MEYyQzVDNTM5M0YzNkEA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:48:45 [uvicorn.access:476] 2a03:2880:22ff:73:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:48:45 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:48:45 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNkNCMDRCODU2Njk5OUJGOTQ3AA==.
+INFO 2025-10-31 12:48:45 [uvicorn.access:476] 2a03:2880:21ff:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:48:45 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:48:45 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNkNCMDRCODU2Njk5OUJGOTQ3AA==.
+INFO 2025-10-31 12:48:46 [uvicorn.access:476] 2a03:2880:10ff:2:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:48:46 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:48:46 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNkNCMDRCODU2Njk5OUJGOTQ3AA==.
+INFO 2025-10-31 12:48:49 [uvicorn.access:476] 2a03:2880:22ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:48:49 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:48:49 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNkNCMDRCODU2Njk5OUJGOTQ3AA==.
+INFO 2025-10-31 12:48:51 [uvicorn.access:476] 2a03:2880:21ff:41:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:48:51 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:48:51 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSREY2M0E1NUUwQzMzQTY2MTFCAA==.
+INFO 2025-10-31 12:48:51 [uvicorn.access:476] 2a03:2880:21ff:c:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:48:51 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:48:51 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSREY2M0E1NUUwQzMzQTY2MTFCAA==.
+INFO 2025-10-31 12:48:51 [uvicorn.access:476] 2a03:2880:12ff:3:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:48:51 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:48:51 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSREY2M0E1NUUwQzMzQTY2MTFCAA==.
+INFO 2025-10-31 12:48:51 [uvicorn.access:476] 2a03:2880:10ff:41:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:48:51 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:48:51 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSREY2M0E1NUUwQzMzQTY2MTFCAA==.
+INFO 2025-10-31 12:48:51 [uvicorn.access:476] 2a03:2880:22ff:44:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:48:51 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:48:51 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSREY2M0E1NUUwQzMzQTY2MTFCAA==.
+INFO 2025-10-31 12:48:56 [uvicorn.access:476] 127.0.0.1:64120 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:48:56 [uvicorn.access:476] 127.0.0.1:64122 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:48:56 [uvicorn.access:476] 127.0.0.1:64121 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:48:56 [uvicorn.access:476] 127.0.0.1:64123 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:49:47 [uvicorn.access:476] 2a03:2880:10ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:49:47 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:49:47 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:49:47 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0Y3MzVCOEE2N0JCMzU0OENBNzYA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:49:47 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0Y3MzVCOEE2N0JCMzU0OENBNzYA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:49:56 [uvicorn.access:476] 127.0.0.1:64139 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:49:56 [uvicorn.access:476] 127.0.0.1:64141 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:49:56 [uvicorn.access:476] 127.0.0.1:64140 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:49:56 [uvicorn.access:476] 127.0.0.1:64142 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:50:31 [uvicorn.access:476] 2a03:2880:22ff:6:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:50:31 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:50:31 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRkE1NDU3MkE2MzYwQjAxQzE2AA==.
+INFO 2025-10-31 12:50:31 [uvicorn.access:476] 2a03:2880:10ff:47:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:50:31 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:50:31 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRkE1NDU3MkE2MzYwQjAxQzE2AA==.
+INFO 2025-10-31 12:50:31 [uvicorn.access:476] 2a03:2880:22ff:7c:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:50:31 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:50:31 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRkE1NDU3MkE2MzYwQjAxQzE2AA==.
+INFO 2025-10-31 12:50:31 [uvicorn.access:476] 2a03:2880:22ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:50:31 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:50:31 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRkE1NDU3MkE2MzYwQjAxQzE2AA==.
+INFO 2025-10-31 12:50:36 [uvicorn.access:476] 2a03:2880:21ff:56:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:50:36 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:50:36 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMjFBRkE0QTg2QkNCNDdCMENGAA==.
+INFO 2025-10-31 12:50:36 [uvicorn.access:476] 2a03:2880:10ff:4:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:50:36 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:50:36 [uvicorn.access:476] 2a03:2880:10ff:6:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:50:36 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:50:36 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMjFBRkE0QTg2QkNCNDdCMENGAA==.
+INFO 2025-10-31 12:50:36 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMjFBRkE0QTg2QkNCNDdCMENGAA==.
+INFO 2025-10-31 12:50:36 [uvicorn.access:476] 2a03:2880:22ff:74:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:50:36 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:50:36 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMjFBRkE0QTg2QkNCNDdCMENGAA==.
+INFO 2025-10-31 12:50:37 [uvicorn.access:476] 2a03:2880:12ff:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:50:37 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:50:37 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMjFBRkE0QTg2QkNCNDdCMENGAA==.
+INFO 2025-10-31 12:50:42 [uvicorn.access:476] 2a03:2880:22ff:3:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:50:42 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:50:42 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQzc4NUM0MkE4MzczNTlBQkM0AA==.
+INFO 2025-10-31 12:50:42 [uvicorn.access:476] 2a03:2880:22ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:50:42 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:50:42 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQzc4NUM0MkE4MzczNTlBQkM0AA==.
+INFO 2025-10-31 12:50:42 [uvicorn.access:476] 2a03:2880:10ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:50:42 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:50:42 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQzc4NUM0MkE4MzczNTlBQkM0AA==.
+INFO 2025-10-31 12:50:42 [uvicorn.access:476] 2a03:2880:22ff:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:50:42 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:50:42 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQzc4NUM0MkE4MzczNTlBQkM0AA==.
+INFO 2025-10-31 12:50:42 [uvicorn.access:476] 2a03:2880:22ff:70:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:50:42 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:50:42 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQzc4NUM0MkE4MzczNTlBQkM0AA==.
+INFO 2025-10-31 12:50:56 [uvicorn.access:476] 127.0.0.1:64175 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:50:56 [uvicorn.access:476] 127.0.0.1:64177 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:50:56 [uvicorn.access:476] 127.0.0.1:64176 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:50:56 [uvicorn.access:476] 127.0.0.1:64178 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:51:52 [uvicorn.access:476] 2a03:2880:22ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:51:52 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:51:52 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:51:52 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YyOERCNEI3NUNENTBGQTJDMEMA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:51:52 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YyOERCNEI3NUNENTBGQTJDMEMA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:51:56 [uvicorn.access:476] 127.0.0.1:64185 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:51:56 [uvicorn.access:476] 127.0.0.1:64186 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:51:56 [uvicorn.access:476] 127.0.0.1:64187 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:51:56 [uvicorn.access:476] 127.0.0.1:64188 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:52:12 [uvicorn.access:476] 2a03:2880:12ff:7:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:52:12 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:52:12 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 191, Status: Gerando Resposta) encontrado para 554599861237.
+INFO 2025-10-31 12:52:12 [app.api.webhook:247] WBP Webhook: Mídia recebida (Tipo: image, ID: 860603563020860) para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhgUM0Y2NDI5QzI0N0RDODRBMTUxMTEA. Baixando...
+DEBUG 2025-10-31 12:52:12 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=5.0 socket_options=None
+DEBUG 2025-10-31 12:52:12 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D85921BB10>
+DEBUG 2025-10-31 12:52:12 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000001D8585D8830> server_hostname='graph.facebook.com' timeout=5.0
+DEBUG 2025-10-31 12:52:12 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D858A57D90>
+DEBUG 2025-10-31 12:52:12 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-31 12:52:12 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-31 12:52:12 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-31 12:52:12 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-31 12:52:12 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-31 12:52:12 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Encoding', b'gzip'), (b'ETag', b'"e751170202325f304e4607cec9e5c4152a8629cb"'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'Accept-Encoding'), (b'x-fb-aed', b'621'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'A0o5xgi7uo0W2moOE_1Z9FA'), (b'x-fb-trace-id', b'FfzzH7Ni+Ia'), (b'x-fb-rev', b'1029220230'), (b'X-FB-Debug', b'qyrk6JFjPGMM7U8KpAZOOJh8mYJqaTf1lc/pvTDgw3rJnXCnAJaGLsGpcvx99DKIHDaMGtRd2C2eoxqN+zI9bw=='), (b'Date', b'Fri, 31 Oct 2025 15:52:11 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=25, rtx=0, c=10, mss=1392, tbw=3480, tp=-1, tpl=-1, uplat=336, ullat=0'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'295')])
+INFO 2025-10-31 12:52:12 [httpx:1740] HTTP Request: GET https://graph.facebook.com/v24.0/860603563020860 "HTTP/1.1 200 OK"
+DEBUG 2025-10-31 12:52:12 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-31 12:52:12 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-31 12:52:12 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-31 12:52:12 [httpcore.http11:87] response_closed.complete
+DEBUG 2025-10-31 12:52:12 [httpcore.connection:87] close.started
+DEBUG 2025-10-31 12:52:12 [httpcore.connection:87] close.complete
+DEBUG 2025-10-31 12:52:13 [httpcore.connection:87] connect_tcp.started host='lookaside.fbsbx.com' port=443 local_address=None timeout=60.0 socket_options=None
+DEBUG 2025-10-31 12:52:13 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D858C068D0>
+DEBUG 2025-10-31 12:52:13 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000001D858B79D90> server_hostname='lookaside.fbsbx.com' timeout=60.0
+DEBUG 2025-10-31 12:52:13 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D858C06A90>
+DEBUG 2025-10-31 12:52:13 [httpcore.http11:87] send_request_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-31 12:52:13 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-31 12:52:13 [httpcore.http11:87] send_request_body.started request=<Request [b'GET']>
+DEBUG 2025-10-31 12:52:13 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-31 12:52:13 [httpcore.http11:87] receive_response_headers.started request=<Request [b'GET']>
+DEBUG 2025-10-31 12:52:13 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'content-digest', b'adler32=1110439617'), (b'ETag', b'4355817496942420629'), (b'x-manifold-obj-blobsizebytes', b'203234'), (b'x-manifold-obj-canonicalpath', b'flat/624543710743746'), (b'x-manifold-obj-ctime', b'1761925929'), (b'x-manifold-obj-entrytype', b'1'), (b'x-manifold-obj-expiresat', b'0'), (b'x-manifold-obj-isuserdata', b'0'), (b'x-manifold-obj-propertiesjson', b'{"blob_state":"created","__ctime":"1761925929"}'), (b'x-manifold-obj-symlinktarget', b''), (b'cross-origin-resource-policy', b'cross-origin'), (b'Accept-Ranges', b'bytes'), (b'Date', b'Fri, 31 Oct 2025 15:52:12 GMT'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Content-Disposition', b'inline;filename=File.jpg'), (b'Content-Type', b'image/jpeg'), (b'Connection', b'keep-alive'), (b'Content-Length', b'196882')])
+INFO 2025-10-31 12:52:13 [httpx:1740] HTTP Request: GET https://lookaside.fbsbx.com/whatsapp_business/attachments/?mid=860603563020860&source=getMedia&ext=1761926231&hash=ARk-3BFINseY_4C-yXOX6kVOYnciSj2X9AuamnH0eB-YHg "HTTP/1.1 200 OK"
+DEBUG 2025-10-31 12:52:13 [httpcore.http11:87] receive_response_body.started request=<Request [b'GET']>
+DEBUG 2025-10-31 12:52:13 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-31 12:52:13 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-31 12:52:13 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-31 12:52:13 [app.services.whatsapp_service:444] WBP: Mídia baixada (196882 bytes).
+DEBUG 2025-10-31 12:52:13 [httpcore.connection:87] close.started
+DEBUG 2025-10-31 12:52:13 [httpcore.connection:87] close.complete
+INFO 2025-10-31 12:52:13 [app.api.webhook:258] WBP Webhook: Mídia 860603563020860 ...
+INFO 2025-10-31 12:52:13 [app.services.gemini_service:126] Iniciando transcrição/análise para mídia do tipo image/jpeg
+INFO 2025-10-31 12:52:23 [app.crud.crud_user:89] DEBUG: 1 token(s) deduzido(s) do utilizador 3. Restantes: 9844
+INFO 2025-10-31 12:52:23 [app.services.gemini_service:93] Token deduzido para o utilizador 3. Tokens restantes: 9844
+INFO 2025-10-31 12:52:23 [app.services.gemini_service:152] Transcrição/Análise gerada: 'A imagem exibe uma torta salgada com crosta dourada e recheio cremoso, com uma fatia já cortada, apr...'
+INFO 2025-10-31 12:52:23 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5ODYxMjM3FQIAEhgUM0Y2NDI5QzI0N0RDODRBMTUxMTEA adicionada e status atualizado para Atendimento 191.
+INFO 2025-10-31 12:52:31 [uvicorn.access:476] 2a03:2880:10ff:45:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:52:31 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:52:31 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSM0FDQTgyQTFCMzhCRURFNDdBAA==.
+INFO 2025-10-31 12:52:31 [uvicorn.access:476] 2a03:2880:10ff:4b:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:52:31 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:52:31 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSM0FDQTgyQTFCMzhCRURFNDdBAA==.
+INFO 2025-10-31 12:52:31 [uvicorn.access:476] 2a03:2880:12ff:72:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:52:31 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:52:31 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSM0FDQTgyQTFCMzhCRURFNDdBAA==.
+INFO 2025-10-31 12:52:31 [uvicorn.access:476] 2a03:2880:10ff:43:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:52:31 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:52:31 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSM0FDQTgyQTFCMzhCRURFNDdBAA==.
+INFO 2025-10-31 12:52:35 [uvicorn.access:476] 2a03:2880:10ff:73:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:52:35 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:52:35 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSOEE4MzM0MTUwRDc5QkM3QUREAA==.
+INFO 2025-10-31 12:52:36 [uvicorn.access:476] 2a03:2880:10ff:6:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:52:36 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:52:36 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSOEE4MzM0MTUwRDc5QkM3QUREAA==.
+INFO 2025-10-31 12:52:36 [uvicorn.access:476] 2a03:2880:10ff:45:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:52:36 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:52:36 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSOEE4MzM0MTUwRDc5QkM3QUREAA==.
+INFO 2025-10-31 12:52:36 [uvicorn.access:476] 2a03:2880:21ff:4:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:52:36 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:52:36 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSOEE4MzM0MTUwRDc5QkM3QUREAA==.
+INFO 2025-10-31 12:52:36 [uvicorn.access:476] 2a03:2880:22ff:6:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:52:36 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:52:36 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSOEE4MzM0MTUwRDc5QkM3QUREAA==.
+INFO 2025-10-31 12:52:40 [app.agent_manager:314] Agente (User 3, API: official): Processando atendimento ID 191 (Contato: 554599861237)
+INFO 2025-10-31 12:52:40 [app.agent_manager:331] Agente: Atendimento 191 marcado como 'Gerando Resposta'.
+INFO 2025-10-31 12:52:40 [app.agent_manager:407] Agente (Oficial): Usando histórico do DB (43 msgs) para atendimento 191.
+INFO 2025-10-31 12:52:40 [app.agent_manager:442] Agente: Atendimento 191 apto para IA. Chamando Gemini...
+INFO 2025-10-31 12:52:47 [app.crud.crud_user:89] DEBUG: 1 token(s) deduzido(s) do utilizador 3. Restantes: 9843
+INFO 2025-10-31 12:52:47 [app.services.gemini_service:93] Token deduzido para o utilizador 3. Tokens restantes: 9843
+INFO 2025-10-31 12:52:47 [app.agent_manager:485] Agente: Enviando parte 1/1 para 554599861237 (Atendimento 191)...
+DEBUG 2025-10-31 12:52:47 [app.services.whatsapp_service:469] WBP Send Payload to 554599861237: {"messaging_product": "whatsapp", "recipient_type": "individual", "to": "554599861237", "type": "text", "text": {"preview_url": false, "body": "Cris, para que eu possa te ajudar a encontrar o painel ideal, poderia me dizer para qual ambiente voc\u00ea est\u00e1 pensando em instalar? Assim consigo te dar as melhores sugest\u00f5es! \ud83d\ude0a"}}
+DEBUG 2025-10-31 12:52:47 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=30.0 socket_options=None
+DEBUG 2025-10-31 12:52:47 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D858BF3050>
+DEBUG 2025-10-31 12:52:47 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000001D8585DBEC0> server_hostname='graph.facebook.com' timeout=30.0
+DEBUG 2025-10-31 12:52:47 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D85921BA50>
+DEBUG 2025-10-31 12:52:47 [httpcore.http11:87] send_request_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-31 12:52:47 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-31 12:52:47 [httpcore.http11:87] send_request_body.started request=<Request [b'POST']>
+DEBUG 2025-10-31 12:52:47 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-31 12:52:47 [httpcore.http11:87] receive_response_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-31 12:52:48 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'x-fb-aed', b'621'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'ASsoR0eka6NI9l35BbWm-Cb'), (b'x-fb-trace-id', b'EWOPzjLjvv+'), (b'x-fb-rev', b'1029220230'), (b'X-FB-Debug', b'g3XTqUCftUB6Cku6hAZ0+KIkTfIl4nud8s4mDFI0K6n7i4fs9RWtV4rg5JOj51B398TXfrsiEgrMiLqheQNmMg=='), (b'x-fb-server-load', b'8'), (b'Date', b'Fri, 31 Oct 2025 15:52:46 GMT'), (b'X-FB-Connection-Quality', b'EXCELLENT; q=0.9, rtt=25, rtx=0, c=10, mss=1392, tbw=3479, tp=-1, tpl=-1, uplat=720, ullat=2'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'178')])
+INFO 2025-10-31 12:52:48 [httpx:1740] HTTP Request: POST https://graph.facebook.com/v24.0/806840102518876/messages "HTTP/1.1 200 OK"
+DEBUG 2025-10-31 12:52:48 [httpcore.http11:87] receive_response_body.started request=<Request [b'POST']>
+DEBUG 2025-10-31 12:52:48 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-31 12:52:48 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-31 12:52:48 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-31 12:52:48 [app.services.whatsapp_service:482] WBP: Mensagem enviada para 554599861237 (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMTdCODI2OUQxRTI0QzI1RkY0AA==, Tentativa 1).
+DEBUG 2025-10-31 12:52:48 [httpcore.connection:87] close.started
+DEBUG 2025-10-31 12:52:48 [httpcore.connection:87] close.complete
+INFO 2025-10-31 12:52:48 [app.agent_manager:492] Agente: Parte 1 enviada com sucesso para 191. (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMTdCODI2OUQxRTI0QzI1RkY0AA==)
+INFO 2025-10-31 12:52:48 [app.agent_manager:515] Agente: Verificando status atual do Atendimento 191 ANTES da atualização final.
+INFO 2025-10-31 12:52:48 [app.agent_manager:564] Agente: Atendimento 191 ainda 'Gerando Resposta'. Aplicando status: 'Aguardando Resposta'
+INFO 2025-10-31 12:52:48 [app.agent_manager:580] Agente: Atendimento 191 finalizado neste ciclo.
+INFO 2025-10-31 12:52:49 [uvicorn.access:476] 2a03:2880:10ff:74:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:52:49 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:52:49 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMTdCODI2OUQxRTI0QzI1RkY0AA==.
+INFO 2025-10-31 12:52:49 [uvicorn.access:476] 2a03:2880:22ff:4d:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:52:49 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:52:49 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMTdCODI2OUQxRTI0QzI1RkY0AA==.
+INFO 2025-10-31 12:52:56 [uvicorn.access:476] 127.0.0.1:64224 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:52:56 [uvicorn.access:476] 127.0.0.1:64226 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:52:56 [uvicorn.access:476] 127.0.0.1:64225 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:52:56 [uvicorn.access:476] 127.0.0.1:64227 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:53:07 [uvicorn.access:476] 2a03:2880:10ff:7:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:53:07 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:53:07 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:53:07 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0ZGMkRFQTdDOTk3NkQ5NkQwOUEA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:53:07 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0ZGMkRFQTdDOTk3NkQ5NkQwOUEA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:53:20 [uvicorn.access:476] 2a03:2880:12ff:74:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:53:20 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:53:20 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSNDAzOEQwQUMwQjhENThFOEUyAA==.
+INFO 2025-10-31 12:53:20 [uvicorn.access:476] 2a03:2880:21ff:8:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:53:20 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:53:20 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSNDAzOEQwQUMwQjhENThFOEUyAA==.
+INFO 2025-10-31 12:53:44 [uvicorn.access:476] 2a03:2880:10ff:71:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:53:44 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:53:44 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQ0Q0M0Q0RDg5NzY3MjUwM0ExAA==.
+INFO 2025-10-31 12:53:44 [uvicorn.access:476] 2a03:2880:21ff:73:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:53:44 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:53:44 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQ0Q0M0Q0RDg5NzY3MjUwM0ExAA==.
+INFO 2025-10-31 12:53:44 [uvicorn.access:476] 2a03:2880:10ff:4f:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:53:44 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:53:44 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQ0Q0M0Q0RDg5NzY3MjUwM0ExAA==.
+INFO 2025-10-31 12:53:44 [uvicorn.access:476] 2a03:2880:22ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:53:44 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:53:44 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQ0Q0M0Q0RDg5NzY3MjUwM0ExAA==.
+INFO 2025-10-31 12:53:56 [uvicorn.access:476] 127.0.0.1:64250 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:53:56 [uvicorn.access:476] 127.0.0.1:64253 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:53:56 [uvicorn.access:476] 127.0.0.1:64251 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:53:56 [uvicorn.access:476] 127.0.0.1:64254 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:54:41 [uvicorn.access:476] 2a03:2880:21ff:7:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:54:41 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:54:41 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:54:41 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YyMTBDRDY1MEZCRkEyNDcxQTYA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:54:41 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YyMTBDRDY1MEZCRkEyNDcxQTYA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:54:56 [uvicorn.access:476] 127.0.0.1:64264 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:54:56 [uvicorn.access:476] 127.0.0.1:64266 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:54:56 [uvicorn.access:476] 127.0.0.1:64265 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:54:56 [uvicorn.access:476] 127.0.0.1:64267 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:55:15 [uvicorn.access:476] 2a03:2880:22ff:4d:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:55:15 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:55:15 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQTZERUQ3NDI1OUE1OEY1NEI3AA==.
+INFO 2025-10-31 12:55:15 [uvicorn.access:476] 2a03:2880:10ff:72:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:55:15 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:55:15 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQTZERUQ3NDI1OUE1OEY1NEI3AA==.
+INFO 2025-10-31 12:55:15 [uvicorn.access:476] 2a03:2880:12ff:a:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:55:15 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:55:15 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQTZERUQ3NDI1OUE1OEY1NEI3AA==.
+INFO 2025-10-31 12:55:15 [uvicorn.access:476] 2a03:2880:12ff:55:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:55:15 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:55:15 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQTZERUQ3NDI1OUE1OEY1NEI3AA==.
+INFO 2025-10-31 12:55:56 [uvicorn.access:476] 127.0.0.1:64278 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:55:56 [uvicorn.access:476] 127.0.0.1:64280 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:55:56 [uvicorn.access:476] 127.0.0.1:64281 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:55:56 [uvicorn.access:476] 127.0.0.1:64279 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:55:57 [uvicorn.access:476] 2a03:2880:22ff:70:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:55:57 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:55:57 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:55:57 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0Y0RjQxREM4NzhBRjc2MkEyMTYA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:55:57 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0Y0RjQxREM4NzhBRjc2MkEyMTYA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:56:26 [uvicorn.access:476] 2a03:2880:22ff:3:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:56:26 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:56:26 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMzFERDQ4OUI3MjlBMzY5RTkzAA==.
+INFO 2025-10-31 12:56:26 [uvicorn.access:476] 2a03:2880:10ff:7:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:56:26 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:56:26 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMzFERDQ4OUI3MjlBMzY5RTkzAA==.
+INFO 2025-10-31 12:56:26 [uvicorn.access:476] 2a03:2880:22ff:49:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:56:26 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:56:26 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMzFERDQ4OUI3MjlBMzY5RTkzAA==.
+INFO 2025-10-31 12:56:26 [uvicorn.access:476] 2a03:2880:22ff:73:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:56:26 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:56:26 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMzFERDQ4OUI3MjlBMzY5RTkzAA==.
+INFO 2025-10-31 12:56:26 [uvicorn.access:476] 2a03:2880:12ff:45:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:56:26 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:56:26 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMzFERDQ4OUI3MjlBMzY5RTkzAA==.
+INFO 2025-10-31 12:56:56 [uvicorn.access:476] 127.0.0.1:64326 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:56:56 [uvicorn.access:476] 127.0.0.1:64328 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:56:56 [uvicorn.access:476] 127.0.0.1:64327 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:56:56 [uvicorn.access:476] 127.0.0.1:64329 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:57:17 [uvicorn.access:476] 2a03:2880:22ff:8:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:57:17 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:57:17 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:57:17 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0ZEMjk0MUNEQkQ4NDRBN0U1RDkA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:57:17 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0ZEMjk0MUNEQkQ4NDRBN0U1RDkA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:57:50 [uvicorn.access:476] 2a03:2880:22ff:74:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:57:50 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:57:50 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMjBFN0JDRTY2QTUzMDMxRjdFAA==.
+INFO 2025-10-31 12:57:50 [uvicorn.access:476] 2a03:2880:12ff:73:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:57:50 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:57:50 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMjBFN0JDRTY2QTUzMDMxRjdFAA==.
+INFO 2025-10-31 12:57:50 [uvicorn.access:476] 2a03:2880:10ff:72:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:57:50 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:57:50 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMjBFN0JDRTY2QTUzMDMxRjdFAA==.
+INFO 2025-10-31 12:57:56 [uvicorn.access:476] 127.0.0.1:64354 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:57:56 [uvicorn.access:476] 127.0.0.1:64356 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:57:56 [uvicorn.access:476] 127.0.0.1:64357 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:57:56 [uvicorn.access:476] 127.0.0.1:64355 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:58:11 [uvicorn.access:476] 2a03:2880:22ff:46:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:58:11 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:58:11 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMjBFN0JDRTY2QTUzMDMxRjdFAA==.
+INFO 2025-10-31 12:58:56 [uvicorn.access:476] 127.0.0.1:64391 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:58:56 [uvicorn.access:476] 127.0.0.1:64392 - "OPTIONS /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:58:56 [uvicorn.access:476] 127.0.0.1:64391 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:58:56 [uvicorn.access:476] 127.0.0.1:64393 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:58:56 [uvicorn.access:476] 127.0.0.1:64392 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:58:56 [uvicorn.access:476] 127.0.0.1:64393 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:58:56 [uvicorn.access:476] 127.0.0.1:64391 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:58:56 [uvicorn.access:476] 127.0.0.1:64394 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:59:00 [uvicorn.access:476] 2a03:2880:12ff:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:59:00 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 12:59:00 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 12:59:00 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YxMTk4MUIxRjNEMTEzMzU5MzgA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 12:59:00 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YxMTk4MUIxRjNEMTEzMzU5MzgA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 12:59:23 [uvicorn.access:476] 2a03:2880:10ff:4e:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:59:23 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:59:23 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMUMwMzk4NTg1ODc0QTZEMDI4AA==.
+INFO 2025-10-31 12:59:24 [uvicorn.access:476] 2a03:2880:12ff:2:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 12:59:24 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 12:59:24 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMUMwMzk4NTg1ODc0QTZEMDI4AA==.
+INFO 2025-10-31 12:59:56 [uvicorn.access:476] 127.0.0.1:64405 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 12:59:56 [uvicorn.access:476] 127.0.0.1:64407 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 12:59:56 [uvicorn.access:476] 127.0.0.1:64406 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 12:59:56 [uvicorn.access:476] 127.0.0.1:64405 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:00:02 [uvicorn.access:476] 2a03:2880:22ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:00:02 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:00:02 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMUMwMzk4NTg1ODc0QTZEMDI4AA==.
+INFO 2025-10-31 13:00:05 [uvicorn.access:476] 2a03:2880:22ff:3:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:00:05 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 13:00:05 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 13:00:05 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0Y0OUJDQjQ3NjQ3NjBCMUMxM0YA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 13:00:05 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0Y0OUJDQjQ3NjQ3NjBCMUMxM0YA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 13:00:28 [uvicorn.access:476] 2a03:2880:21ff:47:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:00:28 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:00:28 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSOUJCQTIwOTIyQjY2NzNERjZEAA==.
+INFO 2025-10-31 13:00:28 [uvicorn.access:476] 2a03:2880:10ff:41:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:00:28 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:00:28 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSOUJCQTIwOTIyQjY2NzNERjZEAA==.
+INFO 2025-10-31 13:00:28 [uvicorn.access:476] 2a03:2880:22ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:00:28 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:00:28 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSOUJCQTIwOTIyQjY2NzNERjZEAA==.
+INFO 2025-10-31 13:00:40 [uvicorn.access:476] 2a03:2880:10ff:4f:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:00:40 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:00:40 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSOUJCQTIwOTIyQjY2NzNERjZEAA==.
+INFO 2025-10-31 13:00:56 [uvicorn.access:476] 127.0.0.1:64408 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:00:56 [uvicorn.access:476] 127.0.0.1:64437 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:00:56 [uvicorn.access:476] 127.0.0.1:64436 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:00:56 [uvicorn.access:476] 127.0.0.1:64438 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:01:56 [uvicorn.access:476] 127.0.0.1:64440 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:01:56 [uvicorn.access:476] 127.0.0.1:64443 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:01:56 [uvicorn.access:476] 127.0.0.1:64442 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:01:56 [uvicorn.access:476] 127.0.0.1:64441 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:02:50 [uvicorn.access:476] 2a03:2880:22ff:74:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:02:50 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 13:02:50 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 13:02:50 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0ZERTEyMzgyREYwMDA0RkQ4MjEA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 13:02:50 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0ZERTEyMzgyREYwMDA0RkQ4MjEA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 13:02:56 [uvicorn.access:476] 127.0.0.1:64451 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:02:56 [uvicorn.access:476] 127.0.0.1:64453 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:02:56 [uvicorn.access:476] 127.0.0.1:64452 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:02:56 [uvicorn.access:476] 127.0.0.1:64454 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:03:19 [uvicorn.access:476] 2a03:2880:22ff:73:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:03:19 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:03:19 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQ0QxQ0VBQTFDQjA4OENFMjFDAA==.
+INFO 2025-10-31 13:03:19 [uvicorn.access:476] 2a03:2880:12ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:03:19 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:03:19 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQ0QxQ0VBQTFDQjA4OENFMjFDAA==.
+INFO 2025-10-31 13:03:19 [uvicorn.access:476] 2a03:2880:10ff:70:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:03:19 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:03:19 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQ0QxQ0VBQTFDQjA4OENFMjFDAA==.
+INFO 2025-10-31 13:03:22 [uvicorn.access:476] 2a03:2880:12ff:4b:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:03:22 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:03:22 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQ0QxQ0VBQTFDQjA4OENFMjFDAA==.
+INFO 2025-10-31 13:03:23 [uvicorn.access:476] 2a03:2880:10ff:4d:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:03:23 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:03:23 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQTM1RjUxRDg0RTM0ODQxQjZDAA==.
+INFO 2025-10-31 13:03:23 [uvicorn.access:476] 2a03:2880:22ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:03:23 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:03:23 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQTM1RjUxRDg0RTM0ODQxQjZDAA==.
+INFO 2025-10-31 13:03:23 [uvicorn.access:476] 2a03:2880:10ff:43:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:03:23 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:03:23 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQTM1RjUxRDg0RTM0ODQxQjZDAA==.
+INFO 2025-10-31 13:03:23 [uvicorn.access:476] 2a03:2880:12ff:1:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:03:23 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:03:23 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQTM1RjUxRDg0RTM0ODQxQjZDAA==.
+INFO 2025-10-31 13:03:56 [uvicorn.access:476] 127.0.0.1:64485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:03:56 [uvicorn.access:476] 127.0.0.1:64487 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:03:56 [uvicorn.access:476] 127.0.0.1:64486 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:03:56 [uvicorn.access:476] 127.0.0.1:64488 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:04:56 [uvicorn.access:476] 127.0.0.1:64513 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:04:56 [uvicorn.access:476] 127.0.0.1:64515 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:04:56 [uvicorn.access:476] 127.0.0.1:64514 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:04:56 [uvicorn.access:476] 127.0.0.1:64516 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:05:33 [uvicorn.access:476] 2a03:2880:22ff:1:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:05:33 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 13:05:33 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 13:05:33 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YzMjQ5RTQ2NzlCNjJFMTY5RDEA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 13:05:33 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YzMjQ5RTQ2NzlCNjJFMTY5RDEA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 13:05:56 [uvicorn.access:476] 127.0.0.1:64525 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:05:56 [uvicorn.access:476] 127.0.0.1:64529 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:05:56 [uvicorn.access:476] 127.0.0.1:64526 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:05:56 [uvicorn.access:476] 127.0.0.1:64530 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:06:11 [uvicorn.access:476] 2a03:2880:10ff:4d:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:11 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:11 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMTRCQzU0RjE5MkUyRDIwNzRCAA==.
+INFO 2025-10-31 13:06:11 [uvicorn.access:476] 2a03:2880:10ff:45:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:11 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:11 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMTRCQzU0RjE5MkUyRDIwNzRCAA==.
+INFO 2025-10-31 13:06:11 [uvicorn.access:476] 2a03:2880:22ff:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:11 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:11 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMTRCQzU0RjE5MkUyRDIwNzRCAA==.
+INFO 2025-10-31 13:06:11 [uvicorn.access:476] 2a03:2880:12ff:59:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:11 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:11 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMTRCQzU0RjE5MkUyRDIwNzRCAA==.
+INFO 2025-10-31 13:06:16 [uvicorn.access:476] 2a03:2880:22ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:16 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:16 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSOTU2NDIzQkNFOTQwOThBNEYyAA==.
+INFO 2025-10-31 13:06:16 [uvicorn.access:476] 2a03:2880:10ff:3:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:16 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:16 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSOTU2NDIzQkNFOTQwOThBNEYyAA==.
+INFO 2025-10-31 13:06:17 [uvicorn.access:476] 2a03:2880:12ff:51:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:17 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:17 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSOTU2NDIzQkNFOTQwOThBNEYyAA==.
+INFO 2025-10-31 13:06:17 [uvicorn.access:476] 2a03:2880:22ff:44:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:17 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:17 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSOTU2NDIzQkNFOTQwOThBNEYyAA==.
+INFO 2025-10-31 13:06:17 [uvicorn.access:476] 2a03:2880:12ff:70:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:17 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:17 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSOTU2NDIzQkNFOTQwOThBNEYyAA==.
+INFO 2025-10-31 13:06:21 [uvicorn.access:476] 2a03:2880:22ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:21 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:21 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQjdDOEU5RDVBMzYyNzdBQ0U3AA==.
+INFO 2025-10-31 13:06:21 [uvicorn.access:476] 2a03:2880:21ff:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:21 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:21 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQjdDOEU5RDVBMzYyNzdBQ0U3AA==.
+INFO 2025-10-31 13:06:21 [uvicorn.access:476] 2a03:2880:22ff:2:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:21 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:21 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQjdDOEU5RDVBMzYyNzdBQ0U3AA==.
+INFO 2025-10-31 13:06:21 [uvicorn.access:476] 2a03:2880:10ff:4f:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:21 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:21 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQjdDOEU5RDVBMzYyNzdBQ0U3AA==.
+INFO 2025-10-31 13:06:21 [uvicorn.access:476] 2a03:2880:22ff:4c:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:21 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:21 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQjdDOEU5RDVBMzYyNzdBQ0U3AA==.
+INFO 2025-10-31 13:06:25 [uvicorn.access:476] 2a03:2880:21ff:42:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:25 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:25 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQjk0ODBFQUE4ODdGRkI3OTk4AA==.
+INFO 2025-10-31 13:06:26 [uvicorn.access:476] 2a03:2880:10ff:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:26 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:26 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQjk0ODBFQUE4ODdGRkI3OTk4AA==.
+INFO 2025-10-31 13:06:26 [uvicorn.access:476] 2a03:2880:22ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:26 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:26 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQjk0ODBFQUE4ODdGRkI3OTk4AA==.
+INFO 2025-10-31 13:06:26 [uvicorn.access:476] 2a03:2880:10ff:73:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:26 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:26 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQjk0ODBFQUE4ODdGRkI3OTk4AA==.
+INFO 2025-10-31 13:06:26 [uvicorn.access:476] 2a03:2880:12ff:4:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:06:26 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:06:26 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQjk0ODBFQUE4ODdGRkI3OTk4AA==.
+INFO 2025-10-31 13:06:56 [uvicorn.access:476] 127.0.0.1:64606 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:06:56 [uvicorn.access:476] 127.0.0.1:64609 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:06:56 [uvicorn.access:476] 127.0.0.1:64608 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:06:56 [uvicorn.access:476] 127.0.0.1:64607 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:07:56 [uvicorn.access:476] 127.0.0.1:64614 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:07:56 [uvicorn.access:476] 127.0.0.1:64616 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:07:56 [uvicorn.access:476] 127.0.0.1:64615 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:07:56 [uvicorn.access:476] 127.0.0.1:64617 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:08:56 [uvicorn.access:476] 127.0.0.1:64668 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:08:56 [uvicorn.access:476] 127.0.0.1:64673 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:08:56 [uvicorn.access:476] 127.0.0.1:64672 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:08:56 [uvicorn.access:476] 127.0.0.1:64671 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:09:56 [uvicorn.access:476] 127.0.0.1:64706 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:09:56 [uvicorn.access:476] 127.0.0.1:64707 - "OPTIONS /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:09:56 [uvicorn.access:476] 127.0.0.1:64706 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:09:56 [uvicorn.access:476] 127.0.0.1:64708 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:09:56 [uvicorn.access:476] 127.0.0.1:64707 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:09:56 [uvicorn.access:476] 127.0.0.1:64708 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:09:56 [uvicorn.access:476] 127.0.0.1:64706 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:09:56 [uvicorn.access:476] 127.0.0.1:64709 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:10:56 [uvicorn.access:476] 127.0.0.1:64728 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:10:56 [uvicorn.access:476] 127.0.0.1:64731 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:10:56 [uvicorn.access:476] 127.0.0.1:64730 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:10:56 [uvicorn.access:476] 127.0.0.1:64729 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:11:56 [uvicorn.access:476] 127.0.0.1:64750 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:11:56 [uvicorn.access:476] 127.0.0.1:64752 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:11:56 [uvicorn.access:476] 127.0.0.1:64751 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:11:56 [uvicorn.access:476] 127.0.0.1:64753 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:12:12 [uvicorn.access:476] 2a03:2880:22ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:12:12 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:12:12 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSRjE2M0I2QTZBQjA0QTU1RjFFAA==.
+INFO 2025-10-31 13:12:56 [uvicorn.access:476] 127.0.0.1:64771 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:12:56 [uvicorn.access:476] 127.0.0.1:64773 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:12:56 [uvicorn.access:476] 127.0.0.1:64772 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:12:56 [uvicorn.access:476] 127.0.0.1:64774 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:13:56 [uvicorn.access:476] 127.0.0.1:64779 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:13:56 [uvicorn.access:476] 127.0.0.1:64782 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:13:56 [uvicorn.access:476] 127.0.0.1:64781 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:13:56 [uvicorn.access:476] 127.0.0.1:64780 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:14:56 [uvicorn.access:476] 127.0.0.1:64787 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:14:56 [uvicorn.access:476] 127.0.0.1:64789 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:14:56 [uvicorn.access:476] 127.0.0.1:64788 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:14:56 [uvicorn.access:476] 127.0.0.1:64790 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:15:45 [uvicorn.access:476] 2a03:2880:10ff:8:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:15:45 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 13:15:45 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 13:15:45 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0ZFRTBCOTIwMUY0QjExN0E3QTkA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 13:15:45 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0ZFRTBCOTIwMUY0QjExN0E3QTkA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 13:15:56 [uvicorn.access:476] 127.0.0.1:64801 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:15:56 [uvicorn.access:476] 127.0.0.1:64803 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:15:56 [uvicorn.access:476] 127.0.0.1:64802 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:15:56 [uvicorn.access:476] 127.0.0.1:64804 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:16:32 [uvicorn.access:476] 2a03:2880:10ff:2:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:16:32 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:16:32 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNEY1NzBDMENCOUUzRTczRTA1AA==.
+INFO 2025-10-31 13:16:32 [uvicorn.access:476] 2a03:2880:10ff:7:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:16:32 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:16:32 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNEY1NzBDMENCOUUzRTczRTA1AA==.
+INFO 2025-10-31 13:16:32 [uvicorn.access:476] 2a03:2880:22ff:9:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:16:32 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:16:32 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNEY1NzBDMENCOUUzRTczRTA1AA==.
+INFO 2025-10-31 13:16:32 [uvicorn.access:476] 2a03:2880:22ff:46:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:16:32 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:16:32 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNEY1NzBDMENCOUUzRTczRTA1AA==.
+INFO 2025-10-31 13:16:35 [uvicorn.access:476] 2a03:2880:21ff:43:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:16:35 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:16:35 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNTY5NTIxM0MzNDA1RjNENTlDAA==.
+INFO 2025-10-31 13:16:35 [uvicorn.access:476] 2a03:2880:10ff:6:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:16:35 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:16:35 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNTY5NTIxM0MzNDA1RjNENTlDAA==.
+INFO 2025-10-31 13:16:35 [uvicorn.access:476] 2a03:2880:12ff:4e:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:16:35 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:16:35 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNTY5NTIxM0MzNDA1RjNENTlDAA==.
+INFO 2025-10-31 13:16:35 [uvicorn.access:476] 2a03:2880:21ff:4d:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:16:35 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:16:35 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNTY5NTIxM0MzNDA1RjNENTlDAA==.
+INFO 2025-10-31 13:16:56 [uvicorn.access:476] 127.0.0.1:64827 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:16:56 [uvicorn.access:476] 127.0.0.1:64829 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:16:56 [uvicorn.access:476] 127.0.0.1:64828 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:16:56 [uvicorn.access:476] 127.0.0.1:64830 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:17:36 [uvicorn.access:476] 2a03:2880:10ff:4d:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:17:36 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 13:17:36 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 13:17:36 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0Y2QTU0Rjk4OUZGQkJBOEZGNzkA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 13:17:36 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0Y2QTU0Rjk4OUZGQkJBOEZGNzkA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 13:17:56 [uvicorn.access:476] 127.0.0.1:64904 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:17:56 [uvicorn.access:476] 127.0.0.1:64907 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:17:56 [uvicorn.access:476] 127.0.0.1:64905 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:17:56 [uvicorn.access:476] 127.0.0.1:64908 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:18:37 [uvicorn.access:476] 2a03:2880:10ff:41:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:18:37 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:18:37 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRUY1NkVBMEMzQ0Q0Q0I5QTRBAA==.
+INFO 2025-10-31 13:18:37 [uvicorn.access:476] 2a03:2880:10ff:47:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:18:37 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:18:37 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRUY1NkVBMEMzQ0Q0Q0I5QTRBAA==.
+INFO 2025-10-31 13:18:37 [uvicorn.access:476] 2a03:2880:22ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:18:37 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:18:37 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSRUY1NkVBMEMzQ0Q0Q0I5QTRBAA==.
+INFO 2025-10-31 13:18:40 [uvicorn.access:476] 2a03:2880:22ff:49:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:18:40 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:18:40 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQ0Y0RTFEQjMzMDExNjcwQTAwAA==.
+INFO 2025-10-31 13:18:41 [uvicorn.access:476] 2a03:2880:21ff:44:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:18:41 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:18:41 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQ0Y0RTFEQjMzMDExNjcwQTAwAA==.
+INFO 2025-10-31 13:18:41 [uvicorn.access:476] 2a03:2880:10ff:4d:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:18:41 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:18:41 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQ0Y0RTFEQjMzMDExNjcwQTAwAA==.
+INFO 2025-10-31 13:18:41 [uvicorn.access:476] 2a03:2880:21ff:c:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:18:41 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:18:41 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQ0Y0RTFEQjMzMDExNjcwQTAwAA==.
+INFO 2025-10-31 13:18:56 [uvicorn.access:476] 127.0.0.1:64933 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:18:56 [uvicorn.access:476] 127.0.0.1:64935 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:18:56 [uvicorn.access:476] 127.0.0.1:64934 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:18:56 [uvicorn.access:476] 127.0.0.1:64936 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:19:56 [uvicorn.access:476] 127.0.0.1:64938 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:19:56 [uvicorn.access:476] 127.0.0.1:64940 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:19:56 [uvicorn.access:476] 127.0.0.1:64939 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:19:56 [uvicorn.access:476] 127.0.0.1:64941 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:19:58 [uvicorn.access:476] 2a03:2880:10ff:1:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:19:58 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 13:19:58 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 13:19:58 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YyQzNDNTM5ODA2MDBCMDFEQ0MA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 13:19:58 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0YyQzNDNTM5ODA2MDBCMDFEQ0MA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 13:22:51 [uvicorn.access:476] 127.0.0.1:59803 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:22:51 [uvicorn.access:476] 127.0.0.1:59804 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:22:51 [uvicorn.access:476] 127.0.0.1:59805 - "OPTIONS /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:22:51 [uvicorn.access:476] 127.0.0.1:59806 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:22:51 [uvicorn.access:476] 127.0.0.1:59805 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:22:51 [uvicorn.access:476] 127.0.0.1:59806 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:22:51 [uvicorn.access:476] 127.0.0.1:59804 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:22:51 [uvicorn.access:476] 127.0.0.1:59805 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:22:52 [uvicorn.access:476] 2a03:2880:22ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:22:52 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:22:52 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSODI4QjE1RDlBQUM2QUMxMkM0AA==.
+INFO 2025-10-31 13:22:54 [uvicorn.access:476] 127.0.0.1:57753 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:22:54 [uvicorn.access:476] 127.0.0.1:57754 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:22:54 [uvicorn.access:476] 127.0.0.1:57752 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:22:54 [uvicorn.access:476] 127.0.0.1:57755 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:23:03 [uvicorn.access:476] 2a03:2880:21ff:70:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:23:03 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:23:03 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSMTdCODI2OUQxRTI0QzI1RkY0AA==.
+INFO 2025-10-31 13:23:03 [uvicorn.access:476] 2a03:2880:22ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:23:03 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:23:03 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSNDAzOEQwQUMwQjhENThFOEUyAA==.
+INFO 2025-10-31 13:23:11 [uvicorn.access:476] 2a03:2880:12ff:52:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:23:11 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:23:11 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQkI0MkVCM0RDQkVERDY2QzI3AA==.
+INFO 2025-10-31 13:23:52 [uvicorn.access:476] 127.0.0.1:60767 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:23:52 [uvicorn.access:476] 127.0.0.1:60769 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:23:52 [uvicorn.access:476] 127.0.0.1:60770 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:23:52 [uvicorn.access:476] 127.0.0.1:60768 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:24:19 [uvicorn.access:476] 2a03:2880:22ff:1:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:24:19 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:24:19 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQkI0MkVCM0RDQkVERDY2QzI3AA==.
+INFO 2025-10-31 13:24:21 [uvicorn.access:476] 2a03:2880:12ff:49:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:24:21 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:24:21 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSODI4QjE1RDlBQUM2QUMxMkM0AA==.
+INFO 2025-10-31 13:24:30 [uvicorn.access:476] 2a03:2880:10ff:3:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:24:30 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:24:30 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNjUxODAyNTYxRkRGNTBBNjI1AA==.
+INFO 2025-10-31 13:24:52 [uvicorn.access:476] 127.0.0.1:60808 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:24:52 [uvicorn.access:476] 127.0.0.1:60810 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:24:52 [uvicorn.access:476] 127.0.0.1:60809 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:24:52 [uvicorn.access:476] 127.0.0.1:60811 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:24:56 [uvicorn.access:476] 2a03:2880:22ff:8:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:24:56 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:24:56 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMjdBNzI1N0JBQjJFNTlCRUZEAA==.
+INFO 2025-10-31 13:25:09 [uvicorn.access:476] 2a03:2880:10ff:70:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:25:09 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:25:09 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSODI4QjE1RDlBQUM2QUMxMkM0AA==.
+INFO 2025-10-31 13:25:21 [uvicorn.access:476] 2a03:2880:21ff:2:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:25:21 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:25:21 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMjdBNzI1N0JBQjJFNTlCRUZEAA==.
+INFO 2025-10-31 13:25:30 [uvicorn.access:476] 2a03:2880:22ff:6:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:25:30 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:25:30 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSQkI0MkVCM0RDQkVERDY2QzI3AA==.
+INFO 2025-10-31 13:25:32 [uvicorn.access:476] 2a03:2880:10ff:9:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:25:32 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:25:32 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSODI4QjE1RDlBQUM2QUMxMkM0AA==.
+INFO 2025-10-31 13:25:39 [uvicorn.access:476] 2a03:2880:22ff:44:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:25:39 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:25:39 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMjdBNzI1N0JBQjJFNTlCRUZEAA==.
+INFO 2025-10-31 13:25:47 [uvicorn.access:476] 2a03:2880:12ff:74:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:25:47 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 13:25:47 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 187, Status: Atendente Chamado) encontrado para 555599103414.
+INFO 2025-10-31 13:25:47 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0Y2RTg2Qzk5MjVENDExQzE4QjMA de 555599103414 processada. Atendimento ID 187 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 13:25:47 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU1NTk5MTAzNDE0FQIAEhgUM0Y2RTg2Qzk5MjVENDExQzE4QjMA adicionada (status 'Atendente Chamado' mantido) para Atendimento 187.
+INFO 2025-10-31 13:25:52 [uvicorn.access:476] 127.0.0.1:60844 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:25:52 [uvicorn.access:476] 127.0.0.1:60846 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:25:52 [uvicorn.access:476] 127.0.0.1:60845 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:25:52 [uvicorn.access:476] 127.0.0.1:60847 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:26:15 [uvicorn.access:476] 2a03:2880:10ff:7:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:26:15 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:26:15 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMjdBNzI1N0JBQjJFNTlCRUZEAA==.
+INFO 2025-10-31 13:26:30 [uvicorn.access:476] 2a03:2880:10ff:74:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:26:30 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:26:30 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSMjdBNzI1N0JBQjJFNTlCRUZEAA==.
+INFO 2025-10-31 13:26:47 [uvicorn.access:476] 2a03:2880:10ff:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:26:47 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:26:47 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNzY5NTA4NTZDNDk3RTAwM0I2AA==.
+INFO 2025-10-31 13:26:52 [uvicorn.access:476] 127.0.0.1:60895 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:26:52 [uvicorn.access:476] 127.0.0.1:60896 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:26:52 [uvicorn.access:476] 127.0.0.1:60897 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:26:52 [uvicorn.access:476] 127.0.0.1:60898 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:26:57 [uvicorn.access:476] 2a03:2880:12ff:54:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:26:57 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:26:57 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNjUxODAyNTYxRkRGNTBBNjI1AA==.
+INFO 2025-10-31 13:27:52 [uvicorn.access:476] 127.0.0.1:60929 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:27:52 [uvicorn.access:476] 127.0.0.1:60931 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:27:52 [uvicorn.access:476] 127.0.0.1:60930 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:27:52 [uvicorn.access:476] 127.0.0.1:60932 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:28:52 [uvicorn.access:476] 127.0.0.1:60938 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:28:52 [uvicorn.access:476] 127.0.0.1:60939 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:28:52 [uvicorn.access:476] 127.0.0.1:60940 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:28:52 [uvicorn.access:476] 127.0.0.1:60943 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:29:52 [uvicorn.access:476] 127.0.0.1:60950 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:29:52 [uvicorn.access:476] 127.0.0.1:60952 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:29:52 [uvicorn.access:476] 127.0.0.1:60951 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:29:52 [uvicorn.access:476] 127.0.0.1:60953 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:30:52 [uvicorn.access:476] 127.0.0.1:60957 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:30:52 [uvicorn.access:476] 127.0.0.1:60959 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:30:52 [uvicorn.access:476] 127.0.0.1:60958 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:30:52 [uvicorn.access:476] 127.0.0.1:60960 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:31:52 [uvicorn.access:476] 127.0.0.1:60977 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:31:52 [uvicorn.access:476] 127.0.0.1:60978 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:31:52 [uvicorn.access:476] 127.0.0.1:60979 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:31:52 [uvicorn.access:476] 127.0.0.1:60980 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:32:49 [uvicorn.access:476] 127.0.0.1:60990 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:32:49 [uvicorn.access:476] 127.0.0.1:60990 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:32:49 [uvicorn.access:476] 127.0.0.1:60993 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:32:49 [uvicorn.access:476] 127.0.0.1:60992 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:32:49 [uvicorn.access:476] 127.0.0.1:60992 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:32:49 [uvicorn.access:476] 127.0.0.1:60993 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:32:50 [uvicorn.access:476] 127.0.0.1:60993 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:32:50 [uvicorn.access:476] 127.0.0.1:60993 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:32:50 [uvicorn.access:476] 127.0.0.1:60990 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:32:50 [uvicorn.access:476] 127.0.0.1:60992 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:32:50 [uvicorn.access:476] 127.0.0.1:60999 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:32:50 [uvicorn.access:476] 127.0.0.1:60993 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:32:50 [uvicorn.access:476] 127.0.0.1:60992 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:32:50 [uvicorn.access:476] 127.0.0.1:60990 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:32:53 [uvicorn.access:476] 127.0.0.1:60990 - "OPTIONS /api/v1/atendimentos/191 HTTP/1.1" 200
+INFO 2025-10-31 13:32:53 [uvicorn.access:476] 127.0.0.1:60990 - "PUT /api/v1/atendimentos/191 HTTP/1.1" 200
+INFO 2025-10-31 13:32:55 [uvicorn.access:476] 127.0.0.1:60990 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:32:55 [uvicorn.access:476] 127.0.0.1:60992 - "OPTIONS /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:32:55 [uvicorn.access:476] 127.0.0.1:60993 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:32:55 [uvicorn.access:476] 127.0.0.1:60993 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:32:55 [uvicorn.access:476] 127.0.0.1:60990 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:32:55 [uvicorn.access:476] 127.0.0.1:60992 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:33:00 [uvicorn.access:476] 127.0.0.1:60992 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:00 [uvicorn.access:476] 127.0.0.1:60993 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:33:00 [uvicorn.access:476] 127.0.0.1:61000 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:00 [uvicorn.access:476] 127.0.0.1:60990 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:33:05 [uvicorn.access:476] 127.0.0.1:60990 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:05 [uvicorn.access:476] 127.0.0.1:60993 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:33:05 [uvicorn.access:476] 127.0.0.1:61000 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:33:06 [uvicorn.access:476] 127.0.0.1:61000 - "OPTIONS /api/v1/atendimentos/191/send_message HTTP/1.1" 200
+INFO 2025-10-31 13:33:06 [uvicorn.access:476] 127.0.0.1:60993 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:06 [uvicorn.access:476] 127.0.0.1:61000 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:33:06 [uvicorn.access:476] 127.0.0.1:60990 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+DEBUG 2025-10-31 13:33:06 [app.services.whatsapp_service:469] WBP Send Payload to 554599861237: {"messaging_product": "whatsapp", "recipient_type": "individual", "to": "554599861237", "type": "text", "text": {"preview_url": false, "body": "Tudo bem?\n\nComo est\u00e1?"}}
+DEBUG 2025-10-31 13:33:06 [httpcore.connection:87] connect_tcp.started host='graph.facebook.com' port=443 local_address=None timeout=30.0 socket_options=None
+INFO 2025-10-31 13:33:06 [uvicorn.access:476] 127.0.0.1:61004 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:06 [uvicorn.access:476] 127.0.0.1:60993 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:33:06 [uvicorn.access:476] 127.0.0.1:61000 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+DEBUG 2025-10-31 13:33:06 [httpcore.connection:87] connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D858B88710>
+DEBUG 2025-10-31 13:33:06 [httpcore.connection:87] start_tls.started ssl_context=<ssl.SSLContext object at 0x000001D8585D9010> server_hostname='graph.facebook.com' timeout=30.0
+DEBUG 2025-10-31 13:33:06 [httpcore.connection:87] start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000001D858B8BCD0>
+DEBUG 2025-10-31 13:33:06 [httpcore.http11:87] send_request_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-31 13:33:06 [httpcore.http11:87] send_request_headers.complete
+DEBUG 2025-10-31 13:33:06 [httpcore.http11:87] send_request_body.started request=<Request [b'POST']>
+DEBUG 2025-10-31 13:33:06 [httpcore.http11:87] send_request_body.complete
+DEBUG 2025-10-31 13:33:06 [httpcore.http11:87] receive_response_headers.started request=<Request [b'POST']>
+DEBUG 2025-10-31 13:33:08 [httpcore.http11:87] receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'x-fb-aed', b'621'), (b'x-business-use-case-usage', b'{"1917451302166405":[{"type":"whatsapp","call_count":1,"total_cputime":1,"total_time":1,"estimated_time_to_regain_access":0}]}'), (b'Access-Control-Allow-Origin', b'*'), (b'facebook-api-version', b'v24.0'), (b'Strict-Transport-Security', b'max-age=15552000; preload'), (b'Pragma', b'no-cache'), (b'Cache-Control', b'private, no-cache, no-store, must-revalidate'), (b'Expires', b'Sat, 01 Jan 2000 00:00:00 GMT'), (b'x-fb-request-id', b'ALQ_djQEA8XKgPHacT1QSoB'), (b'x-fb-trace-id', b'ExS/b7OKjco'), (b'x-fb-rev', b'1029223583'), (b'X-FB-Debug', b'BosaBwMadZSo0KSOoDc+K9jCzGNTSIIr8sDvLpR+aUjmSg4g6isf0piVvrKLjvFGWHOGxdw5NFbnICnTM50cLw=='), (b'Date', b'Fri, 31 Oct 2025 16:33:07 GMT'), (b'X-FB-Connection-Quality', b'GOOD; q=0.7, rtt=56, rtx=0, c=10, mss=1392, tbw=3482, tp=-1, tpl=-1, uplat=1239, ullat=1'), (b'Alt-Svc', b'h3=":443"; ma=86400'), (b'Connection', b'keep-alive'), (b'Content-Length', b'178')])
+INFO 2025-10-31 13:33:08 [httpx:1740] HTTP Request: POST https://graph.facebook.com/v24.0/806840102518876/messages "HTTP/1.1 200 OK"
+DEBUG 2025-10-31 13:33:08 [httpcore.http11:87] receive_response_body.started request=<Request [b'POST']>
+DEBUG 2025-10-31 13:33:08 [httpcore.http11:87] receive_response_body.complete
+DEBUG 2025-10-31 13:33:08 [httpcore.http11:87] response_closed.started
+DEBUG 2025-10-31 13:33:08 [httpcore.http11:87] response_closed.complete
+INFO 2025-10-31 13:33:08 [app.services.whatsapp_service:482] WBP: Mensagem enviada para 554599861237 (ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSOTQ4QkVDRDQ2OTRBQTM3RjZCAA==, Tentativa 1).
+DEBUG 2025-10-31 13:33:08 [httpcore.connection:87] close.started
+DEBUG 2025-10-31 13:33:08 [httpcore.connection:87] close.complete
+INFO 2025-10-31 13:33:08 [app.api.atendimentos:151] Mensagem manual enviada para 554599861237 (Atendimento ID: 191). API Msg ID: wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSOTQ4QkVDRDQ2OTRBQTM3RjZCAA==
+INFO 2025-10-31 13:33:08 [app.crud.crud_atendimento:117] Mensagem ID wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSOTQ4QkVDRDQ2OTRBQTM3RjZCAA== adicionada à conversa do Atendimento ID 191.
+INFO 2025-10-31 13:33:08 [uvicorn.access:476] 127.0.0.1:61003 - "POST /api/v1/atendimentos/191/send_message HTTP/1.1" 200
+INFO 2025-10-31 13:33:08 [uvicorn.access:476] 127.0.0.1:61003 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:08 [uvicorn.access:476] 127.0.0.1:60993 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:33:08 [uvicorn.access:476] 127.0.0.1:61000 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:33:09 [uvicorn.access:476] 2a03:2880:10ff:41:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:33:09 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:33:09 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSOTQ4QkVDRDQ2OTRBQTM3RjZCAA==.
+INFO 2025-10-31 13:33:09 [uvicorn.access:476] 2a03:2880:22ff:8:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:33:09 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:33:09 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSOTQ4QkVDRDQ2OTRBQTM3RjZCAA==.
+INFO 2025-10-31 13:33:09 [uvicorn.access:476] 2a03:2880:22ff:71:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 13:33:09 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 13:33:09 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5ODYxMjM3FQIAERgSOTQ4QkVDRDQ2OTRBQTM3RjZCAA==.
+INFO 2025-10-31 13:33:10 [uvicorn.access:476] 127.0.0.1:61000 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:13 [uvicorn.access:476] 127.0.0.1:61000 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:13 [uvicorn.access:476] 127.0.0.1:61013 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:33:13 [uvicorn.access:476] 127.0.0.1:61012 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:33:18 [uvicorn.access:476] 127.0.0.1:61012 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:18 [uvicorn.access:476] 127.0.0.1:61015 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:33:18 [uvicorn.access:476] 127.0.0.1:61014 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:33:20 [uvicorn.access:476] 127.0.0.1:61014 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:23 [uvicorn.access:476] 127.0.0.1:61014 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:23 [uvicorn.access:476] 127.0.0.1:61016 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:33:23 [uvicorn.access:476] 127.0.0.1:61017 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:33:28 [uvicorn.access:476] 127.0.0.1:61023 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:28 [uvicorn.access:476] 127.0.0.1:61024 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:33:28 [uvicorn.access:476] 127.0.0.1:61025 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:33:30 [uvicorn.access:476] 127.0.0.1:61025 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:33 [uvicorn.access:476] 127.0.0.1:61025 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:33 [uvicorn.access:476] 127.0.0.1:61023 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:33:33 [uvicorn.access:476] 127.0.0.1:61024 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:33:38 [uvicorn.access:476] 127.0.0.1:61024 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:38 [uvicorn.access:476] 127.0.0.1:61031 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:33:38 [uvicorn.access:476] 127.0.0.1:61032 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200
+INFO 2025-10-31 13:33:40 [uvicorn.access:476] 127.0.0.1:61032 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:43 [uvicorn.access:476] 127.0.0.1:61032 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 13:33:43 [uvicorn.access:476] 127.0.0.1:61033 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 13:33:43 [uvicorn.access:476] 127.0.0.1:61034 - "GET /api/v1/atendimentos/?search=&limit=1000 HTTP/1.1" 200

@@ -782,6 +782,24 @@ const ChatFooter = ({ onSendMessage, onSendMedia }) => {
     const docInputRef = useRef(null);
     const videoInputRef = useRef(null);
 
+    useEffect(() => {
+        const textarea = textInputRef.current;
+        if (textarea) {
+            const maxHeight = 120; // Altura máxima (aprox. 5-6 linhas)
+
+            textarea.style.height = 'auto'; // Reseta a altura
+            const scrollHeight = textarea.scrollHeight;
+
+            if (scrollHeight > maxHeight) {
+                textarea.style.height = `${maxHeight}px`;
+                textarea.style.overflowY = 'auto'; // Adiciona scroll se passar do max
+            } else {
+                textarea.style.height = `${scrollHeight}px`;
+                textarea.style.overflowY = 'hidden'; // Esconde scroll
+            }
+        }
+    }, [text]); // Executa toda vez que o texto muda
+
     // --- Lógica de Gravação de Áudio (MODIFICADA) ---
     const startRecording = async () => {
         try {
@@ -948,27 +966,43 @@ const ChatFooter = ({ onSendMessage, onSendMedia }) => {
         setShowAttachMenu(false); // Fecha o menu após enfileirar tudo
     };
 
-    // --- Lógica de Envio de Texto ---
-    const handleSubmitText = (e) => {
-        e.preventDefault();
-
-        // 1. Pega o texto e faz as verificações
+    // --- Lógica de Envio de Texto (MODIFICADA) ---
+    // 1. A lógica de envio foi extraída para esta função
+    const submitTextLogic = () => {
         const textToSend = text.trim();
         if (!textToSend || isRecording || isSendingMedia) return;
 
-        // 2. Limpa o input IMEDIATAMENTE
-        setText('');
+        setText(''); // Limpa o input
 
-        // 3. Foca no input IMEDIATAMENTE (usando o setTimeout que funcionou)
+        // Foca e reseta a altura do textarea
         setTimeout(() => {
-            textInputRef.current?.focus();
+            const textarea = textInputRef.current;
+            if (textarea) {
+                textarea.focus();
+                textarea.style.height = 'auto'; // Reseta altura
+                textarea.style.overflowY = 'hidden';
+            }
         }, 0);
 
-        // 4. Dispara o envio em segundo plano (sem 'await')
-        // O componente 'Atendimentos' (pai) já cuida da lógica
-        // otimista e do tratamento de erro da API.
-        onSendMessage(textToSend);
+        onSendMessage(textToSend); // Envia (sem await)
     };
+
+    // 2. O handler do <form> agora só chama a lógica
+    const handleSubmitText = (e) => {
+        e.preventDefault();
+        submitTextLogic();
+    };
+
+    // 3. (NOVO) Handler de tecla para o textarea
+    const handleKeyDown = (e) => {
+        // Se for 'Enter' E NÃO for 'Shift'
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); // Previne a quebra de linha
+            submitTextLogic();  // Envia a mensagem
+        }
+        // Se for 'Shift + Enter', permite o comportamento padrão (quebrar linha)
+    };
+    // --- FIM DAS MODIFICAÇÕES DE ENVIO DE TEXTO ---
 
     // Formata o tempo de gravação (ex: 00:05)
     const formatRecordingTime = (time) => {
@@ -1064,13 +1098,14 @@ const ChatFooter = ({ onSendMessage, onSendMedia }) => {
                     </div>
 
                     {/* Input de Texto */}
-                    <input
-                        ref={textInputRef} // <-- ADICIONE ESTA LINHA
-                        type="text"
+                    <textarea
+                        ref={textInputRef}
+                        rows={1} // Começa com uma linha
                         placeholder="Digite uma mensagem"
-                        className="flex-1 px-4 py-2 border border-gray-300 bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        className="flex-1 px-4 py-2 border border-gray-300 bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none overflow-y-hidden" // Adicionado resize-none e overflow-y-hidden
                         value={text}
                         onChange={(e) => setText(e.target.value)}
+                        onKeyDown={handleKeyDown}
                     />
 
                     {/* Botão Enviar ou Mic */}
