@@ -33860,3 +33860,2066 @@ INFO 2025-10-31 17:08:24 [uvicorn.access:476] 127.0.0.1:50366 - "GET /api/v1/ate
 INFO 2025-10-31 17:08:24 [uvicorn.access:476] 127.0.0.1:50361 - "GET /api/v1/auth/me HTTP/1.1" 200
 INFO 2025-10-31 17:08:25 [uvicorn.access:476] 127.0.0.1:50374 - "GET /api/v1/configs/ HTTP/1.1" 200
 INFO 2025-10-31 17:08:25 [uvicorn.access:476] 127.0.0.1:50366 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:08:30 [uvicorn.access:476] 127.0.0.1:50374 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:08:30 [uvicorn.access:476] 127.0.0.1:50340 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:08:33 [uvicorn.access:476] 127.0.0.1:50340 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:08:33 [uvicorn.access:476] 127.0.0.1:50320 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:08:33 [uvicorn.access:476] 127.0.0.1:50361 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:08:34 [uvicorn.access:476] 127.0.0.1:50340 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:08:35 [uvicorn.access:476] 127.0.0.1:50306 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:08:36 [uvicorn.access:476] 127.0.0.1:50320 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:08:38 [uvicorn.access:476] 127.0.0.1:50366 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:08:39 [uvicorn.access:476] 127.0.0.1:50366 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:08:40 [uvicorn.access:476] 127.0.0.1:50320 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:08:44 [uvicorn.access:476] 127.0.0.1:50320 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:08:45 [uvicorn.access:476] 127.0.0.1:50366 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:08:45 [uvicorn.access:476] 127.0.0.1:50439 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:08:46 [uvicorn.access:476] 127.0.0.1:50361 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:08:50 [uvicorn.access:476] 127.0.0.1:50361 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:08:51 [uvicorn.access:476] 127.0.0.1:50366 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:08:53 [uvicorn.access:476] 127.0.0.1:50374 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:08:54 [uvicorn.access:476] 127.0.0.1:50361 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:08:55 [uvicorn.access:476] 127.0.0.1:50374 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:08:55 [uvicorn.access:476] 127.0.0.1:50444 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:08:59 [uvicorn.access:476] 127.0.0.1:50444 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:09:00 [uvicorn.access:476] 127.0.0.1:50437 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:09:00 [uvicorn.access:476] 127.0.0.1:50374 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:09:05 [uvicorn.access:476] 127.0.0.1:50366 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:09:05 [uvicorn.access:476] 127.0.0.1:50437 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:09:06 [uvicorn.access:476] 127.0.0.1:50366 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:09:06 [uvicorn.access:476] 127.0.0.1:50374 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:09:10 [uvicorn.access:476] 127.0.0.1:50366 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:09:10 [uvicorn.access:476] 127.0.0.1:50361 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:09:11 [uvicorn.access:476] 127.0.0.1:50437 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:09:14 [uvicorn.access:476] 127.0.0.1:50439 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:09:14 [uvicorn.access:476] 127.0.0.1:50437 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:09:15 [uvicorn.access:476] 127.0.0.1:50366 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:09:16 [uvicorn.access:476] 127.0.0.1:50437 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:09:19 [uvicorn.access:476] 127.0.0.1:50437 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:09:19 [uvicorn.access:476] 127.0.0.1:50444 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:09:21 [uvicorn.access:476] 127.0.0.1:50366 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:09:24 [uvicorn.access:476] 127.0.0.1:50361 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:09:24 [uvicorn.access:476] 127.0.0.1:50366 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:09:25 [uvicorn.access:476] 127.0.0.1:50444 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:09:25 [uvicorn.access:476] 127.0.0.1:50361 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:09:26 [uvicorn.access:476] 127.0.0.1:50374 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:09:29 [uvicorn.access:476] 127.0.0.1:50374 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:09:30 [uvicorn.access:476] 127.0.0.1:50361 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:09:33 [uvicorn.access:476] 127.0.0.1:50467 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:09:34 [uvicorn.access:476] 127.0.0.1:50374 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:09:35 [uvicorn.access:476] 127.0.0.1:50467 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:09:36 [uvicorn.access:476] 127.0.0.1:50437 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:09:36 [uvicorn.access:476] 127.0.0.1:50374 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:09:36 [uvicorn.access:476] 127.0.0.1:50439 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:09:44 [uvicorn.access:476] 127.0.0.1:50361 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:09:45 [uvicorn.access:476] 127.0.0.1:50444 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:09:53 [uvicorn.access:476] 127.0.0.1:50478 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:09:53 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:09:55 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:09:55 [uvicorn.access:476] 127.0.0.1:50478 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:10:00 [uvicorn.access:476] 127.0.0.1:50374 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:10:02 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:10:03 [uvicorn.access:476] 127.0.0.1:50444 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:10:16 [uvicorn.access:476] 127.0.0.1:50502 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:10:55 [uvicorn.access:476] 127.0.0.1:61873 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:10:55 [uvicorn.access:476] 127.0.0.1:61872 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:10:56 [uvicorn.access:476] 127.0.0.1:61879 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:11:03 [uvicorn.access:476] 127.0.0.1:61871 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:11:54 [uvicorn.access:476] 127.0.0.1:61928 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:11:55 [uvicorn.access:476] 127.0.0.1:61932 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:11:55 [uvicorn.access:476] 127.0.0.1:61930 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:12:04 [uvicorn.access:476] 127.0.0.1:61929 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:12:53 [uvicorn.access:476] 127.0.0.1:61977 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:12:54 [uvicorn.access:476] 127.0.0.1:61979 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:12:54 [uvicorn.access:476] 127.0.0.1:61981 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:13:02 [uvicorn.access:476] 127.0.0.1:61978 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:13:53 [uvicorn.access:476] 127.0.0.1:62227 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:13:54 [uvicorn.access:476] 127.0.0.1:62229 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:13:54 [uvicorn.access:476] 127.0.0.1:62230 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:13:56 [uvicorn.access:476] 127.0.0.1:62228 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:14:53 [uvicorn.access:476] 127.0.0.1:62261 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:14:54 [uvicorn.access:476] 127.0.0.1:62263 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:14:54 [uvicorn.access:476] 127.0.0.1:62264 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:14:58 [uvicorn.access:476] 127.0.0.1:62262 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:15:52 [uvicorn.access:476] 127.0.0.1:62302 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:15:52 [uvicorn.access:476] 127.0.0.1:62303 - "OPTIONS /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:15:52 [uvicorn.access:476] 127.0.0.1:62302 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:15:53 [uvicorn.access:476] 127.0.0.1:62303 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:15:54 [uvicorn.access:476] 127.0.0.1:62304 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:15:54 [uvicorn.access:476] 127.0.0.1:62305 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:15:59 [uvicorn.access:476] 127.0.0.1:62302 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:16:54 [uvicorn.access:476] 127.0.0.1:62349 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:16:55 [uvicorn.access:476] 127.0.0.1:62352 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:16:55 [uvicorn.access:476] 127.0.0.1:62351 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:17:04 [uvicorn.access:476] 127.0.0.1:62350 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:17:54 [uvicorn.access:476] 127.0.0.1:62384 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:17:54 [uvicorn.access:476] 127.0.0.1:62386 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:17:54 [uvicorn.access:476] 127.0.0.1:62387 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:18:03 [uvicorn.access:476] 127.0.0.1:62385 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:18:54 [uvicorn.access:476] 127.0.0.1:62417 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:18:54 [uvicorn.access:476] 127.0.0.1:62421 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:18:54 [uvicorn.access:476] 127.0.0.1:62419 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:18:57 [uvicorn.access:476] 127.0.0.1:62418 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:19:52 [uvicorn.access:476] 127.0.0.1:62457 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:19:53 [uvicorn.access:476] 127.0.0.1:62455 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:19:54 [uvicorn.access:476] 127.0.0.1:62459 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:19:55 [uvicorn.access:476] 127.0.0.1:62457 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:20:01 [uvicorn.access:476] 127.0.0.1:62456 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:20:53 [uvicorn.access:476] 127.0.0.1:62490 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:20:54 [uvicorn.access:476] 127.0.0.1:62492 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:20:54 [uvicorn.access:476] 127.0.0.1:62493 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:20:56 [uvicorn.access:476] 127.0.0.1:62491 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:21:53 [uvicorn.access:476] 127.0.0.1:62524 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:21:54 [uvicorn.access:476] 127.0.0.1:62526 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:21:54 [uvicorn.access:476] 127.0.0.1:62527 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:21:55 [uvicorn.access:476] 127.0.0.1:62525 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:22:38 [uvicorn.access:476] 127.0.0.1:62551 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:22:39 [uvicorn.access:476] 127.0.0.1:62553 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:22:39 [uvicorn.access:476] 127.0.0.1:62554 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:22:43 [uvicorn.access:476] 127.0.0.1:62554 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:22:44 [uvicorn.access:476] 127.0.0.1:62553 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:22:44 [uvicorn.access:476] 127.0.0.1:62551 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:22:47 [uvicorn.access:476] 127.0.0.1:62552 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:22:49 [uvicorn.access:476] 127.0.0.1:62552 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:22:50 [uvicorn.access:476] 127.0.0.1:62553 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:22:54 [uvicorn.access:476] 127.0.0.1:62553 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:22:55 [uvicorn.access:476] 127.0.0.1:62552 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:22:55 [uvicorn.access:476] 127.0.0.1:62562 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:22:56 [uvicorn.access:476] 127.0.0.1:62551 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:22:58 [uvicorn.access:476] 127.0.0.1:62562 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:22:59 [uvicorn.access:476] 127.0.0.1:62552 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:23:00 [uvicorn.access:476] 127.0.0.1:62553 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:23:04 [uvicorn.access:476] 127.0.0.1:62553 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:23:05 [uvicorn.access:476] 127.0.0.1:62552 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:23:05 [uvicorn.access:476] 127.0.0.1:62568 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:23:06 [uvicorn.access:476] 127.0.0.1:62551 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:23:08 [uvicorn.access:476] 127.0.0.1:62568 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:23:09 [uvicorn.access:476] 127.0.0.1:62568 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:23:10 [uvicorn.access:476] 127.0.0.1:62552 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:23:13 [uvicorn.access:476] 127.0.0.1:62551 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:23:14 [uvicorn.access:476] 127.0.0.1:62551 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:23:15 [uvicorn.access:476] 127.0.0.1:62568 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:23:15 [uvicorn.access:476] 127.0.0.1:62572 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:23:19 [uvicorn.access:476] 2a03:2880:12ff:45:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 17:23:19 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-10-31 17:23:19 [uvicorn.access:476] 127.0.0.1:62572 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:23:19 [uvicorn.access:476] 127.0.0.1:62552 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:23:20 [uvicorn.access:476] 127.0.0.1:62568 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:23:20 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSMEMwOUMwNTlFQzk4QThCMzBGAA==.
+INFO 2025-10-31 17:23:22 [uvicorn.access:476] 127.0.0.1:62572 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:23:24 [uvicorn.access:476] 127.0.0.1:62572 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:23:25 [uvicorn.access:476] 127.0.0.1:62552 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:23:25 [uvicorn.access:476] 127.0.0.1:62576 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:23:26 [uvicorn.access:476] 127.0.0.1:62568 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:23:29 [uvicorn.access:476] 127.0.0.1:62568 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:23:30 [uvicorn.access:476] 127.0.0.1:62552 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:23:30 [uvicorn.access:476] 127.0.0.1:62576 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:23:34 [uvicorn.access:476] 127.0.0.1:62552 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:23:34 [uvicorn.access:476] 127.0.0.1:62576 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:23:35 [uvicorn.access:476] 127.0.0.1:62568 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:23:35 [uvicorn.access:476] 127.0.0.1:62552 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:23:38 [uvicorn.access:476] 127.0.0.1:62577 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:23:39 [uvicorn.access:476] 127.0.0.1:62577 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:23:40 [uvicorn.access:476] 127.0.0.1:62568 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:23:42 [uvicorn.access:476] 127.0.0.1:62552 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:23:53 [uvicorn.access:476] 127.0.0.1:62582 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:23:54 [uvicorn.access:476] 127.0.0.1:62584 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:23:54 [uvicorn.access:476] 127.0.0.1:62585 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:23:55 [uvicorn.access:476] 127.0.0.1:62583 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:24:53 [uvicorn.access:476] 127.0.0.1:62586 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:24:54 [uvicorn.access:476] 127.0.0.1:62588 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:24:54 [uvicorn.access:476] 127.0.0.1:62589 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:24:55 [uvicorn.access:476] 127.0.0.1:62587 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:25:53 [uvicorn.access:476] 127.0.0.1:62606 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:25:54 [uvicorn.access:476] 127.0.0.1:62608 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:25:54 [uvicorn.access:476] 127.0.0.1:62609 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:25:56 [uvicorn.access:476] 127.0.0.1:62607 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:26:03 [uvicorn.access:476] 2a03:2880:22ff:44:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 17:26:03 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+INFO 2025-10-31 17:26:03 [app.services.whatsapp_service:54] ✅ Conexão com o banco de dados da Evolution API configurada.
+INFO 2025-10-31 17:26:03 [app.services.gemini_service:49] ✅ Cliente Gemini inicializado com sucesso (chave índice 0).
+DEBUG 2025-10-31 17:26:05 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 900, Status: Atendente Chamado) encontrado para 554599944039.
+INFO 2025-10-31 17:26:06 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5OTQ0MDM5FQIAEhgWM0VCMERDMjE0QTc1MDc0NjVGQjY5OQA= de 554599944039 processada. Atendimento ID 900 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 17:26:08 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5OTQ0MDM5FQIAEhgWM0VCMERDMjE0QTc1MDc0NjVGQjY5OQA= adicionada (status 'Atendente Chamado' mantido) para Atendimento 900.
+INFO 2025-10-31 17:26:52 [uvicorn.access:476] 127.0.0.1:62630 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:26:52 [uvicorn.access:476] 127.0.0.1:62631 - "OPTIONS /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:26:52 [uvicorn.access:476] 127.0.0.1:62632 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:26:53 [uvicorn.access:476] 127.0.0.1:62632 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:26:54 [uvicorn.access:476] 127.0.0.1:62630 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:26:54 [uvicorn.access:476] 127.0.0.1:62633 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:26:55 [uvicorn.access:476] 127.0.0.1:62631 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:27:54 [uvicorn.access:476] 127.0.0.1:62658 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:27:54 [uvicorn.access:476] 127.0.0.1:62660 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:27:54 [uvicorn.access:476] 127.0.0.1:62661 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:28:03 [uvicorn.access:476] 127.0.0.1:62659 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:28:54 [uvicorn.access:476] 127.0.0.1:62670 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:28:55 [uvicorn.access:476] 127.0.0.1:62673 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:28:55 [uvicorn.access:476] 127.0.0.1:62672 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:29:05 [uvicorn.access:476] 127.0.0.1:62671 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:29:53 [uvicorn.access:476] 127.0.0.1:62681 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:29:54 [uvicorn.access:476] 127.0.0.1:62683 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:29:54 [uvicorn.access:476] 127.0.0.1:62684 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:30:03 [uvicorn.access:476] 127.0.0.1:62682 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:30:52 [uvicorn.access:476] 127.0.0.1:62703 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:30:53 [uvicorn.access:476] 127.0.0.1:62701 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:30:54 [uvicorn.access:476] 127.0.0.1:62703 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:30:55 [uvicorn.access:476] 127.0.0.1:62704 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:30:56 [uvicorn.access:476] 127.0.0.1:62702 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:31:53 [uvicorn.access:476] 127.0.0.1:62723 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:31:54 [uvicorn.access:476] 127.0.0.1:62725 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:31:54 [uvicorn.access:476] 127.0.0.1:62726 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:31:59 [uvicorn.access:476] 127.0.0.1:62724 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:32:53 [uvicorn.access:476] 127.0.0.1:62736 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:32:54 [uvicorn.access:476] 127.0.0.1:62739 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:32:54 [uvicorn.access:476] 127.0.0.1:62740 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:32:58 [uvicorn.access:476] 127.0.0.1:62738 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:33:53 [uvicorn.access:476] 127.0.0.1:62752 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:33:54 [uvicorn.access:476] 127.0.0.1:62754 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:33:54 [uvicorn.access:476] 127.0.0.1:62755 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:34:05 [uvicorn.access:476] 127.0.0.1:62753 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:34:53 [uvicorn.access:476] 127.0.0.1:62863 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:34:54 [uvicorn.access:476] 127.0.0.1:62865 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:34:55 [uvicorn.access:476] 127.0.0.1:62867 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:34:58 [uvicorn.access:476] 127.0.0.1:62864 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:35:54 [uvicorn.access:476] 127.0.0.1:62902 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:35:54 [uvicorn.access:476] 127.0.0.1:62904 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:35:55 [uvicorn.access:476] 127.0.0.1:62906 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:35:59 [uvicorn.access:476] 127.0.0.1:62903 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:36:53 [uvicorn.access:476] 127.0.0.1:62908 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:36:54 [uvicorn.access:476] 127.0.0.1:62910 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:36:54 [uvicorn.access:476] 127.0.0.1:62911 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:36:56 [uvicorn.access:476] 127.0.0.1:62909 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:37:52 [uvicorn.access:476] 127.0.0.1:62919 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:37:52 [uvicorn.access:476] 127.0.0.1:62920 - "OPTIONS /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:37:52 [uvicorn.access:476] 127.0.0.1:62919 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:37:54 [uvicorn.access:476] 127.0.0.1:62921 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:37:55 [uvicorn.access:476] 127.0.0.1:62925 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:37:55 [uvicorn.access:476] 127.0.0.1:62920 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:37:56 [uvicorn.access:476] 127.0.0.1:62919 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:38:53 [uvicorn.access:476] 127.0.0.1:63093 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:38:54 [uvicorn.access:476] 127.0.0.1:63093 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:38:55 [uvicorn.access:476] 127.0.0.1:63095 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:38:57 [uvicorn.access:476] 127.0.0.1:63094 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:39:53 [uvicorn.access:476] 127.0.0.1:63109 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:39:54 [uvicorn.access:476] 127.0.0.1:63111 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:39:54 [uvicorn.access:476] 127.0.0.1:63112 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:39:55 [uvicorn.access:476] 127.0.0.1:63110 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:40:53 [uvicorn.access:476] 127.0.0.1:63200 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:40:54 [uvicorn.access:476] 127.0.0.1:63203 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:40:54 [uvicorn.access:476] 127.0.0.1:63202 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:40:55 [uvicorn.access:476] 127.0.0.1:63201 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:41:52 [uvicorn.access:476] 127.0.0.1:63216 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:41:54 [uvicorn.access:476] 127.0.0.1:63214 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:41:55 [uvicorn.access:476] 127.0.0.1:63216 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:41:55 [uvicorn.access:476] 127.0.0.1:63217 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:42:04 [uvicorn.access:476] 127.0.0.1:63215 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 17:42:54 [uvicorn.access:476] 127.0.0.1:63240 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:42:55 [uvicorn.access:476] 127.0.0.1:63242 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 17:42:55 [uvicorn.access:476] 127.0.0.1:63243 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 17:43:10 [uvicorn.access:476] 127.0.0.1:63241 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 20:58:45 [uvicorn.access:476] 127.0.0.1:54460 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:58:45 [uvicorn.access:476] 127.0.0.1:54461 - "OPTIONS /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 20:58:45 [uvicorn.access:476] 127.0.0.1:54459 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 20:58:45 [uvicorn.access:476] 127.0.0.1:54462 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+ERROR 2025-10-31 20:58:46 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 298, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\dependencies\utils.py", line 646, in solve_dependencies
+    solved = await call(**solved_result.values)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\api\dependencies.py", line 20, in get_current_active_user
+    user = await crud_user.get_user_by_email(db, email=token_data.email)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\crud\crud_user.py", line 17, in get_user_by_email
+    result = await db.execute(select(models.User).filter(models.User.email == email))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 463, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2365, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2241, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2110, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3277, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 143, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3301, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 447, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1345, in _checkout
+    with util.safe_reraise():
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1342, in _checkout
+    fairy._connection_record.get_connection()
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 836, in get_connection
+    self.__connect()
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 899, in __connect
+    with util.safe_reraise():
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 895, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\create.py", line 661, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 629, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 964, in connect
+    await_only(creator_fn(*arg, **kw)),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connection.py", line 2421, in connect
+    return await connect_utils._connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1075, in _connect
+    raise last_error or exceptions.TargetServerAttributeNotMatched(
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1049, in _connect
+    conn = await _connect_addr(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 886, in _connect_addr
+    return await __connect_addr(params, True, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 931, in __connect_addr
+    tr, pr = await connector
+             ^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 802, in _create_ssl_connection
+    tr, pr = await loop.create_connection(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 1046, in create_connection
+    infos = await self._ensure_resolved(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 1420, in _ensure_resolved
+    return await loop.getaddrinfo(host, port, family=family, type=type,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 868, in getaddrinfo
+    return await self.run_in_executor(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\socket.py", line 962, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno 11001] getaddrinfo failed
+ERROR 2025-10-31 20:58:47 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 298, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\dependencies\utils.py", line 646, in solve_dependencies
+    solved = await call(**solved_result.values)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\api\dependencies.py", line 20, in get_current_active_user
+    user = await crud_user.get_user_by_email(db, email=token_data.email)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\crud\crud_user.py", line 17, in get_user_by_email
+    result = await db.execute(select(models.User).filter(models.User.email == email))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 463, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2365, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2241, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2110, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3277, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 143, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3301, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 447, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1345, in _checkout
+    with util.safe_reraise():
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1342, in _checkout
+    fairy._connection_record.get_connection()
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 836, in get_connection
+    self.__connect()
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 899, in __connect
+    with util.safe_reraise():
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 895, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\create.py", line 661, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 629, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 964, in connect
+    await_only(creator_fn(*arg, **kw)),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connection.py", line 2421, in connect
+    return await connect_utils._connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1075, in _connect
+    raise last_error or exceptions.TargetServerAttributeNotMatched(
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1049, in _connect
+    conn = await _connect_addr(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 886, in _connect_addr
+    return await __connect_addr(params, True, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 931, in __connect_addr
+    tr, pr = await connector
+             ^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 802, in _create_ssl_connection
+    tr, pr = await loop.create_connection(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 1046, in create_connection
+    infos = await self._ensure_resolved(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 1420, in _ensure_resolved
+    return await loop.getaddrinfo(host, port, family=family, type=type,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 868, in getaddrinfo
+    return await self.run_in_executor(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\socket.py", line 962, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno 11001] getaddrinfo failed
+ERROR 2025-10-31 20:58:47 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 298, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\dependencies\utils.py", line 646, in solve_dependencies
+    solved = await call(**solved_result.values)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\api\dependencies.py", line 20, in get_current_active_user
+    user = await crud_user.get_user_by_email(db, email=token_data.email)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\crud\crud_user.py", line 17, in get_user_by_email
+    result = await db.execute(select(models.User).filter(models.User.email == email))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 463, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2365, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2241, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2110, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3277, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 143, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3301, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 447, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1345, in _checkout
+    with util.safe_reraise():
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1342, in _checkout
+    fairy._connection_record.get_connection()
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 836, in get_connection
+    self.__connect()
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 899, in __connect
+    with util.safe_reraise():
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 895, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\create.py", line 661, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 629, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 964, in connect
+    await_only(creator_fn(*arg, **kw)),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connection.py", line 2421, in connect
+    return await connect_utils._connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1075, in _connect
+    raise last_error or exceptions.TargetServerAttributeNotMatched(
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1049, in _connect
+    conn = await _connect_addr(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 886, in _connect_addr
+    return await __connect_addr(params, True, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 931, in __connect_addr
+    tr, pr = await connector
+             ^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 802, in _create_ssl_connection
+    tr, pr = await loop.create_connection(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 1046, in create_connection
+    infos = await self._ensure_resolved(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 1420, in _ensure_resolved
+    return await loop.getaddrinfo(host, port, family=family, type=type,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 868, in getaddrinfo
+    return await self.run_in_executor(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\socket.py", line 962, in getaddrinfo
+    for res in _socket.getaddrinfo(host, port, family, type, proto, flags):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+socket.gaierror: [Errno 11001] getaddrinfo failed
+INFO 2025-10-31 20:59:08 [uvicorn.access:476] 127.0.0.1:64063 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:11 [uvicorn.access:476] 127.0.0.1:64075 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:11 [uvicorn.access:476] 127.0.0.1:64077 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 20:59:13 [uvicorn.access:476] 127.0.0.1:64063 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 20:59:13 [uvicorn.access:476] 127.0.0.1:64075 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 20:59:14 [uvicorn.access:476] 127.0.0.1:64106 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:15 [uvicorn.access:476] 127.0.0.1:64075 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 20:59:15 [uvicorn.access:476] 127.0.0.1:64063 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:16 [uvicorn.access:476] 127.0.0.1:64077 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 20:59:16 [uvicorn.access:476] 127.0.0.1:64075 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:17 [uvicorn.access:476] 127.0.0.1:64077 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:18 [uvicorn.access:476] 127.0.0.1:64075 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:19 [uvicorn.access:476] 127.0.0.1:64075 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:20 [uvicorn.access:476] 127.0.0.1:64063 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 20:59:20 [uvicorn.access:476] 127.0.0.1:64077 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 20:59:20 [uvicorn.access:476] 127.0.0.1:64116 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:22 [uvicorn.access:476] 127.0.0.1:64075 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 20:59:24 [uvicorn.access:476] 127.0.0.1:64075 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:25 [uvicorn.access:476] 127.0.0.1:64077 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 20:59:26 [uvicorn.access:476] 127.0.0.1:64116 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 20:59:29 [uvicorn.access:476] 127.0.0.1:64116 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:30 [uvicorn.access:476] 127.0.0.1:64075 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 20:59:30 [uvicorn.access:476] 127.0.0.1:64117 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:31 [uvicorn.access:476] 127.0.0.1:64077 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 20:59:34 [uvicorn.access:476] 127.0.0.1:64077 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:35 [uvicorn.access:476] 127.0.0.1:64075 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 20:59:36 [uvicorn.access:476] 127.0.0.1:64117 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 20:59:39 [uvicorn.access:476] 127.0.0.1:64117 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:40 [uvicorn.access:476] 127.0.0.1:64077 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 20:59:40 [uvicorn.access:476] 127.0.0.1:64127 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:41 [uvicorn.access:476] 127.0.0.1:64075 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 20:59:44 [uvicorn.access:476] 127.0.0.1:64075 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:45 [uvicorn.access:476] 127.0.0.1:64077 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 20:59:46 [uvicorn.access:476] 127.0.0.1:64127 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 20:59:49 [uvicorn.access:476] 127.0.0.1:64127 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:53 [uvicorn.access:476] 127.0.0.1:64127 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 20:59:54 [uvicorn.access:476] 127.0.0.1:64142 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 20:59:55 [uvicorn.access:476] 127.0.0.1:64141 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 20:59:59 [uvicorn.access:476] 127.0.0.1:64141 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:00:09 [uvicorn.access:476] 127.0.0.1:64158 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:00:53 [uvicorn.access:476] 127.0.0.1:64165 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:00:54 [uvicorn.access:476] 127.0.0.1:64167 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 21:00:54 [uvicorn.access:476] 127.0.0.1:64168 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:00:55 [uvicorn.access:476] 127.0.0.1:64166 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 21:01:53 [uvicorn.access:476] 127.0.0.1:64171 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:01:54 [uvicorn.access:476] 127.0.0.1:64173 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 21:01:54 [uvicorn.access:476] 127.0.0.1:64174 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:01:55 [uvicorn.access:476] 127.0.0.1:64172 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 21:02:53 [uvicorn.access:476] 127.0.0.1:64180 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:02:54 [uvicorn.access:476] 127.0.0.1:64182 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 21:02:54 [uvicorn.access:476] 127.0.0.1:64183 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:02:55 [uvicorn.access:476] 127.0.0.1:64181 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 21:03:53 [uvicorn.access:476] 127.0.0.1:64205 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:03:54 [uvicorn.access:476] 127.0.0.1:64207 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 21:03:54 [uvicorn.access:476] 127.0.0.1:64208 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:03:55 [uvicorn.access:476] 127.0.0.1:64206 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 21:04:26 [uvicorn.access:476] 2a03:2880:22ff:48:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-10-31 21:04:26 [app.api.webhook:147] WBP Webhook (Background): Iniciando processamento de 'value'...
+DEBUG 2025-10-31 21:04:31 [app.crud.crud_atendimento:183] Atendimento ativo (ID: 900, Status: Atendente Chamado) encontrado para 554599944039.
+INFO 2025-10-31 21:04:33 [app.api.webhook:226] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5OTQ0MDM5FQIAEhgWM0VCMEFDNDE1NDc2QUIyNTk4RjQxOAA= de 554599944039 processada. Atendimento ID 900 está em 'Atendente Chamado', status NÃO será alterado.
+INFO 2025-10-31 21:04:36 [app.api.webhook:361] WBP Webhook: Mensagem wamid.HBgMNTU0NTk5OTQ0MDM5FQIAEhgWM0VCMEFDNDE1NDc2QUIyNTk4RjQxOAA= adicionada (status 'Atendente Chamado' mantido) para Atendimento 900.
+INFO 2025-10-31 21:04:54 [uvicorn.access:476] 127.0.0.1:64245 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 21:04:54 [uvicorn.access:476] 127.0.0.1:64243 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:04:55 [uvicorn.access:476] 127.0.0.1:64244 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 21:04:55 [uvicorn.access:476] 127.0.0.1:64245 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:05:53 [uvicorn.access:476] 127.0.0.1:64264 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:05:54 [uvicorn.access:476] 127.0.0.1:64266 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 21:05:54 [uvicorn.access:476] 127.0.0.1:64267 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:05:55 [uvicorn.access:476] 127.0.0.1:64265 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 21:06:53 [uvicorn.access:476] 127.0.0.1:64268 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:06:54 [uvicorn.access:476] 127.0.0.1:64270 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 21:06:54 [uvicorn.access:476] 127.0.0.1:64273 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:06:55 [uvicorn.access:476] 127.0.0.1:64269 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 21:07:53 [uvicorn.access:476] 127.0.0.1:64278 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:07:54 [uvicorn.access:476] 127.0.0.1:64280 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 21:07:54 [uvicorn.access:476] 127.0.0.1:64281 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:07:58 [uvicorn.access:476] 127.0.0.1:64279 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 21:08:52 [uvicorn.access:476] 127.0.0.1:64307 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:08:52 [uvicorn.access:476] 127.0.0.1:64308 - "OPTIONS /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 21:08:52 [uvicorn.access:476] 127.0.0.1:64307 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 21:08:52 [uvicorn.access:476] 127.0.0.1:64309 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:08:53 [uvicorn.access:476] 127.0.0.1:64308 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:08:54 [uvicorn.access:476] 127.0.0.1:64309 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 21:08:54 [uvicorn.access:476] 127.0.0.1:64310 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:08:55 [uvicorn.access:476] 127.0.0.1:64307 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 21:09:54 [uvicorn.access:476] 127.0.0.1:64321 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:09:54 [uvicorn.access:476] 127.0.0.1:64323 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 21:09:55 [uvicorn.access:476] 127.0.0.1:64324 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:09:56 [uvicorn.access:476] 127.0.0.1:64322 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 21:10:54 [uvicorn.access:476] 127.0.0.1:64325 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:10:54 [uvicorn.access:476] 127.0.0.1:64327 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 21:10:55 [uvicorn.access:476] 127.0.0.1:64328 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:10:57 [uvicorn.access:476] 127.0.0.1:64326 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 21:11:53 [uvicorn.access:476] 127.0.0.1:64333 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:11:54 [uvicorn.access:476] 127.0.0.1:64335 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 21:11:55 [uvicorn.access:476] 127.0.0.1:64336 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:11:55 [uvicorn.access:476] 127.0.0.1:64334 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-10-31 21:12:53 [uvicorn.access:476] 127.0.0.1:64339 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:12:54 [uvicorn.access:476] 127.0.0.1:64341 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-10-31 21:12:54 [uvicorn.access:476] 127.0.0.1:64342 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-10-31 21:12:55 [uvicorn.access:476] 127.0.0.1:64340 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:03:12 [uvicorn.access:476] 127.0.0.1:61296 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:03:12 [uvicorn.access:476] 127.0.0.1:61294 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:03:12 [uvicorn.access:476] 127.0.0.1:61293 - "OPTIONS /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:03:12 [uvicorn.access:476] 127.0.0.1:61295 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:03:16 [uvicorn.access:476] 127.0.0.1:61293 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:03:17 [uvicorn.access:476] 127.0.0.1:61294 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:03:19 [uvicorn.access:476] 127.0.0.1:61296 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:03:21 [uvicorn.access:476] 127.0.0.1:61295 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:03:52 [uvicorn.access:476] 127.0.0.1:50422 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:03:53 [uvicorn.access:476] 127.0.0.1:50421 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:03:54 [uvicorn.access:476] 127.0.0.1:50420 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:03:55 [uvicorn.access:476] 127.0.0.1:50421 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:05 [uvicorn.access:476] 127.0.0.1:50439 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:06 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:06 [uvicorn.access:476] 127.0.0.1:50441 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:04:06 [uvicorn.access:476] 127.0.0.1:50442 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:07 [uvicorn.access:476] 127.0.0.1:50441 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:07 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:04:08 [uvicorn.access:476] 127.0.0.1:50442 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:09 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:10 [uvicorn.access:476] 127.0.0.1:50439 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:04:11 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:11 [uvicorn.access:476] 127.0.0.1:50442 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:04:12 [uvicorn.access:476] 127.0.0.1:50442 - "OPTIONS /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:04:12 [uvicorn.access:476] 127.0.0.1:50439 - "OPTIONS /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:04:13 [uvicorn.access:476] 127.0.0.1:50442 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:13 [uvicorn.access:476] 127.0.0.1:50441 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:04:13 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:04:13 [uvicorn.access:476] 127.0.0.1:50453 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:14 [uvicorn.access:476] 127.0.0.1:50439 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:04:14 [uvicorn.access:476] 127.0.0.1:50441 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:04:14 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:16 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:16 [uvicorn.access:476] 127.0.0.1:50453 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:04:17 [uvicorn.access:476] 127.0.0.1:50442 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:04:20 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:20 [uvicorn.access:476] 127.0.0.1:50453 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:04:21 [uvicorn.access:476] 127.0.0.1:50442 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:04:25 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:25 [uvicorn.access:476] 127.0.0.1:50453 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:04:26 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:26 [uvicorn.access:476] 127.0.0.1:50442 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:04:30 [uvicorn.access:476] 127.0.0.1:50453 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:30 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:04:31 [uvicorn.access:476] 127.0.0.1:50442 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:04:32 [uvicorn.access:476] 2a03:2880:22ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-01 09:04:32 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-01 09:04:33 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSQUMyRTA0QkQzMDQ2NzczMDJDAA==.
+INFO 2025-11-01 09:04:35 [uvicorn.access:476] 127.0.0.1:50453 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:35 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:04:36 [uvicorn.access:476] 127.0.0.1:50453 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:36 [uvicorn.access:476] 127.0.0.1:50442 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:04:40 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:40 [uvicorn.access:476] 127.0.0.1:50453 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:04:41 [uvicorn.access:476] 127.0.0.1:50442 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:04:45 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:45 [uvicorn.access:476] 127.0.0.1:50453 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:04:46 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:46 [uvicorn.access:476] 127.0.0.1:50442 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:04:50 [uvicorn.access:476] 127.0.0.1:50453 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:50 [uvicorn.access:476] 127.0.0.1:50440 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:04:51 [uvicorn.access:476] 127.0.0.1:50442 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:04:55 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:55 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:04:56 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:04:56 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:05:00 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:00 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:05:01 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:05:05 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:05 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:05:06 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:06 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:05:10 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:10 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:05:11 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:05:15 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:15 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:05:16 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:16 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:05:20 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:20 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:05:21 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:05:25 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:25 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:05:26 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:26 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:05:30 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:30 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:05:31 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:05:35 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:35 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:05:36 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:36 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:05:40 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:40 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:05:41 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:05:45 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:45 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:05:46 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:46 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:05:50 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:50 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:05:51 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:05:55 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:55 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:05:56 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:05:56 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:06:00 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:00 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:06:01 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:06:05 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:05 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:06:06 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:06 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:06:10 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:10 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:06:11 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:06:15 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:15 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:06:16 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:16 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:06:20 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:20 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:06:21 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:06:25 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:25 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:06:26 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:26 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:06:30 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:30 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:06:31 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:06:35 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:35 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:06:36 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:36 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:06:40 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:40 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:06:41 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:06:45 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:45 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:06:46 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:46 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:06:50 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:50 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:06:51 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:06:55 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:55 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:06:56 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:06:56 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:07:00 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:00 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:07:01 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:07:05 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:05 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:07:06 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:06 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:07:10 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:10 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:07:11 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:07:15 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:15 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:07:16 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:16 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:07:20 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:20 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:07:21 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:07:25 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:25 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:07:26 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:26 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:07:30 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:30 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:07:31 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:07:35 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:35 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:07:36 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:36 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:07:40 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:40 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:07:41 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:07:45 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:45 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:07:46 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:46 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:07:50 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:50 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:07:51 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:07:55 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:55 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:07:56 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:07:56 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:08:00 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:00 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:08:01 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:08:05 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:05 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:08:06 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:06 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:08:10 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:10 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:08:11 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:08:15 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:15 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:08:16 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:16 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:08:20 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:20 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:08:21 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:08:25 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:25 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:08:26 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:26 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:08:30 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:30 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:08:31 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:08:35 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:35 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:08:36 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:36 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:08:40 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:40 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:08:41 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:08:45 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:45 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:08:46 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:46 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:08:50 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:50 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:08:51 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:08:55 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:08:55 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:08:56 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:08:57 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:00 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:00 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:09:01 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:09:05 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:05 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:09:06 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:09:06 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:10 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:10 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:09:11 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:09:15 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:15 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:09:16 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:16 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/atendimentos/?search=&page=1&limit=20 HTTP/1.1" 200
+INFO 2025-11-01 09:09:18 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:19 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:09:19 [uvicorn.access:476] 127.0.0.1:50599 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:20 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:09:20 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:20 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:09:23 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:09:23 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:24 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:09:25 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:09:26 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:28 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:29 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:09:30 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:09:33 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:34 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:09:35 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:09:36 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:38 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:39 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:09:40 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:09:43 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:44 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:09:45 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:09:46 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:48 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:49 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:09:50 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:09:53 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:54 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:09:55 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:09:56 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:58 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:09:59 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:10:00 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:10:03 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:10:04 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:10:05 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:10:06 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:10:08 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:10:09 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:10:10 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:10:13 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:10:14 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:10:15 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:10:16 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:10:18 [uvicorn.access:476] 127.0.0.1:50485 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:10:19 [uvicorn.access:476] 127.0.0.1:50483 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:10:20 [uvicorn.access:476] 127.0.0.1:50484 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:10:51 [uvicorn.access:476] 127.0.0.1:50625 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:10:52 [uvicorn.access:476] 127.0.0.1:50627 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:10:52 [uvicorn.access:476] 127.0.0.1:50628 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:10:53 [uvicorn.access:476] 127.0.0.1:50626 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:11:51 [uvicorn.access:476] 127.0.0.1:50634 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:11:52 [uvicorn.access:476] 127.0.0.1:50636 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:11:52 [uvicorn.access:476] 127.0.0.1:50637 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:11:53 [uvicorn.access:476] 127.0.0.1:50635 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:12:51 [uvicorn.access:476] 127.0.0.1:50656 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:12:52 [uvicorn.access:476] 127.0.0.1:50658 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:12:52 [uvicorn.access:476] 127.0.0.1:50659 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:12:53 [uvicorn.access:476] 127.0.0.1:50657 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:13:51 [uvicorn.access:476] 127.0.0.1:50690 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:13:51 [uvicorn.access:476] 127.0.0.1:50691 - "OPTIONS /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:13:51 [uvicorn.access:476] 127.0.0.1:50690 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:13:51 [uvicorn.access:476] 127.0.0.1:50692 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:13:51 [uvicorn.access:476] 127.0.0.1:50690 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:13:52 [uvicorn.access:476] 127.0.0.1:50691 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:13:52 [uvicorn.access:476] 127.0.0.1:50693 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:13:53 [uvicorn.access:476] 127.0.0.1:50692 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:14:52 [uvicorn.access:476] 127.0.0.1:50703 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:14:52 [uvicorn.access:476] 127.0.0.1:50705 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:14:53 [uvicorn.access:476] 127.0.0.1:50706 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:14:53 [uvicorn.access:476] 127.0.0.1:50704 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:15:52 [uvicorn.access:476] 127.0.0.1:50711 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:15:52 [uvicorn.access:476] 127.0.0.1:50713 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:15:53 [uvicorn.access:476] 127.0.0.1:50714 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:15:53 [uvicorn.access:476] 127.0.0.1:50712 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:16:51 [uvicorn.access:476] 127.0.0.1:50726 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:16:52 [uvicorn.access:476] 127.0.0.1:50728 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:16:52 [uvicorn.access:476] 127.0.0.1:50729 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:16:53 [uvicorn.access:476] 127.0.0.1:50727 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:17:51 [uvicorn.access:476] 127.0.0.1:50753 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:17:52 [uvicorn.access:476] 127.0.0.1:50755 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:17:52 [uvicorn.access:476] 127.0.0.1:50757 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:17:53 [uvicorn.access:476] 127.0.0.1:50754 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:18:51 [uvicorn.access:476] 127.0.0.1:50765 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:18:52 [uvicorn.access:476] 127.0.0.1:50767 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:18:52 [uvicorn.access:476] 127.0.0.1:50771 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:18:53 [uvicorn.access:476] 127.0.0.1:50766 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:19:50 [uvicorn.access:476] 2a03:2880:10ff:54:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-01 09:19:50 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-01 09:19:51 [uvicorn.access:476] 127.0.0.1:50777 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:19:51 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTkxNDk3ODM5FQIAERgSOTg1RDBDQUNCMjMwMzZDRjNGAA==.
+INFO 2025-11-01 09:19:52 [uvicorn.access:476] 127.0.0.1:50779 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:19:53 [uvicorn.access:476] 127.0.0.1:50780 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:19:53 [uvicorn.access:476] 127.0.0.1:50778 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:20:51 [uvicorn.access:476] 127.0.0.1:50794 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:20:52 [uvicorn.access:476] 127.0.0.1:50796 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:20:52 [uvicorn.access:476] 127.0.0.1:50797 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:20:53 [uvicorn.access:476] 127.0.0.1:50795 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:21:52 [uvicorn.access:476] 127.0.0.1:50806 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:21:52 [uvicorn.access:476] 127.0.0.1:50808 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:21:52 [uvicorn.access:476] 127.0.0.1:50810 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:21:53 [uvicorn.access:476] 127.0.0.1:50807 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:22:51 [uvicorn.access:476] 127.0.0.1:50839 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:22:52 [uvicorn.access:476] 127.0.0.1:50841 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:22:52 [uvicorn.access:476] 127.0.0.1:50842 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:22:53 [uvicorn.access:476] 127.0.0.1:50840 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:23:51 [uvicorn.access:476] 127.0.0.1:50850 - "OPTIONS /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:23:51 [uvicorn.access:476] 127.0.0.1:50854 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:23:51 [uvicorn.access:476] 127.0.0.1:50853 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:23:51 [uvicorn.access:476] 127.0.0.1:50849 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:23:52 [uvicorn.access:476] 127.0.0.1:50853 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:23:52 [uvicorn.access:476] 127.0.0.1:50850 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:23:53 [uvicorn.access:476] 127.0.0.1:50854 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:24:51 [uvicorn.access:476] 127.0.0.1:50874 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:24:52 [uvicorn.access:476] 127.0.0.1:50876 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:24:52 [uvicorn.access:476] 127.0.0.1:50877 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:24:53 [uvicorn.access:476] 127.0.0.1:50875 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:25:51 [uvicorn.access:476] 127.0.0.1:50894 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:25:52 [uvicorn.access:476] 127.0.0.1:50896 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:25:53 [uvicorn.access:476] 127.0.0.1:50897 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:25:53 [uvicorn.access:476] 127.0.0.1:50895 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:26:51 [uvicorn.access:476] 127.0.0.1:50911 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:26:52 [uvicorn.access:476] 127.0.0.1:50913 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:26:52 [uvicorn.access:476] 127.0.0.1:50914 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:26:53 [uvicorn.access:476] 127.0.0.1:50912 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:27:52 [uvicorn.access:476] 127.0.0.1:50928 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:27:52 [uvicorn.access:476] 127.0.0.1:50930 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:27:52 [uvicorn.access:476] 127.0.0.1:50931 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:27:53 [uvicorn.access:476] 127.0.0.1:50929 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:28:52 [uvicorn.access:476] 127.0.0.1:50938 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:28:52 [uvicorn.access:476] 127.0.0.1:50940 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:28:52 [uvicorn.access:476] 127.0.0.1:50941 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:28:53 [uvicorn.access:476] 127.0.0.1:50939 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:29:51 [uvicorn.access:476] 127.0.0.1:50944 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:29:52 [uvicorn.access:476] 127.0.0.1:50946 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:29:52 [uvicorn.access:476] 127.0.0.1:50948 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:29:53 [uvicorn.access:476] 127.0.0.1:50945 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:30:51 [uvicorn.access:476] 127.0.0.1:50956 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:30:52 [uvicorn.access:476] 127.0.0.1:50958 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:30:52 [uvicorn.access:476] 127.0.0.1:50959 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:30:53 [uvicorn.access:476] 127.0.0.1:50957 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:31:46 [uvicorn.access:476] 2a03:2880:21ff:71:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-01 09:31:46 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-01 09:31:47 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSRkYxOTJDRkJCQ0E4MkE1QjM2AA==.
+INFO 2025-11-01 09:31:51 [uvicorn.access:476] 127.0.0.1:50970 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:31:52 [uvicorn.access:476] 127.0.0.1:50972 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:31:53 [uvicorn.access:476] 127.0.0.1:50973 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:31:53 [uvicorn.access:476] 127.0.0.1:50971 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:32:51 [uvicorn.access:476] 127.0.0.1:51020 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:32:52 [uvicorn.access:476] 127.0.0.1:51022 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:32:52 [uvicorn.access:476] 127.0.0.1:51023 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:32:53 [uvicorn.access:476] 127.0.0.1:51021 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:33:51 [uvicorn.access:476] 127.0.0.1:51031 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:33:52 [uvicorn.access:476] 127.0.0.1:51033 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:33:52 [uvicorn.access:476] 127.0.0.1:51034 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:33:53 [uvicorn.access:476] 127.0.0.1:51032 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:34:51 [uvicorn.access:476] 127.0.0.1:51043 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:34:51 [uvicorn.access:476] 127.0.0.1:51044 - "OPTIONS /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:34:51 [uvicorn.access:476] 127.0.0.1:51045 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:34:51 [uvicorn.access:476] 127.0.0.1:51046 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:34:52 [uvicorn.access:476] 127.0.0.1:51044 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:34:52 [uvicorn.access:476] 127.0.0.1:51043 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:34:53 [uvicorn.access:476] 127.0.0.1:51046 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:34:53 [uvicorn.access:476] 127.0.0.1:51045 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:35:51 [uvicorn.access:476] 127.0.0.1:51056 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:35:52 [uvicorn.access:476] 127.0.0.1:51058 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:35:52 [uvicorn.access:476] 127.0.0.1:51059 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:35:53 [uvicorn.access:476] 127.0.0.1:51057 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:36:51 [uvicorn.access:476] 127.0.0.1:51067 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:36:52 [uvicorn.access:476] 127.0.0.1:51069 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:36:52 [uvicorn.access:476] 127.0.0.1:51070 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:36:53 [uvicorn.access:476] 127.0.0.1:51068 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:37:51 [uvicorn.access:476] 127.0.0.1:51075 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:37:52 [uvicorn.access:476] 127.0.0.1:51077 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:37:53 [uvicorn.access:476] 127.0.0.1:51078 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:37:53 [uvicorn.access:476] 127.0.0.1:51076 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:38:51 [uvicorn.access:476] 127.0.0.1:51085 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:38:52 [uvicorn.access:476] 127.0.0.1:51087 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:38:52 [uvicorn.access:476] 127.0.0.1:51088 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:38:53 [uvicorn.access:476] 127.0.0.1:51086 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:39:51 [uvicorn.access:476] 127.0.0.1:51091 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:39:52 [uvicorn.access:476] 127.0.0.1:51093 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:39:52 [uvicorn.access:476] 127.0.0.1:51094 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:39:53 [uvicorn.access:476] 127.0.0.1:51092 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:40:51 [uvicorn.access:476] 127.0.0.1:51114 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:40:52 [uvicorn.access:476] 127.0.0.1:51116 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:40:52 [uvicorn.access:476] 127.0.0.1:51117 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:40:53 [uvicorn.access:476] 127.0.0.1:51115 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:41:52 [uvicorn.access:476] 127.0.0.1:51132 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:41:52 [uvicorn.access:476] 127.0.0.1:51134 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:41:53 [uvicorn.access:476] 127.0.0.1:51135 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:41:53 [uvicorn.access:476] 127.0.0.1:51133 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:42:51 [uvicorn.access:476] 127.0.0.1:51155 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:42:52 [uvicorn.access:476] 127.0.0.1:51157 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:42:52 [uvicorn.access:476] 127.0.0.1:51159 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:42:53 [uvicorn.access:476] 127.0.0.1:51156 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:43:52 [uvicorn.access:476] 127.0.0.1:51173 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:43:52 [uvicorn.access:476] 127.0.0.1:51175 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:43:53 [uvicorn.access:476] 127.0.0.1:51174 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:43:53 [uvicorn.access:476] 127.0.0.1:51176 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:44:51 [uvicorn.access:476] 127.0.0.1:51194 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:44:52 [uvicorn.access:476] 127.0.0.1:51196 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:44:53 [uvicorn.access:476] 127.0.0.1:51197 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:44:53 [uvicorn.access:476] 127.0.0.1:51195 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:45:51 [uvicorn.access:476] 127.0.0.1:51211 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:45:51 [uvicorn.access:476] 127.0.0.1:51212 - "OPTIONS /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:45:51 [uvicorn.access:476] 127.0.0.1:51213 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:45:51 [uvicorn.access:476] 127.0.0.1:51214 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:45:51 [uvicorn.access:476] 127.0.0.1:51212 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:45:52 [uvicorn.access:476] 127.0.0.1:51214 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:45:52 [uvicorn.access:476] 127.0.0.1:51211 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:45:53 [uvicorn.access:476] 127.0.0.1:51213 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:46:51 [uvicorn.access:476] 127.0.0.1:51235 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:46:52 [uvicorn.access:476] 127.0.0.1:51237 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:46:52 [uvicorn.access:476] 127.0.0.1:51238 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:46:53 [uvicorn.access:476] 127.0.0.1:51236 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:47:52 [uvicorn.access:476] 127.0.0.1:51257 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:47:52 [uvicorn.access:476] 127.0.0.1:51259 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:47:53 [uvicorn.access:476] 127.0.0.1:51260 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:47:53 [uvicorn.access:476] 127.0.0.1:51258 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:48:51 [uvicorn.access:476] 127.0.0.1:51270 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:48:52 [uvicorn.access:476] 127.0.0.1:51272 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:48:52 [uvicorn.access:476] 127.0.0.1:51273 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:48:53 [uvicorn.access:476] 127.0.0.1:51271 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:49:52 [uvicorn.access:476] 127.0.0.1:51276 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:49:52 [uvicorn.access:476] 127.0.0.1:51278 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:49:53 [uvicorn.access:476] 127.0.0.1:51277 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:49:53 [uvicorn.access:476] 127.0.0.1:51279 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:50:51 [uvicorn.access:476] 127.0.0.1:51293 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:50:52 [uvicorn.access:476] 127.0.0.1:51295 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:50:52 [uvicorn.access:476] 127.0.0.1:51296 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:50:53 [uvicorn.access:476] 127.0.0.1:51294 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:51:51 [uvicorn.access:476] 127.0.0.1:51299 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:51:52 [uvicorn.access:476] 127.0.0.1:51301 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:51:52 [uvicorn.access:476] 127.0.0.1:51302 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:51:53 [uvicorn.access:476] 127.0.0.1:51300 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:52:51 [uvicorn.access:476] 127.0.0.1:51517 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:52:52 [uvicorn.access:476] 127.0.0.1:51519 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:52:52 [uvicorn.access:476] 127.0.0.1:51520 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:52:53 [uvicorn.access:476] 127.0.0.1:51518 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:53:52 [uvicorn.access:476] 127.0.0.1:51523 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:53:52 [uvicorn.access:476] 127.0.0.1:51525 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:53:52 [uvicorn.access:476] 127.0.0.1:51526 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:53:53 [uvicorn.access:476] 127.0.0.1:51524 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:54:51 [uvicorn.access:476] 127.0.0.1:51533 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:54:52 [uvicorn.access:476] 127.0.0.1:51535 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:54:52 [uvicorn.access:476] 127.0.0.1:51536 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:54:53 [uvicorn.access:476] 127.0.0.1:51534 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:55:52 [uvicorn.access:476] 127.0.0.1:51546 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:55:52 [uvicorn.access:476] 127.0.0.1:51548 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:55:52 [uvicorn.access:476] 127.0.0.1:51550 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:55:53 [uvicorn.access:476] 127.0.0.1:51547 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:56:51 [uvicorn.access:476] 127.0.0.1:51557 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:56:51 [uvicorn.access:476] 127.0.0.1:51558 - "OPTIONS /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:56:51 [uvicorn.access:476] 127.0.0.1:51559 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:56:51 [uvicorn.access:476] 127.0.0.1:51557 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:56:51 [uvicorn.access:476] 127.0.0.1:51559 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:56:52 [uvicorn.access:476] 127.0.0.1:51558 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:56:52 [uvicorn.access:476] 127.0.0.1:51560 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:56:53 [uvicorn.access:476] 127.0.0.1:51557 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:57:51 [uvicorn.access:476] 127.0.0.1:51564 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:57:52 [uvicorn.access:476] 127.0.0.1:51566 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:57:52 [uvicorn.access:476] 127.0.0.1:51567 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:57:53 [uvicorn.access:476] 127.0.0.1:51565 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:58:51 [uvicorn.access:476] 127.0.0.1:51600 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:58:52 [uvicorn.access:476] 127.0.0.1:51602 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:58:52 [uvicorn.access:476] 127.0.0.1:51603 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:58:53 [uvicorn.access:476] 127.0.0.1:51601 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 09:59:36 [uvicorn.access:476] 2a03:2880:22ff:6:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-01 09:59:36 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-01 09:59:37 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSMERFRkI4RTU5RjhDRkVDRDVEAA==.
+INFO 2025-11-01 09:59:51 [uvicorn.access:476] 127.0.0.1:51614 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:59:52 [uvicorn.access:476] 127.0.0.1:51616 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 09:59:52 [uvicorn.access:476] 127.0.0.1:51617 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 09:59:53 [uvicorn.access:476] 127.0.0.1:51615 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:00:51 [uvicorn.access:476] 127.0.0.1:51640 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:00:52 [uvicorn.access:476] 127.0.0.1:51642 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:00:53 [uvicorn.access:476] 127.0.0.1:51643 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:00:53 [uvicorn.access:476] 127.0.0.1:51641 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:01:51 [uvicorn.access:476] 127.0.0.1:51649 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:01:52 [uvicorn.access:476] 127.0.0.1:51651 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:01:52 [uvicorn.access:476] 127.0.0.1:51659 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:01:53 [uvicorn.access:476] 127.0.0.1:51650 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:02:52 [uvicorn.access:476] 127.0.0.1:51716 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:02:52 [uvicorn.access:476] 127.0.0.1:51718 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:02:53 [uvicorn.access:476] 127.0.0.1:51719 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:02:53 [uvicorn.access:476] 127.0.0.1:51717 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:03:51 [uvicorn.access:476] 127.0.0.1:51735 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:03:52 [uvicorn.access:476] 127.0.0.1:51737 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:03:52 [uvicorn.access:476] 127.0.0.1:51739 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:03:53 [uvicorn.access:476] 127.0.0.1:51736 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:04:01 [uvicorn.access:476] 2a03:2880:12ff:40:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-01 10:04:01 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-01 10:04:02 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSNDQ1OUJBRUQ0MTQwOEVGQjhDAA==.
+INFO 2025-11-01 10:04:51 [uvicorn.access:476] 127.0.0.1:51759 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:04:52 [uvicorn.access:476] 127.0.0.1:51761 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:04:52 [uvicorn.access:476] 127.0.0.1:51762 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:04:53 [uvicorn.access:476] 127.0.0.1:51760 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:05:52 [uvicorn.access:476] 127.0.0.1:51775 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:05:52 [uvicorn.access:476] 127.0.0.1:51777 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:05:53 [uvicorn.access:476] 127.0.0.1:51778 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:05:53 [uvicorn.access:476] 127.0.0.1:51776 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:06:51 [uvicorn.access:476] 127.0.0.1:51791 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:06:52 [uvicorn.access:476] 127.0.0.1:51793 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:06:52 [uvicorn.access:476] 127.0.0.1:51794 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:06:53 [uvicorn.access:476] 127.0.0.1:51792 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:07:51 [uvicorn.access:476] 127.0.0.1:51804 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:07:51 [uvicorn.access:476] 127.0.0.1:51805 - "OPTIONS /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:07:51 [uvicorn.access:476] 127.0.0.1:51806 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:07:51 [uvicorn.access:476] 127.0.0.1:51804 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:07:52 [uvicorn.access:476] 127.0.0.1:51806 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:07:52 [uvicorn.access:476] 127.0.0.1:51805 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:07:53 [uvicorn.access:476] 127.0.0.1:51804 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:07:53 [uvicorn.access:476] 127.0.0.1:51807 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:08:51 [uvicorn.access:476] 127.0.0.1:51816 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:08:52 [uvicorn.access:476] 127.0.0.1:51818 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:08:53 [uvicorn.access:476] 127.0.0.1:51820 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:08:53 [uvicorn.access:476] 127.0.0.1:51817 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:09:51 [uvicorn.access:476] 127.0.0.1:51831 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:09:52 [uvicorn.access:476] 127.0.0.1:51833 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:09:52 [uvicorn.access:476] 127.0.0.1:51834 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:09:53 [uvicorn.access:476] 127.0.0.1:51832 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:10:51 [uvicorn.access:476] 127.0.0.1:51841 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:10:52 [uvicorn.access:476] 127.0.0.1:51843 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:10:52 [uvicorn.access:476] 127.0.0.1:51844 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:10:53 [uvicorn.access:476] 127.0.0.1:51842 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:11:51 [uvicorn.access:476] 127.0.0.1:51848 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:11:52 [uvicorn.access:476] 127.0.0.1:51850 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:11:52 [uvicorn.access:476] 127.0.0.1:51853 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:11:53 [uvicorn.access:476] 127.0.0.1:51849 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:12:51 [uvicorn.access:476] 127.0.0.1:51863 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:12:52 [uvicorn.access:476] 127.0.0.1:51865 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:12:52 [uvicorn.access:476] 127.0.0.1:51866 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:12:53 [uvicorn.access:476] 127.0.0.1:51864 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:13:52 [uvicorn.access:476] 127.0.0.1:51878 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:13:52 [uvicorn.access:476] 127.0.0.1:51880 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:13:53 [uvicorn.access:476] 127.0.0.1:51881 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:13:53 [uvicorn.access:476] 127.0.0.1:51879 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:14:51 [uvicorn.access:476] 127.0.0.1:51888 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:14:52 [uvicorn.access:476] 127.0.0.1:51890 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:14:52 [uvicorn.access:476] 127.0.0.1:51892 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:14:53 [uvicorn.access:476] 127.0.0.1:51889 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:15:51 [uvicorn.access:476] 127.0.0.1:51896 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:15:52 [uvicorn.access:476] 127.0.0.1:51898 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:15:52 [uvicorn.access:476] 127.0.0.1:51899 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:15:53 [uvicorn.access:476] 127.0.0.1:51897 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:16:51 [uvicorn.access:476] 127.0.0.1:51904 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:16:52 [uvicorn.access:476] 127.0.0.1:51906 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:16:52 [uvicorn.access:476] 127.0.0.1:51909 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:16:53 [uvicorn.access:476] 127.0.0.1:51905 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:17:51 [uvicorn.access:476] 127.0.0.1:51945 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:17:52 [uvicorn.access:476] 127.0.0.1:51947 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:17:52 [uvicorn.access:476] 127.0.0.1:51948 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:17:53 [uvicorn.access:476] 127.0.0.1:51946 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:18:51 [uvicorn.access:476] 127.0.0.1:51959 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:18:51 [uvicorn.access:476] 127.0.0.1:51960 - "OPTIONS /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:18:51 [uvicorn.access:476] 127.0.0.1:51961 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:18:51 [uvicorn.access:476] 127.0.0.1:51962 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:18:51 [uvicorn.access:476] 127.0.0.1:51961 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:18:52 [uvicorn.access:476] 127.0.0.1:51962 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:18:52 [uvicorn.access:476] 127.0.0.1:51959 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:18:53 [uvicorn.access:476] 127.0.0.1:51960 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:19:51 [uvicorn.access:476] 127.0.0.1:51986 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:19:52 [uvicorn.access:476] 127.0.0.1:51988 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:19:52 [uvicorn.access:476] 127.0.0.1:51989 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:19:53 [uvicorn.access:476] 127.0.0.1:51987 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 10:20:28 [uvicorn.access:476] 2a03:2880:12ff:9:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-01 10:20:28 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-01 10:20:29 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSMzdENzg4MkU5OUUyQ0I0NzQ0AA==.
+INFO 2025-11-01 10:20:51 [uvicorn.access:476] 127.0.0.1:51995 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:20:52 [uvicorn.access:476] 127.0.0.1:51997 - "GET /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 10:20:52 [uvicorn.access:476] 127.0.0.1:51998 - "GET /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 10:20:53 [uvicorn.access:476] 127.0.0.1:51996 - "GET /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+INFO 2025-11-01 11:12:25 [uvicorn.access:476] 127.0.0.1:57701 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+INFO 2025-11-01 11:12:25 [uvicorn.access:476] 127.0.0.1:57700 - "OPTIONS /api/v1/atendimentos/?search=&limit=50 HTTP/1.1" 200
+ERROR 2025-11-01 12:12:24 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connection.py", line 2421, in connect
+    return await connect_utils._connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1049, in _connect
+    conn = await _connect_addr(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 886, in _connect_addr
+    return await __connect_addr(params, True, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 931, in __connect_addr
+    tr, pr = await connector
+             ^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 802, in _create_ssl_connection
+    tr, pr = await loop.create_connection(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 1046, in create_connection
+    infos = await self._ensure_resolved(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 1420, in _ensure_resolved
+    return await loop.getaddrinfo(host, port, family=family, type=type,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 868, in getaddrinfo
+    return await self.run_in_executor(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 298, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\dependencies\utils.py", line 646, in solve_dependencies
+    solved = await call(**solved_result.values)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\api\dependencies.py", line 20, in get_current_active_user
+    user = await crud_user.get_user_by_email(db, email=token_data.email)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\crud\crud_user.py", line 17, in get_user_by_email
+    result = await db.execute(select(models.User).filter(models.User.email == email))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 463, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2365, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2241, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2110, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3277, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 143, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3301, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 447, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1345, in _checkout
+    with util.safe_reraise():
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1342, in _checkout
+    fairy._connection_record.get_connection()
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 836, in get_connection
+    self.__connect()
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 899, in __connect
+    with util.safe_reraise():
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 895, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\create.py", line 661, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 629, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 964, in connect
+    await_only(creator_fn(*arg, **kw)),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connection.py", line 2420, in connect
+    async with compat.timeout(timeout):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+ERROR 2025-11-01 12:12:24 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connection.py", line 2421, in connect
+    return await connect_utils._connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1049, in _connect
+    conn = await _connect_addr(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 886, in _connect_addr
+    return await __connect_addr(params, True, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 931, in __connect_addr
+    tr, pr = await connector
+             ^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 802, in _create_ssl_connection
+    tr, pr = await loop.create_connection(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 1046, in create_connection
+    infos = await self._ensure_resolved(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 1420, in _ensure_resolved
+    return await loop.getaddrinfo(host, port, family=family, type=type,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\base_events.py", line 868, in getaddrinfo
+    return await self.run_in_executor(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 298, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\dependencies\utils.py", line 646, in solve_dependencies
+    solved = await call(**solved_result.values)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\api\dependencies.py", line 20, in get_current_active_user
+    user = await crud_user.get_user_by_email(db, email=token_data.email)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\crud\crud_user.py", line 17, in get_user_by_email
+    result = await db.execute(select(models.User).filter(models.User.email == email))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 463, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2365, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2241, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2110, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3277, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 143, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3301, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 447, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1345, in _checkout
+    with util.safe_reraise():
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1342, in _checkout
+    fairy._connection_record.get_connection()
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 836, in get_connection
+    self.__connect()
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 899, in __connect
+    with util.safe_reraise():
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 895, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\create.py", line 661, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 629, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 964, in connect
+    await_only(creator_fn(*arg, **kw)),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connection.py", line 2420, in connect
+    async with compat.timeout(timeout):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+INFO 2025-11-01 12:12:24 [uvicorn.access:476] 127.0.0.1:60548 - "OPTIONS /api/v1/configs/ HTTP/1.1" 200
+INFO 2025-11-01 12:12:24 [uvicorn.access:476] 127.0.0.1:60547 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200
+ERROR 2025-11-01 13:12:24 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connection.py", line 2421, in connect
+    return await connect_utils._connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1049, in _connect
+    conn = await _connect_addr(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 886, in _connect_addr
+    return await __connect_addr(params, True, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 931, in __connect_addr
+    tr, pr = await connector
+             ^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 810, in _create_ssl_connection
+    do_ssl_upgrade = await pr.on_data
+                     ^^^^^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 298, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\dependencies\utils.py", line 646, in solve_dependencies
+    solved = await call(**solved_result.values)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\api\dependencies.py", line 20, in get_current_active_user
+    user = await crud_user.get_user_by_email(db, email=token_data.email)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\crud\crud_user.py", line 17, in get_user_by_email
+    result = await db.execute(select(models.User).filter(models.User.email == email))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 463, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2365, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2241, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2110, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3277, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 143, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3301, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 447, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1264, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 716, in checkout
+    with util.safe_reraise():
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 714, in checkout
+    dbapi_connection = rec.get_connection()
+                       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 865, in get_connection
+    self.__connect()
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 899, in __connect
+    with util.safe_reraise():
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 895, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\create.py", line 661, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 629, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 964, in connect
+    await_only(creator_fn(*arg, **kw)),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connection.py", line 2420, in connect
+    async with compat.timeout(timeout):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+ERROR 2025-11-01 13:12:24 [uvicorn.error:414] Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connection.py", line 2421, in connect
+    return await connect_utils._connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1049, in _connect
+    conn = await _connect_addr(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 886, in _connect_addr
+    return await __connect_addr(params, True, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 931, in __connect_addr
+    tr, pr = await connector
+             ^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 810, in _create_ssl_connection
+    do_ssl_upgrade = await pr.on_data
+                     ^^^^^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\applications.py", line 1082, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\cors.py", line 144, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\starlette\routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\routing.py", line 298, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\fastapi\dependencies\utils.py", line 646, in solve_dependencies
+    solved = await call(**solved_result.values)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\api\dependencies.py", line 20, in get_current_active_user
+    user = await crud_user.get_user_by_email(db, email=token_data.email)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\app\crud\crud_user.py", line 17, in get_user_by_email
+    result = await db.execute(select(models.User).filter(models.User.email == email))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 463, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2365, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2241, in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2110, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1189, in _connection_for_bind
+    conn = bind.connect()
+           ^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3277, in connect
+    return self._connection_cls(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 143, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3301, in raw_connection
+    return self.pool.connect()
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 447, in connect
+    return _ConnectionFairy._checkout(self)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1264, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 716, in checkout
+    with util.safe_reraise():
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 714, in checkout
+    dbapi_connection = rec.get_connection()
+                       ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 865, in get_connection
+    self.__connect()
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 899, in __connect
+    with util.safe_reraise():
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 895, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\create.py", line 661, in connect
+    return dialect.connect(*cargs, **cparams)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 629, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 964, in connect
+    await_only(creator_fn(*arg, **kw)),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "C:\Users\sirle\OneDrive\Área de Trabalho\Sites\AtendAI\.venv\Lib\site-packages\asyncpg\connection.py", line 2420, in connect
+    async with compat.timeout(timeout):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\asyncio\timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+INFO 2025-11-01 20:15:20 [uvicorn.access:476] 2a03:2880:12ff:7:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-01 20:15:20 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-01 20:15:21 [uvicorn.access:476] 2a03:2880:12ff:73:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-01 20:15:21 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-01 20:15:24 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSQkU0RjQxOTJGNkI3Q0QyOUE3AA==.
+INFO 2025-11-01 20:15:25 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSNzY5NTA4NTZDNDk3RTAwM0I2AA==.
+INFO 2025-11-01 20:23:43 [uvicorn.access:476] 2a03:2880:22ff:7d:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-01 20:23:43 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-01 20:23:47 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSQzg5QTE4NDA2NEU2NzU4RDQ0AA==.
+INFO 2025-11-01 20:31:23 [uvicorn.access:476] 2a03:2880:10ff:8:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-01 20:31:23 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-01 20:31:26 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSOTYxOEJFQjQxMjM3RjU2OUEwAA==.
+INFO 2025-11-01 21:10:23 [uvicorn.access:476] 2a03:2880:22ff:7e:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-01 21:10:23 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-01 21:10:26 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSRkYxOTJDRkJCQ0E4MkE1QjM2AA==.
+INFO 2025-11-01 21:40:40 [uvicorn.access:476] 2a03:2880:10ff:8:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-01 21:40:40 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-01 21:40:42 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSQUMyRTA0QkQzMDQ2NzczMDJDAA==.
+INFO 2025-11-01 21:45:02 [uvicorn.access:476] 2a03:2880:10ff:7:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-01 21:45:02 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-01 21:45:04 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSRkYxOTJDRkJCQ0E4MkE1QjM2AA==.
+INFO 2025-11-02 19:25:17 [uvicorn.access:476] 2a03:2880:12ff:3:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-02 19:25:17 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-02 19:25:17 [uvicorn.access:476] 2a03:2880:12ff:9:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-02 19:25:17 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-02 19:25:20 [app.api.webhook:414] WBP Webhook (Status): Status 'sent' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSMTkzRDNCMDU1QUI0MTM2NkQ5AA==.
+INFO 2025-11-02 19:25:21 [app.api.webhook:414] WBP Webhook (Status): Status 'delivered' ignorado para msg wamid.HBgMNTU1NTk5MTAzNDE0FQIAERgSODI4QjE1RDlBQUM2QUMxMkM0AA==.
+INFO 2025-11-02 20:32:26 [uvicorn.access:476] 2a03:2880:12ff:5:::0 - "POST /api/v1/webhook/official/webhook HTTP/1.1" 200
+INFO 2025-11-02 20:32:26 [app.api.webhook:381] WBP Webhook (Background): Iniciando processamento de 'status'...
+INFO 2025-11-02 20:32:30 [app.api.webhook:414] WBP Webhook (Status): Status 'read' ignorado para msg wamid.HBgMNTU0NTk5OTQ0MDM5FQIAERgSODM1MDMxNUNDQzQ1MDE0NjcxAA==.
