@@ -213,7 +213,6 @@ function Operacao() {
             if (defaultPersona && defaultPersona.situacoes_disponiveis && defaultPersona.situacoes_disponiveis.length > 0) {
                 setStatusOptions(defaultPersona.situacoes_disponiveis);
             } else {
-                // Fallback
                 const legacyStatusOptions = [
                     { nome: "Aguardando Resposta", cor: "#fef08a" },
                     { nome: "Mensagem Recebida", cor: "#dbeafe" },
