@@ -16,5 +16,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copia o restante do código da sua aplicação
 COPY . .
 
-# Comando para iniciar sua aplicação, usando a porta que o Railway fornece
-CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT
+# -----------------
+# A CORREÇÃO ESTÁ AQUI
+# -----------------
+
+# 1. Diga ao Elastic Beanstalk que seu app roda na porta 8000
+EXPOSE 8000
+
+# 2. Inicie o Uvicorn manualmente na porta 8000
+CMD uvicorn app.main:app --host 0.0.0.0 --port 8000
