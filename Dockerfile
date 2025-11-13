@@ -1,29 +1,33 @@
-# Use uma imagem base oficial do Python
-FROM python:3.11-slim
+# Dockerfile
 
-# Define o diretório de trabalho dentro do contêiner
+# 1. Estágio de Build: Instalar dependências
+FROM python:3.11-slim as builder
+
 WORKDIR /app
 
-# Instala o ffmpeg usando o gerenciador de pacotes do sistema (apt)
-RUN apt-get update && apt-get install -y ffmpeg
+# Instala dependências do sistema, se necessário (ex: para compilar psycopg2)
+# RUN apt-get update && apt-get install -y build-essential libpq-dev
 
-# Copia o arquivo de dependências primeiro para aproveitar o cache
-COPY requirements.txt .
+COPY backend/requirements.txt .
 
-# Instala as dependências do Python
+# Instala as dependências em um ambiente virtual dentro do builder
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia o restante do código da sua aplicação
-COPY . .
+# 2. Estágio Final: Imagem leve com as dependências instaladas
+FROM python:3.11-slim
 
-# --- Alteração para AWS + Railway ---
+WORKDIR /app
 
-# 1. Expõe a porta 8000.
-#    O AWS Elastic Beanstalk procura por esta linha.
-#    O Railway vai ignorar esta linha, o que não tem problema.
+# Copia o ambiente virtual do estágio de build
+COPY --from=builder /opt/venv /opt/venv
+
+# Copia o código da sua aplicação
+COPY backend/ .
+
+# Define o ambiente virtual como o padrão
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Expõe a porta que o FastAPI vai usar
 EXPOSE 8000
-
-# 2. Inicia o Uvicorn usando a variável $PORT (do Railway)
-#    OU usa 8000 como padrão (para a AWS)
-#    A sintaxe ${PORT:-8000} significa: "Use $PORT se estiver definida, senão, use 8000"
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

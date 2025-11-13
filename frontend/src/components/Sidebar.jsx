@@ -26,23 +26,12 @@ const Sidebar = ({ currentUserApiType }) => {
     const baseNavItems = [
         { icon: LayoutDashboard, name: 'Dashboard', path: '/dashboard' },
         { icon: MessageSquareText, name: 'Atendimentos', path: '/atendimentos' },
-        { icon: Rocket, name: 'Operação', path: '/operacao' },
+        { icon: Archive, name: 'Mensagens', path: '/mensagens' },
         { icon: Bot, name: 'Persona & Contexto', path: '/configs' },
-        { icon: LinkIcon, name: 'Conexão API', path: '/whatsapp' },
     ];
 
     // 2. Cria a lista final de itens
     const navItems = [...baseNavItems];
-
-    // 3. Adiciona o item "Finalizados" condicionalmente
-    if (currentUserApiType === 'official') {
-        navItems.splice(2, 0, { // Insere no índice 2 (logo após "Atendimentos")
-            icon: Archive,
-            name: 'Mensagens',
-            path: '/mensagens' // O novo link
-        });
-    }
-    // --- FIM DA LÓGICA DE NAVEGAÇÃO ---
 
     return (
         <aside

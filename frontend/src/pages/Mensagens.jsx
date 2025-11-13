@@ -424,7 +424,7 @@ const ContactItem = ({ atendimento, isSelected, onSelect, statusOptions, onUpdat
             />
             <div className="flex-1 min-w-0 border-gray-100"> {/* Removido pt-3 */}
                 <div className="flex justify-between items-center mb-1">
-                    <h3 className="text-md font-semibold text-gray-800 truncate">{atendimento.contact.whatsapp}</h3>
+                    <h3 className="text-md font-semibold text-gray-800 truncate">{atendimento.whatsapp}</h3>
                     <span className="text-xs text-blue-600 font-medium ml-2 flex-shrink-0">
                         {formatTimestamp(lastMessageTime)}
                     </span>
@@ -1205,7 +1205,7 @@ function Atendimentos() {
     const fetchData = useCallback(async (isInitialLoad = false) => {
         if (isInitialLoad) setIsLoading(true);
         try {
-            const [userRes, atendimentosRes, personasRes] = await Promise.all([
+            const [userRes, atendimentosRes, personasRes, situationsRes] = await Promise.all([
                 api.get('/auth/me'),
                 api.get('/atendimentos/', {
                     params: {
@@ -1213,10 +1213,12 @@ function Atendimentos() {
                         limit: 50
                     }
                 }),
-                api.get('/configs/')
+                api.get('/configs/'),
+                api.get('/configs/situations') // <-- ADICIONADO: Busca as situações
             ]);
             setCurrentUser(userRes.data);
             setPersonas(personasRes.data);
+            setStatusOptions(situationsRes.data); // <-- ADICIONADO: Define o estado com os dados da API
 
             const data = atendimentosRes.data;
 
@@ -1292,23 +1294,6 @@ function Atendimentos() {
         // Adicionamos 'sendingQueue' e 'isProcessing' como dependências do useCallback
         // Isso garante que a função 'fetchData' sempre tenha a lista mais recente de IDs ocupados.
     }, [searchTerm, sendingQueue, isProcessing]);
-
-    useEffect(() => {
-        if (currentUser && personas.length > 0) {
-            const defaultPersona = personas.find(p => p.id === currentUser.default_persona_id);
-
-            if (defaultPersona && defaultPersona.situacoes_disponiveis && defaultPersona.situacoes_disponiveis.length > 0) {
-                setStatusOptions(defaultPersona.situacoes_disponiveis);
-            } else {
-                // Fallback
-                setStatusOptions([
-                    { nome: "Aguardando Resposta", cor: "#3b82f6" }, // blue-500
-                    { nome: "Atendente Chamado", cor: "#f59e0b" }, // yellow-500
-                    { nome: "Concluído", cor: "#22c55e" } // green-500
-                ]);
-            }
-        }
-    }, [currentUser, personas]);
 
     // --- Efeito: Polling ---
     useEffect(() => {

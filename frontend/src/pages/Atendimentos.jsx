@@ -113,7 +113,7 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose }) =>
         <Modal onClose={onClose}>
             <div className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Editar Atendimento</h3>
-                <p className="text-sm text-gray-500 mb-6">A alterar o atendimento de: <strong className="text-gray-700">{atendimento.contact.whatsapp}</strong></p>
+                <p className="text-sm text-gray-500 mb-6">A alterar o atendimento de: <strong className="text-gray-700">{atendimento.whatsapp}</strong></p>
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Situação</label>
@@ -150,7 +150,7 @@ const DeleteConfirmationModal = ({ atendimento, onConfirm, onClose }) => (
             </div>
             <h3 className="mt-4 text-lg font-semibold text-gray-900">Apagar Atendimento</h3>
             <p className="mt-2 text-sm text-gray-500">
-                Tem a certeza que quer apagar o atendimento de <strong className="text-gray-700">{atendimento?.contact?.whatsapp ?? 'Contato Desconhecido'}</strong>? Esta ação não pode ser desfeita.
+                Tem a certeza que quer apagar o atendimento de <strong className="text-gray-700">{atendimento?.whatsapp ?? 'Contato Desconhecido'}</strong>? Esta ação não pode ser desfeita.
             </p>
             <div className="mt-6 flex justify-center gap-4">
                 <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">Cancelar</button>
@@ -196,10 +196,11 @@ function Atendimentos() {
                 page: currentPage,
                 limit: limit
             };
-            const [atendimentosRes, personasRes, userRes] = await Promise.all([
+            const [atendimentosRes, personasRes, userRes, situationsRes] = await Promise.all([
                 api.get('/atendimentos/', { params }),
                 api.get('/configs/'),
-                api.get('/auth/me')
+                api.get('/auth/me'),
+                api.get('/configs/situations') // <-- ADICIONADO: Busca as situações
             ]);
 
             setAtendimentos(atendimentosRes.data.items);
@@ -207,6 +208,7 @@ function Atendimentos() {
             setTotalPages(Math.ceil(atendimentosRes.data.total / limit));
             setPersonas(personasRes.data);
             setUserData(userRes.data);
+            setStatusOptions(situationsRes.data); // <-- ADICIONADO: Define o estado com os dados da API
 
             // Atualiza a URL com os parâmetros atuais
             setSearchParams(params, { replace: true });
@@ -224,26 +226,6 @@ function Atendimentos() {
     }, [searchTerm, currentPage, limit, setSearchParams]); // Adiciona setSearchParams
 
     const intervalRef = useRef(null);
-
-    useEffect(() => {
-        if (userData && personas.length > 0) {
-            const defaultPersona = personas.find(p => p.id === userData.default_persona_id);
-
-            if (defaultPersona && defaultPersona.situacoes_disponiveis && defaultPersona.situacoes_disponiveis.length > 0) {
-                setStatusOptions(defaultPersona.situacoes_disponiveis);
-            } else {
-                // Fallback para os status antigos se não houver config
-                const legacyStatusOptions = [
-                    { nome: "Aguardando Resposta", cor: "#fef08a" }, // yellow-200
-                    { nome: "Mensagem Recebida", cor: "#dbeafe" }, // blue-200
-                    { nome: "Ignorar Contato", cor: "#e5e7eb" }, // gray-200
-                    { nome: "Atendente Chamado", cor: "#ffedd5" }, // orange-200
-                    { nome: "Concluído", cor: "#dcfce7" } // green-200
-                ];
-                setStatusOptions(legacyStatusOptions);
-            }
-        }
-    }, [userData, personas]);
 
     // Efeito para buscar dados e configurar polling
     useEffect(() => {
@@ -329,20 +311,6 @@ function Atendimentos() {
         }
     };
 
-    // --- FUNÇÃO DE ESTILO ANTIGA (PARA FALLBACK) ---
-    const getStatusClass = (status) => {
-        const baseClasses = "px-3 py-1 text-xs font-semibold rounded-full inline-block text-center min-w-[140px]";
-        switch (status) {
-            case 'Mensagem Recebida': return `${baseClasses} bg-blue-100 text-blue-800`;
-            case 'Concluído': return `${baseClasses} bg-green-100 text-green-800`;
-            case 'Aguardando Resposta': return `${baseClasses} bg-yellow-100 text-yellow-800`;
-            case 'Atendente Chamado': return `${baseClasses} bg-orange-100 text-orange-800`;
-            case 'Erro IA': return `${baseClasses} bg-red-200 text-red-800`;
-            case 'Ignorar Contato': return `${baseClasses} bg-gray-200 text-gray-700`;
-            default: return `${baseClasses} bg-gray-100 text-gray-600`;
-        }
-    };
-
     // --- NOVA FUNÇÃO DE ESTILO (DINÂMICA) ---
     const getStatusStyleAndClass = (status) => {
         const baseClasses = "px-3 py-1 text-xs font-semibold rounded-full inline-block text-center min-w-[140px]";
@@ -350,24 +318,16 @@ function Atendimentos() {
 
         if (situacao && situacao.cor) {
             try {
-                const hex = situacao.cor.replace('#', '');
-                const r = parseInt(hex.substring(0, 2), 16);
-                const g = parseInt(hex.substring(2, 4), 16);
-                const b = parseInt(hex.substring(4, 6), 16);
-                // Calcula luminância
-                const textColorClass = 'text-white';
-
                 return {
                     style: { backgroundColor: situacao.cor },
-                    className: `${baseClasses} ${textColorClass}`
+                    className: `${baseClasses} text-white` // Força texto branco
                 };
             } catch (e) {
-                // Cor inválida, usa fallback
-                return { style: {}, className: getStatusClass(status) };
+                // Cor inválida, retorna estilo padrão
             }
         }
-        // Fallback para o sistema antigo
-        return { style: {}, className: getStatusClass(status) };
+        // Fallback para status não encontrados na lista (ou cor inválida)
+        return { style: {}, className: `${baseClasses} bg-gray-100 text-gray-600` };
     };
 
     return (
@@ -420,7 +380,7 @@ function Atendimentos() {
                                     const renderProps = getStatusStyleAndClass(at.status);
                                     return (
                                     <tr key={at.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                        <td className="p-4 font-medium text-gray-800">{at.contact?.whatsapp ?? 'N/A'}</td> {/* Fallback para contato */}
+                                        <td className="p-4 font-medium text-gray-800">{at.whatsapp ?? 'N/A'}</td> {/* Fallback para contato */}
                                         <td className="p-4 text-sm text-gray-600">{at.updated_at ? new Date(at.updated_at).toLocaleString('pt-BR') : 'N/A'}</td> {/* Fallback para data */}
                                         <td className="p-4 text-center">
                                             <span className={renderProps.className} style={renderProps.style}>
@@ -468,7 +428,7 @@ function Atendimentos() {
             </div>
 
             {/* Modais */}
-            {modalData.type === 'conversation' && modalData.data && <ConversationModal onClose={handleCloseModals} conversation={modalData.data.conversa} contactIdentifier={modalData.data.contact?.whatsapp} />}
+            {modalData.type === 'conversation' && modalData.data && <ConversationModal onClose={handleCloseModals} conversation={modalData.data.conversa} contactIdentifier={modalData.data.atendimentos?.whatsapp} />}
             {modalData.type === 'edit' && modalData.data && <EditModal onClose={handleCloseModals} atendimento={modalData.data} personas={personas} statusOptions={statusOptions} onSave={handleSaveEdit} />}
             {modalData.type === 'delete' && modalData.data && <DeleteConfirmationModal onClose={handleCloseModals} atendimento={modalData.data} onConfirm={handleConfirmDelete} />}
         </div>

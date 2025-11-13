@@ -1,0 +1,47 @@
+# docker-compose.yml
+
+services:
+  # Serviço da API (FastAPI)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: atendai_api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app # Monta o código local para desenvolvimento com reload
+    ports:
+      - "8000:8000"
+    environment:
+      # Configure suas variáveis de ambiente aqui, apontando para os serviços Docker
+      # ATENÇÃO: Use o nome do serviço 'db' e não 'localhost'
+      - DATABASE_URL=${DATABASE_URL}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      # ... outras variáveis do seu .env
+    depends_on:
+      db:
+        condition: service_healthy # Espera o DB estar pronto
+      redis:
+        condition: service_started
+
+  # Serviço dos Workers do Celery
+  worker:
+    build: .
+    container_name: atendai_worker
+    # O comando para iniciar o worker do Celery
+    command: celery -A app.core.celery_app.celery_app worker --loglevel=info
+    volumes:
+      - ./backend:/app # Monta o código local para desenvolvimento com reload
+    environment:
+      # As mesmas variáveis de ambiente da API
+      # ATENÇÃO: Use o nome do serviço 'db' e não 'localhost'
+      - DATABASE_URL=${DATABASE_URL}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      # ... outras variáveis do seu .env
+    depends_on:
+      - api # Garante que a API (e suas dependências) suba primeiro
+
+volumes:
+  postgres_data:

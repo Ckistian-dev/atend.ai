@@ -6,8 +6,6 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Atendimentos from './pages/Atendimentos';
 import Configs from './pages/Configs';
-import Whatsapp from './pages/Whatsapp';
-import Operacao from './pages/Operacao';
 import Mensagens from './pages/Mensagens';
 
 // Importação dos componentes de layout
@@ -27,8 +25,6 @@ function App() {
         <Route path="atendimentos" element={<Atendimentos />} />
         <Route path="mensagens" element={<Mensagens />} />
         <Route path="configs" element={<Configs />} />
-        <Route path="whatsapp" element={<Whatsapp />} />
-        <Route path="operacao" element={<Operacao />} />
         
         {/* Redireciona a rota raiz para o dashboard */}
         <Route index element={<Navigate to="/dashboard" />} />
