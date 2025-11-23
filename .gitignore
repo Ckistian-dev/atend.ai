@@ -1,0 +1,11 @@
+node_modules/
+.venv/
+venv/
+.env
+dist/
+build/
+.next/
+__pycache__/
+*.sqlite3
+*.log
+*.tar

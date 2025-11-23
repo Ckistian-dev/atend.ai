@@ -1,0 +1,115 @@
+# A linha 'version' foi removida por ser obsoleta
+
+services:
+  # --- NOVO SERVIÇO: Banco de Dados PostgreSQL ---
+  postgres:
+    image: postgres:15-alpine
+    container_name: atendai_db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=atendai_local
+    ports:
+      # Expõe a porta para que você possa conectar com um cliente de DB localmente
+      - "5434:5432"
+    volumes:
+      # Garante que os dados do banco sobrevivam a reinicializações
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d atendai_local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- NOVO SERVIÇO: RabbitMQ ---
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: atendai_rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password
+    ports:
+      # Porta para a aplicação se conectar
+      - "5672:5672"
+      # Porta para o painel de gerenciamento web
+      - "15672:15672"
+    volumes:
+      # Garante que as filas e mensagens sobrevivam a reinicializações
+      - rabbitmq_data:/var/lib/rabbitmq/
+    # --- HEALTHCHECK ADICIONADO ---
+    # Esta seção define como o Docker deve verificar se o RabbitMQ está pronto.
+    healthcheck:
+      # Comando que verifica se a porta principal do RabbitMQ está respondendo.
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s # Verifica a cada 10 segundos.
+      timeout: 5s   # Considera falha se o comando demorar mais de 5 segundos.
+      retries: 5    # Tenta 5 vezes antes de marcar o contêiner como 'unhealthy'.
+      start_period: 20s # Dá 20 segundos de carência para o RabbitMQ iniciar antes de começar as verificações.
+
+  # Contêiner da API (FastAPI)
+  api:
+    build: . 
+    container_name: atendai_api
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      # --- VARIÁVEL ATUALIZADA para conectar ao container do Postgres ---
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/atendai_local
+      # --- VARIÁVEIS DE AMBIENTE ATUALIZADAS PARA RABBITMQ ---
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=atendai-webhook-queue-local
+      # --- CORREÇÃO AQUI ---
+      # O token agora bate com o que a Meta está enviando
+      - WBP_VERIFY_TOKEN=meu-atendai-e-secreto-987654
+    depends_on:
+      # A API só inicia DEPOIS que o RabbitMQ e o Postgres estiverem prontos.
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # --- MUDANÇA AQUI: 'worker' foi renomeado para 'worker-webhook' ---
+  worker-webhook:
+    build: . 
+    container_name: atendai_worker_webhook # Nome do contêiner atualizado
+    command: ["python", "-m", "app.worker_webhook"] # Comando aponta para o NOVO arquivo
+    volumes:
+      - .:/app
+    environment:
+      # --- VARIÁVEL ATUALIZADA para conectar ao container do Postgres ---
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/atendai_local
+      # --- VARIÁVEIS DE AMBIENTE ATUALIZADAS PARA RABBITMQ ---
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=atendai-webhook-queue-local
+    depends_on:
+      # O worker só inicia DEPOIS que o RabbitMQ e o Postgres estiverem prontos.
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # --- NOVO SERVIÇO: O Agente de IA ---
+  worker-agent:
+    build: . # Usa a mesma imagem Docker
+    container_name: atendai_worker_agent # Novo nome de contêiner
+    command: ["python", "-m", "app.worker_agent"] # Comando aponta para o NOVO arquivo
+    volumes:
+      - .:/app
+    environment:
+      # --- VARIÁVEL ATUALIZADA para conectar ao container do Postgres ---
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/atendai_local
+      - AWS_REGION=us-east-1 # (Necessário para o boto3, caso o Gemini use)
+      # (Adicione aqui quaisquer outras chaves que o Gemini precise)
+    depends_on:
+      # O agente depende apenas do banco de dados para iniciar.
+      postgres:
+        condition: service_healthy
+
+volumes:
+  # Volume para persistir os dados do RabbitMQ
+  rabbitmq_data:
+  # --- NOVO VOLUME para persistir os dados do PostgreSQL ---
+  postgres_data:

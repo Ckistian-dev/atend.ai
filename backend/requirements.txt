@@ -1,0 +1,48 @@
+#--- Core do FastAPI ---
+
+fastapi
+uvicorn[standard]
+
+#--- Banco de Dados ---
+
+sqlalchemy[asyncio]
+alembic
+asyncpg
+
+#--- Autenticação e Segurança ---
+
+passlib
+bcrypt==4.3.0
+python-jose[cryptography]
+cryptography # Adicionado para criptografia do token Google
+
+#--- Configuração e Utilitários ---
+
+pydantic-settings
+python-multipart
+email-validator
+
+#--- Comunicação com APIs Externas ---
+
+httpx
+google-generativeai
+
+#--- Google OAuth & People API (Novos) ---
+
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
+packaging
+
+#--- Processamento de Dados ---
+
+pandas
+openpyxl
+
+#--- SQS ---
+
+boto3 # Mantido caso outra parte da aplicação use AWS
+
+#--- RabbitMQ ---
+# pika foi substituído por aio_pika para suporte assíncrono
+aio_pika

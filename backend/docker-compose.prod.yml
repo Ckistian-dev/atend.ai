@@ -1,0 +1,95 @@
+services:
+  # --- Banco de Dados ---
+  postgres:
+    image: postgres:15-alpine
+    container_name: atendai_db
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=atendai_local
+    ports:
+      # Liberado APENAS para localhost (Túnel SSH funciona, Hackers da internet não)
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d atendai_local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- RabbitMQ ---
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: atendai_rabbitmq
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # --- API (FastAPI) ---
+  api:
+    # MUDANÇA AQUI: Agora aponta para o Docker Hub
+    image: ckistian/atendai-backend:latest
+    container_name: atendai_api
+    restart: always
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/atendai_local
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=atendai-webhook-queue-local
+      - WBP_VERIFY_TOKEN=meu-atendai-e-secreto-987654
+      # --- CORS CONFIG ---
+      - FRONTEND_URL=https://atendai.cjssolucoes.com,https://www.atendai.cjssolucoes.com,https://api.atendai.cjssolucoes.com
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # --- Worker Webhook ---
+  worker-webhook:
+    image: ckistian/atendai-backend:latest
+    container_name: atendai_worker_webhook
+    restart: always
+    command: ["python", "-m", "app.worker_webhook"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/atendai_local
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=atendai-webhook-queue-local
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # --- Worker Agent ---
+  worker-agent:
+    image: ckistian/atendai-backend:latest
+    container_name: atendai_worker_agent
+    restart: always
+    command: ["python", "-m", "app.worker_agent"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/atendai_local
+      - AWS_REGION=us-east-1
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  rabbitmq_data:
+  postgres_data:
