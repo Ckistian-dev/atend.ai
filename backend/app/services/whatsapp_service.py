@@ -1,7 +1,7 @@
 import httpx
 import logging
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import os
 import uuid
 import tempfile
@@ -36,12 +36,19 @@ class WhatsAppService:
         return clean_number
 
     def _run_ffmpeg_sync(self, input_path: str, output_path: str):
-        """Função síncrona para executar o ffmpeg convertendo para OGG/OPUS (PTT)."""
-        # COMANDO ALTERADO: De MP3 para OGG OPUS
+        """
+        Função síncrona para executar o ffmpeg.
+        ALTERADO: Converte para MP3 para máxima compatibilidade, especialmente com iPhones.
+        O áudio não será mais enviado como PTT (mensagem de voz), mas como um arquivo de áudio reproduzível.
+        """
         command = [
-            "ffmpeg", "-y", "-i", input_path, 
-            "-c:a", "libopus", "-b:a", "16k", "-vbr", "on", "-compression_level", "10", 
-            output_path
+            "ffmpeg",
+            "-y",
+            "-i", input_path,
+            "-c:a", "libmp3lame", # Codec MP3
+            "-q:a", "4",          # Qualidade de áudio (0=melhor, 9=pior)
+            "-ar", "44100",       # Sample rate padrão
+            output_path          # O output_path já terá a extensão .mp3
         ]
         
         try:
@@ -181,43 +188,40 @@ class WhatsAppService:
         final_mimetype = mimetype
         final_filename = filename
 
-        # ALTERADO: Removemos a lista de exceções. Se é audio, convertemos para garantir o PTT.
+        # --- LÓGICA DE CONVERSÃO DE ÁUDIO PARA MP3 (ALTERADO) ---
+        # Converte qualquer áudio para MP3 para garantir compatibilidade com todos os dispositivos, incluindo iPhone.
+        # Isso corrige o erro 'Media upload error' (131053) da API da Meta.
         if media_type == 'audio':
-            logger.info(f"WBP: Áudio ({mimetype}) recebido. Convertendo para OGG Opus (PTT).")
+            logger.info(f"WBP: Áudio ({mimetype}) recebido. Convertendo para MP3 para garantir compatibilidade.")
             try:
                 with tempfile.TemporaryDirectory() as temp_dir:
                     input_ext = os.path.splitext(filename)[1] or '.bin'
                     input_path = os.path.join(temp_dir, f"{uuid.uuid4()}{input_ext}")
                     
-                    # ALTERADO: Saída agora é .ogg
-                    output_path = os.path.join(temp_dir, f"{uuid.uuid4()}.ogg")
+                    output_path = os.path.join(temp_dir, f"{uuid.uuid4()}.mp3") # Saída agora é .mp3
                     
                     with open(input_path, "wb") as f:
                         f.write(file_bytes)
                     
-                    # Chama a função atualizada com os novos parâmetros
+                    # Chama a função síncrona do ffmpeg (que agora converte para MP3)
                     await asyncio.to_thread(self._run_ffmpeg_sync, input_path, output_path)
                     
                     with open(output_path, "rb") as f:
                         converted_bytes = f.read()
                     
                     if not converted_bytes:
-                        raise ValueError("Arquivo OGG resultante está vazio.")
+                        raise ValueError("Arquivo MP3 resultante está vazio.")
                         
                     final_file_bytes = converted_bytes
-                    # ALTERADO: Mimetype específico para nota de voz
-                    final_mimetype = 'audio/ogg' 
-                    # ALTERADO: Extensão final
-                    final_filename = os.path.splitext(filename)[0] + ".ogg"
+                    final_mimetype = 'audio/mpeg' # Mimetype para MP3
+                    final_filename = os.path.splitext(filename)[0] + ".mp3"
                     
-                    logger.info(f"WBP: Conversão para OGG concluída ({len(final_file_bytes)} bytes).")
+                    logger.info(f"WBP: Conversão de áudio para MP3 concluída ({len(final_file_bytes)} bytes).")
 
             except Exception as conv_e:
-                logger.error(f"WBP: Falha CRÍTICA na conversão para OGG: {conv_e}", exc_info=True)
-                logger.warning("WBP: Tentando enviar original (pode não sair como PTT)...")
-                final_file_bytes = file_bytes
-                final_mimetype = mimetype
-                final_filename = filename
+                logger.error(f"WBP: Falha CRÍTICA na conversão de áudio para MP3: {conv_e}", exc_info=True)
+                logger.warning("WBP: Tentando enviar áudio original (pode falhar ou não sair como PTT)...")
+                # Se a conversão falhar, ele tentará enviar o original.
         
         # --- INÍCIO DA LÓGICA DE CONVERSÃO DE IMAGEM (NOVO) ---
         # Processa TODAS as imagens para garantir a orientação correta e compatibilidade.
@@ -353,6 +357,54 @@ class WhatsAppService:
             logger.error(f"WBP: Erro inesperado ao enviar mídia ({media_type}) para {clean_to_number}: {e}", exc_info=True)
             raise MessageSendError(f"WBP: Erro inesperado no envio de mídia: {e}") from e
 
+    async def send_template_message_official(
+        self,
+        phone_number_id: str,
+        access_token: str,
+        to_number: str,
+        template_name: str,
+        language_code: str,
+        components: list
+    ) -> Dict[str, Any]:
+        """Envia uma mensagem de template via API Oficial (WBP)."""
+        if not all([phone_number_id, access_token, to_number, template_name, language_code]):
+            raise ValueError("WBP: phone_number_id, access_token, to_number, template_name e language_code são obrigatórios.")
+
+        url = f"{self.wbp_graph_url_base}/{self.wbp_api_version}/{phone_number_id}/messages"
+        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+        clean_to_number = self._normalize_number(to_number)
+
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": clean_to_number,
+            "type": "template",
+            "template": {
+                "name": template_name,
+                "language": {
+                    "code": language_code
+                },
+                "components": components
+            }
+        }
+
+        logger.debug(f"WBP Send Template Payload to {clean_to_number}: {json.dumps(payload)}")
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, json=payload, timeout=30.0)
+                response.raise_for_status()
+                response_data = response.json()
+                message_id = response_data.get("messages", [{}])[0].get("id")
+                logger.info(f"WBP: Mensagem de template '{template_name}' enviada para {clean_to_number} (ID: {message_id}).")
+                return {"id": message_id}
+        except httpx.HTTPStatusError as e:
+            error_body = e.response.text if e.response else "N/A"
+            logger.error(f"WBP: Erro HTTP {e.response.status_code} ao enviar template '{template_name}' para {clean_to_number}: {error_body}")
+            raise MessageSendError(f"WBP: Falha ao enviar template: {error_body}") from e
+        except Exception as e:
+            logger.error(f"WBP: Erro inesperado ao enviar template para {clean_to_number}: {e}", exc_info=True)
+            raise MessageSendError(f"WBP: Erro inesperado no envio de template: {e}") from e
+
     async def send_text_message(self, user: models.User, number: str, text: str) -> Dict[str, Any]:
         # (Função existente sem alterações)
         if not user or not number or not text:
@@ -425,6 +477,68 @@ class WhatsAppService:
             logger.error(f"Erro inesperado no adaptador send_media_message para user {user.id}: {e}", exc_info=True)
             raise MessageSendError(f"Erro inesperado no envio de mídia: {e}") from e
 
+    async def send_template_message(
+        self,
+        user: models.User,
+        number: str,
+        template_name: str,
+        language_code: str,
+        components: list
+    ) -> Dict[str, Any]:
+        """Adapter para enviar mensagem de template, tratando a autenticação do usuário."""
+        if not all([user, number, template_name, language_code]):
+            raise ValueError("User, number, template_name e language_code são obrigatórios.")
+
+        try:
+            if not user.wbp_phone_number_id or not user.wbp_access_token:
+                raise ValueError(f"Usuário {user.id} não tem 'wbp_phone_number_id' ou 'wbp_access_token' configurados.")
+
+            try:
+                decrypted_token = decrypt_token(user.wbp_access_token)
+            except Exception as decrypt_err:
+                logger.error(f"Falha ao descriptografar WBP token (template) para user {user.id}: {decrypt_err}")
+                raise ValueError(f"Não foi possível descriptografar o token de acesso (User {user.id}).") from decrypt_err
+
+            return await self.send_template_message_official(
+                user.wbp_phone_number_id, decrypted_token, number, template_name, language_code, components
+            )
+        except (MessageSendError, ValueError) as e:
+            raise e
+        except Exception as e:
+            logger.error(f"Erro inesperado no adaptador send_template_message para user {user.id}: {e}", exc_info=True)
+            raise MessageSendError(f"Erro inesperado no envio de template: {e}") from e
+
+    async def get_templates_official(self, business_account_id: str, access_token: str) -> List[Dict[str, Any]]:
+        """Busca a lista de templates de mensagem da API Oficial (WBP)."""
+        if not business_account_id or not access_token:
+            raise ValueError("WBP: business_account_id e access_token são obrigatórios para buscar templates.")
+
+        url = f"{self.wbp_graph_url_base}/{self.wbp_api_version}/{business_account_id}/message_templates"
+        headers = {"Authorization": f"Bearer {access_token}"}
+        # Parâmetros para buscar todos os campos relevantes e aumentar o limite
+        params = {
+            "fields": "name,status,language,components",
+            "limit": 200  # Aumenta o limite para buscar mais templates de uma vez
+        }
+
+        logger.info(f"WBP: Buscando templates para a conta {business_account_id}...")
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, headers=headers, params=params, timeout=30.0)
+                response.raise_for_status()
+                response_data = response.json()
+
+                all_templates = response_data.get("data", [])
+                logger.info(f"WBP: Encontrados {len(all_templates)} templates no total (todos os status).")
+                return all_templates
+        except httpx.HTTPStatusError as e:
+            error_body = e.response.text if e.response else "N/A"
+            logger.error(f"WBP: Erro HTTP {e.response.status_code} ao buscar templates: {error_body}")
+            raise MessageSendError(f"WBP: Falha ao buscar templates: {error_body}") from e
+        except Exception as e:
+            logger.error(f"WBP: Erro inesperado ao buscar templates: {e}", exc_info=True)
+            raise MessageSendError(f"WBP: Erro inesperado ao buscar templates: {e}") from e
 # --- Singleton ---
 _whatsapp_service_instance = None
 def get_whatsapp_service():

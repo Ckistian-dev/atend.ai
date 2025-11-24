@@ -139,6 +139,12 @@ async def delete_atendimento(
 class SendMessagePayload(schemas.BaseModel):
     text: str
 
+class SendTemplatePayload(schemas.BaseModel):
+    template_name: str
+    language_code: str = "en_US"
+    # Lista flexível para componentes de header, body, buttons
+    components: List[Dict[str, Any]]
+
 # Endpoint para um atendente humano enviar uma mensagem de texto
 @router.post("/{atendimento_id}/send_message", response_model=schemas.Atendimento)
 async def send_manual_message(
@@ -286,7 +292,8 @@ async def send_manual_media_message(
         media_id_from_send = send_result.get("media_id") # ID da mídia na API do WhatsApp
         
         # Se o serviço converteu o áudio, o mimetype salvo deve ser o do formato final (mp3)
-        final_mimetype_saved = 'audio/mpeg' if type == 'audio' and media_id_from_send else mimetype
+        # A conversão agora sempre acontece para áudio, então podemos definir diretamente.
+        final_mimetype_saved = 'audio/mpeg' if type == 'audio' else mimetype
 
         formatted_message = schemas.FormattedMessage(
             id=str(message_id),
@@ -329,7 +336,7 @@ async def send_manual_media_message(
         await file.close()
         
 # Endpoint para baixar mídias recebidas via API Oficial
-@router.get( "/{atendimento_id}/media/{media_id}", summary="Baixar mídia diretamente (API Oficial)", )
+@router.get("/{atendimento_id}/media/{media_id}", summary="Baixar mídia diretamente (API Oficial)")
 async def download_media_directly(
     atendimento_id: int,
     media_id: str,
@@ -419,3 +426,129 @@ async def download_media_directly(
     except Exception as e:
         logger.error(f"Erro inesperado ao processar mídia {media_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Erro interno ao processar mídia: {str(e)}")
+
+# Endpoint para enviar uma mensagem de template
+@router.post("/{atendimento_id}/send_template", response_model=schemas.Atendimento)
+async def send_template_message(
+    atendimento_id: int,
+    payload: SendTemplatePayload = Body(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(dependencies.get_current_active_user),
+    whatsapp_service: WhatsAppService = Depends(get_whatsapp_service)
+):
+    """
+    Envia uma mensagem baseada em um template pré-aprovado da Meta.
+    Usado para iniciar conversas ou enviar notificações.
+    """
+    db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, user_id=current_user.id)
+    if not db_atendimento or not db_atendimento.whatsapp:
+        raise HTTPException(status_code=404, detail="Atendimento ou contato não encontrado")
+
+    whatsapp_number = db_atendimento.whatsapp
+
+    try:
+        send_result = await whatsapp_service.send_template_message(
+            user=current_user,
+            number=whatsapp_number,
+            template_name=payload.template_name,
+            language_code=payload.language_code,
+            components=payload.components
+        )
+
+        logger.info(f"Template '{payload.template_name}' enviado para {whatsapp_number}. API Msg ID: {send_result.get('id')}")
+
+        # --- INÍCIO DA LÓGICA ATUALIZADA ---
+        # Monta a mensagem completa para o histórico, em vez de um resumo.
+        content_for_history = f"[Template: {payload.template_name}]\n"
+        try:
+            # 1. Busca a definição do template para obter o texto original
+            decrypted_token = decrypt_token(current_user.wbp_access_token)
+            templates = await whatsapp_service.get_templates_official(
+                business_account_id=current_user.wbp_business_account_id,
+                access_token=decrypted_token
+            )
+            
+            target_template = next((t for t in templates if t['name'] == payload.template_name and t['language'] == payload.language_code), None)
+
+            if target_template:
+                # 2. Pega os textos do header e body
+                header_text = next((c.get('text', '') for c in target_template.get('components', []) if c['type'] == 'HEADER'), '')
+                body_text = next((c.get('text', '') for c in target_template.get('components', []) if c['type'] == 'BODY'), '')
+
+                # 3. Pega os valores das variáveis enviadas
+                header_params = next((c.get('parameters', []) for c in payload.components if c['type'] == 'header'), [])
+                body_params = next((c.get('parameters', []) for c in payload.components if c['type'] == 'body'), [])
+
+                # 4. Substitui as variáveis no texto
+                for i, param in enumerate(header_params):
+                    header_text = header_text.replace(f"{{{{{i+1}}}}}", param.get('text', ''))
+                
+                for i, param in enumerate(body_params):
+                    # A contagem de variáveis do corpo pode continuar da do header, ou começar de 1.
+                    # A API da Meta é um pouco inconsistente. Vamos tentar os dois.
+                    # Ex: {{1}} no header, {{1}} no body.
+                    body_text = body_text.replace(f"{{{{{i+1}}}}}", param.get('text', ''))
+                    # Ex: {{1}} no header, {{2}} no body.
+                    body_text = body_text.replace(f"{{{{{len(header_params) + i + 1}}}}}", param.get('text', ''))
+
+                full_message = f"{header_text}\n{body_text}".strip()
+                if full_message:
+                    content_for_history = full_message
+
+        except Exception as e:
+            logger.warning(f"Não foi possível montar o preview completo do template '{payload.template_name}': {e}")
+            # Fallback para o método antigo se a montagem falhar
+            content_for_history = f"[Template enviado: {payload.template_name}]"
+        # --- FIM DA LÓGICA ATUALIZADA ---
+        
+        formatted_message = schemas.FormattedMessage(
+            id=send_result.get('id') or f"template-{uuid.uuid4()}",
+            role='assistant',
+            content=content_for_history,
+            timestamp=int(datetime.now(timezone.utc).timestamp()),
+            type='text' # Salva como texto simples no histórico
+        )
+
+        atendimento_atualizado = await crud_atendimento.add_message_to_conversa(
+            db=db, atendimento_id=atendimento_id, user_id=current_user.id, message=formatted_message
+        )
+
+        await db.commit()
+        await db.refresh(atendimento_atualizado)
+        return atendimento_atualizado
+
+    except (MessageSendError, ValueError) as e:
+        logger.error(f"Erro ao ENVIAR template para {whatsapp_number}: {e}", exc_info=True)
+        raise HTTPException(status_code=502, detail=f"Falha ao enviar template pela API: {e}")
+
+# Endpoint para listar os templates de mensagem disponíveis para o usuário
+@router.get("/whatsapp/templates", response_model=List[Dict[str, Any]])
+async def get_whatsapp_templates(
+    current_user: models.User = Depends(dependencies.get_current_active_user),
+    whatsapp_service: WhatsAppService = Depends(get_whatsapp_service)
+):
+    """
+    Busca e retorna a lista de templates de mensagem aprovados ('ACTIVE')
+    da conta do WhatsApp Business associada ao usuário.
+    """
+    # NOTA: Requer que 'wbp_business_account_id' esteja no modelo User e preenchido.
+    if not hasattr(current_user, 'wbp_business_account_id') or not current_user.wbp_business_account_id:
+        logger.error(f"Usuário {current_user.id} tentou buscar templates sem 'wbp_business_account_id' configurado.")
+        raise HTTPException(
+            status_code=400,
+            detail="ID da Conta do WhatsApp Business não está configurado para este usuário."
+        )
+
+    if not current_user.wbp_access_token:
+        raise HTTPException(status_code=400, detail="Token de acesso do WhatsApp não configurado.")
+
+    try:
+        decrypted_token = decrypt_token(current_user.wbp_access_token)
+        templates = await whatsapp_service.get_templates_official(
+            business_account_id=current_user.wbp_business_account_id,
+            access_token=decrypted_token
+        )
+        return templates
+    except (MessageSendError, ValueError) as e:
+        logger.error(f"Erro ao buscar templates para o usuário {current_user.id}: {e}", exc_info=True)
+        raise HTTPException(status_code=502, detail=f"Falha ao buscar templates da API do WhatsApp: {e}")

@@ -21,7 +21,8 @@ SITUATIONS = [
     {"cor": "#f0ad60", "nome": "Atendente Chamado"},
     {"cor": "#e5da61", "nome": "Aguardando Resposta"},
     {"cor": "#5fd395", "nome": "Concluído"},
-    {"cor": "#d569dd", "nome": "Gerando Resposta"}
+    {"cor": "#d569dd", "nome": "Gerando Resposta"},
+    {"cor": "#837676", "nome": "Ignorar Contato"},
 ]
 
 @router.post("/", response_model=Config, status_code=status.HTTP_201_CREATED, summary="Criar uma nova Configuração")

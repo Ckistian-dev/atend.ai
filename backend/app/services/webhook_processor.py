@@ -14,24 +14,179 @@ from app.services.security import decrypt_token
 
 logger = logging.getLogger(__name__)
 
-async def process_official_message_task(value_payload: dict): # Recebe 'value'
+async def _process_single_message(message_data: Dict[str, Any], user: models.User, phone_number_id: str):
     """
-    Função de background (Oficial) que processa a mensagem, baixa mídia, chama IA e salva no DB.
-    Refatorada para usar sessões curtas e evitar conflitos.
-    Itera sobre múltiplas mensagens se vierem no mesmo 'value'.
+    Processa UMA ÚNICA mensagem do webhook. Esta função é isolada para evitar vazamento de estado.
     """
-    logger.info("WBP Webhook (Worker): Iniciando processamento de 'value'...")
     whatsapp_service = get_whatsapp_service()
     gemini_service = get_gemini_service()
-    atendimento_id_log = None
+    atendimento_id = None
+    msg_id_wamid = message_data.get('id')
+
+    try:
+        msg_type = message_data.get('type')
+        timestamp_s_str = message_data.get('timestamp', '0')
+        try:
+            timestamp_s = int(timestamp_s_str)
+        except ValueError:
+            logger.warning(f"WBP Webhook: Timestamp inválido '{timestamp_s_str}' para msg {msg_id_wamid}. Usando 0.")
+            timestamp_s = 0
+        sender_number = message_data.get('from')
+
+        if not sender_number or not msg_id_wamid:
+            logger.warning(f"WBP Webhook (Worker): Mensagem sem 'from' ou 'id'. Pulando. Payload: {message_data}")
+            return
+
+        cleaned_sender_number = "".join(filter(str.isdigit, sender_number))
+
+        # --- Etapa 1: Obter ou Criar Atendimento ---
+        async with SessionLocal() as db_session:
+            result = await crud_atendimento.get_or_create_atendimento_by_number(db=db_session, number=cleaned_sender_number, user=user)
+            if not result:
+                logger.error(f"WBP Webhook: Falha CRÍTICA ao obter/criar atendimento para {cleaned_sender_number} (User {user.id})")
+                return
+
+            atendimento_obj, was_created = result
+            await db_session.commit()
+            atendimento_id = atendimento_obj.id
+            
+            # Status que, se o atendimento já tiver, não devem ser alterados para "Mensagem Recebida".
+            status_que_bloqueiam_reabertura = ["Ignorar Contato", "Atendente Chamado"]
+            deve_mudar_status = True
+            if not was_created and atendimento_obj.status in status_que_bloqueiam_reabertura:
+                logger.info(f"WBP Webhook: Mensagem {msg_id_wamid} de {cleaned_sender_number}. Atendimento ID {atendimento_id} está em '{atendimento_obj.status}', status NÃO será alterado.")
+                deve_mudar_status = False
+
+        # --- Etapa 2: Processar Conteúdo da Mensagem (Texto, Mídia, etc.) ---
+        formatted_msg_content = ""
+        media_info_gemini = None
+        mime_type_original = None
+        caption = ""
+        media_id_from_payload = None
+
+        if msg_type == 'text':
+            formatted_msg_content = message_data.get('text', {}).get('body', '').strip()
+        
+        elif msg_type in ['image', 'audio', 'video', 'document', 'sticker']:
+            media_obj = message_data.get(msg_type, {})
+            media_id = media_obj.get('id')
+            media_id_from_payload = media_id
+            mime_type_original = media_obj.get('mime_type', 'application/octet-stream')
+            caption = media_obj.get('caption', '').strip()
+
+            if media_id:
+                logger.info(f"WBP Webhook: Mídia recebida (Tipo: {msg_type}, ID: {media_id}). Baixando...")
+                if not user.wbp_access_token:
+                    logger.error(f"WBP Webhook: User {user.id} não tem wbp_access_token para baixar mídia {media_id}.")
+                    formatted_msg_content = f"[Mídia ({msg_type}) recebida, falha ao baixar: Token ausente]"
+                else:
+                    try:
+                        decrypted_token = decrypt_token(user.wbp_access_token)
+                        media_url = await whatsapp_service.get_media_url_official(media_id, decrypted_token)
+                        if media_url:
+                            media_bytes = await whatsapp_service.download_media_official(media_url, decrypted_token)
+                            if media_bytes:
+                                media_info_gemini = {"mime_type": mime_type_original, "data": media_bytes}
+                            else: formatted_msg_content = f"[Mídia ({msg_type}) recebida, falha no download]"
+                        else: formatted_msg_content = f"[Mídia ({msg_type}) recebida, falha ao obter URL]"
+                    except Exception as media_err:
+                        logger.error(f"WBP Webhook: Falha ao baixar/descriptografar mídia {media_id} (User {user.id}): {media_err}")
+                        formatted_msg_content = f"[Mídia ({msg_type}) recebida, falha ao baixar: Erro de token/processamento]"
+            else:
+                formatted_msg_content = f"[Mídia ({msg_type}) recebida, mas ID ausente no payload]"
+
+            if caption and not media_info_gemini:
+                formatted_msg_content += f"\n[Legenda]: {caption}"
+
+        # ... (outros tipos de mensagem como 'contacts', 'location') ...
+        else:
+            logger.info(f"WBP Webhook: Tipo de mensagem não tratado: {msg_type}. Payload: {message_data}")
+            formatted_msg_content = f"[Mensagem do tipo '{msg_type}' recebida, conteúdo não processado]"
+
+        # --- Etapa 3: Análise de Mídia com IA (se aplicável) ---
+        if media_info_gemini:
+            try:
+                async with SessionLocal() as db_gemini_ctx:
+                    # Busca o atendimento e suas relações necessárias para a IA
+                    stmt = select(models.Atendimento).where(models.Atendimento.id == atendimento_id).options(joinedload(models.Atendimento.active_persona))
+                    atendimento_ctx_ia = (await db_gemini_ctx.execute(stmt)).scalar_one()
+                    
+                    current_conversa_list = json.loads(atendimento_ctx_ia.conversa or "[]")
+                    persona_config = atendimento_ctx_ia.active_persona or await crud_config.get_config(db_gemini_ctx, user.default_persona_id, user.id)
+                    
+                    if not persona_config: raise ValueError("Nenhuma persona (ativa ou padrão) encontrada para análise de mídia.")
+
+                    user_for_gemini = await db_gemini_ctx.get(models.User, user.id)
+                    if not user_for_gemini: raise ValueError("Usuário não encontrado na sessão Gemini.")
+
+                    analysis_result = await gemini_service.transcribe_and_analyze_media(
+                        media_info_gemini, current_conversa_list, persona_config.contexto_json, db_gemini_ctx, user_for_gemini
+                    )
+
+                prefix = "[Áudio transcrito]" if 'audio' in mime_type_original else f"[Análise de Mídia ({mime_type_original})]"
+                formatted_msg_content = f"{prefix}: {analysis_result or 'Falha na análise'}"
+                if caption: formatted_msg_content += f"\n[Legenda]: {caption}"
+
+            except Exception as gemini_err:
+                logger.error(f"WBP Webhook: Erro Gemini ao analisar mídia (msg {msg_id_wamid}): {gemini_err}", exc_info=True)
+                formatted_msg_content = f"[Mídia ({msg_type}) recebida ({mime_type_original}), erro na análise/transcrição]"
+
+        # --- Etapa 4: Salvar Mensagem no Banco de Dados ---
+        if formatted_msg_content or media_id_from_payload:
+            formatted_msg = schemas.FormattedMessage(
+                id=msg_id_wamid, role='user', content=formatted_msg_content or None,
+                timestamp=timestamp_s, status='unread',
+                type=msg_type if msg_type in ['image', 'audio', 'document', 'video', 'sticker'] else 'text',
+                media_id=media_id_from_payload, mime_type=mime_type_original,
+                filename=message_data.get('document', {}).get('filename')
+            )
+            
+            async with SessionLocal() as db_save_msg:
+                async with db_save_msg.begin(): # Inicia uma transação
+                    atendimento_to_update = await db_save_msg.get(models.Atendimento, atendimento_id, with_for_update=True)
+                    if not atendimento_to_update:
+                        logger.error(f"WBP Webhook: Atendimento {atendimento_id} desapareceu antes de salvar msg {msg_id_wamid}.")
+                        return
+
+                    try:
+                        current_conversa_list = json.loads(atendimento_to_update.conversa or "[]")
+                    except (json.JSONDecodeError, TypeError):
+                        current_conversa_list = []
+
+                    # Evita duplicatas
+                    if any(m.get('id') == msg_id_wamid for m in current_conversa_list):
+                        logger.warning(f"WBP Webhook: Mensagem {msg_id_wamid} já existe no atendimento {atendimento_id}. Pulando salvamento.")
+                        return
+
+                    current_conversa_list.append(formatted_msg.model_dump())
+                    current_conversa_list.sort(key=lambda x: x.get('timestamp') or 0)
+                    atendimento_to_update.conversa = json.dumps(current_conversa_list, ensure_ascii=False)
+                    
+                    if deve_mudar_status:
+                        atendimento_to_update.status = "Mensagem Recebida"
+                    
+                    atendimento_to_update.updated_at = datetime.now(timezone.utc)
+            
+            logger.info(f"WBP Webhook: Mensagem {msg_id_wamid} salva no Atendimento {atendimento_id}.")
+        else:
+            logger.info(f"WBP Webhook: Mensagem {msg_id_wamid} (tipo {msg_type}) não gerou conteúdo para salvar.")
+
+    except Exception as e:
+        logger.error(f"WBP Webhook: Erro INESPERADO no processamento da msg {msg_id_wamid} (Atendimento {atendimento_id}): {e}", exc_info=True)
+        # Não relance o erro para que a mensagem seja confirmada no RabbitMQ e não tente novamente.
+
+async def process_official_message_task(value_payload: dict): # Recebe 'value'
+    """
+    Função principal que recebe o payload 'value' do webhook, encontra o usuário
+    e delega o processamento de cada mensagem para uma função isolada.
+    """
+    logger.info("WBP Webhook (Worker): Iniciando processamento de 'value'...")
     user_id_log = None
 
     try:
         metadata = value_payload.get('metadata', {})
         phone_number_id = metadata.get('phone_number_id')
         messages = value_payload.get('messages', [])
-        whatsapps_data = value_payload.get('whatsapps', [{}])[0]
-        profile_name = whatsapps_data.get('profile', {}).get('name', '')
 
         if not phone_number_id:
             logger.error("WBP Webhook (Worker): phone_number_id não encontrado no payload 'value'.")
@@ -47,198 +202,10 @@ async def process_official_message_task(value_payload: dict): # Recebe 'value'
         user_id_log = user.id
 
         for message_data in messages:
-            atendimento_id_log = None
-            atendimento_id = None # Define o ID do atendimento para este loop
-            try:
-                msg_type = message_data.get('type')
-                msg_id_wamid = message_data.get('id')
-                timestamp_s_str = message_data.get('timestamp', '0')
-                try:
-                    timestamp_s = int(timestamp_s_str)
-                except ValueError:
-                    logger.warning(f"WBP Webhook: Timestamp inválido recebido '{timestamp_s_str}' para msg {msg_id_wamid}. Usando 0.")
-                    timestamp_s = 0
-                sender_number = message_data.get('from')
-
-                if not sender_number or not msg_id_wamid:
-                    logger.warning(f"WBP Webhook (Worker): Mensagem sem 'from' ou 'id'. Pulando. Payload msg: {message_data}")
-                    continue
-
-                cleaned_sender_number = "".join(filter(str.isdigit, sender_number))
-
-                atendimento_reloaded_after_create: Optional[models.Atendimento] = None
-                was_created = False
-                async with SessionLocal() as db_get_create:
-                    result = await crud_atendimento.get_or_create_atendimento_by_number(db=db_get_create, number=cleaned_sender_number, user=user)
-                    if not result:
-                        logger.error(f"WBP Webhook (Worker): Falha CRÍTICA ao obter/criar atendimento para {cleaned_sender_number} (User {user.id})")
-                        continue
-
-                    atendimento_obj, was_created = result
-                    await db_get_create.commit()
-
-                    if atendimento_obj:
-                        await db_get_create.refresh(atendimento_obj, ['whatsapp', 'active_persona']) # Recarrega com relações
-                        atendimento_reloaded_after_create = atendimento_obj
-                        atendimento_id = atendimento_obj.id # Guarda o ID
-                        atendimento_id_log = atendimento_obj.id
-                    else:
-                        logger.error(f"WBP Webhook: get_or_create retornou None mesmo sem erro explícito para {cleaned_sender_number}.")
-                        continue
-
-                if not atendimento_reloaded_after_create:
-                        logger.error(f"WBP Webhook: Falha ao obter estado do atendimento {atendimento_id_log} após get/create.")
-                        continue
-
-                situacoes_de_parada = ["Ignorar Contato", "Atendente Chamado"]
-                deve_mudar_status = True # Por padrão, sempre mudamos o status
-
-                if not was_created and atendimento_reloaded_after_create.status in situacoes_de_parada:
-                    logger.info(f"WBP Webhook: Mensagem {msg_id_wamid} de {cleaned_sender_number} processada. Atendimento ID {atendimento_reloaded_after_create.id} está em '{atendimento_reloaded_after_create.status}', status NÃO será alterado.")
-                    deve_mudar_status = False # Encontrou situação de parada, não muda o status
-
-                formatted_msg_content = ""
-                media_info_gemini = None
-                mime_type_original = None
-                caption = ""
-                media_id_from_payload = None
-
-                if msg_type == 'text':
-                    formatted_msg_content = message_data.get('text', {}).get('body', '').strip()
-                    
-                elif msg_type in ['image', 'audio', 'video', 'document', 'sticker']:
-                    media_id = message_data.get(msg_type, {}).get('id')
-                    mime_type_original = message_data.get(msg_type, {}).get('mime_type', 'application/octet-stream')
-                    caption = message_data.get(msg_type, {}).get('caption', '').strip()
-                    if media_id:
-                        media_id_from_payload = media_id
-
-                    if media_id:
-                        logger.info(f"WBP Webhook: Mídia recebida (Tipo: {msg_type}, ID: {media_id}) para msg {msg_id_wamid}. Baixando...")
-                        if not user.wbp_access_token:
-                            logger.error(f"WBP Webhook: User {user.id} não tem wbp_access_token para baixar mídia {media_id}.")
-                            formatted_msg_content = f"[Mídia ({msg_type}) recebida, falha ao baixar: Token ausente]"
-                        else:
-                            try:
-                                decrypted_token = decrypt_token(user.wbp_access_token)
-                                media_url = await whatsapp_service.get_media_url_official(media_id, decrypted_token)
-                                if media_url:
-                                    media_bytes = await whatsapp_service.download_media_official(media_url, decrypted_token)
-                                    if media_bytes:
-                                        logger.info(f"WBP Webhook: Mídia {media_id} ...")
-                                        media_info_gemini = {"mime_type": mime_type_original, "data": media_bytes}
-                                    else: formatted_msg_content = f"[Mídia ({msg_type}) recebida, falha no download]"
-                                else: formatted_msg_content = f"[Mídia ({msg_type}) recebida, mas ID ausente no payload]"
-                            except Exception as decrypt_err:
-                                logger.error(f"WBP Webhook: Falha ao descriptografar token para baixar mídia {media_id} (User {user.id}): {decrypt_err}")
-                                formatted_msg_content = f"[Mídia ({msg_type}) recebida, falha ao baixar: Erro de token]"
-                    else: formatted_msg_content = f"[Mídia ({msg_type}) recebida, mas ID ausente no payload]"
-
-                    if caption and not media_info_gemini:
-                        caption_text = f"\n[Legenda]: {caption}"
-                        if formatted_msg_content: formatted_msg_content += caption_text
-                        else: formatted_msg_content = caption_text
-
-                elif msg_type == 'whatsapps':
-                    whatsapps_list = message_data.get('whatsapps', [])
-                    whatsapp_names = [f"{c.get('name',{}).get('formatted_name','N/A')} ({c.get('phones',[{}])[0].get('wa_id','N/A')})" for c in whatsapps_list]
-                    formatted_msg_content = f"[Contato compartilhado]: {', '.join(whatsapp_names)}"
-                elif msg_type == 'location':
-                    lat = message_data.get('location',{}).get('latitude')
-                    lon = message_data.get('location',{}).get('longitude')
-                    name = message_data.get('location',{}).get('name')
-                    address = message_data.get('location',{}).get('address')
-                    formatted_msg_content = f"[Localização compartilhada]: {name or 'Localização'} ({lat}, {lon}) {address or ''}"
-                else:
-                    logger.info(f"WBP Webhook: Tipo de mensagem não tratado recebido: {msg_type} para msg {msg_id_wamid}. Payload: {message_data}")
-                    formatted_msg_content = f"[Mensagem do tipo '{msg_type}' recebida, conteúdo não processado]"
-
-                if media_info_gemini:
-                    try:
-                        analysis_result = None # Define a variável
-                        async with SessionLocal() as db_gemini_ctx:
-                            stmt = select(models.Atendimento).where(models.Atendimento.id == atendimento_id)\
-                                .options(joinedload(models.Atendimento.active_persona))
-                            result_at = await db_gemini_ctx.execute(stmt)
-                            atendimento_ctx_ia = result_at.scalar_one_or_none()
-
-                            if not atendimento_ctx_ia: raise ValueError("Atendimento não encontrado na sessão Gemini.")
-
-                            current_conversa_list_for_context = json.loads(atendimento_ctx_ia.conversa or "[]")
-                            persona_config = atendimento_ctx_ia.active_persona
-                            if not persona_config:
-                                if user.default_persona_id: persona_config = await crud_config.get_config(db_gemini_ctx, user.default_persona_id, user.id)
-                            if not persona_config: raise ValueError("Nenhuma persona encontrada para análise de mídia.")
-
-                            user_for_gemini = await db_gemini_ctx.get(models.User, user.id)
-                            if not user_for_gemini: raise ValueError("Usuário não encontrado na sessão Gemini.")
-
-                            analysis_result = await gemini_service.transcribe_and_analyze_media(
-                                media_info_gemini, current_conversa_list_for_context,
-                                persona_config.contexto_json,
-                                db_gemini_ctx, user_for_gemini
-                            )
-
-                        prefix = "[Áudio transcrito]" if msg_type == 'audio' else f"[Análise de Mídia ({mime_type_original})]"
-                        formatted_msg_content = f"{prefix}: {analysis_result or 'Falha na análise'}" # <--- Já preenche o content
-                        if caption: formatted_msg_content += f"\n[Legenda]: {caption}"
-
-                    except Exception as gemini_err:
-                        logger.error(f"WBP Webhook: Erro Gemini ao analisar mídia ID {media_id} (msg {msg_id_wamid}): {gemini_err}", exc_info=True)
-                        formatted_msg_content = f"[Mídia ({msg_type}) recebida ({mime_type_original}), erro na análise/transcrição]" # <--- Preenche em caso de erro
-
-                if formatted_msg_content or media_id_from_payload: # Salva se tiver texto OU media_id
-                    formatted_msg = schemas.FormattedMessage(
-                        id=msg_id_wamid,
-                        role='user',
-                        content=formatted_msg_content or None, 
-                        timestamp=timestamp_s,
-                        status='unread',
-                        type=msg_type if msg_type in ['image', 'audio', 'document', 'video', 'sticker'] else 'text',
-                        media_id=media_id_from_payload,
-                        mime_type=mime_type_original,
-                        filename=message_data.get('document', {}).get('filename') 
-                    )
-                    try:
-                        async with SessionLocal() as db_save_msg:
-                            async with db_save_msg.begin():
-                                atendimento_to_update = await db_save_msg.get(models.Atendimento, atendimento_id, with_for_update=True)
-                                if not atendimento_to_update:
-                                    logger.error(f"WBP Webhook: Atendimento {atendimento_id} desapareceu antes de salvar msg {msg_id_wamid}.")
-                                    continue
-
-                                try:
-                                    current_conversa_str = atendimento_to_update.conversa or "[]"
-                                    current_conversa_list = json.loads(current_conversa_str)
-                                except (json.JSONDecodeError, TypeError):
-                                    logger.warning(f"WBP Webhook: Conversa JSON inválida ao salvar msg {msg_id_wamid}. Reiniciando.")
-                                    current_conversa_list = []
-
-                                current_conversa_list.append(formatted_msg.model_dump())
-                                current_conversa_list.sort(key=lambda x: x.get('timestamp') or 0)
-
-                                atendimento_to_update.conversa = json.dumps(current_conversa_list, ensure_ascii=False)
-                                
-                                logger_status_msg = ""
-                                if deve_mudar_status:
-                                    atendimento_to_update.status = "Mensagem Recebida"
-                                    logger_status_msg = "e status atualizado"
-                                else:
-                                    logger_status_msg = f"(status '{atendimento_to_update.status}' mantido)"
-                                
-                                atendimento_to_update.updated_at = datetime.now(timezone.utc)
-
-                        logger.info(f"WBP Webhook: Mensagem {msg_id_wamid} adicionada {logger_status_msg} para Atendimento {atendimento_id}.")
-
-                    except Exception as save_err:
-                        logger.error(f"WBP Webhook: Erro na TRANSAÇÃO ao salvar msg {msg_id_wamid} no Atendimento {atendimento_id}: {save_err}", exc_info=True)
-                        continue
-                else:
-                    logger.info(f"WBP Webhook: Mensagem {msg_id_wamid} (tipo {msg_type}) não gerou conteúdo processável.")
-
-            except Exception as inner_loop_err:
-                logger.error(f"WBP Webhook (Worker): Erro INESPERADO no loop interno para msg {msg_id_wamid} (Atendimento ID: {atendimento_id_log}, User: {user_id_log}): {inner_loop_err}", exc_info=True)
-                continue
+            # Chama a função isolada para cada mensagem.
+            # O `await` aqui garante que as mensagens de um mesmo webhook sejam processadas sequencialmente,
+            # o que é mais seguro para evitar race conditions no mesmo atendimento.
+            await _process_single_message(message_data, user, phone_number_id)
 
     except Exception as e:
         logger.error(f"WBP Webhook (Worker): ERRO CRÍTICO GERAL no processamento do 'value' (User: {user_id_log}): {e}", exc_info=True)

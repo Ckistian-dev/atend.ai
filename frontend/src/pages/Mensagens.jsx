@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../api/axiosConfig'; // Presumindo que você tenha este arquivo de configuração do Axios
 import {
     Search, MessageSquareText, CheckCircle, Clock, UserCheck, Paperclip, Mic, Send, Image as ImageIcon, FileText, CircleDashed, ChevronDown,
-    Play, Download, Loader2, StopCircle, Trash2, AlertTriangle, FileVideo, MoreVertical,
+    Play, Download, Loader2, StopCircle, Trash2, AlertTriangle, FileVideo, MoreVertical, MessageSquarePlus,
     Filter
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -718,7 +718,13 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
     const formatTimestamp = (timestamp) => {
         try {
             const date = (typeof timestamp === 'number') ? new Date(timestamp * 1000) : new Date(timestamp);
-            return format(date, 'HH:mm');
+            const now = new Date();
+            // Se a data da mensagem for o mesmo dia que hoje, mostra só a hora.
+            if (format(date, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd')) {
+                return format(date, 'HH:mm');
+            }
+            // Caso contrário, mostra data e hora.
+            return format(date, 'HH:mm dd/MM/yy');
         } catch {
             return '';
         }
@@ -774,9 +780,11 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
     );
 };
 
-const ChatFooter = ({ onSendMessage, onSendMedia }) => {
+const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
     const [text, setText] = useState('');
     const [showAttachMenu, setShowAttachMenu] = useState(false);
+    const attachMenuRef = useRef(null); // Ref para o menu de anexo
+
 
     // --- Novos estados para mídia ---
     const [isRecording, setIsRecording] = useState(false);
@@ -795,6 +803,20 @@ const ChatFooter = ({ onSendMessage, onSendMedia }) => {
     const imageInputRef = useRef(null);
     const docInputRef = useRef(null);
     const videoInputRef = useRef(null);
+
+    // Efeito para fechar o menu de anexo ao clicar fora
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (attachMenuRef.current && !attachMenuRef.current.contains(event.target)) {
+                setShowAttachMenu(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     useEffect(() => {
         const textarea = textInputRef.current;
@@ -1089,7 +1111,12 @@ const ChatFooter = ({ onSendMessage, onSendMedia }) => {
                 // UI Padrão (texto ou mic)
                 <form onSubmit={handleSubmitText} className="flex items-center gap-3">
                     {/* Botão Anexar */}
-                    <div className="relative">
+                    <div className="relative" ref={attachMenuRef}>
+                        {/* --- NOVO: Botão para abrir modal de template --- */}
+                        <button type="button" onClick={onOpenTemplateModal} className="p-2 text-gray-500 hover:text-blue-600 transition-colors rounded-full hover:bg-gray-200" title="Enviar template">
+                            <MessageSquarePlus size={22} />
+                        </button>
+
                         {showAttachMenu && (
                             <div className="absolute bottom-12 left-0 bg-white rounded-lg shadow-lg overflow-hidden w-48 animate-fade-in-up-fast">
                                 <button type="button" onClick={() => imageInputRef.current?.click()} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
@@ -1182,6 +1209,9 @@ const getLastMessageTimestamp = (at) => {
     }
 };
 
+// --- NOVO: Importa o modal de template ---
+import TemplateModal from '../components/TemplateModal';
+
 
 // --- COMPONENTE PRINCIPAL DA PÁGINA ---
 function Mensagens() {
@@ -1204,6 +1234,9 @@ function Mensagens() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDownloadingMedia, setIsDownloadingMedia] = useState(false); // Para feedback no botão
     const currentBlobUrl = useRef(null); // Para limpar a URL do blob anterior
+
+    // --- NOVO: Estado para o modal de template ---
+    const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
     const intervalRef = useRef(null);
 
@@ -1784,6 +1817,27 @@ function Mensagens() {
         }
     };
 
+    // --- NOVA FUNÇÃO: Enviar mensagem de template ---
+    const handleSendTemplate = async (templatePayload) => {
+        if (!selectedAtendimento) {
+            throw new Error("Nenhum atendimento selecionado.");
+        }
+        const atendimentoId = selectedAtendimento.id;
+
+        // A API de template já adiciona a mensagem ao histórico no backend
+        // e retorna o atendimento atualizado.
+        // A chamada `updateAtendimentoState` irá atualizar a UI com a resposta.
+        try {
+            const response = await api.post(
+                `/atendimentos/${atendimentoId}/send_template`,
+                templatePayload
+            );
+            updateAtendimentoState(atendimentoId, response.data);
+        } catch (err) {
+            console.error("Erro no handleSendTemplate:", err);
+            throw err; // Re-lança o erro para o modal poder exibi-lo
+        }
+    };
 
     if (isLoading && !currentUser) {
         return <div className="flex h-screen items-center justify-center text-gray-600">A carregar interface de mensagens...</div>;
@@ -1836,6 +1890,7 @@ function Mensagens() {
                         <ChatFooter
                             onSendMessage={handleSendMessage}
                             onSendMedia={handleSendMedia} // Passa a nova função
+                            onOpenTemplateModal={() => setIsTemplateModalOpen(true)} // Passa a função para abrir o modal
                         />
                     </>
                 ) : (
@@ -1850,6 +1905,14 @@ function Mensagens() {
                 mediaUrl={modalMedia?.url}
                 mediaType={modalMedia?.type}
                 filename={modalMedia?.filename}
+            />
+
+            {/* --- NOVO: Renderiza o Modal de Template --- */}
+            <TemplateModal
+                isOpen={isTemplateModalOpen}
+                onClose={() => setIsTemplateModalOpen(false)}
+                onSend={handleSendTemplate}
+                atendimento={selectedAtendimento}
             />
 
         </div>
