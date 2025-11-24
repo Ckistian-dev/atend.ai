@@ -1229,6 +1229,9 @@ function Mensagens() {
     const [activeFilter, setActiveFilter] = useState('todos');
     const [selectedAtendimento, setSelectedAtendimento] = useState(null);
     const [totalAtendimentos, setTotalAtendimentos] = useState(0);
+    
+    // --- NOVO: Estado para controlar o limite de carregamento ---
+    const [limit, setLimit] = useState(20);
 
     const [modalMedia, setModalMedia] = useState(null); // { url: blobUrl, type: 'image'|'audio', filename: string }
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1254,7 +1257,12 @@ function Mensagens() {
         try {
             const [userRes, atendimentosRes, personasRes, situationsRes] = await Promise.all([
                 api.get('/auth/me'),
-                api.get('/atendimentos/', { params: { search: searchTerm, limit: 50 } }),
+                // --- CORREÇÃO: Envia o filtro para a API ---
+                api.get('/atendimentos/', {
+                    params: {
+                        search: searchTerm, limit: limit, status: activeFilter === 'todos' ? null : activeFilter
+                    }
+                }),
                 api.get('/configs/'),
                 api.get('/configs/situations')
             ]);
@@ -1262,30 +1270,48 @@ function Mensagens() {
             setPersonas(personasRes.data);
             setStatusOptions(situationsRes.data);
 
-            const data = atendimentosRes.data;
-            if (data && Array.isArray(data.items)) {
-                setAtendimentos(prevLocalAtendimentos => {
-                    const localAtendimentosMap = new Map(prevLocalAtendimentos.map(item => [item.id, item]));
-                    const busyAtendimentoIds = new Set([
-                        ...Object.keys(sendingQueue).map(id => parseInt(id, 10)),
-                        ...Object.keys(isProcessing).filter(id => isProcessing[id]).map(id => parseInt(id, 10))
-                    ]);
-                    const mergedAtendimentos = data.items.map(serverAt => {
-                        if (busyAtendimentoIds.has(serverAt.id)) {
-                            const localAt = localAtendimentosMap.get(serverAt.id);
-                            if (!localAt) return serverAt;
-                            const localConversa = JSON.parse(localAt.conversa || '[]');
-                            const sendingMessages = localConversa.filter(msg => msg.type === 'sending');
-                            const serverConversa = JSON.parse(serverAt.conversa || '[]');
-                            const mergedConversa = [...serverConversa, ...sendingMessages];
-                            return { ...serverAt, conversa: JSON.stringify(mergedConversa) };
-                        } else { return serverAt; }
+            const serverData = atendimentosRes.data;
+            if (serverData && Array.isArray(serverData.items)) {
+                setAtendimentos(prevAtendimentos => {
+                    // Se for uma carga inicial, troca de filtro ou busca, substitui a lista.
+                    // Consideramos uma "carga nova" se o limite for o padrão (20).
+                    const isNewLoad = limit === 20;
+
+                    const newItems = serverData.items;
+                    let combinedItems;
+
+                    if (isNewLoad) {
+                        combinedItems = newItems;
+                    } else {
+                        // Se não for carga nova (é um "carregar mais"), combina os resultados.
+                        const prevItemsMap = new Map(prevAtendimentos.map(item => [item.id, item]));
+                        newItems.forEach(item => {
+                            prevItemsMap.set(item.id, item); // Adiciona ou atualiza
+                        });
+                        combinedItems = Array.from(prevItemsMap.values());
+                    }
+
+                    // Lógica para manter mensagens otimistas (em envio)
+                    const busyAtendimentoIds = new Set(
+                        Object.keys(sendingQueue)
+                            .filter(id => sendingQueue[id]?.length > 0)
+                            .map(id => parseInt(id, 10))
+                    );
+
+                    return combinedItems.map(at => {
+                        if (busyAtendimentoIds.has(at.id)) {
+                            const localVersion = prevAtendimentos.find(local => local.id === at.id);
+                            if (localVersion) {
+                                // Se existe uma versão local com mensagens em envio, usa ela.
+                                return localVersion;
+                            }
+                        }
+                        return at;
                     });
-                    return mergedAtendimentos;
                 });
-                setTotalAtendimentos(data.total);
+                setTotalAtendimentos(serverData.total);
             } else {
-                setAtendimentos(Array.isArray(data) ? data : []);
+                setAtendimentos(Array.isArray(serverData) ? serverData : []);
                 setTotalAtendimentos(0);
             }
             setError('');
@@ -1295,7 +1321,7 @@ function Mensagens() {
         } finally {
             if (isInitialLoad) setIsLoading(false);
         }
-    }, [searchTerm, sendingQueue, isProcessing]);
+    }, [searchTerm, sendingQueue, isProcessing, limit, activeFilter]); // <-- ADICIONA 'activeFilter' ÀS DEPENDÊNCIAS
 
     // --- Efeito: Polling Seguro (COM PAUSA EM SEGUNDO PLANO) ---
     useEffect(() => {
@@ -1317,6 +1343,8 @@ function Mensagens() {
 
         const handleVisibilityChange = () => {
             if (!document.hidden && isMounted) {
+                // --- ALTERADO: Reseta o limite para o valor inicial correto ---
+                setLimit(20);
                 clearTimeout(timeoutId);
                 poll();
             }
@@ -1329,6 +1357,13 @@ function Mensagens() {
         };
     }, [fetchData]);
 
+    // --- NOVO: Efeito para resetar o limite ao mudar o filtro ou a busca ---
+    useEffect(() => {
+        // Toda vez que o filtro ou o termo de busca mudar,
+        // reseta o limite para o valor inicial.
+        setLimit(20);
+    }, [activeFilter, searchTerm]);
+
     useEffect(() => {
         if (!Array.isArray(mensagens)) {
             setFilteredAtendimentos([]);
@@ -1337,14 +1372,7 @@ function Mensagens() {
 
         let filtered = mensagens;
 
-        // Lógica de filtro (original)
-        if (activeFilter === 'todos') {
-            filtered = mensagens;
-        } else {
-            filtered = mensagens.filter(at => at.status === activeFilter);
-        }
-
-        // --- INÍCIO DA MODIFICAÇÃO (SORT) ---
+        // A filtragem agora é feita no backend. O frontend apenas ordena.
         // Ordena a lista filtrada (b - a para decrescente, mais novo primeiro)
         const sortedFiltered = filtered.sort((a, b) => {
             // Usa a função helper definida fora do componente
@@ -1352,16 +1380,13 @@ function Mensagens() {
             const timeB = getLastMessageTimestamp(b);
             return timeB - timeA;
         });
-        // --- FIM DA MODIFICAÇÃO (SORT) ---
 
         // Usa a lista ORDENADA
         setFilteredAtendimentos(sortedFiltered);
 
-        // --- INÍCIO DA MODIFICAÇÃO (SELEÇÃO) ---
         // (Modificado para usar sortedFiltered)
         // Se nada estiver selecionado (carga inicial) E a lista ORDENADA tiver itens
         if (!selectedAtendimento && sortedFiltered.length > 0) {
-            // Seleciona o primeiro da lista
             setSelectedAtendimento(sortedFiltered[0]);
         }
         // --- FIM DA MODIFICAÇÃO (SELEÇÃO) ---
@@ -1839,6 +1864,16 @@ function Mensagens() {
         }
     };
 
+    // --- NOVO: Função para carregar mais atendimentos ---
+    const handleLoadMore = () => {
+        // Aumenta o limite e o useEffect de fetchData/polling vai pegar a mudança
+        setLimit(prevLimit => prevLimit + 20);
+        // Não é necessário chamar fetchData() aqui, pois a mudança no estado 'limit'
+        // já vai disparar o re-render e o useEffect que depende de 'fetchData' 
+        // (que por sua vez depende de 'limit') fará o trabalho.
+        // Para uma resposta mais imediata, podemos chamar, mas o polling já resolve.
+    };
+
     if (isLoading && !currentUser) {
         return <div className="flex h-screen items-center justify-center text-gray-600">A carregar interface de mensagens...</div>;
     }
@@ -1874,6 +1909,17 @@ function Mensagens() {
                         <p className="text-center text-gray-500 p-6">
                             Nenhum mensagem encontrado para este filtro.
                         </p>
+                    )}
+                    {/* --- Lógica do botão "Carregar Mais" --- */}
+                    {filteredAtendimentos.length > 0 && filteredAtendimentos.length < totalAtendimentos && (
+                        <div className="p-3 text-center border-t border-gray-200">
+                            <button
+                                onClick={handleLoadMore}
+                                className="w-full px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                            >
+                                Carregar Mais ({filteredAtendimentos.length}/{totalAtendimentos})
+                            </button>
+                        </div>
                     )}
                 </nav>
             </aside>
