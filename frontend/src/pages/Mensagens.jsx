@@ -1233,6 +1233,9 @@ function Mensagens() {
     // --- NOVO: Estado para controlar o limite de carregamento ---
     const [limit, setLimit] = useState(20);
 
+    // --- NOVO: Estado para o loading do botão "Carregar Mais" ---
+    const [isFetchingMore, setIsFetchingMore] = useState(false);
+
     const [modalMedia, setModalMedia] = useState(null); // { url: blobUrl, type: 'image'|'audio', filename: string }
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDownloadingMedia, setIsDownloadingMedia] = useState(false); // Para feedback no botão
@@ -1254,6 +1257,12 @@ function Mensagens() {
     // --- Fetch (User e Mensagens) ---
     const fetchData = useCallback(async (isInitialLoad = false) => {
         if (isInitialLoad) setIsLoading(true);
+
+        // Se não for uma carga inicial, significa que pode ser um "carregar mais" ou polling.
+        // Ativamos o estado de carregamento se o limite for maior que o inicial.
+        if (!isInitialLoad && limit > 20) {
+            setIsFetchingMore(true);
+        }
         try {
             const [userRes, atendimentosRes, personasRes, situationsRes] = await Promise.all([
                 api.get('/auth/me'),
@@ -1320,6 +1329,7 @@ function Mensagens() {
             if (isInitialLoad) setError('Não foi possível carregar os dados. Verifique a sua conexão.');
         } finally {
             if (isInitialLoad) setIsLoading(false);
+            setIsFetchingMore(false); // Desativa o loading do botão em todos os casos
         }
     }, [searchTerm, sendingQueue, isProcessing, limit, activeFilter]); // <-- ADICIONA 'activeFilter' ÀS DEPENDÊNCIAS
 
@@ -1866,12 +1876,10 @@ function Mensagens() {
 
     // --- NOVO: Função para carregar mais atendimentos ---
     const handleLoadMore = () => {
+        // Ativa o estado de loading imediatamente
+        setIsFetchingMore(true);
         // Aumenta o limite e o useEffect de fetchData/polling vai pegar a mudança
         setLimit(prevLimit => prevLimit + 20);
-        // Não é necessário chamar fetchData() aqui, pois a mudança no estado 'limit'
-        // já vai disparar o re-render e o useEffect que depende de 'fetchData' 
-        // (que por sua vez depende de 'limit') fará o trabalho.
-        // Para uma resposta mais imediata, podemos chamar, mas o polling já resolve.
     };
 
     if (isLoading && !currentUser) {
@@ -1915,9 +1923,16 @@ function Mensagens() {
                         <div className="p-3 text-center border-t border-gray-200">
                             <button
                                 onClick={handleLoadMore}
-                                className="w-full px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                                className="w-full px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-wait flex items-center justify-center gap-2"
+                                disabled={isFetchingMore}
                             >
-                                Carregar Mais ({filteredAtendimentos.length}/{totalAtendimentos})
+                                {isFetchingMore ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" />
+                                        A carregar...
+                                    </>
+                                ) : `Carregar Mais (${filteredAtendimentos.length}/${totalAtendimentos})`
+                                }
                             </button>
                         </div>
                     )}
