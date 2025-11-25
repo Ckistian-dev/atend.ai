@@ -762,7 +762,7 @@ function Mensagens() {
     // --- NOVA FUNÇÃO: Alterna um filtro na lista de filtros ativos ---
     const toggleFilter = (groupName) => {
         const filterGroups = {
-            atendimentos: ['Atendente Chamado', 'Concluído'],
+            atendimentos: ['Atendente Chamado'],
             bot_ia: ['Mensagem Recebida', 'Aguardando Resposta', 'Gerando Resposta'],
         };
 
