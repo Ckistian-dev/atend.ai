@@ -54,7 +54,7 @@ function Mensagens() {
 
     const [searchTerm, setSearchTerm] = useState('');
     // --- ALTERADO: activeFilters agora guarda os status, activeButtonGroup guarda o botão ativo ---
-    const [activeFilters, setActiveFilters] = useState(['Atendente Chamado', 'Concluído']);
+    const [activeFilters, setActiveFilters] = useState(['Atendente Chamado']);
     const [activeButtonGroup, setActiveButtonGroup] = useState('atendimentos'); // 'atendimentos' ou 'bot_ia'
 
     // --- NOVO: Estado para o termo de busca com debounce ---
