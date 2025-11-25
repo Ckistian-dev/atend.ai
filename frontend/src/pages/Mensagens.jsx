@@ -109,15 +109,23 @@ function Mensagens() {
         if (!isInitialLoad && limit > 20) {
             setIsFetchingMore(true);
         } 
+
         try {
-            // --- CORREÇÃO: Usa URLSearchParams para formatar a lista de status ---
             const params = new URLSearchParams({
-                search: debouncedSearchTerm || '', // <-- MUDANÇA AQUI
+                search: debouncedSearchTerm || '',
                 limit: limit,
             });
-            // Adiciona cada status ao parâmetro 'status'
-            if (activeFilters.length > 0) {
+
+            // --- ALTERADO: Adiciona filtros do popover (status e tags) à requisição ---
+            // Usa os filtros do popover se existirem, senão, usa os filtros dos botões principais.
+            if (statusFilters.length > 0) {
+                statusFilters.forEach(s => params.append('status', s));
+            } else if (activeFilters.length > 0) {
                 activeFilters.forEach(s => params.append('status', s));
+            }
+
+            if (tagFilters.length > 0) {
+                tagFilters.forEach(t => params.append('tags', t));
             }
 
             const [userRes, atendimentosRes, personasRes, situationsRes, tagsRes] = await Promise.all([
@@ -184,7 +192,7 @@ function Mensagens() {
             if (isInitialLoad) setIsLoading(false);
             setIsFetchingMore(false); // Desativa o loading do botão em todos os casos
         }
-    }, [debouncedSearchTerm, sendingQueue, isProcessing, limit, activeFilters, activeButtonGroup]);
+    }, [debouncedSearchTerm, sendingQueue, isProcessing, limit, activeFilters, activeButtonGroup, statusFilters, tagFilters]);
 
     // --- Efeito: Polling Seguro (COM PAUSA EM SEGUNDO PLANO) ---
     useEffect(() => {
@@ -235,59 +243,22 @@ function Mensagens() {
     // --- NOVO: Efeito para resetar o limite ao mudar o filtro ou a busca ---
     useEffect(() => {
         // Toda vez que o filtro ou o termo de busca mudar,
-        // reseta o limite para o valor inicial.
-        setLimit(20);
-    }, [activeButtonGroup, debouncedSearchTerm]);
-
-    // --- NOVO: Efeito para filtrar no frontend quando os filtros de popover mudam ---
-    useEffect(() => {
-        let filtered = [...mensagens];
-
-        // 1. Filtro por Status (do popover)
-        if (statusFilters.length > 0) {
-            const statusSet = new Set(statusFilters);
-            filtered = filtered.filter(at => statusSet.has(at.status));
-        }
-
-        // 2. Filtro por Tags (do popover)
-        if (tagFilters.length > 0) {
-            const tagSet = new Set(tagFilters);
-            filtered = filtered.filter(at =>
-                at.tags && at.tags.some(tag => tagSet.has(tag.name))
-            );
-        }
-
-        // A ordenação já acontece no useEffect abaixo, então só atualizamos a lista filtrada
-        setFilteredAtendimentos(filtered);
-
-    }, [statusFilters, tagFilters, mensagens]); // Re-filtra quando os filtros ou a lista principal mudam
+        // reseta o limite.
+        // Se os filtros do popover estiverem ativos, o limite é 25. Senão, 20.
+        const hasPopoverFilters = statusFilters.length > 0 || tagFilters.length > 0;
+        setLimit(hasPopoverFilters ? 20 : 20);
+    }, [activeButtonGroup, debouncedSearchTerm, statusFilters, tagFilters]);
 
     useEffect(() => {
         if (!Array.isArray(mensagens)) {
             setFilteredAtendimentos([]);
             return;
         }
-
-        let filtered = mensagens;
         
-        // --- LÓGICA DE FILTRAGEM ATUALIZADA ---
-        // A filtragem principal (busca e grupo de botões) ainda vem do backend.
-        // A filtragem detalhada (status e tags do popover) é aplicada no frontend.
-
-        // 1. Filtro por Status (do popover)
-        if (statusFilters.length > 0) {
-            const statusSet = new Set(statusFilters);
-            filtered = filtered.filter(at => statusSet.has(at.status));
-        }
-
-        // 2. Filtro por Tags (do popover)
-        if (tagFilters.length > 0) {
-            const tagSet = new Set(tagFilters);
-            filtered = filtered.filter(at =>
-                at.tags && at.tags.some(tag => tagSet.has(tag.name))
-            );
-        }
-
+        // --- LÓGICA DE FILTRAGEM REMOVIDA ---
+        // A filtragem agora é feita 100% no backend. O frontend apenas ordena os resultados recebidos.
+        // A variável 'mensagens' já contém a lista filtrada vinda da API.
+        let filtered = mensagens; 
 
         // Ordena a lista filtrada (b - a para decrescente, mais novo primeiro)
         const sortedFiltered = [...filtered].sort((a, b) => {
@@ -323,7 +294,7 @@ function Mensagens() {
                 setSelectedAtendimento(null);
             }
         }
-    }, [mensagens, selectedAtendimento, statusFilters, tagFilters]); // Adiciona dependências de filtro
+    }, [mensagens, selectedAtendimento]); // Remove dependências de filtro, pois a filtragem é via API
 
     // --- FUNÇÃO CORRIGIDA PARA USAR AXIOS (api) ---
     const handleViewMedia = async (mediaId, type, filename) => {
