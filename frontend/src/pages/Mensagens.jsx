@@ -11,6 +11,7 @@ import ContactItem from '../components/mensagens/ContactItem';
 import ChatBody from '../components/mensagens/ChatBody';
 import ChatFooter from '../components/mensagens/ChatFooter';
 import ChatPlaceholder from '../components/mensagens/ChatPlaceholder';
+import FilterPopover from '../components/mensagens/FilterPopover';
 import TemplateModal from '../components/mensagens/TemplateModal';
 
 const getTextColorForBackground = (hexColor) => {
@@ -58,6 +59,11 @@ function Mensagens() {
 
     // --- NOVO: Estado para o termo de busca com debounce ---
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+
+    // --- NOVOS ESTADOS PARA FILTRO DETALHADO ---
+    const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+    const [statusFilters, setStatusFilters] = useState([]); // Filtros de status do popover
+    const [tagFilters, setTagFilters] = useState([]); // Filtros de tag do popover
 
 
     const [selectedAtendimento, setSelectedAtendimento] = useState(null);
@@ -233,6 +239,29 @@ function Mensagens() {
         setLimit(20);
     }, [activeButtonGroup, debouncedSearchTerm]);
 
+    // --- NOVO: Efeito para filtrar no frontend quando os filtros de popover mudam ---
+    useEffect(() => {
+        let filtered = [...mensagens];
+
+        // 1. Filtro por Status (do popover)
+        if (statusFilters.length > 0) {
+            const statusSet = new Set(statusFilters);
+            filtered = filtered.filter(at => statusSet.has(at.status));
+        }
+
+        // 2. Filtro por Tags (do popover)
+        if (tagFilters.length > 0) {
+            const tagSet = new Set(tagFilters);
+            filtered = filtered.filter(at =>
+                at.tags && at.tags.some(tag => tagSet.has(tag.name))
+            );
+        }
+
+        // A ordenação já acontece no useEffect abaixo, então só atualizamos a lista filtrada
+        setFilteredAtendimentos(filtered);
+
+    }, [statusFilters, tagFilters, mensagens]); // Re-filtra quando os filtros ou a lista principal mudam
+
     useEffect(() => {
         if (!Array.isArray(mensagens)) {
             setFilteredAtendimentos([]);
@@ -240,10 +269,28 @@ function Mensagens() {
         }
 
         let filtered = mensagens;
+        
+        // --- LÓGICA DE FILTRAGEM ATUALIZADA ---
+        // A filtragem principal (busca e grupo de botões) ainda vem do backend.
+        // A filtragem detalhada (status e tags do popover) é aplicada no frontend.
 
-        // A filtragem agora é feita no backend. O frontend apenas ordena.
+        // 1. Filtro por Status (do popover)
+        if (statusFilters.length > 0) {
+            const statusSet = new Set(statusFilters);
+            filtered = filtered.filter(at => statusSet.has(at.status));
+        }
+
+        // 2. Filtro por Tags (do popover)
+        if (tagFilters.length > 0) {
+            const tagSet = new Set(tagFilters);
+            filtered = filtered.filter(at =>
+                at.tags && at.tags.some(tag => tagSet.has(tag.name))
+            );
+        }
+
+
         // Ordena a lista filtrada (b - a para decrescente, mais novo primeiro)
-        const sortedFiltered = filtered.sort((a, b) => {
+        const sortedFiltered = [...filtered].sort((a, b) => {
             // Usa a função helper definida fora do componente
             const timeA = getLastMessageTimestamp(a);
             const timeB = getLastMessageTimestamp(b);
@@ -276,7 +323,7 @@ function Mensagens() {
                 setSelectedAtendimento(null);
             }
         }
-    }, [mensagens, selectedAtendimento]); // activeFilter removido pois a filtragem vem do backend
+    }, [mensagens, selectedAtendimento, statusFilters, tagFilters]); // Adiciona dependências de filtro
 
     // --- FUNÇÃO CORRIGIDA PARA USAR AXIOS (api) ---
     const handleViewMedia = async (mediaId, type, filename) => {
@@ -759,6 +806,31 @@ function Mensagens() {
         }
     };
 
+    // --- NOVAS FUNÇÕES PARA O POPOVER DE FILTRO ---
+    const handleStatusFilterChange = (statusName) => {
+        setStatusFilters(prev =>
+            prev.includes(statusName)
+                ? prev.filter(s => s !== statusName)
+                : [...prev, statusName]
+        );
+        // Desativa o grupo de botões principal para evitar conflito
+        setActiveButtonGroup(null);
+        setActiveFilters([]);
+    };
+
+    const handleTagFilterChange = (tagName) => {
+        setTagFilters(prev =>
+            prev.includes(tagName)
+                ? prev.filter(t => t !== tagName)
+                : [...prev, tagName]
+        );
+    };
+
+    const handleClearAllFilters = () => {
+        setStatusFilters([]);
+        setTagFilters([]);
+    };
+
     // --- NOVAS FUNÇÕES PARA O EDITOR DE TAGS ---
     const handleToggleTagEditor = (atendimentoId) => {
         setOpenTagEditorId(prevId => (prevId === atendimentoId ? null : atendimentoId));
@@ -784,13 +856,28 @@ function Mensagens() {
 
     return (
         <div className="flex h-[93vh] bg-white">
-            <aside className="w-full md:w-[30%] lg:w-[25%] flex flex-col border-r border-gray-200 min-h-0">
-                <SearchAndFilter
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                    activeButtonGroup={activeButtonGroup} // Passa o grupo ativo
-                    toggleFilter={toggleFilter}     // Passa a função de toggle
-                />
+            <aside className="w-full md:w-[30%] lg:w-[25%] flex flex-col border-r border-gray-200 min-h-0 relative">
+                <div className="relative">
+                    <SearchAndFilter
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        activeButtonGroup={activeButtonGroup}
+                        toggleFilter={toggleFilter}
+                        onFilterIconClick={() => setIsFilterPopoverOpen(prev => !prev)}
+                        hasActiveFilters={statusFilters.length > 0 || tagFilters.length > 0}
+                    />
+                    <FilterPopover
+                        isOpen={isFilterPopoverOpen}
+                        onClose={() => setIsFilterPopoverOpen(false)}
+                        statusOptions={statusOptions}
+                        allTags={allTags}
+                        selectedStatus={statusFilters}
+                        onStatusChange={handleStatusFilterChange}
+                        selectedTags={tagFilters}
+                        onTagChange={handleTagFilterChange}
+                        onClearFilters={handleClearAllFilters}
+                    />
+                </div>
                 <div className="flex-1 overflow-y-auto">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center h-full text-gray-500">

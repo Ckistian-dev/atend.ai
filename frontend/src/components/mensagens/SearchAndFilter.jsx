@@ -1,9 +1,9 @@
 import React from 'react';
-import { Search, Users, Bot } from 'lucide-react';
+import { Search, Users, Bot, Filter } from 'lucide-react';
 
-const SearchAndFilter = ({ searchTerm, setSearchTerm, activeButtonGroup, toggleFilter }) => {
+const SearchAndFilter = ({ searchTerm, setSearchTerm, activeButtonGroup, toggleFilter, onFilterIconClick, hasActiveFilters }) => {
     const baseButtonClass = "px-3 py-1.5 text-sm font-medium rounded-lg transition-colors";
-    const activeButtonClass = "bg-blue-600 text-white shadow-sm";
+    const activeButtonClass = "bg-blue-600 text-white shadow-sm hover:bg-blue-700";
     const inactiveButtonClass = "bg-gray-100 text-gray-600 hover:bg-gray-200"; // Mantido para consistência
 
     return (
@@ -18,6 +18,16 @@ const SearchAndFilter = ({ searchTerm, setSearchTerm, activeButtonGroup, toggleF
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
+                <button
+                    onClick={onFilterIconClick}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 rounded-full text-gray-500 hover:bg-gray-200 hover:text-blue-600"
+                    title="Filtrar por status ou tag"
+                >
+                    <Filter size={18} />
+                    {hasActiveFilters && (
+                        <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-blue-500 ring-2 ring-white" />
+                    )}
+                </button>
             </div>
 
             {/* Botões de Filtro */}
