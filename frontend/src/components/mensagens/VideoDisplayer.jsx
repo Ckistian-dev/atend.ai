@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, Play, AlertCircle } from 'lucide-react';
-import api from '../api/axiosConfig';
+import api from '../../api/axiosConfig';
 
 const VideoDisplayer = ({ atendimentoId, mediaId, caption }) => {
     const [videoSrc, setVideoSrc] = useState(null);

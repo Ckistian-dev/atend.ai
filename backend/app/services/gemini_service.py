@@ -147,15 +147,15 @@ class GeminiService:
         else:
             formatted_history = self._format_history_for_prompt(db_history)
             media_analysis_prompt = {
-                "instrucao_geral": "Você é um especialista em análise de documentos e imagens. Sua tarefa é analisar o arquivo enviado pelo contato e descrever seu conteúdo de forma concisa e objetiva para ser usado como uma anotação interna no CRM.",
+                "instrucao_geral": "Você é um especialista em extração de dados de documentos e imagens. Sua tarefa é analisar o arquivo enviado pelo contato e extrair as informações relevantes, usando o contexto da conversa e da planilha para entender o que é importante. O resultado será usado como contexto para outra IA e não deve ter o tom da persona.",
                 "regras": [
-                    "1. Foque no conteúdo do arquivo (imagem ou documento).",
-                    "2. Conecte o conteúdo do arquivo com o que foi discutido na conversa, se aplicável, usando o `historico_conversa` e o `contexto_planilha`.",
-                    "3. Siga o tom de voz definido na `configuracao_persona` para formular a sua análise.",
-                    "4. Sua resposta final deve ser APENAS o texto da análise, sem nenhuma outra palavra, título ou formatação."
+                    "1. Foco na Extração de Dados: Sua prioridade não é apenas descrever, mas EXTRAIR os dados importantes do arquivo (imagem ou documento). Use o `historico_conversa` e o `contexto_planilha` para identificar quais informações são relevantes (ex: dados de um produto, informações de um comprovante, etc.).",
+                    "2. Seja um Extrator, Não um Assistente: Sua resposta deve ser puramente a informação extraída. Não converse, não cumprimente, não use a persona do assistente. Apenas forneça os dados.",
+                    "3. Transcrição Literal se Necessário: Se o arquivo for um documento de texto ou um comprovante, transcreva as informações importantes de forma literal e estruturada.",
+                    "4. Resposta Limpa e Direta: Sua resposta final deve ser APENAS o texto da análise/transcrição, sem nenhuma outra palavra, título ou formatação."
                 ],
                 "contexto_planilha": contexto_planilha or {"aviso": "Nenhum contexto de planilha foi fornecido para esta análise."},
-                "historico_conversa": formatted_history
+                "historico_conversa": formatted_history,
             }
             prompt_text = json.dumps(media_analysis_prompt, ensure_ascii=False, indent=2, cls=SetEncoder)
             prompt_parts.extend([prompt_text, media_data])
@@ -211,7 +211,8 @@ class GeminiService:
                         "chaves": {
                             "mensagem_para_enviar": "O texto da mensagem a ser enviada ao contato. Se decidir que não deve enviar uma mensagem agora, o valor deve ser null.",
                             "nova_situacao": "Aguardando Resposta, Atendente Chamado ou Concluído.",
-                            "observacoes": "Um resumo interno e conciso da interação para salvar no CRM.",
+                            "nome_contato": "O nome do contato, se ele se apresentar ou for mencionado. Se o nome já existir nos `dados_atuais_conversa` ou não for mencionado, retorne o valor existente ou null.",
+                            "observacoes": "Um resumo da conversa. Seja conciso e objetivo, focando nos pontos principais da interação para ser salvo como um registro interno no CRM.",
                             "arquivos_anexos": {
                                 "descricao": "Uma LISTA de arquivos a serem enviados. Se não houver, o valor deve ser null ou uma lista vazia [].",
                                 "formato_item": {
@@ -230,6 +231,7 @@ class GeminiService:
                     "arquivos_disponiveis": arquivos_drive_json or {"aviso": "Nenhum arquivo do Drive vinculado."},
                     "dados_atuais_conversa": {
                         "tarefa_imediata": "Analisar a última mensagem do contato e formular a PRÓXIMA resposta seguindo a `instrucao_geral`.",
+                        "nome_contato_atual": whatsapp.nome_contato,
                         "historico_conversa": formatted_history
                     }
                 }

@@ -25,18 +25,6 @@ class Settings(BaseSettings):
     
     GOOGLE_SERVICE_ACCOUNT_JSON: str
     
-    # --- AWS SQS ---
-    SQS_WEBHOOK_QUEUE_URL: str = os.getenv("SQS_WEBHOOK_QUEUE_URL", "")
-    
-    # Opcional: Para rodar com SQS local (ex: LocalStack)
-    # Ex: "http://localstack:4566"
-    AWS_ENDPOINT_URL: Optional[str] = os.getenv("AWS_ENDPOINT_URL", None) 
-    AWS_REGION: str = os.getenv("AWS_REGION", "us-east-1")
-    
-    # Chaves para desenvolvimento local (Em Fargate, use IAM Roles)
-    AWS_ACCESS_KEY_ID: Optional[str] = os.getenv("AWS_ACCESS_KEY_ID", None)
-    AWS_SECRET_ACCESS_KEY: Optional[str] = os.getenv("AWS_SECRET_ACCESS_KEY", None)
-
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../api/axiosConfig';
-import { Search, MessageSquare, Edit, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, MessageSquare, Edit, Trash2, AlertTriangle, ChevronLeft, ChevronRight, X as XIcon, Tag, Download, Plus, MessageSquarePlus, Loader2 } from 'lucide-react';
 
 // --- MODAL GENÉRICO ---
 const Modal = ({ onClose, children }) => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm animate-fade-in" onClick={onClose}>
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 animate-fade-in-up" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm animate-fade-in-up-fast" onClick={onClose}>
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-xl mx-4 animate-fade-in-up" onClick={e => e.stopPropagation()}>
             {children}
         </div>
     </div>
@@ -33,7 +33,7 @@ const ConversationModal = ({ onClose, conversation, contactIdentifier }) => {
         <Modal onClose={onClose}>
             <div className="h-[80vh] flex flex-col">
                 <div className="p-4 border-b bg-gray-50 rounded-t-lg">
-                    <h2 className="text-lg font-semibold text-gray-800">Conversa com {contactIdentifier}</h2>
+                    <h2 className="text-lg font-semibold text-gray-800">Histórico de: {contactIdentifier}</h2>
                 </div>
                 <div ref={chatContainerRef} className="flex-1 p-4 md:p-6 overflow-y-auto space-y-4 bg-[url('https://i.redd.it/qwd83nc4xxf41.jpg')] bg-cover bg-center">
                     {(messages || []).map((msg, index) => { // Added fallback just in case
@@ -92,15 +92,43 @@ const Pagination = ({ currentPage, totalPages, onPageChange, totalItems }) => {
 };
 
 // --- MODAL DE EDIÇÃO ---
-const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose }) => {
+const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allTags, setAllTags }) => {
     const [status, setStatus] = useState(atendimento.status);
     // Garante que personaId tenha um valor padrão (null ou o primeiro ID) se o atual for inválido
     const [personaId, setPersonaId] = useState(atendimento.active_persona_id ?? (personas?.[0]?.id ?? null));
+    const [currentTags, setCurrentTags] = useState(atendimento.tags || []);
+    const [newTagName, setNewTagName] = useState('');
+    const [newTagColor, setNewTagColor] = useState('#6b7280');
+
+    const handleAddTag = () => {
+        if (newTagName.trim() && !currentTags.some(t => t.name.toLowerCase() === newTagName.trim().toLowerCase())) {
+            const newTag = { name: newTagName.trim(), color: newTagColor };
+            setCurrentTags([...currentTags, newTag]);
+            // Adiciona à lista global se for nova
+            if (!allTags.some(t => t.name.toLowerCase() === newTag.name.toLowerCase())) {
+                setAllTags([...allTags, newTag]);
+            }
+            setNewTagName('');
+            setNewTagColor('#6b7280');
+        }
+    };
+
+    const handleToggleTag = (tag) => {
+        if (currentTags.some(t => t.name === tag.name)) {
+            setCurrentTags(currentTags.filter(t => t.name !== tag.name));
+        } else {
+            setCurrentTags([...currentTags, tag]);
+        }
+    };
+
+    const handleRemoveTag = (tagName) => {
+        setCurrentTags(currentTags.filter(t => t.name !== tagName));
+    };
 
     const handleSave = () => {
         // Converte personaId para número ao salvar, tratando null/undefined
         const finalPersonaId = personaId ? parseInt(personaId, 10) : null;
-        onSave(atendimento.id, { status, active_persona_id: finalPersonaId });
+        onSave(atendimento.id, { status, active_persona_id: finalPersonaId, tags: currentTags });
         onClose();
     };
 
@@ -109,27 +137,70 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose }) =>
         ? personas.map(p => <option key={p.id} value={p.id}>{p.nome_config}</option>)
         : [<option key="loading" value="" disabled>Carregando...</option>]; // Adiciona um fallback visual
 
+    const availableTags = allTags.filter(
+        globalTag => !currentTags.some(currentTag => currentTag.name === globalTag.name)
+    );
+
     return (
-        <Modal onClose={onClose}>
-            <div className="p-6">
+        <Modal onClose={onClose}> {/* max-w-xl */}
+            <div className="p-8"> {/* p-8 */}
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Editar Atendimento</h3>
                 <p className="text-sm text-gray-500 mb-6">A alterar o atendimento de: <strong className="text-gray-700">{atendimento.whatsapp}</strong></p>
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Situação</label>
-                        <select value={status} onChange={e => setStatus(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Situação</label>
+                        <select value={status} onChange={e => setStatus(e.target.value)} className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             {(statusOptions || []).map(opt => (
                                 <option key={opt.nome} value={opt.nome}>{opt.nome}</option>
                             ))}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Persona Ativa</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Persona Ativa</label>
                         {/* Garante que o valor do select seja uma string ou vazio */}
-                        <select value={personaId ?? ''} onChange={e => setPersonaId(e.target.value === '' ? null : parseInt(e.target.value, 10))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        <select value={personaId ?? ''} onChange={e => setPersonaId(e.target.value === '' ? null : parseInt(e.target.value, 10))} className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                             <option value="">-- Nenhuma --</option> {/* Opção para selecionar nenhuma persona */}
                             {personaOptions}
                         </select>
+                    </div>
+
+                    {/* Seção de Tags */}
+                    <div className="pt-6 border-t">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                        <div className="flex flex-wrap gap-2 mb-4 p-2 bg-gray-50 rounded-md min-h-[40px]">
+                            {currentTags.map(tag => (
+                                <span key={tag.name} className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-white rounded-full" style={{ backgroundColor: tag.color }}>
+                                    {tag.name}
+                                    <button onClick={() => handleRemoveTag(tag.name)} className="opacity-70 hover:opacity-100"><XIcon size={12} /></button>
+                                </span>
+                            ))}
+                        </div>
+
+                        <div className="mb-4">
+                            <p className="block text-sm font-medium text-gray-700 mb-2">Adicionar tag existente:</p>
+                            <div className="flex flex-wrap gap-2">
+                                {availableTags.map(tag => (
+                                    <button key={tag.name} type="button" onClick={() => handleToggleTag(tag)} className="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-200 rounded-full hover:bg-gray-300">
+                                        + {tag.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <p className="block text-sm font-medium text-gray-700 mb-2">Criar nova tag:</p>
+                            <div className="flex items-center gap-2">
+                                <input type="color" value={newTagColor} onChange={e => setNewTagColor(e.target.value)} className="h-8 w-8 p-0 border-none rounded" />
+                                <input
+                                    type="text"
+                                    value={newTagName}
+                                    onChange={e => setNewTagName(e.target.value)}
+                                    placeholder="Nome da nova tag..."
+                                    className="flex-grow block w-full px-3 py-2 text-sm rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                />
+                                <button type="button" onClick={handleAddTag} className="px-4 py-2 bg-gray-700 text-white text-sm rounded-md hover:bg-gray-800">Adicionar</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div className="mt-8 flex justify-end gap-4">
@@ -160,6 +231,156 @@ const DeleteConfirmationModal = ({ atendimento, onConfirm, onClose }) => (
     </Modal>
 );
 
+// --- NOVO: MODAL DE CRIAÇÃO ---
+const CreateModal = ({ personas, statusOptions, templates, onSave, onClose }) => {
+    const [whatsapp, setWhatsapp] = useState('');
+    const [nomeContato, setNomeContato] = useState('');
+    const [status, setStatus] = useState('Novo Atendimento');
+    const [personaId, setPersonaId] = useState(personas?.[0]?.id ?? '');
+
+    // Estados para o template
+    const [selectedTemplateName, setSelectedTemplateName] = useState('');
+    const [templateVariables, setTemplateVariables] = useState({});
+
+    const selectedTemplate = useMemo(() => {
+        if (!selectedTemplateName) return null;
+        return templates.find(t => t.name === selectedTemplateName);
+    }, [selectedTemplateName, templates]);
+
+    const templateVariableNames = useMemo(() => {
+        if (!selectedTemplate) return [];
+        const headerText = selectedTemplate.components.find(c => c.type === 'HEADER')?.text || '';
+        const bodyText = selectedTemplate.components.find(c => c.type === 'BODY')?.text || '';
+        const combinedText = `${headerText} ${bodyText}`;
+        // CORREÇÃO: A regex agora aceita palavras (\w+) além de apenas dígitos (\d+).
+        const matches = combinedText.match(/{{\s*(\w+)\s*}}/g) || [];
+        return [...new Set(matches.map(v => v.replace(/[{}]/g, '').trim()))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    }, [selectedTemplate]);
+
+    // --- NOVO: Lógica para gerar o texto de preview ---
+    const previewText = useMemo(() => {
+        if (!selectedTemplate) return '';
+
+        const header = selectedTemplate.components.find(c => c.type === 'HEADER')?.text || '';
+        const body = selectedTemplate.components.find(c => c.type === 'BODY')?.text || '';
+        let combinedText = `${header}\n${body}`.trim();
+
+        // Substitui as variáveis no texto
+        return combinedText.replace(/{{\s*(\w+)\s*}}/g, (match, varName) => {
+            const value = templateVariables[varName];
+            // Se a variável tiver um valor, usa. Senão, mostra o placeholder.
+            return value
+                ? `<strong class="font-bold text-black">${value}</strong>`
+                : `<span class="italic text-blue-600 opacity-80">${match}</span>`;
+        });
+    }, [selectedTemplate, templateVariables]);
+
+
+    useEffect(() => {
+        const initialVars = templateVariableNames.reduce((acc, name) => {
+            acc[name] = '';
+            return acc;
+        }, {});
+        setTemplateVariables(initialVars);
+    }, [templateVariableNames]);
+
+    const handleSave = () => {
+        if (!whatsapp.trim()) {
+            alert("O número do WhatsApp é obrigatório.");
+            return;
+        }
+
+        const payload = {
+            whatsapp: whatsapp.trim(),
+            nome_contato: nomeContato.trim() || null,
+            status,
+            active_persona_id: personaId ? parseInt(personaId, 10) : null,
+        };
+
+        if (selectedTemplate) {
+            payload.template_name = selectedTemplate.name;
+            payload.template_language_code = selectedTemplate.language;
+            payload.template_components = [
+                { type: 'body', parameters: templateVariableNames.map(name => ({ type: 'text', text: templateVariables[name] || '' })) }
+            ];
+        }
+
+        onSave(payload);
+        onClose();
+    };
+
+    return (
+        <Modal onClose={onClose}> {/* max-w-xl */}
+            <div className="p-8"> {/* p-8 */}
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">Criar Novo Atendimento</h3>
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp*</label>
+                        <input type="text" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="5511999998888" className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Contato</label>
+                        <input type="text" value={nomeContato} onChange={e => setNomeContato(e.target.value)} className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder='Digite o Nome' />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Situação Inicial</label>
+                        <select value={status} onChange={e => setStatus(e.target.value)} className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            {(statusOptions || []).map(opt => <option key={opt.nome} value={opt.nome}>{opt.nome}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Persona Inicial</label>
+                        <select value={personaId} onChange={e => setPersonaId(e.target.value)} className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">-- Nenhuma --</option>
+                            {(personas || []).map(p => <option key={p.id} value={p.id}>{p.nome_config}</option>)}
+                        </select>
+                    </div>
+
+                    {/* Seção de Template */}
+                    <div className="pt-6 border-t"> {/* pt-6 */}
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Iniciar com Template (Opcional)</label>
+                        <select value={selectedTemplateName} onChange={e => setSelectedTemplateName(e.target.value)} className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">Nenhum Template</option>
+                            {(templates || []).map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                        </select>
+                    </div>
+
+                    {/* --- INÍCIO: Seção de Preview e Variáveis --- */}
+                    {selectedTemplate && (
+                        <div className="space-y-4 pt-4">
+                            {/* Preview da Mensagem */}
+                            <div className="p-4 bg-gray-100 rounded-lg" style={{ backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)), url('https://static.vecteezy.com/system/resources/previews/021/736/713/non_2x/doodle-lines-arrows-circles-and-curves-hand-drawn-design-elements-isolated-on-white-background-for-infographic-illustration-vector.jpg')`, backgroundSize: 'contain' }}>
+                                <h4 className="text-sm font-semibold text-gray-700 mb-3">Pré-visualização</h4>
+                                <div className="flex justify-end">
+                                    <div className="relative max-w-md py-2 px-3 rounded-lg shadow-sm break-words bg-[#d9fdd3] text-gray-800">
+                                        <p className="whitespace-pre-wrap text-sm" dangerouslySetInnerHTML={{ __html: previewText.replace(/\n/g, '<br />') }} />
+                                        <span className="text-xs text-gray-400 float-right ml-2 mt-1">
+                                            {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Inputs das Variáveis */}
+                            {templateVariableNames.length > 0 && templateVariableNames.map(name => (
+                                <div key={name}>
+                                    <label className="block text-xs font-mono text-gray-500 mb-1">{`{{${name}}}`}</label>
+                                    <input type="text" value={templateVariables[name] || ''} onChange={e => setTemplateVariables(prev => ({ ...prev, [name]: e.target.value }))} placeholder={`Valor para {{${name}}}`}
+                                        className="block w-full px-3 py-2 text-sm rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                <div className="mt-8 flex justify-end gap-4">
+                    <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">Cancelar</button>
+                    <button type="button" onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">Criar Atendimento</button>
+                </div>
+            </div>
+        </Modal>
+    );
+};
+
 
 // --- COMPONENTE PRINCIPAL DA PÁGINA ---
 function Atendimentos() {
@@ -171,10 +392,13 @@ function Atendimentos() {
     const [searchParams, setSearchParams] = useSearchParams(); // Adicionado setSearchParams
     const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
 
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [modalData, setModalData] = useState({ type: null, data: null });
 
     const [statusOptions, setStatusOptions] = useState([]); // Agora é dinâmico
     const [userData, setUserData] = useState(null); // Novo
+    const [templates, setTemplates] = useState([]); // Novo para templates
+    const [allTags, setAllTags] = useState([]); // Para o modal de edição
 
     const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1', 10)); // Lê a página da URL
     const [totalPages, setTotalPages] = useState(0);
@@ -196,19 +420,23 @@ function Atendimentos() {
                 page: currentPage,
                 limit: limit
             };
-            const [atendimentosRes, personasRes, userRes, situationsRes] = await Promise.all([
+            const [atendimentosRes, personasRes, userRes, situationsRes, tagsRes, templatesRes] = await Promise.all([
                 api.get('/atendimentos/', { params }),
                 api.get('/configs/'),
                 api.get('/auth/me'),
-                api.get('/configs/situations') // <-- ADICIONADO: Busca as situações
+                api.get('/configs/situations'),
+                api.get('/atendimentos/tags'),
+                api.get('/atendimentos/whatsapp/templates') // <-- NOVO: Busca de templates
             ]);
 
             setAtendimentos(atendimentosRes.data.items);
             setTotalAtendimentos(atendimentosRes.data.total);
             setTotalPages(Math.ceil(atendimentosRes.data.total / limit));
+            setAllTags(tagsRes.data);
             setPersonas(personasRes.data);
             setUserData(userRes.data);
             setStatusOptions(situationsRes.data); // <-- ADICIONADO: Define o estado com os dados da API
+            setTemplates(templatesRes.data); // <-- NOVO: Salva os templates
 
             // Atualiza a URL com os parâmetros atuais
             setSearchParams(params, { replace: true });
@@ -330,6 +558,26 @@ function Atendimentos() {
         }
     };
 
+    const handleCreate = async (newAtendimentoData) => {
+        try {
+            const response = await api.post('/atendimentos/', newAtendimentoData);
+            // Adiciona o novo atendimento no início da lista para feedback imediato
+            setAtendimentos(prev => [response.data, ...prev]);
+            setTotalAtendimentos(prev => prev + 1);
+            setIsCreateModalOpen(false); // Fecha o modal
+        } catch (err) {
+            console.error("Erro ao criar atendimento:", err);
+            let errorMessage = 'Erro ao criar o atendimento.';
+            if (err.response?.status === 409) {
+                errorMessage = 'Já existe um atendimento para este número de WhatsApp.';
+            } else if (err.response?.data?.detail) {
+                errorMessage = err.response.data.detail;
+            }
+            alert(errorMessage);
+            // Não fecha o modal em caso de erro para o usuário corrigir
+        }
+    };
+
     // --- NOVA FUNÇÃO DE ESTILO (DINÂMICA) ---
     const getStatusStyleAndClass = (status) => {
         const baseClasses = "px-3 py-1 text-xs font-semibold rounded-full inline-block text-center min-w-[140px]";
@@ -349,12 +597,97 @@ function Atendimentos() {
         return { style: {}, className: `${baseClasses} bg-gray-100 text-gray-600` };
     };
 
+    const handleExport = async () => {
+        try {
+            // Busca todos os atendimentos sem paginação para exportar
+            const response = await api.get('/atendimentos/', {
+                params: {
+                    search: searchTerm,
+                    limit: 9999, // Um limite alto para buscar todos os resultados filtrados
+                    page: 1
+                }
+            });
+            const itemsToExport = response.data.items;
+
+            if (itemsToExport.length === 0) {
+                alert("Nenhum atendimento para exportar com os filtros atuais.");
+                return;
+            }
+
+            // --- INÍCIO DA CONVERSÃO PARA CSV ---
+            const headers = [
+                "WhatsApp", "Nome do Contato", "Situação", "Observações", 
+                "Tags", "Nome da Persona Ativa", 
+                "Criado em", "Última Atualização", "Conversa"
+            ];
+
+            const csvRows = [headers.join(',')]; // Adiciona o cabeçalho
+
+            const escapeCsvCell = (cell) => {
+                if (cell === null || cell === undefined) return '""';
+                const strCell = String(cell);
+                // Se a célula contém vírgula, aspas ou quebra de linha, envolve com aspas
+                if (strCell.includes(',') || strCell.includes('"') || strCell.includes('\n')) {
+                    // Escapa as aspas internas duplicando-as
+                    return `"${strCell.replace(/"/g, '""')}"`;
+                }
+                return `"${strCell}"`; // Envolve tudo em aspas para segurança
+            };
+
+            for (const item of itemsToExport) {
+                const tags = item.tags ? item.tags.map(t => t.name).join('; ') : '';
+                const personaName = item.active_persona ? item.active_persona.nome_config : '';
+                
+                const row = [
+                    item.whatsapp, item.nome_contato, item.status, item.observacoes,
+                    tags, personaName, 
+                    item.created_at, item.updated_at, item.conversa
+                ].map(escapeCsvCell);
+                
+                csvRows.push(row.join(','));
+            }
+            // --- FIM DA CONVERSÃO PARA CSV ---
+
+            // Dispara o download no navegador
+            const csvContent = csvRows.join('\n');
+            const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' }); // Adiciona BOM para Excel
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `atendimentos_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+        } catch (err) {
+            console.error("Erro ao exportar atendimentos:", err);
+            alert("Ocorreu um erro ao tentar exportar os dados. Tente novamente.");
+        }
+    };
+
     return (
         <div className="p-6 md:p-10 bg-gray-50 min-h-screen">
             <div className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-800">Atendimentos</h1>
                     <p className="text-gray-500 mt-1">Visualize e gerencie todas as conversas ativas.</p>
+                </div>
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg shadow-md text-sm font-medium hover:bg-green-700 transition-colors"
+                    >
+                        <Plus size={16} />
+                        Novo Atendimento
+                    </button>
+                    <button
+                        onClick={handleExport}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md text-sm font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                    >
+                        <Download size={16} />
+                        Exportar
+                    </button>
                 </div>
             </div>
 
@@ -383,28 +716,49 @@ function Atendimentos() {
                     <table className="w-full text-left">
                         <thead className="border-b-2 border-gray-200">
                             <tr>
-                                <th className="p-4 text-sm font-semibold text-gray-600">Contato (WhatsApp)</th>
+                                <th className="p-4 text-sm font-semibold text-gray-600">Contato</th>
                                 <th className="p-4 text-sm font-semibold text-gray-600">Última Atualização</th>
                                 <th className="p-4 text-sm font-semibold text-gray-600 text-center">Situação</th>
-                                <th className="p-4 text-sm font-semibold text-gray-600">Observação da IA</th>
+                                <th className="p-4 text-sm font-semibold text-gray-600 text-center">Tags</th>
+                                <th className="p-4 text-sm font-semibold text-gray-600">Resumo da Conversa</th>
                                 <th className="p-4 text-sm font-semibold text-gray-600 text-center">Persona Ativa</th>
                                 <th className="p-4 text-sm font-semibold text-gray-600 text-center">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td colSpan="6" className="text-center p-8 text-gray-500">A carregar atendimentos...</td></tr>
+                                <tr><td colSpan="7" className="text-center p-8 text-gray-500">A carregar atendimentos...</td></tr>
                             ) : (
                                 (atendimentos || []).map((at) => { // Fallback principal aqui
                                     const renderProps = getStatusStyleAndClass(at.status);
                                     return (
                                         <tr key={at.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                            <td className="p-4 font-medium text-gray-800">{at.whatsapp ?? 'N/A'}</td> {/* Fallback para contato */}
+                                            <td className="p-4">
+                                                {at.nome_contato ? (
+                                                    <>
+                                                        <div className="font-semibold text-gray-900">{at.nome_contato}</div>
+                                                        <div className="text-xs text-gray-500">{at.whatsapp}</div>
+                                                    </>
+                                                ) : (
+                                                    <div className="font-semibold text-gray-900">{at.whatsapp}</div>
+                                                )}
+                                            </td>
                                             <td className="p-4 text-sm text-gray-600">{at.updated_at ? new Date(at.updated_at).toLocaleString('pt-BR') : 'N/A'}</td> {/* Fallback para data */}
                                             <td className="p-4 text-center">
                                                 <span className={renderProps.className} style={renderProps.style}>
                                                     {at.status ?? 'N/A'}
                                                 </span>
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                <div className="flex justify-center items-center flex-wrap gap-1.5">
+                                                    {(at.tags && at.tags.length > 0) ? (
+                                                        at.tags.map(tag => (
+                                                            <span key={tag.name} className="px-2 py-0.5 text-xs font-medium text-white rounded-full" style={{ backgroundColor: tag.color }}>
+                                                                {tag.name}
+                                                            </span>
+                                                        ))
+                                                    ) : <span className="text-gray-400 text-xs italic">Nenhuma</span>}
+                                                </div>
                                             </td>
                                             <td className="p-4 text-sm text-gray-600 max-w-xl truncate" title={at.observacoes}> {/* Removido truncate */}
                                                 {at.observacoes ? (
@@ -448,9 +802,10 @@ function Atendimentos() {
             </div>
 
             {/* Modais */}
-            {modalData.type === 'conversation' && modalData.data && <ConversationModal onClose={handleCloseModals} conversation={modalData.data.conversa} contactIdentifier={modalData.data.atendimentos?.whatsapp} />}
-            {modalData.type === 'edit' && modalData.data && <EditModal onClose={handleCloseModals} atendimento={modalData.data} personas={personas} statusOptions={statusOptions} onSave={handleSaveEdit} />}
+            {modalData.type === 'conversation' && modalData.data && <ConversationModal onClose={handleCloseModals} conversation={modalData.data.conversa} contactIdentifier={modalData.data.nome_contato || modalData.data.whatsapp} />}
+            {modalData.type === 'edit' && modalData.data && <EditModal onClose={handleCloseModals} atendimento={modalData.data} personas={personas} statusOptions={statusOptions} onSave={handleSaveEdit} allTags={allTags} setAllTags={setAllTags} />}
             {modalData.type === 'delete' && modalData.data && <DeleteConfirmationModal onClose={handleCloseModals} atendimento={modalData.data} onConfirm={handleConfirmDelete} />}
+            {isCreateModalOpen && <CreateModal onClose={() => setIsCreateModalOpen(false)} onSave={handleCreate} personas={personas} statusOptions={statusOptions} templates={templates} />}
         </div>
     );
 }

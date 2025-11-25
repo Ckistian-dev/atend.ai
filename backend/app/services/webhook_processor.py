@@ -66,6 +66,17 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
 
         if msg_type == 'text':
             formatted_msg_content = message_data.get('text', {}).get('body', '').strip()
+
+            # Comando especial para resetar/deletar o atendimento
+            if formatted_msg_content == "/reset":
+                logger.info(f"WBP Webhook: Comando /reset recebido de {cleaned_sender_number}. Deletando atendimento ID {atendimento_id}.")
+                async with SessionLocal() as db_delete_session:
+                    atendimento_to_delete = await db_delete_session.get(models.Atendimento, atendimento_id)
+                    if atendimento_to_delete:
+                        await db_delete_session.delete(atendimento_to_delete)
+                        await db_delete_session.commit()
+                        logger.info(f"WBP Webhook: Atendimento {atendimento_id} DELETADO com sucesso.")
+                return # Finaliza o processamento para esta mensagem
         
         elif msg_type in ['image', 'audio', 'video', 'document', 'sticker']:
             media_obj = message_data.get(msg_type, {})
@@ -123,7 +134,7 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
                         media_info_gemini, current_conversa_list, persona_config.contexto_json, db_gemini_ctx, user_for_gemini
                     )
 
-                prefix = "[Áudio transcrito]" if 'audio' in mime_type_original else f"[Análise de Mídia ({mime_type_original})]"
+                prefix = "[Áudio]" if 'audio' in mime_type_original else f"[Envio de Mídia ({mime_type_original})]"
                 formatted_msg_content = f"{prefix}: {analysis_result or 'Falha na análise'}"
                 if caption: formatted_msg_content += f"\n[Legenda]: {caption}"
 

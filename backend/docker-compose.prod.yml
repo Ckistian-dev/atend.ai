@@ -42,7 +42,7 @@ services:
   # --- API (FastAPI) ---
   api:
     # MUDANÇA AQUI: Agora aponta para o Docker Hub
-    image: ckistian/atendai-backend:latest
+    image: ckistian/atendai-backend:v1.0.2
     container_name: atendai_api
     restart: always
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
@@ -63,7 +63,7 @@ services:
 
   # --- Worker Webhook ---
   worker-webhook:
-    image: ckistian/atendai-backend:latest
+    image: ckistian/atendai-backend:v1.0.2
     container_name: atendai_worker_webhook
     restart: always
     command: ["python", "-m", "app.worker_webhook"]
@@ -79,7 +79,7 @@ services:
 
   # --- Worker Agent ---
   worker-agent:
-    image: ckistian/atendai-backend:latest
+    image: ckistian/atendai-backend:v1.0.2
     container_name: atendai_worker_agent
     restart: always
     command: ["python", "-m", "app.worker_agent"]

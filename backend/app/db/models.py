@@ -46,12 +46,14 @@ class Atendimento(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     whatsapp: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    nome_contato: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     status: Mapped[str] = mapped_column(String(50), default="Aguardando Resposta", index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     active_persona_id: Mapped[Optional[int]] = mapped_column(ForeignKey('configs.id'), nullable=True)
     conversa: Mapped[Optional[str]] = mapped_column(Text, default="[]")
     observacoes: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="")
+    tags: Mapped[Optional[List[Dict[str, str]]]] = mapped_column(JSONB, nullable=True, default=list)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), index=True)
 
     owner: Mapped["User"] = relationship(back_populates="atendimentos")

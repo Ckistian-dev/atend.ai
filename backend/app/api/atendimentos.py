@@ -39,13 +39,15 @@ async def get_atendimentos(
     current_user: models.User = Depends(dependencies.get_current_active_user),
     # Parâmetros de query para busca e paginação, com valores padrão e validações
     search: Optional[str] = Query(None, description="Termo de busca para contato, status ou observação"),
+    status: Optional[List[str]] = Query(None, description="Lista de status para filtrar"),
     page: int = Query(1, ge=1, description="Número da página"),
-    limit: int = Query(20, ge=1, le=1000, description="Itens por página")
+    limit: int = Query(20, ge=1, le=10000, description="Itens por página")
 ):
     """
     Lista todos os atendimentos para o usuário logado, com suporte a busca e paginação.
     - `search`: Filtra os resultados por número de WhatsApp, status ou observações.
     - `page`: Define a página de resultados a ser retornada.
+    - `status`: Filtra por uma lista de status específicos.
     - `limit`: Define o número máximo de itens por página.
     """
     
@@ -57,6 +59,11 @@ async def get_atendimentos(
         select(models.Atendimento)
         .where(models.Atendimento.user_id == current_user.id)
     )
+
+    # --- NOVO: Adiciona filtro por status, se fornecido ---
+    # A query agora pode receber uma lista de status (ex: status=Concluído&status=Atendente Chamado)
+    if status:
+        stmt_base = stmt_base.where(models.Atendimento.status.in_(status))
 
     # Se um termo de busca foi fornecido, adiciona a condição `WHERE` à query
     if search:
@@ -117,6 +124,53 @@ async def update_atendimento(
     await db.refresh(updated_atendimento)
     return updated_atendimento
 
+@router.post("/", response_model=schemas.Atendimento, status_code=201)
+async def create_atendimento(
+    atendimento_in: schemas.AtendimentoCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(dependencies.get_current_active_user),
+    whatsapp_service: WhatsAppService = Depends(get_whatsapp_service) # Adicionado
+):
+    """
+    Cria um novo atendimento manualmente. Se um template for fornecido,
+    envia a mensagem de template para o novo contato.
+    """
+    # Verifica se já existe um atendimento para este número
+    existing_query = await db.execute(select(models.Atendimento).where(
+        models.Atendimento.whatsapp == atendimento_in.whatsapp,
+        models.Atendimento.user_id == current_user.id
+    ))
+    if existing_query.scalars().first():
+        raise HTTPException(status_code=409, detail="Já existe um atendimento para este número.")
+
+    # Cria o atendimento no banco de dados
+    db_atendimento = await crud_atendimento.create_atendimento(db=db, atendimento_in=atendimento_in, user_id=current_user.id)
+    await db.commit()
+    await db.refresh(db_atendimento)
+
+    # Se um template foi fornecido, envia a mensagem
+    if atendimento_in.template_name and atendimento_in.template_language_code:
+        try:
+            await whatsapp_service.send_template_message(
+                user=current_user,
+                number=db_atendimento.whatsapp,
+                template_name=atendimento_in.template_name,
+                language_code=atendimento_in.template_language_code,
+                components=atendimento_in.template_components or []
+            )
+            # Recarrega o atendimento para incluir a mensagem enviada no histórico
+            await db.refresh(db_atendimento)
+        except MessageSendError as e:
+            # O atendimento foi criado, mas o envio do template falhou.
+            # Retorna o atendimento criado com um aviso.
+            logger.error(f"Atendimento {db_atendimento.id} criado, mas falha ao enviar template inicial: {e}")
+            # O ideal seria adicionar um status/observação, mas por simplicidade, retornamos como está.
+            # O frontend pode mostrar um alerta.
+            pass # Deixa passar e retorna o atendimento criado.
+
+    return db_atendimento
+
+
 # Endpoint para apagar um atendimento
 @router.delete("/{atendimento_id}", response_model=schemas.Atendimento)
 async def delete_atendimento(
@@ -135,6 +189,20 @@ async def delete_atendimento(
     # Confirma a transação
     await db.commit()
     return deleted_atendimento
+
+# Endpoint para buscar todas as tags únicas do usuário
+@router.get("/tags", response_model=List[Dict[str, str]])
+async def get_user_tags(
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(dependencies.get_current_active_user)
+):
+    """
+    Busca e retorna uma lista de todas as tags únicas (nome e cor)
+    utilizadas nos atendimentos do usuário logado.
+    """
+    tags = await crud_atendimento.get_all_user_tags(db, user_id=current_user.id)
+    return tags
+
 
 class SendMessagePayload(schemas.BaseModel):
     text: str
@@ -334,6 +402,38 @@ async def send_manual_media_message(
     finally:
         # Garante que o arquivo temporário seja fechado
         await file.close()
+
+# Endpoint para listar os templates de mensagem disponíveis para o usuário
+@router.get("/whatsapp/templates", response_model=List[Dict[str, Any]])
+async def get_whatsapp_templates(
+    current_user: models.User = Depends(dependencies.get_current_active_user),
+    whatsapp_service: WhatsAppService = Depends(get_whatsapp_service)
+):
+    """
+    Busca e retorna a lista de templates de mensagem aprovados ('ACTIVE')
+    da conta do WhatsApp Business associada ao usuário.
+    """
+    # NOTA: Requer que 'wbp_business_account_id' esteja no modelo User e preenchido.
+    if not hasattr(current_user, 'wbp_business_account_id') or not current_user.wbp_business_account_id:
+        logger.error(f"Usuário {current_user.id} tentou buscar templates sem 'wbp_business_account_id' configurado.")
+        raise HTTPException(
+            status_code=400,
+            detail="ID da Conta do WhatsApp Business não está configurado para este usuário."
+        )
+
+    if not current_user.wbp_access_token:
+        raise HTTPException(status_code=400, detail="Token de acesso do WhatsApp não configurado.")
+
+    try:
+        decrypted_token = decrypt_token(current_user.wbp_access_token)
+        templates = await whatsapp_service.get_templates_official(
+            business_account_id=current_user.wbp_business_account_id,
+            access_token=decrypted_token
+        )
+        return templates
+    except (MessageSendError, ValueError) as e:
+        logger.error(f"Erro ao buscar templates para o usuário {current_user.id}: {e}", exc_info=True)
+        raise HTTPException(status_code=502, detail=f"Falha ao buscar templates da API do WhatsApp: {e}")
         
 # Endpoint para baixar mídias recebidas via API Oficial
 @router.get("/{atendimento_id}/media/{media_id}", summary="Baixar mídia diretamente (API Oficial)")
@@ -520,35 +620,3 @@ async def send_template_message(
     except (MessageSendError, ValueError) as e:
         logger.error(f"Erro ao ENVIAR template para {whatsapp_number}: {e}", exc_info=True)
         raise HTTPException(status_code=502, detail=f"Falha ao enviar template pela API: {e}")
-
-# Endpoint para listar os templates de mensagem disponíveis para o usuário
-@router.get("/whatsapp/templates", response_model=List[Dict[str, Any]])
-async def get_whatsapp_templates(
-    current_user: models.User = Depends(dependencies.get_current_active_user),
-    whatsapp_service: WhatsAppService = Depends(get_whatsapp_service)
-):
-    """
-    Busca e retorna a lista de templates de mensagem aprovados ('ACTIVE')
-    da conta do WhatsApp Business associada ao usuário.
-    """
-    # NOTA: Requer que 'wbp_business_account_id' esteja no modelo User e preenchido.
-    if not hasattr(current_user, 'wbp_business_account_id') or not current_user.wbp_business_account_id:
-        logger.error(f"Usuário {current_user.id} tentou buscar templates sem 'wbp_business_account_id' configurado.")
-        raise HTTPException(
-            status_code=400,
-            detail="ID da Conta do WhatsApp Business não está configurado para este usuário."
-        )
-
-    if not current_user.wbp_access_token:
-        raise HTTPException(status_code=400, detail="Token de acesso do WhatsApp não configurado.")
-
-    try:
-        decrypted_token = decrypt_token(current_user.wbp_access_token)
-        templates = await whatsapp_service.get_templates_official(
-            business_account_id=current_user.wbp_business_account_id,
-            access_token=decrypted_token
-        )
-        return templates
-    except (MessageSendError, ValueError) as e:
-        logger.error(f"Erro ao buscar templates para o usuário {current_user.id}: {e}", exc_info=True)
-        raise HTTPException(status_code=502, detail=f"Falha ao buscar templates da API do WhatsApp: {e}")

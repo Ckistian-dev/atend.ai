@@ -31,7 +31,24 @@ class AtendimentoUpdate(BaseModel):
     active_persona_id: Optional[int] = None
     observacoes: Optional[str] = None
     conversa: Optional[Any] = None
+    nome_contato: Optional[str] = None
+    tags: Optional[List[Dict[str, str]]] = None
     model_config = {"from_attributes": True}
+
+class AtendimentoCreate(BaseModel):
+    whatsapp: str
+    nome_contato: Optional[str] = None
+    status: Optional[str] = "Novo Atendimento"
+    active_persona_id: Optional[int] = None
+    observacoes: Optional[str] = None
+    tags: Optional[List[Dict[str, str]]] = Field(default_factory=list)
+    # Campos opcionais para iniciar com um template
+    template_name: Optional[str] = None
+    template_language_code: Optional[str] = None
+    template_components: Optional[List[Dict[str, Any]]] = None
+
+    model_config = {"from_attributes": True}
+
 
 class Atendimento(BaseModel):
     id: int
@@ -43,6 +60,8 @@ class Atendimento(BaseModel):
     created_at: datetime
     updated_at: datetime
     whatsapp: str
+    nome_contato: Optional[str] = None
+    tags: Optional[List[Dict[str, str]]] = Field(default_factory=list)
     active_persona: Optional[Config] = None
     model_config = {"from_attributes": True}
 

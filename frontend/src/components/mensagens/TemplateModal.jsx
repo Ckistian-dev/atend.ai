@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Send, Loader2, AlertTriangle, Search } from 'lucide-react';
-import api from '../api/axiosConfig'; // Importa a configuração do Axios
+import api from '../../api/axiosConfig'; // Importa a configuração do Axios
 
 // --- NOVO: Componente da Barra Lateral ---
 const TemplateSidebar = ({ templates, selectedTemplate, onSelect, searchTerm, setSearchTerm }) => {

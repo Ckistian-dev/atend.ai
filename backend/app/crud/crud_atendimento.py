@@ -1,6 +1,7 @@
 import logging
 from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import models, schemas
 from datetime import datetime, timedelta, timezone # Import timezone
@@ -172,6 +173,32 @@ async def delete_atendimento(db: AsyncSession, atendimento_id: int, user_id: int
         await db.delete(db_atendimento)
         # O commit deve ser feito na rota que chamou
     return db_atendimento
+
+
+async def get_all_user_tags(db: AsyncSession, user_id: int) -> List[Dict[str, str]]:
+    """Busca todas as tags únicas de todos os atendimentos de um usuário."""
+    try:
+        # Esta query extrai o array de tags de cada atendimento
+        query = select(models.Atendimento.tags).where(
+            models.Atendimento.user_id == user_id,
+            models.Atendimento.tags != None,  # Ignora atendimentos sem tags
+            func.jsonb_array_length(models.Atendimento.tags.cast(JSONB)) > 0 # Ignora arrays vazios
+        )
+        result = await db.execute(query)
+        
+        # Processa os resultados para criar um conjunto de tags únicas
+        all_tags_lists = result.scalars().all()
+        unique_tags = {} # Usar um dict para garantir unicidade pelo nome
+        for tags_list in all_tags_lists:
+            for tag in tags_list:
+                # Adiciona ao dict usando o nome como chave para evitar duplicatas
+                if isinstance(tag, dict) and 'name' in tag and 'color' in tag:
+                    unique_tags[tag['name'].lower()] = {'name': tag['name'], 'color': tag['color']}
+        
+        return list(unique_tags.values())
+    except Exception as e:
+        logger.error(f"Erro ao buscar tags para o usuário {user_id}: {e}", exc_info=True)
+        return []
 
 
 async def get_dashboard_data(db: AsyncSession, user_id: int) -> Dict[str, Any]:

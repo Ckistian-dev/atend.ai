@@ -1,17 +1,9 @@
-# --- Script Utilitário para Criar Hash de Senha ---
-#
-# Execute este arquivo diretamente no seu terminal para gerar
-# uma senha criptografada (hash) que pode ser copiada e
-# colada na sua planilha do Google Sheets.
-#
-# Como usar:
-# 1. Salve este arquivo na raiz do seu projeto (mesma pasta do .env).
-# 2. Abra o terminal nesta pasta.
-# 3. Execute o comando: python create_user_hash.py
-# 4. Digite a senha que deseja usar e pressione Enter.
-# 5. Copie o hash gerado e cole na coluna 'senha' da sua planilha.
+from passlib.context import CryptContext
 
-from app.services.security import get_password_hash
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
 
 def generate_hash():
     """

@@ -155,6 +155,7 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
         message_to_send = ia_response.get("mensagem_para_enviar")
         intended_status_after_send = ia_response.get("nova_situacao", "Aguardando Resposta")
         intended_observation = ia_response.get("observacoes", "")
+        contact_name_from_ia = ia_response.get("nome_contato")
         
         # Extração dos dados do anexo, se a IA solicitou um.
         arquivos_anexos = ia_response.get("arquivos_anexos") # <-- Alterado para o plural
@@ -282,6 +283,11 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                         # Salva as observações da IA, o histórico de conversa atualizado e a data de atualização.
                         at_final.observacoes = intended_observation
                         at_final.conversa = json.dumps(current_hist, ensure_ascii=False)
+                        
+                        # Atualiza o nome do contato se a IA retornou um novo nome e o campo atual está vazio.
+                        if contact_name_from_ia and not at_final.nome_contato:
+                            at_final.nome_contato = contact_name_from_ia
+
                         at_final.updated_at = datetime.now(timezone.utc)
             
             logger.info(f"Agente: Atendimento {atendimento_id} finalizado com sucesso.")

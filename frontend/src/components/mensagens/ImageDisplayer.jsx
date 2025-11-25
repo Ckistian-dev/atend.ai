@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, X, AlertCircle } from 'lucide-react';
-import api from '../api/axiosConfig';
+import api from '../../api/axiosConfig';
 
 const ImageDisplayer = ({ atendimentoId, mediaId, caption }) => {
     const [imageSrc, setImageSrc] = useState(null);
