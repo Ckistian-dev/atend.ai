@@ -284,10 +284,10 @@ const Dashboard = () => {
                         {/* Coluna Esquerda: Cards e Gráfico de Linhas */}
                         <div className="lg:col-span-2 space-y-8 flex flex-col">
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <StatCard icon={<TrendingUp size={28} className="text-blue-500" />} label={data.stats.totalAtendimentos.label} value={data.stats.totalAtendimentos.value} color="bg-blue-100" />
-                                <StatCard icon={<CheckCircle size={28} className="text-green-500" />} label={data.stats.totalConcluidos.label} value={data.stats.totalConcluidos.value} color="bg-green-100" />
-                                <StatCard icon={<Percent size={28} className="text-amber-500" />} label={data.stats.taxaConversao.label} value={data.stats.taxaConversao.value} color="bg-amber-100" />
-                                <StatCard icon={<Cpu size={28} className="text-violet-500" />} label={data.stats.consumoMedioTokens.label} value={data.stats.consumoMedioTokens.value} color="bg-violet-100" />
+                                <StatCard icon={<TrendingUp size={28} className="text-blue-500" />} label={data.stats?.totalAtendimentos?.label} value={data.stats?.totalAtendimentos?.value} color="bg-blue-100" />
+                                <StatCard icon={<CheckCircle size={28} className="text-green-500" />} label={data.stats?.totalConcluidos?.label} value={data.stats?.totalConcluidos?.value} color="bg-green-100" />
+                                <StatCard icon={<Percent size={28} className="text-amber-500" />} label={data.stats?.taxaConversao?.label} value={data.stats?.taxaConversao?.value} color="bg-amber-100" />
+                                <StatCard icon={<Cpu size={28} className="text-violet-500" />} label={data.stats?.consumoMedioTokens?.label} value={data.stats?.consumoMedioTokens?.value} color="bg-violet-100" />
                             </div>
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex-grow flex flex-col">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Volume de Atendimentos por Dia</h3>
