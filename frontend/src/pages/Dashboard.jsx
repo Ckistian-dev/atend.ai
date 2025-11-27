@@ -266,6 +266,18 @@ const Dashboard = () => {
         return <div className="flex h-full items-center justify-center text-red-600 p-10">{error}</div>;
     }
 
+    // Verifica se os dados essenciais para os gráficos existem após o carregamento
+    const hasChartData = data && data.charts && data.charts.contatosPorDia && data.charts.atendimentosPorSituacao;
+
+    if (!isLoading && !error && !hasChartData) {
+        return (
+            <div className="flex h-full items-center justify-center bg-gray-50 p-10">
+                <AlertCircle size={24} className="text-amber-500 mr-3" />
+                <p className="text-xl text-gray-600">Página em desenvolvimento. Dados para os gráficos não encontrados.</p>
+            </div>
+        );
+    }
+
     return (
         <div className="p-6 md:p-8 bg-gray-50 min-h-full">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
@@ -292,7 +304,7 @@ const Dashboard = () => {
                             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex-grow flex flex-col">
                                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Volume de Atendimentos por Dia</h3>
                                 <ResponsiveContainer width="100%" minHeight={400}>
-                                    <LineChart data={data.charts.contatosPorDia} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                    <LineChart data={data?.charts?.contatosPorDia || []} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                                         <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                                         <YAxis tick={{ fontSize: 12 }} />
@@ -315,7 +327,7 @@ const Dashboard = () => {
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                                     <Pie 
-                                        data={data.charts.atendimentosPorSituacao} 
+                                        data={data?.charts?.atendimentosPorSituacao || []} 
                                         dataKey="value" 
                                         nameKey="name" 
                                         cx="50%" 
@@ -325,7 +337,7 @@ const Dashboard = () => {
                                         paddingAngle={3}
                                         label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
                                     >
-                                        {data.charts.atendimentosPorSituacao.map((entry, index) => (
+                                        {(data?.charts?.atendimentosPorSituacao || []).map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name] || '#808080'} />
                                         ))}
                                     </Pie>
