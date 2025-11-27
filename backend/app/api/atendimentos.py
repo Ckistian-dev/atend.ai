@@ -15,8 +15,9 @@ from starlette.responses import RedirectResponse
 import httpx # Para fazer requisições HTTP assíncronas
 
 # Importações do SQLAlchemy para manipulação do banco de dados
-from sqlalchemy import select, func
+from sqlalchemy import select, func, cast
 from sqlalchemy.orm import joinedload
+from sqlalchemy.dialects.postgresql import JSONB
 
 # Importações de módulos locais da aplicação
 from app.api import dependencies
@@ -40,6 +41,7 @@ async def get_atendimentos(
     # Parâmetros de query para busca e paginação, com valores padrão e validações
     search: Optional[str] = Query(None, description="Termo de busca para contato, status ou observação"),
     status: Optional[List[str]] = Query(None, description="Lista de status para filtrar"),
+    tags: Optional[List[str]] = Query(None, description="Lista de nomes de tags para filtrar"),
     page: int = Query(1, ge=1, description="Número da página"),
     limit: int = Query(20, ge=1, le=10000, description="Itens por página")
 ):
@@ -47,6 +49,7 @@ async def get_atendimentos(
     Lista todos os atendimentos para o usuário logado, com suporte a busca e paginação.
     - `search`: Filtra os resultados por número de WhatsApp, status ou observações.
     - `page`: Define a página de resultados a ser retornada.
+    - `tags`: Filtra por uma lista de nomes de tags.
     - `status`: Filtra por uma lista de status específicos.
     - `limit`: Define o número máximo de itens por página.
     """
@@ -64,6 +67,18 @@ async def get_atendimentos(
     # A query agora pode receber uma lista de status (ex: status=Concluído&status=Atendente Chamado)
     if status:
         stmt_base = stmt_base.where(models.Atendimento.status.in_(status))
+
+    # --- NOVO: Adiciona filtro por tags, se fornecido ---
+    if tags:
+        # Para cada tag na lista, verifica se ela existe no array JSON 'tags' do atendimento.
+        # A sintaxe `[{'name': 'tag_name'}]` é um padrão para construir um objeto JSON
+        # que será usado na verificação de contenção (`@>`).
+        # A lógica foi alterada para usar o operador `?` que verifica a existência de um
+        # elemento de nível superior que corresponda ao padrão.
+        for tag_name in tags:
+            # Cria um padrão JSON para buscar um objeto que contenha o nome da tag.
+            tag_pattern = json.dumps({'name': tag_name})
+            stmt_base = stmt_base.where(cast(models.Atendimento.tags, JSONB).op('?')(tag_pattern))
 
     # Se um termo de busca foi fornecido, adiciona a condição `WHERE` à query
     if search:

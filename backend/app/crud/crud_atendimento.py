@@ -200,57 +200,176 @@ async def get_all_user_tags(db: AsyncSession, user_id: int) -> List[Dict[str, st
         logger.error(f"Erro ao buscar tags para o usuário {user_id}: {e}", exc_info=True)
         return []
 
+async def get_atendimentos_no_periodo(db: AsyncSession, user_id: int, start_date: datetime, end_date: datetime) -> List[models.Atendimento]:
+    """Busca todos os atendimentos de um usuário dentro de um período de datas."""
+    query = select(models.Atendimento).where(
+        models.Atendimento.user_id == user_id,
+        models.Atendimento.created_at.between(start_date, end_date)
+    )
+    result = await db.execute(query)
+    return result.scalars().all()
 
-async def get_dashboard_data(db: AsyncSession, user_id: int) -> Dict[str, Any]:
-    """Coleta dados para o novo dashboard de atendimentos."""
-    # (Sem alterações nesta função por enquanto)
+
+async def get_dashboard_data(
+    db: AsyncSession, 
+    user_id: int, 
+    start_date: datetime, 
+    end_date: datetime
+) -> Dict[str, Any]:
+    """Coleta, agrega e formata dados para o dashboard, filtrados por período."""
+
+    # --- LÓGICA ORIGINAL PARA CARREGAR O DASHBOARD ---
+
+    # --- 1. Métricas para os Cards ---
+    base_query = select(models.Atendimento).where(
+        models.Atendimento.user_id == user_id,
+        models.Atendimento.created_at.between(start_date, end_date),
+        models.Atendimento.status != 'Ignorar Contato' # Exclui o status
+    )
+
+    # Mapeamento de cores para ser usado nas queries
+    status_colors = {
+        "Mensagem Recebida": "#144cd1",
+        "Atendente Chamado": "#f0ad60",
+        "Aguardando Resposta": "#e5da61",
+        "Concluído": "#5fd395",
+        "Gerando Resposta": "#d569dd",
+    }
+
+    total_atendimentos_query = await db.execute(select(func.count()).select_from(base_query.subquery()))
+    total_atendimentos = total_atendimentos_query.scalar_one_or_none() or 0
+
+    concluidos_query = await db.execute(select(func.count()).select_from(
+        base_query.where(models.Atendimento.status == 'Concluído').subquery()
+    ))
+    total_concluidos = concluidos_query.scalar_one_or_none() or 0
+
+    taxa_conversao = (total_concluidos / total_atendimentos * 100) if total_atendimentos > 0 else 0
+
+    # --- 2. Gráfico de Rosca (Atendimentos por Situação) ---
     status_counts_query = await db.execute(
         select(models.Atendimento.status, func.count(models.Atendimento.id))
-        .where(models.Atendimento.user_id == user_id)
-        .group_by(models.Atendimento.status)
-    )
-    status_counts = {status: count for status, count in status_counts_query.all()}
-
-    now_utc = datetime.now(timezone.utc)
-    start_of_day_utc = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
-
-    finalizados_hoje_query = await db.execute(
-        select(func.count(models.Atendimento.id))
         .where(
             models.Atendimento.user_id == user_id,
-            models.Atendimento.status == 'Concluído',
-            models.Atendimento.updated_at >= start_of_day_utc # Ajustado para início do dia UTC
+            models.Atendimento.created_at.between(start_date, end_date),
+            models.Atendimento.status != 'Ignorar Contato' # Exclui o status
         )
+        .group_by(models.Atendimento.status)
     )
-    finalizados_hoje = finalizados_hoje_query.scalar_one_or_none() or 0
+    atendimentos_por_situacao = [
+        {"name": status, "value": count, "color": status_colors.get(status, "#808080")}
+        for status, count in status_counts_query.all()
+    ]
 
-    recent_activity_query = await db.execute(
-        select(models.Atendimento)
-        .where(models.Atendimento.user_id == user_id)
-        .order_by(models.Atendimento.updated_at.desc())
-        .limit(20)
+    # --- 3. Gráfico de Linhas (Contatos por Dia) ---
+    # Contagem individual para cada status por dia
+    status_filters = [
+        func.count().filter(models.Atendimento.status == status).label(status)
+        for status in status_colors.keys()
+    ]
+
+    date_series_query = await db.execute(
+        select(
+            func.date_trunc('day', models.Atendimento.created_at).label('day'),
+            func.count(models.Atendimento.id).label('total'),
+            *status_filters
+        ).where(
+            models.Atendimento.user_id == user_id,
+            models.Atendimento.created_at.between(start_date, end_date),
+            models.Atendimento.status != 'Ignorar Contato' # Exclui o status
+        )
+        .group_by('day')
+        .order_by('day')
     )
-    recent_activity = recent_activity_query.scalars().all()
+    
+    # --- LÓGICA APRIMORADA PARA GARANTIR TODOS OS DIAS NO PERÍODO ---
+    # 1. Cria um dicionário com todos os dias do período, inicializados com zero.
+    all_days_in_period = {}
+    current_day = start_date
+    while current_day <= end_date:
+        day_key = current_day.strftime('%d/%m')
+        all_days_in_period[day_key] = {
+            "date": day_key,
+            "total": 0
+        }
+        for status in status_colors.keys():
+            all_days_in_period[day_key][status] = 0
+        current_day += timedelta(days=1)
+
+    # 2. Preenche o dicionário com os dados do banco.
+    results = date_series_query.mappings().all()
+    for row in results:
+        day_key = row['day'].strftime('%d/%m')
+        if day_key in all_days_in_period:
+            for status in status_colors.keys():
+                all_days_in_period[day_key][status] = row.get(status, 0)
+            all_days_in_period[day_key]['total'] = row.get('total', 0)
+    
+    # 3. Converte o dicionário para a lista final.
+    contatos_por_dia = list(all_days_in_period.values())
+    # --- 4. Consumo de Tokens (Estimativa) ---
+    # Esta é uma estimativa, pois não temos um log de transações de tokens.
+    # A lógica é: (Tokens no início do mês - Tokens atuais) / atendimentos no período.
+    # Isso pode ser impreciso se o período cruzar meses.
+    # Uma implementação futura ideal teria uma tabela de transações de tokens.
+    
+    # Para simplificar, vamos calcular o consumo médio como um valor fixo por enquanto.
+    # Em um cenário real, buscaríamos o usuário e faríamos o cálculo.
+    # user = await crud_user.get_user(db, user_id=user_id)
+    # tokens_consumidos = 9999 - user.tokens 
+    # consumo_medio_tokens = (tokens_consumidos / total_atendimentos) if total_atendimentos > 0 else 0
+    # Por enquanto, retornamos um valor simulado.
+    consumo_medio_tokens = 1.25 # Valor simulado
+    # Lógica aprimorada: Contar tokens consumidos analisando o histórico de conversas.
+    # Cada mensagem com role 'assistant' no período representa um token consumido.
+    atendimentos_no_periodo_query = await db.execute(base_query)
+    atendimentos_no_periodo = atendimentos_no_periodo_query.scalars().all()
+
+    tokens_consumidos = 0
+    for atendimento in atendimentos_no_periodo:
+        try:
+            conversa_list = json.loads(atendimento.conversa or "[]")
+            for msg in conversa_list:
+                # Verifica se a mensagem é do assistente e está dentro do período
+                if msg.get('role') == 'assistant':
+                    msg_timestamp = msg.get('timestamp')
+                    if msg_timestamp:
+                        # Converte timestamp (pode ser int ou str ISO) para datetime
+                        if isinstance(msg_timestamp, (int, float)):
+                            msg_dt = datetime.fromtimestamp(msg_timestamp, tz=timezone.utc)
+                        else:
+                            msg_dt = datetime.fromisoformat(str(msg_timestamp).replace("Z", "+00:00"))
+                        
+                        if start_date <= msg_dt <= end_date:
+                            tokens_consumidos += 1
+        except (json.JSONDecodeError, TypeError, ValueError):
+            continue # Ignora conversas malformadas
+
+    consumo_medio_tokens = (tokens_consumidos / total_atendimentos) if total_atendimentos > 0 else 0
 
     dashboard_data = {
         "stats": {
-            "totalAtendimentos": sum(status_counts.values()),
-            "ativos": status_counts.get("Aguardando Resposta", 0) + status_counts.get("Mensagem Recebida", 0) + status_counts.get("Novo Atendimento", 0), # Incluindo Novos
-            "finalizadosHoje": finalizados_hoje,
-            "ignorados": status_counts.get("Ignorar Contato", 0),
-            "erros": status_counts.get("Erro no Agente", 0) + status_counts.get("Falha no Envio", 0) # Somando erros
-        },
-        "recentActivity": [
-            {
-                "id": a.id,
-                "whatsapp": a.whatsapp if a.whatsapp else "N/A", # Checar se contato existe
-                "situacao": a.status,
-                "observacao": a.observacoes,
-                "active_persona_id": a.active_persona_id,
-                "updated_at": a.updated_at.isoformat() if a.updated_at else None # Tratar None
+            "totalAtendimentos": {
+                "value": total_atendimentos,
+                "label": "Total de Atendimentos"
+            },
+            "totalConcluidos": {
+                "value": total_concluidos,
+                "label": "Atendimentos Concluídos"
+            },
+            "taxaConversao": {
+                "value": f"{taxa_conversao:.1f}%",
+                "label": "Taxa de Conversão"
+            },
+            "consumoMedioTokens": {
+                "value": f"{consumo_medio_tokens:.2f}",
+                "label": "Tokens / Atendimento (médio)"
             }
-            for a in recent_activity
-        ]
+        },
+        "charts": {
+            "atendimentosPorSituacao": atendimentos_por_situacao,
+            "contatosPorDia": contatos_por_dia
+        }
     }
     return dashboard_data
 

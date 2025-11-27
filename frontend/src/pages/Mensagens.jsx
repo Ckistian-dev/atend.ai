@@ -62,8 +62,8 @@ function Mensagens() {
 
     // --- NOVOS ESTADOS PARA FILTRO DETALHADO ---
     const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
-    const [statusFilters, setStatusFilters] = useState([]); // Filtros de status do popover
-    const [tagFilters, setTagFilters] = useState([]); // Filtros de tag do popover
+    const [statusFilters, setStatusFilters] = useState(null); // ALTERADO: Agora é string ou null
+    const [tagFilters, setTagFilters] = useState(null); // ALTERADO: Agora é string ou null
 
 
     const [selectedAtendimento, setSelectedAtendimento] = useState(null);
@@ -118,14 +118,14 @@ function Mensagens() {
 
             // --- ALTERADO: Adiciona filtros do popover (status e tags) à requisição ---
             // Usa os filtros do popover se existirem, senão, usa os filtros dos botões principais.
-            if (statusFilters.length > 0) {
-                statusFilters.forEach(s => params.append('status', s));
+            if (statusFilters) {
+                params.append('status', statusFilters);
             } else if (activeFilters.length > 0) {
                 activeFilters.forEach(s => params.append('status', s));
             }
 
-            if (tagFilters.length > 0) {
-                tagFilters.forEach(t => params.append('tags', t));
+            if (tagFilters) {
+                params.append('tags', tagFilters);
             }
 
             const [userRes, atendimentosRes, personasRes, situationsRes, tagsRes] = await Promise.all([
@@ -245,7 +245,7 @@ function Mensagens() {
         // Toda vez que o filtro ou o termo de busca mudar,
         // reseta o limite.
         // Se os filtros do popover estiverem ativos, o limite é 25. Senão, 20.
-        const hasPopoverFilters = statusFilters.length > 0 || tagFilters.length > 0;
+        const hasPopoverFilters = !!statusFilters || !!tagFilters;
         setLimit(hasPopoverFilters ? 20 : 20);
     }, [activeButtonGroup, debouncedSearchTerm, statusFilters, tagFilters]);
 
@@ -756,7 +756,7 @@ function Mensagens() {
         // Ativa o estado de loading imediatamente
         setIsFetchingMore(true);
         // Aumenta o limite e o useEffect de fetchData/polling vai pegar a mudança
-        setLimit(prevLimit => prevLimit + 20);
+        setLimit(prevLimit => prevLimit + limit);
     };
 
     // --- NOVA FUNÇÃO: Alterna um filtro na lista de filtros ativos ---
@@ -779,27 +779,28 @@ function Mensagens() {
 
     // --- NOVAS FUNÇÕES PARA O POPOVER DE FILTRO ---
     const handleStatusFilterChange = (statusName) => {
-        setStatusFilters(prev =>
-            prev.includes(statusName)
-                ? prev.filter(s => s !== statusName)
-                : [...prev, statusName]
-        );
+        // Se o status clicado já for o ativo, desativa. Senão, ativa.
+        setStatusFilters(prev => (prev === statusName ? null : statusName));
+        // Limpa o filtro de tag para garantir exclusividade
+        setTagFilters(null);
         // Desativa o grupo de botões principal para evitar conflito
         setActiveButtonGroup(null);
         setActiveFilters([]);
     };
 
     const handleTagFilterChange = (tagName) => {
-        setTagFilters(prev =>
-            prev.includes(tagName)
-                ? prev.filter(t => t !== tagName)
-                : [...prev, tagName]
-        );
+        // Se a tag clicada já for a ativa, desativa. Senão, ativa.
+        setTagFilters(prev => (prev === tagName ? null : tagName));
+        // Limpa o filtro de status para garantir exclusividade
+        setStatusFilters(null);
+        // Desativa o grupo de botões principal para evitar conflito
+        setActiveButtonGroup(null);
+        setActiveFilters([]);
     };
 
     const handleClearAllFilters = () => {
-        setStatusFilters([]);
-        setTagFilters([]);
+        setStatusFilters(null);
+        setTagFilters(null);
     };
 
     // --- NOVAS FUNÇÕES PARA O EDITOR DE TAGS ---
@@ -834,8 +835,8 @@ function Mensagens() {
                         setSearchTerm={setSearchTerm}
                         activeButtonGroup={activeButtonGroup}
                         toggleFilter={toggleFilter}
-                        onFilterIconClick={() => setIsFilterPopoverOpen(prev => !prev)}
-                        hasActiveFilters={statusFilters.length > 0 || tagFilters.length > 0}
+                        onFilterIconClick={() => setIsFilterPopoverOpen(prev => !prev)} // ALTERADO: Verifica se os filtros não são nulos
+                        hasActiveFilters={!!statusFilters || !!tagFilters}
                     />
                     <FilterPopover
                         isOpen={isFilterPopoverOpen}
@@ -847,6 +848,8 @@ function Mensagens() {
                         selectedTags={tagFilters}
                         onTagChange={handleTagFilterChange}
                         onClearFilters={handleClearAllFilters}
+                        limit={limit}
+                        onLimitChange={setLimit}
                     />
                 </div>
                 <div className="flex-1 overflow-y-auto">

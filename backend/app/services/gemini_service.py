@@ -110,12 +110,10 @@ class GeminiService:
                     return response
 
                 except exceptions.ResourceExhausted as e:
-                    logger.warning(f"Quota da API excedida (429) com a chave {self.current_key_index} (tentativa {attempt + 1}/{max_attempts_per_key}).")
-                    if attempt == max_attempts_per_key - 1:
-                        logger.warning(f"Máximo de tentativas atingido para a chave {self.current_key_index}. Rotacionando chave.")
-                        break 
-                    logger.info("Aguardando 5 segundos antes de tentar novamente...")
-                    await asyncio.sleep(5)
+                    # Se a cota foi excedida, não adianta tentar de novo com a mesma chave.
+                    # Quebra o loop de tentativas para forçar a rotação imediata.
+                    logger.warning(f"Quota da API excedida (429) com a chave {self.current_key_index}. Rotacionando para a próxima chave...")
+                    break
                 except (exceptions.InvalidArgument, genai.types.BlockedPromptException) as e:
                     logger.error(f"Erro não recuperável com a API Gemini: {type(e).__name__}. Não haverá nova tentativa. Erro: {e}", exc_info=True)
                     raise e
@@ -271,6 +269,57 @@ class GeminiService:
             content = msg.get("content", "")
             history_for_ia.append({"remetente": role, "mensagem": content})
         return history_for_ia
+
+    async def analyze_data(
+        self,
+        question: str,
+        user: models.User,
+        atendimentos: List[models.Atendimento], # Lista de atendimentos do período
+        persona: Optional[models.Config],       # A persona padrão
+        db: AsyncSession,
+    ) -> str:
+        """
+        Usa a IA para analisar dados do sistema com base em uma pergunta do usuário.
+        """
+        logger.info(f"Iniciando análise de dados para user_id={user.id} com a pergunta: '{question[:100]}...'")
+
+        # Simplifica os dados para não sobrecarregar o prompt
+        simplified_atendimentos = [
+            {
+                "id": at.id, "status": at.status, "created_at": at.created_at.isoformat(),
+                "updated_at": at.updated_at.isoformat(), "observacoes": at.observacoes,
+                "conversa_length": len(at.conversa or "[]")
+            } for at in atendimentos
+        ]
+
+        # Simplifica o contexto da persona, se existir
+        persona_context = None
+        if persona and persona.contexto_json:
+            persona_context = {"nome_persona": persona.nome_config, "contexto": persona.contexto_json}
+
+        analysis_prompt = {
+            "objetivo": "Você é um analista de dados sênior e especialista em atendimento ao cliente. Sua tarefa é analisar os dados fornecidos para responder à pergunta do usuário de forma clara, objetiva e com insights acionáveis.",
+            "pergunta_usuario": question,
+            "dados_contexto": {
+                "resumo_usuario": {"id": user.id, "email": user.email, "tokens_restantes": user.tokens},
+                "contexto_persona_ia": persona_context or "Nenhum contexto de persona foi fornecido para esta análise.",
+                "atendimentos_periodo": simplified_atendimentos
+            },
+            "regras_resposta": [
+                "1. Responda diretamente à pergunta do usuário.",
+                "2. Use os dados fornecidos para embasar sua análise. Cite exemplos se for relevante.",
+                "3. Se a pergunta for sobre melhorias, forneça sugestões práticas e realistas.",
+                "4. Formate sua resposta usando Markdown para melhor legibilidade (negrito, listas, etc.).",
+                "5. Seja conciso, mas completo. Evite respostas genéricas.",
+                "6. Se os dados não forem suficientes para responder, explique o porquê e sugira que tipo de informação seria necessária."
+            ]
+        }
+
+        prompt_str = json.dumps(analysis_prompt, ensure_ascii=False, indent=2)
+
+        # Usa _generate_with_retry, mas sem o formato JSON, pois queremos texto livre.
+        response = await self._generate_with_retry(prompt_str, db, user, is_media=False)
+        return response.text.strip()
 
 
 _gemini_service_instance = None
