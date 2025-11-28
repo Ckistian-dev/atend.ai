@@ -65,25 +65,15 @@ function Mensagens() {
     const [statusFilters, setStatusFilters] = useState(null); // ALTERADO: Agora é string ou null
     const [tagFilters, setTagFilters] = useState(null); // ALTERADO: Agora é string ou null
 
-    // --- NOVOS ESTADOS PARA FILTRO DE HORÁRIO ---
-    const [timeStart, setTimeStart] = useState('');
-    const [timeEnd, setTimeEnd] = useState('');
-
 
     const [selectedAtendimento, setSelectedAtendimento] = useState(null);
     const [totalAtendimentos, setTotalAtendimentos] = useState(0);
     
-    // --- ALTERADO: 'pageSize' é o número de itens por página, vindo do localStorage ---
-    const [pageSize, setPageSize] = useState(() => {
-        const savedLimit = localStorage.getItem('atendimentosLimit');
-        const initialLimit = parseInt(savedLimit, 10);
-        return !isNaN(initialLimit) && initialLimit > 0 ? initialLimit : 20;
+    // --- ALTERADO: O limite agora é lido e salvo no localStorage ---
+    const [limit, setLimit] = useState(() => {
+        const savedLimit = localStorage.getItem('atendimentosPageLimit');
+        return savedLimit ? parseInt(savedLimit, 10) : 20;
     });
-
-    // --- NOVO: 'limit' agora é o total de itens a serem buscados (múltiplo de pageSize) ---
-    // Ele começa com o valor de pageSize para a carga inicial.
-    const [limit, setLimit] = useState(pageSize);
-
 
     // --- NOVO: Estado para o loading do botão "Carregar Mais" ---
     const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -124,10 +114,9 @@ function Mensagens() {
         } 
 
         try {
-            const hasTimeFilter = !!timeStart || !!timeEnd;
             const params = new URLSearchParams({
                 search: debouncedSearchTerm || '',
-                limit: limit, // O limite é sempre controlado pela paginação
+                limit: limit,
             });
 
             // --- ALTERADO: Adiciona filtros do popover (status e tags) à requisição ---
@@ -141,9 +130,6 @@ function Mensagens() {
             if (tagFilters) {
                 params.append('tags', tagFilters);
             }
-
-            // A filtragem por horário será feita no frontend,
-            // então não enviamos mais os parâmetros para a API.
 
             const [userRes, atendimentosRes, personasRes, situationsRes, tagsRes] = await Promise.all([
                 api.get('/auth/me'),
@@ -160,13 +146,9 @@ function Mensagens() {
             const serverData = atendimentosRes.data;
             if (serverData && Array.isArray(serverData.items)) {
                 setAtendimentos(prevAtendimentos => {
-                    // Se for uma carga inicial, troca de filtro (incluindo horário) ou busca, substitui a lista.
-                    // A condição `isInitialLoad` garante que a primeira carga sempre substitua a lista.
-                    // As outras condições (`limit === pageSize`, `hasTimeFilter`, `debouncedSearchTerm`)
-                    // garantem que mudanças de filtro pelo usuário também substituam a lista.
-                    // Durante o polling normal, `isNewLoad` será falso, resultando em uma mesclagem.
-                    const isNewLoad = isInitialLoad || limit === pageSize || hasTimeFilter || debouncedSearchTerm;
-                    
+                    // Se for uma carga inicial, troca de filtro ou busca, substitui a lista.
+                    // Consideramos uma "carga nova" se o limite for o padrão (20).
+                    const isNewLoad = limit === 20;
 
                     const newItems = serverData.items;
                     let combinedItems;
@@ -211,9 +193,9 @@ function Mensagens() {
             if (isInitialLoad) setError('Não foi possível carregar os dados. Verifique a sua conexão.');
         } finally {
             if (isInitialLoad) setIsLoading(false);
-            setIsFetchingMore(false);
+            setIsFetchingMore(false); // Desativa o loading do botão em todos os casos
         }
-    }, [debouncedSearchTerm, sendingQueue, isProcessing, limit, activeFilters, activeButtonGroup, statusFilters, tagFilters, timeStart, timeEnd]);
+    }, [debouncedSearchTerm, limit, activeFilters, activeButtonGroup, statusFilters, tagFilters]);
 
     // --- Efeito: Polling Seguro (COM PAUSA EM SEGUNDO PLANO) ---
     useEffect(() => {
@@ -233,9 +215,17 @@ function Mensagens() {
              if (isMounted) timeoutId = setTimeout(poll, 5000);
         });
 
+        const handleVisibilityChange = () => {
+            if (!document.hidden && isMounted) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(poll, 5000); // Apenas agenda o próximo poll
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
         return () => {
             isMounted = false;
             clearTimeout(timeoutId);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [fetchData]);
 
@@ -251,19 +241,19 @@ function Mensagens() {
         };
     }, [searchTerm]); // Roda toda vez que o searchTerm "real" muda
 
-    // --- NOVO: Efeito para salvar o limite no localStorage sempre que ele mudar ---
+    // --- NOVO: Efeito para salvar o limite no localStorage ---
     useEffect(() => {
-        localStorage.setItem('atendimentosLimit', pageSize);
-    }, [pageSize]);
+        localStorage.setItem('atendimentosPageLimit', limit);
+    }, [limit]);
 
     // --- NOVO: Efeito para resetar o limite ao mudar o filtro ou a busca ---
     useEffect(() => {
         // Toda vez que o filtro ou o termo de busca mudar,
-        // reseta o limite para o tamanho da página. Isso força o `fetchData` a fazer uma nova
-        // carga (isNewLoad = true), substituindo a lista em vez de adicionar a ela.
-        // É crucial para que os filtros funcionem corretamente e a paginação seja reiniciada.
-        setLimit(pageSize);
-    }, [activeButtonGroup, debouncedSearchTerm, statusFilters, tagFilters, timeStart, timeEnd]);
+        // reseta o limite.
+        // Se os filtros do popover estiverem ativos, o limite é 25. Senão, 20.
+        const hasPopoverFilters = !!statusFilters || !!tagFilters;
+        setLimit(hasPopoverFilters ? 20 : 20);
+    }, [activeButtonGroup, debouncedSearchTerm, statusFilters, tagFilters]);
 
     useEffect(() => {
         if (!Array.isArray(mensagens)) {
@@ -271,30 +261,10 @@ function Mensagens() {
             return;
         }
         
-        // A filtragem por status, tags e busca é feita no backend.
-        // A filtragem por horário é feita aqui no frontend.
-        let filtered = mensagens;
-
-        if (timeStart || timeEnd) {
-            filtered = filtered.filter(at => {
-                const messageTime = new Date(getLastMessageTimestamp(at));
-                const messageHour = messageTime.getHours();
-                const messageMinute = messageTime.getMinutes();
-
-                // Converte HH:mm para minutos totais do dia
-                const toMinutes = (timeStr) => {
-                    const [h, m] = timeStr.split(':').map(Number);
-                    return h * 60 + m;
-                };
-
-                const messageTotalMinutes = messageHour * 60 + messageMinute;
-                const startTotalMinutes = timeStart ? toMinutes(timeStart) : 0; // Início do dia
-                const endTotalMinutes = timeEnd ? toMinutes(timeEnd) : 1439; // Fim do dia (23:59)
-
-                // Verifica se o horário da mensagem está dentro do intervalo
-                return messageTotalMinutes >= startTotalMinutes && messageTotalMinutes <= endTotalMinutes;
-            });
-        }
+        // --- LÓGICA DE FILTRAGEM REMOVIDA ---
+        // A filtragem agora é feita 100% no backend. O frontend apenas ordena os resultados recebidos.
+        // A variável 'mensagens' já contém a lista filtrada vinda da API.
+        let filtered = mensagens; 
 
         // Ordena a lista filtrada (b - a para decrescente, mais novo primeiro)
         const sortedFiltered = [...filtered].sort((a, b) => {
@@ -508,29 +478,26 @@ function Mensagens() {
 
 
     const addOptimisticMessage = (atendimentoId, msg) => {
-        setAtendimentos(prev =>
-            prev.map(at => {
-                if (at.id === atendimentoId) {
-                    const conversa = JSON.parse(at.conversa || '[]');
-                    conversa.push(msg);
-                    // Atualiza o 'updated_at' para reordenar a lista de contatos
-                    const updatedAt = { ...at, conversa: JSON.stringify(conversa), updated_at: new Date().toISOString() };
-
-                    // Se for o mensagem selecionado, atualiza a tela principal
-                    if (selectedAtendimento?.id === atendimentoId) {
-                        setSelectedAtendimento(updatedAt);
-                    }
-                    return updatedAt;
-                }
-                return at;
-            })
-        );
+        // Atualiza apenas o atendimento selecionado, sem alterar a lista da sidebar.
+        if (selectedAtendimento?.id === atendimentoId) {
+            setSelectedAtendimento(prevAtendimento => {
+                const conversa = JSON.parse(prevAtendimento.conversa || '[]');
+                conversa.push(msg);
+                // Não atualizamos 'updated_at' aqui para não causar reordenação na próxima busca.
+                // A atualização real virá do servidor.
+                return {
+                    ...prevAtendimento,
+                    conversa: JSON.stringify(conversa),
+                };
+            });
+        }
     };
 
     const updateAtendimentoState = (atendimentoId, updatedAtendimento) => {
-        setAtendimentos(prev =>
-            prev.map(at => (at.id === atendimentoId ? updatedAtendimento : at))
-        );
+        // Atualiza a lista completa para refletir o estado final vindo do servidor.
+        setAtendimentos(prev => prev.map(at => (at.id === atendimentoId ? updatedAtendimento : at)));
+        
+        // Se o atendimento atualizado for o que está selecionado, atualiza a janela de chat.
         if (selectedAtendimento?.id === atendimentoId) {
             setSelectedAtendimento(updatedAtendimento);
         }
@@ -768,13 +735,9 @@ function Mensagens() {
     // --- NOVA FUNÇÃO: Enviar mensagem de template ---
     const handleSendTemplate = async (templatePayload) => {
         if (!selectedAtendimento) {
-            throw new Error("Nenhum atendimento selecionado."); //
+            throw new Error("Nenhum atendimento selecionado.");
         }
         const atendimentoId = selectedAtendimento.id;
-        const optimisticId = `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-
-        // Adiciona uma mensagem otimista de "enviando template"
-        addOptimisticMessage(atendimentoId, { id: optimisticId, role: 'assistant', type: 'sending', content: `Enviando template: ${templatePayload.template_name}...`, timestamp: Math.floor(Date.now() / 1000) });
 
         // A API de template já adiciona a mensagem ao histórico no backend
         // e retorna o atendimento atualizado.
@@ -786,9 +749,6 @@ function Mensagens() {
             );
             updateAtendimentoState(atendimentoId, response.data);
         } catch (err) {
-            // Em caso de erro, atualiza a mensagem otimista para um estado de erro
-            const errorMsg = err.response?.data?.detail || `Falha ao enviar o template.`;
-            setMessageToError(atendimentoId, optimisticId, errorMsg);
             console.error("Erro no handleSendTemplate:", err);
             throw err; // Re-lança o erro para o modal poder exibi-lo
         }
@@ -799,8 +759,7 @@ function Mensagens() {
         // Ativa o estado de loading imediatamente
         setIsFetchingMore(true);
         // Aumenta o limite e o useEffect de fetchData/polling vai pegar a mudança
-        // Adiciona o tamanho da página (pageSize) ao limite total (limit).
-        setLimit(prevLimit => prevLimit + pageSize);
+        setLimit(prevLimit => prevLimit + limit);
     };
 
     // --- NOVA FUNÇÃO: Alterna um filtro na lista de filtros ativos ---
@@ -845,8 +804,6 @@ function Mensagens() {
     const handleClearAllFilters = () => {
         setStatusFilters(null);
         setTagFilters(null);
-        setTimeStart('');
-        setTimeEnd('');
     };
 
     // --- NOVAS FUNÇÕES PARA O EDITOR DE TAGS ---
@@ -894,12 +851,8 @@ function Mensagens() {
                         selectedTags={tagFilters}
                         onTagChange={handleTagFilterChange}
                         onClearFilters={handleClearAllFilters}
-                        limit={pageSize}
-                        onLimitChange={setPageSize}
-                        timeStart={timeStart}
-                        onTimeStartChange={setTimeStart}
-                        timeEnd={timeEnd}
-                        onTimeEndChange={setTimeEnd}
+                        limit={limit}
+                        onLimitChange={setLimit}
                     />
                 </div>
                 <div className="flex-1 overflow-y-auto">
