@@ -73,13 +73,17 @@ function Mensagens() {
     const [selectedAtendimento, setSelectedAtendimento] = useState(null);
     const [totalAtendimentos, setTotalAtendimentos] = useState(0);
     
-    // --- ALTERADO: Estado para controlar o limite de carregamento, com persistência no localStorage ---
-    const [limit, setLimit] = useState(() => {
+    // --- ALTERADO: 'pageSize' é o número de itens por página, vindo do localStorage ---
+    const [pageSize, setPageSize] = useState(() => {
         const savedLimit = localStorage.getItem('atendimentosLimit');
         const initialLimit = parseInt(savedLimit, 10);
-        // Retorna o valor salvo se for um número válido, senão, o padrão 20.
         return !isNaN(initialLimit) && initialLimit > 0 ? initialLimit : 20;
     });
+
+    // --- NOVO: 'limit' agora é o total de itens a serem buscados (múltiplo de pageSize) ---
+    // Ele começa com o valor de pageSize para a carga inicial.
+    const [limit, setLimit] = useState(pageSize);
+
 
     // --- NOVO: Estado para o loading do botão "Carregar Mais" ---
     const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -120,12 +124,27 @@ function Mensagens() {
         } 
 
         try {
-            // ALTERADO: Removemos todos os parâmetros de filtro da requisição.
-            // A API agora buscará todos os atendimentos.
-            // A filtragem será feita 100% no frontend.
-            const params = new URLSearchParams();
-            // Conforme solicitado, definimos um limite alto para buscar todos os dados.
-            params.append('limit', 999);
+            const hasTimeFilter = !!timeStart || !!timeEnd;
+            const params = new URLSearchParams({
+                search: debouncedSearchTerm || '',
+                limit: limit, // O limite é sempre controlado pela paginação
+            });
+
+            // --- ALTERADO: Adiciona filtros do popover (status e tags) à requisição ---
+            // Usa os filtros do popover se existirem, senão, usa os filtros dos botões principais.
+            if (statusFilters) {
+                params.append('status', statusFilters);
+            } else if (activeFilters.length > 0) {
+                activeFilters.forEach(s => params.append('status', s));
+            }
+
+            if (tagFilters) {
+                params.append('tags', tagFilters);
+            }
+
+            // A filtragem por horário será feita no frontend,
+            // então não enviamos mais os parâmetros para a API.
+
             const [userRes, atendimentosRes, personasRes, situationsRes, tagsRes] = await Promise.all([
                 api.get('/auth/me'),
                 api.get('/atendimentos/', { params }), // Envia os parâmetros formatados
@@ -140,9 +159,47 @@ function Mensagens() {
 
             const serverData = atendimentosRes.data;
             if (serverData && Array.isArray(serverData.items)) {
-                // ALTERADO: Simplesmente define os atendimentos com o que veio do servidor.
-                // A lógica de "carregar mais" não é mais necessária.
-                setAtendimentos(serverData.items);
+                setAtendimentos(prevAtendimentos => {
+                    // Se for uma carga inicial, troca de filtro (incluindo horário) ou busca, substitui a lista.
+                    // A condição `isInitialLoad` garante que a primeira carga sempre substitua a lista.
+                    // As outras condições (`limit === pageSize`, `hasTimeFilter`, `debouncedSearchTerm`)
+                    // garantem que mudanças de filtro pelo usuário também substituam a lista.
+                    // Durante o polling normal, `isNewLoad` será falso, resultando em uma mesclagem.
+                    const isNewLoad = isInitialLoad || limit === pageSize || hasTimeFilter || debouncedSearchTerm;
+                    
+
+                    const newItems = serverData.items;
+                    let combinedItems;
+
+                    if (isNewLoad) {
+                        combinedItems = newItems;
+                    } else {
+                        // Se não for carga nova (é um "carregar mais"), combina os resultados.
+                        const prevItemsMap = new Map(prevAtendimentos.map(item => [item.id, item]));
+                        newItems.forEach(item => {
+                            prevItemsMap.set(item.id, item); // Adiciona ou atualiza
+                        });
+                        combinedItems = Array.from(prevItemsMap.values());
+                    }
+
+                    // Lógica para manter mensagens otimistas (em envio)
+                    const busyAtendimentoIds = new Set(
+                        Object.keys(sendingQueue)
+                            .filter(id => sendingQueue[id]?.length > 0)
+                            .map(id => parseInt(id, 10))
+                    );
+
+                    return combinedItems.map(at => {
+                        if (busyAtendimentoIds.has(at.id)) {
+                            const localVersion = prevAtendimentos.find(local => local.id === at.id);
+                            if (localVersion) {
+                                // Se existe uma versão local com mensagens em envio, usa ela.
+                                return localVersion;
+                            }
+                        }
+                        return at;
+                    });
+                });
                 setTotalAtendimentos(serverData.total);
             } else {
                 setAtendimentos(Array.isArray(serverData) ? serverData : []);
@@ -156,7 +213,7 @@ function Mensagens() {
             if (isInitialLoad) setIsLoading(false);
             setIsFetchingMore(false);
         }
-    }, [sendingQueue, isProcessing]); // ALTERADO: Removidas dependências de filtro
+    }, [debouncedSearchTerm, sendingQueue, isProcessing, limit, activeFilters, activeButtonGroup, statusFilters, tagFilters, timeStart, timeEnd]);
 
     // --- Efeito: Polling Seguro (COM PAUSA EM SEGUNDO PLANO) ---
     useEffect(() => {
@@ -176,19 +233,9 @@ function Mensagens() {
              if (isMounted) timeoutId = setTimeout(poll, 5000);
         });
 
-        const handleVisibilityChange = () => {
-            if (!document.hidden && isMounted) {
-                // --- ALTERADO: Reseta o limite para o valor inicial correto ---
-                setLimit(20);
-                clearTimeout(timeoutId);
-                poll();
-            }
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
         return () => {
             isMounted = false;
             clearTimeout(timeoutId);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [fetchData]);
 
@@ -206,17 +253,16 @@ function Mensagens() {
 
     // --- NOVO: Efeito para salvar o limite no localStorage sempre que ele mudar ---
     useEffect(() => {
-        localStorage.setItem('atendimentosLimit', limit);
-    }, [limit]);
+        localStorage.setItem('atendimentosLimit', pageSize);
+    }, [pageSize]);
 
     // --- NOVO: Efeito para resetar o limite ao mudar o filtro ou a busca ---
     useEffect(() => {
         // Toda vez que o filtro ou o termo de busca mudar,
-        // reseta o limite para 20. Isso força o `fetchData` a fazer uma nova
+        // reseta o limite para o tamanho da página. Isso força o `fetchData` a fazer uma nova
         // carga (isNewLoad = true), substituindo a lista em vez de adicionar a ela.
-        // É crucial para que os filtros funcionem corretamente.
-        // Se os filtros do popover (status/tag/horário) estiverem ativos, o limite é 20.
-        setLimit(20);
+        // É crucial para que os filtros funcionem corretamente e a paginação seja reiniciada.
+        setLimit(pageSize);
     }, [activeButtonGroup, debouncedSearchTerm, statusFilters, tagFilters, timeStart, timeEnd]);
 
     useEffect(() => {
@@ -225,46 +271,18 @@ function Mensagens() {
             return;
         }
         
-        // ALTERADO: Toda a lógica de filtragem agora acontece no frontend.
+        // A filtragem por status, tags e busca é feita no backend.
+        // A filtragem por horário é feita aqui no frontend.
         let filtered = mensagens;
 
-        // 1. Filtro por Status (botões principais ou popover)
-        const activeStatusFilter = statusFilters || (activeFilters.length > 0 ? activeFilters : null);
-        if (activeStatusFilter) {
-            const filterSet = new Set(Array.isArray(activeStatusFilter) ? activeStatusFilter : [activeStatusFilter]);
-            filtered = filtered.filter(at => filterSet.has(at.status));
-        }
-
-        // 2. Filtro por Tag
-        if (tagFilters) {
-            filtered = filtered.filter(at => {
-                const atendimentoTags = at.tags || []; // Garante que `tags` seja um array
-                return atendimentoTags.some(tag => tag.name === tagFilters);
-            });
-        }
-
-        // 3. Filtro por Termo de Busca (debounced)
-        if (debouncedSearchTerm) {
-            const lowercasedTerm = debouncedSearchTerm.toLowerCase();
-            filtered = filtered.filter(at =>
-                (at.nome_contato && at.nome_contato.toLowerCase().includes(lowercasedTerm)) ||
-                (at.whatsapp && at.whatsapp.includes(lowercasedTerm))
-            );
-        }
-
-        // 4. Filtro por Horário
         if (timeStart || timeEnd) {
             filtered = filtered.filter(at => {
-                const lastMessageTs = getLastMessageTimestamp(at);
-                if (!lastMessageTs) return false; // Ignora se não houver timestamp
-
-                const messageTime = new Date(lastMessageTs);
+                const messageTime = new Date(getLastMessageTimestamp(at));
                 const messageHour = messageTime.getHours();
                 const messageMinute = messageTime.getMinutes();
 
                 // Converte HH:mm para minutos totais do dia
                 const toMinutes = (timeStr) => {
-                    if (!timeStr || !timeStr.includes(':')) return 0;
                     const [h, m] = timeStr.split(':').map(Number);
                     return h * 60 + m;
                 };
@@ -312,7 +330,7 @@ function Mensagens() {
                 setSelectedAtendimento(null);
             }
         }
-    }, [mensagens, selectedAtendimento, timeStart, timeEnd, debouncedSearchTerm, statusFilters, tagFilters, activeFilters]); // ALTERADO: Adicionadas todas as dependências de filtro
+    }, [mensagens, selectedAtendimento]); // Remove dependências de filtro, pois a filtragem é via API
 
     // --- FUNÇÃO CORRIGIDA PARA USAR AXIOS (api) ---
     const handleViewMedia = async (mediaId, type, filename) => {
@@ -495,12 +513,12 @@ function Mensagens() {
                 if (at.id === atendimentoId) {
                     const conversa = JSON.parse(at.conversa || '[]');
                     conversa.push(msg);
-                    // ALTERADO: Não atualizamos mais o 'updated_at' otimisticamente para evitar que a lista reordene imediatamente.
-                    const updatedAt = { ...at, conversa: JSON.stringify(conversa) };
+                    // Atualiza o 'updated_at' para reordenar a lista de contatos
+                    const updatedAt = { ...at, conversa: JSON.stringify(conversa), updated_at: new Date().toISOString() };
 
                     // Se for o mensagem selecionado, atualiza a tela principal
                     if (selectedAtendimento?.id === atendimentoId) {
-                        setSelectedAtendimento(prev => ({ ...prev, conversa: JSON.stringify(conversa) }));
+                        setSelectedAtendimento(updatedAt);
                     }
                     return updatedAt;
                 }
@@ -780,11 +798,8 @@ function Mensagens() {
     const handleLoadMore = () => {
         // Ativa o estado de loading imediatamente
         setIsFetchingMore(true);
-        // Pega o tamanho de página salvo pelo usuário ou usa o padrão 20.
-        const pageSize = parseInt(localStorage.getItem('atendimentosLimit'), 10) || 20;
-
         // Aumenta o limite e o useEffect de fetchData/polling vai pegar a mudança
-        // Adiciona o tamanho da página ao limite atual.
+        // Adiciona o tamanho da página (pageSize) ao limite total (limit).
         setLimit(prevLimit => prevLimit + pageSize);
     };
 
@@ -879,8 +894,8 @@ function Mensagens() {
                         selectedTags={tagFilters}
                         onTagChange={handleTagFilterChange}
                         onClearFilters={handleClearAllFilters}
-                        limit={limit}
-                        onLimitChange={setLimit}
+                        limit={pageSize}
+                        onLimitChange={setPageSize}
                         timeStart={timeStart}
                         onTimeStartChange={setTimeStart}
                         timeEnd={timeEnd}
@@ -916,7 +931,24 @@ function Mensagens() {
                                     Nenhum atendimento encontrado para este filtro.
                                 </p>
                             )}
-                            {/* REMOVIDO: O botão "Carregar Mais" não é mais necessário com a filtragem no frontend */}
+                            {/* --- Lógica do botão "Carregar Mais" --- */}
+                            {filteredAtendimentos.length > 0 && filteredAtendimentos.length < totalAtendimentos && (
+                                <div className="p-3 text-center border-t border-gray-200">
+                                    <button
+                                        onClick={handleLoadMore}
+                                        className="w-full px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-wait flex items-center justify-center gap-2"
+                                        disabled={isFetchingMore}
+                                    >
+                                        {isFetchingMore ? (
+                                            <>
+                                                <Loader2 size={16} className="animate-spin" />
+                                                A carregar...
+                                            </>
+                                        ) : `Carregar Mais (${filteredAtendimentos.length}/${totalAtendimentos})`
+                                        }
+                                    </button>
+                                </div>
+                            )}
                         </>
                     )}
                 </div>
