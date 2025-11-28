@@ -53,7 +53,7 @@ services:
       - RABBITMQ_URL=amqp://user:password@rabbitmq:5672/
       - RABBITMQ_WEBHOOK_QUEUE=atendai-webhook-queue-local
       - WBP_VERIFY_TOKEN=meu-atendai-e-secreto-987654
-      # --- CORS CONFIG ---
+      - GOOGLE_API_KEYS=AIzaSyA0rfp0xsqxVW7PiY36IvP1QrZqTVOjdao,AIzaSyCG_xwlaIAB1B_ftdyzglXrea_5oZM5ZKQ,AIzaSyB4V2oud1awuHHHKF8PA4N_76QGjPzEflA,AIzaSyDcueh_J-V_zfcgOqnYg45J6-lDNF_F6jM,AIzaSyCHrRBKNDqY02evfCooU82DNSJ7BNE1gq0,AIzaSyBbe5Uh3Dtot_PXo9WcOGVnQlSpV5gbZLs,AIzaSyDFAROgLGPXf4j3dqgWFl1Pp_hQrxbhPuI
       - FRONTEND_URL=https://atendai.cjssolucoes.com,https://www.atendai.cjssolucoes.com,https://api.atendai.cjssolucoes.com
     depends_on:
       rabbitmq:
@@ -71,6 +71,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/atendai_local
       - RABBITMQ_URL=amqp://user:password@rabbitmq:5672/
       - RABBITMQ_WEBHOOK_QUEUE=atendai-webhook-queue-local
+      - GOOGLE_API_KEYS=AIzaSyA0rfp0xsqxVW7PiY36IvP1QrZqTVOjdao,AIzaSyCG_xwlaIAB1B_ftdyzglXrea_5oZM5ZKQ,AIzaSyB4V2oud1awuHHHKF8PA4N_76QGjPzEflA,AIzaSyDcueh_J-V_zfcgOqnYg45J6-lDNF_F6jM,AIzaSyCHrRBKNDqY02evfCooU82DNSJ7BNE1gq0,AIzaSyBbe5Uh3Dtot_PXo9WcOGVnQlSpV5gbZLs,AIzaSyDFAROgLGPXf4j3dqgWFl1Pp_hQrxbhPuI
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -86,6 +87,7 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/atendai_local
       - AWS_REGION=us-east-1
+      - GOOGLE_API_KEYS=AIzaSyA0rfp0xsqxVW7PiY36IvP1QrZqTVOjdao,AIzaSyCG_xwlaIAB1B_ftdyzglXrea_5oZM5ZKQ,AIzaSyB4V2oud1awuHHHKF8PA4N_76QGjPzEflA,AIzaSyDcueh_J-V_zfcgOqnYg45J6-lDNF_F6jM,AIzaSyCHrRBKNDqY02evfCooU82DNSJ7BNE1gq0,AIzaSyBbe5Uh3Dtot_PXo9WcOGVnQlSpV5gbZLs,AIzaSyDFAROgLGPXf4j3dqgWFl1Pp_hQrxbhPuI
     depends_on:
       postgres:
         condition: service_healthy

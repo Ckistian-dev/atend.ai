@@ -101,6 +101,8 @@ services:
     environment:
       # --- VARIÁVEL ATUALIZADA para conectar ao container do Postgres ---
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/atendai_local
+      # --- VARIÁVEIS ADICIONADAS para consistência e para o agente de IA ---
+      - GOOGLE_API_KEYS=AIzaSyA0rfp0xsqxVW7PiY36IvP1QrZqTVOjdao,AIzaSyCG_xwlaIAB1B_ftdyzglXrea_5oZM5ZKQ,AIzaSyB4V2oud1awuHHHKF8PA4N_76QGjPzEflA,AIzaSyDcueh_J-V_zfcgOqnYg45J6-lDNF_F6jM,AIzaSyCHrRBKNDqY02evfCooU82DNSJ7BNE1gq0,AIzaSyBbe5Uh3Dtot_PXo9WcOGVnQlSpV5gbZLs,AIzaSyDFAROgLGPXf4j3dqgWFl1Pp_hQrxbhPuI
       - AWS_REGION=us-east-1 # (Necessário para o boto3, caso o Gemini use)
       # (Adicione aqui quaisquer outras chaves que o Gemini precise)
     depends_on:

@@ -7,9 +7,5 @@ build/
 .next/
 __pycache__/
 *.sqlite3
-<<<<<<< HEAD
 *.log
 *.tar
-=======
-*.log
->>>>>>> 619996215d8d0ae71b0fd0dbb1998920c7457b3b

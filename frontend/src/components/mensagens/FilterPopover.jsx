@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { X, Tag, CheckCircle2, Check, ListFilter } from 'lucide-react';
+import { X, Tag, CheckCircle2, Check, ListFilter, ArrowRight, Clock } from 'lucide-react';
 
 const FilterPopover = ({
     isOpen,
@@ -13,6 +13,10 @@ const FilterPopover = ({
     onClearFilters,
     limit,
     onLimitChange,
+    timeStart,
+    onTimeStartChange,
+    timeEnd,
+    onTimeEndChange,
 }) => {
     const popoverRef = useRef(null);
 
@@ -111,6 +115,28 @@ const FilterPopover = ({
                                     </button>
                                 );
                             })}
+                        </div>
+                    </div>
+
+                    {/* ALTERADO: Filtro por Horário Personalizado */}
+                    <div>
+                        <h5 className="text-xs font-bold text-gray-500 mb-2 flex items-center gap-1.5"><Clock size={14} /> INTERVALO DE HORÁRIO</h5>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="time"
+                                title="Horário de início"
+                                value={timeStart || ''}
+                                onChange={(e) => onTimeStartChange(e.target.value)}
+                                className="w-1/2 px-2 py-1 text-sm rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <ArrowRight size={16} className="text-gray-400" />
+                            <input
+                                type="time"
+                                title="Horário de fim"
+                                value={timeEnd || ''}
+                                onChange={(e) => onTimeEndChange(e.target.value)}
+                                className="w-1/2 px-2 py-1 text-sm rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                            />
                         </div>
                     </div>
                 </div>

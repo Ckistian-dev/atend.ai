@@ -3,7 +3,6 @@ import logging
 import random
 import sys
 from app.services.agent_processor import run_agent_cycle
-# O sqs_service e webhook_processor não são importados aqui
 
 # Configuração básica do logging
 logging.basicConfig(level=logging.INFO,
@@ -24,7 +23,6 @@ async def agent_db_poller():
             
             # Aguarda 5 segundos (como no seu requisito) + um jitter
             sleep_time = 5
-            logger.info(f"Worker-Agent: Ciclo completo. Aguardando {sleep_time:.2f}s...")
             await asyncio.sleep(sleep_time)
             
         except Exception as e:
