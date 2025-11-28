@@ -495,12 +495,12 @@ function Mensagens() {
                 if (at.id === atendimentoId) {
                     const conversa = JSON.parse(at.conversa || '[]');
                     conversa.push(msg);
-                    // Atualiza o 'updated_at' para reordenar a lista de contatos
-                    const updatedAt = { ...at, conversa: JSON.stringify(conversa), updated_at: new Date().toISOString() };
+                    // ALTERADO: Não atualizamos mais o 'updated_at' otimisticamente para evitar que a lista reordene imediatamente.
+                    const updatedAt = { ...at, conversa: JSON.stringify(conversa) };
 
                     // Se for o mensagem selecionado, atualiza a tela principal
                     if (selectedAtendimento?.id === atendimentoId) {
-                        setSelectedAtendimento(updatedAt);
+                        setSelectedAtendimento(prev => ({ ...prev, conversa: JSON.stringify(conversa) }));
                     }
                     return updatedAt;
                 }
