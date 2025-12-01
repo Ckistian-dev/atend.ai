@@ -408,7 +408,7 @@ function Atendimentos() {
     // Ref para evitar fetch duplicado no modo Strict do React
     const initialFetchDone = useRef(false);
 
-    const fetchData = useCallback(async (isInitialLoad = false) => {
+    const fetchData = useCallback(async (isInitialLoad = false, isMountedRef) => {
         // Evita loading piscando em polls
         if (isInitialLoad && !initialFetchDone.current) {
             setIsLoading(true);
@@ -438,8 +438,11 @@ function Atendimentos() {
             setStatusOptions(situationsRes.data); // <-- ADICIONADO: Define o estado com os dados da API
             setTemplates(templatesRes.data); // <-- NOVO: Salva os templates
 
-            // Atualiza a URL com os parâmetros atuais
-            setSearchParams(params, { replace: true });
+            // CORREÇÃO: Só atualiza a URL se o componente ainda estiver montado.
+            // Isso evita que uma busca de dados antiga, de uma página que já foi "deixada para trás",
+            // altere a URL da nova página e cause um redirecionamento indesejado.
+            // A verificação `isMountedRef.current` garante que isso não aconteça se o usuário navegar para outra página.
+            if (isMountedRef?.current) setSearchParams(params, { replace: true });
 
         } catch (err) {
             console.error("Erro ao buscar dados:", err); // Log mais detalhado
@@ -451,30 +454,31 @@ function Atendimentos() {
                 initialFetchDone.current = true; // Marca que o fetch inicial foi feito
             }
         }
-    }, [searchTerm, currentPage, limit, setSearchParams]); // Adiciona setSearchParams
+    }, [searchTerm, currentPage, limit, setSearchParams]); // isMountedRef não precisa ser dependência
 
     // --- CORREÇÃO DE POLLING (COM PAUSA EM SEGUNDO PLANO) ---
     useEffect(() => {
-        let isMounted = true;
+        const isMountedRef = { current: true }; // Usamos um objeto ref para que o valor seja mutável e persistente.
         let timeoutId;
 
         const poll = async () => {
             // Só busca dados se a página estiver VISÍVEL
             if (!document.hidden) {
-                await fetchData(false);
+                // Passa a referência do estado de montagem para a função de busca.
+                await fetchData(false, isMountedRef);
             }
 
-            if (isMounted) {
+            if (isMountedRef.current) {
                 // Agenda o próximo ciclo 5s DEPOIS que o atual terminar
                 timeoutId = setTimeout(poll, 5000);
             }
         };
 
         // Lógica de Inicialização
-        if (!initialFetchDone.current) {
-            // Se é a primeira vez, faz o fetch inicial com loading
-            fetchData(true).then(() => {
-                if (isMounted) timeoutId = setTimeout(poll, 5000);
+        // A busca inicial também precisa saber se o componente está montado.
+        if (!initialFetchDone.current) { // Garante que a carga inicial só aconteça uma vez.
+            fetchData(true, isMountedRef).then(() => {
+                if (isMountedRef.current) timeoutId = setTimeout(poll, 5000);
             });
         } else {
             // Se já carregou antes (ex: re-render), inicia o polling direto
@@ -483,7 +487,7 @@ function Atendimentos() {
 
         // Força atualização imediata ao voltar para a aba
         const handleVisibilityChange = () => {
-            if (!document.hidden && isMounted) {
+            if (!document.hidden && isMountedRef.current) {
                 clearTimeout(timeoutId);
                 poll();
             }
@@ -492,7 +496,7 @@ function Atendimentos() {
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
-            isMounted = false;
+            isMountedRef.current = false; // Define como falso quando o componente é desmontado.
             clearTimeout(timeoutId);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };

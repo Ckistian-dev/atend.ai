@@ -3,7 +3,7 @@ import logging.config # <<< NOVO IMPORT
 import sys # <<< NOVO IMPORT (para direcionar handler)
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import engine, SessionLocal
@@ -126,6 +126,29 @@ logger = logging.getLogger(__name__)
 async def create_db_and_tables():
     async with engine.begin() as conn:
         try:
+            # --- NOVO: Criação de função SQL customizada para segurança ---
+            # Esta função SQL é criada para evitar erros de "invalid input syntax for type json".
+            # Ela tenta de forma segura extrair o timestamp da última mensagem do campo 'conversa'.
+            # Se o campo não for um JSON válido ou a estrutura estiver errada, ela retorna NULL em vez de dar erro.
+            await conn.execute(text("""
+                CREATE OR REPLACE FUNCTION safe_get_last_message_time(conversa_text TEXT)
+                RETURNS TIME WITHOUT TIME ZONE AS $$
+                DECLARE
+                    last_msg_timestamp BIGINT;
+                BEGIN
+                    -- Verifica se o texto parece ser um array JSON não vazio
+                    IF conversa_text ~ '^\s*\[.+.\]\s*$' THEN
+                        last_msg_timestamp := (conversa_text::jsonb -> -1 ->> 'timestamp')::bigint;
+                        RETURN (TO_TIMESTAMP(last_msg_timestamp) AT TIME ZONE 'UTC')::TIME;
+                    END IF;
+                    RETURN NULL;
+                EXCEPTION WHEN others THEN
+                    -- Em qualquer erro (JSON inválido, campo faltando, etc.), retorna NULL
+                    RETURN NULL;
+                END;
+                $$ LANGUAGE plpgsql IMMUTABLE;
+            """))
+            logger.info("Função SQL 'safe_get_last_message_time' verificada/criada.")
             # await conn.run_sync(models.Base.metadata.drop_all)
             await conn.run_sync(models.Base.metadata.create_all)
             logger.info("Tabelas do banco de dados verificadas/criadas com sucesso.")

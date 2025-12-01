@@ -25,6 +25,11 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
 
     try:
         msg_type = message_data.get('type')
+        # --- NOVO: Ignorar mensagens de reação ---
+        if msg_type == 'reaction':
+            logger.info(f"WBP Webhook: Mensagem de reação recebida de {message_data.get('from')}. Ignorando.")
+            return
+
         timestamp_s_str = message_data.get('timestamp', '0')
         try:
             timestamp_s = int(timestamp_s_str)
@@ -49,6 +54,12 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
             atendimento_obj, was_created = result
             await db_session.commit()
             atendimento_id = atendimento_obj.id
+
+            # Carrega a conversa atual para uso posterior (ex: respostas)
+            try:
+                current_conversa_list_for_context = json.loads(atendimento_obj.conversa or "[]")
+            except (json.JSONDecodeError, TypeError):
+                current_conversa_list_for_context = []
             
             # Status que, se o atendimento já tiver, não devem ser alterados para "Mensagem Recebida".
             status_que_bloqueiam_reabertura = ["Ignorar Contato", "Atendente Chamado"]
@@ -56,6 +67,8 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
             if not was_created and atendimento_obj.status in status_que_bloqueiam_reabertura:
                 logger.info(f"WBP Webhook: Mensagem {msg_id_wamid} de {cleaned_sender_number}. Atendimento ID {atendimento_id} está em '{atendimento_obj.status}', status NÃO será alterado.")
                 deve_mudar_status = False
+        
+        reply_prefix = ""
 
         # --- Etapa 2: Processar Conteúdo da Mensagem (Texto, Mídia, etc.) ---
         formatted_msg_content = ""
@@ -63,6 +76,22 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
         mime_type_original = None
         caption = ""
         media_id_from_payload = None
+
+        # --- NOVO: Lógica para tratar respostas ---
+        context_data = message_data.get('context')
+        if context_data and context_data.get('id'):
+            replied_msg_id = context_data['id']
+            # Procura a mensagem original na conversa
+            original_msg = next((msg for msg in current_conversa_list_for_context if msg.get('id') == replied_msg_id), None)
+            if original_msg:
+                original_content = original_msg.get('content', '')
+                # Limita o tamanho da citação para não poluir a conversa
+                quote = (original_content[:100] + '...') if len(original_content) > 100 else original_content
+                # Define o prefixo que será adicionado à mensagem
+                reply_prefix = f"[Mensagem Referenciada]: \"{quote}\"\n"
+            else:
+                logger.info(f"WBP Webhook: Mensagem {msg_id_wamid} responde a {replied_msg_id}, mas a msg original não foi encontrada no histórico.")
+
 
         if msg_type == 'text':
             formatted_msg_content = message_data.get('text', {}).get('body', '').strip()
@@ -133,7 +162,7 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
                     analysis_result = await gemini_service.transcribe_and_analyze_media(
                         media_info_gemini, current_conversa_list, persona_config.contexto_json, db_gemini_ctx, user_for_gemini
                     )
-
+                
                 prefix = "[Áudio]" if 'audio' in mime_type_original else f"[Envio de Mídia ({mime_type_original})]"
                 formatted_msg_content = f"{prefix}: {analysis_result or 'Falha na análise'}"
                 if caption: formatted_msg_content += f"\n[Legenda]: {caption}"
@@ -141,6 +170,10 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
             except Exception as gemini_err:
                 logger.error(f"WBP Webhook: Erro Gemini ao analisar mídia (msg {msg_id_wamid}): {gemini_err}", exc_info=True)
                 formatted_msg_content = f"[Mídia ({msg_type}) recebida ({mime_type_original}), erro na análise/transcrição]"
+
+        # --- Adiciona o prefixo de resposta, se houver ---
+        if reply_prefix:
+            formatted_msg_content = reply_prefix + formatted_msg_content
 
         # --- Etapa 4: Salvar Mensagem no Banco de Dados ---
         if formatted_msg_content or media_id_from_payload:

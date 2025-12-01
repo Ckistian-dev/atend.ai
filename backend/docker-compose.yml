@@ -61,7 +61,7 @@ services:
       # --- VARIÁVEIS DE AMBIENTE ATUALIZADAS PARA RABBITMQ ---
       - RABBITMQ_URL=amqp://user:password@rabbitmq:5672/
       - RABBITMQ_WEBHOOK_QUEUE=atendai-webhook-queue-local
-      # --- CORREÇÃO AQUI ---
+      - GOOGLE_API_KEYS=AIzaSyAl9ONccIFW2sKsPN5ycezWGDpKiMGEU8g,AIzaSyCSbuyJgtuuZzfWuc0YQCo-pqsccgXEhzw,AIzaSyDKU1NuqkOg4swwGYPe600_KlH4d2sSIcc
       # O token agora bate com o que a Meta está enviando
       - WBP_VERIFY_TOKEN=meu-atendai-e-secreto-987654
     depends_on:
@@ -84,6 +84,7 @@ services:
       # --- VARIÁVEIS DE AMBIENTE ATUALIZADAS PARA RABBITMQ ---
       - RABBITMQ_URL=amqp://user:password@rabbitmq:5672/
       - RABBITMQ_WEBHOOK_QUEUE=atendai-webhook-queue-local
+      - GOOGLE_API_KEYS=AIzaSyAl9ONccIFW2sKsPN5ycezWGDpKiMGEU8g,AIzaSyCSbuyJgtuuZzfWuc0YQCo-pqsccgXEhzw,AIzaSyDKU1NuqkOg4swwGYPe600_KlH4d2sSIcc
     depends_on:
       # O worker só inicia DEPOIS que o RabbitMQ e o Postgres estiverem prontos.
       rabbitmq:
@@ -102,9 +103,7 @@ services:
       # --- VARIÁVEL ATUALIZADA para conectar ao container do Postgres ---
       - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/atendai_local
       # --- VARIÁVEIS ADICIONADAS para consistência e para o agente de IA ---
-      - GOOGLE_API_KEYS=AIzaSyA0rfp0xsqxVW7PiY36IvP1QrZqTVOjdao,AIzaSyCG_xwlaIAB1B_ftdyzglXrea_5oZM5ZKQ,AIzaSyB4V2oud1awuHHHKF8PA4N_76QGjPzEflA,AIzaSyDcueh_J-V_zfcgOqnYg45J6-lDNF_F6jM,AIzaSyCHrRBKNDqY02evfCooU82DNSJ7BNE1gq0,AIzaSyBbe5Uh3Dtot_PXo9WcOGVnQlSpV5gbZLs,AIzaSyDFAROgLGPXf4j3dqgWFl1Pp_hQrxbhPuI
-      - AWS_REGION=us-east-1 # (Necessário para o boto3, caso o Gemini use)
-      # (Adicione aqui quaisquer outras chaves que o Gemini precise)
+      - GOOGLE_API_KEYS=AIzaSyAl9ONccIFW2sKsPN5ycezWGDpKiMGEU8g,AIzaSyCSbuyJgtuuZzfWuc0YQCo-pqsccgXEhzw,AIzaSyDKU1NuqkOg4swwGYPe600_KlH4d2sSIcc
     depends_on:
       # O agente depende apenas do banco de dados para iniciar.
       postgres:

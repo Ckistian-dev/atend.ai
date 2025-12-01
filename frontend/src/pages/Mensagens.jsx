@@ -64,6 +64,10 @@ function Mensagens() {
     const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
     const [statusFilters, setStatusFilters] = useState(null); // ALTERADO: Agora é string ou null
     const [tagFilters, setTagFilters] = useState(null); // ALTERADO: Agora é string ou null
+    // --- NOVO: Estados para filtro de horário ---
+    const [timeStart, setTimeStart] = useState(null);
+    const [timeEnd, setTimeEnd] = useState(null);
+
 
 
     const [selectedAtendimento, setSelectedAtendimento] = useState(null);
@@ -131,6 +135,15 @@ function Mensagens() {
                 params.append('tags', tagFilters);
             }
 
+            // --- NOVO: Adiciona filtros de horário à requisição ---
+            if (timeStart) {
+                params.append('time_start', timeStart);
+            }
+
+            if (timeEnd) {
+                params.append('time_end', timeEnd);
+            }
+
             const [userRes, atendimentosRes, personasRes, situationsRes, tagsRes] = await Promise.all([
                 api.get('/auth/me'),
                 api.get('/atendimentos/', { params }), // Envia os parâmetros formatados
@@ -193,9 +206,9 @@ function Mensagens() {
             if (isInitialLoad) setError('Não foi possível carregar os dados. Verifique a sua conexão.');
         } finally {
             if (isInitialLoad) setIsLoading(false);
-            setIsFetchingMore(false); // Desativa o loading do botão em todos os casos
+            setIsFetchingMore(false);
         }
-    }, [debouncedSearchTerm, limit, activeFilters, activeButtonGroup, statusFilters, tagFilters]);
+    }, [debouncedSearchTerm, limit, activeFilters, statusFilters, tagFilters, timeStart, timeEnd]);
 
     // --- Efeito: Polling Seguro (COM PAUSA EM SEGUNDO PLANO) ---
     useEffect(() => {
@@ -250,10 +263,10 @@ function Mensagens() {
     useEffect(() => {
         // Toda vez que o filtro ou o termo de busca mudar,
         // reseta o limite.
-        // Se os filtros do popover estiverem ativos, o limite é 25. Senão, 20.
-        const hasPopoverFilters = !!statusFilters || !!tagFilters;
+        // Se os filtros do popover estiverem ativos, o limite é 20. Senão, 20.
+        const hasPopoverFilters = !!statusFilters || !!tagFilters || !!timeStart || !!timeEnd;
         setLimit(hasPopoverFilters ? 20 : 20);
-    }, [activeButtonGroup, debouncedSearchTerm, statusFilters, tagFilters]);
+    }, [activeButtonGroup, debouncedSearchTerm, statusFilters, tagFilters, timeStart, timeEnd]);
 
     useEffect(() => {
         if (!Array.isArray(mensagens)) {
@@ -804,6 +817,9 @@ function Mensagens() {
     const handleClearAllFilters = () => {
         setStatusFilters(null);
         setTagFilters(null);
+        // --- ALTERAÇÃO AQUI ---
+        setTimeStart(null);
+        setTimeEnd(null);
     };
 
     // --- NOVAS FUNÇÕES PARA O EDITOR DE TAGS ---
@@ -853,6 +869,10 @@ function Mensagens() {
                         onClearFilters={handleClearAllFilters}
                         limit={limit}
                         onLimitChange={setLimit}
+                        timeStart={timeStart}
+                        onTimeStartChange={setTimeStart}
+                        timeEnd={timeEnd}
+                        onTimeEndChange={setTimeEnd}
                     />
                 </div>
                 <div className="flex-1 overflow-y-auto">

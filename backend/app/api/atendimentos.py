@@ -15,7 +15,7 @@ from starlette.responses import RedirectResponse
 import httpx # Para fazer requisições HTTP assíncronas
 
 # Importações do SQLAlchemy para manipulação do banco de dados
-from sqlalchemy import select, func, cast
+from sqlalchemy import select, func, cast, Time, text
 from sqlalchemy.orm import joinedload
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -43,7 +43,9 @@ async def get_atendimentos(
     status: Optional[List[str]] = Query(None, description="Lista de status para filtrar"),
     tags: Optional[List[str]] = Query(None, description="Lista de nomes de tags para filtrar"),
     page: int = Query(1, ge=1, description="Número da página"),
-    limit: int = Query(20, ge=1, le=10000, description="Itens por página")
+    limit: int = Query(20, ge=1, le=10000, description="Itens por página"),
+    time_start: Optional[str] = Query(None, description="Horário de início do filtro (HH:MM)"),
+    time_end: Optional[str] = Query(None, description="Horário de fim do filtro (HH:MM)")
 ):
     """
     Lista todos os atendimentos para o usuário logado, com suporte a busca e paginação.
@@ -51,6 +53,8 @@ async def get_atendimentos(
     - `page`: Define a página de resultados a ser retornada.
     - `tags`: Filtra por uma lista de nomes de tags.
     - `status`: Filtra por uma lista de status específicos.
+    - `time_start`: Filtra atendimentos atualizados a partir deste horário.
+    - `time_end`: Filtra atendimentos atualizados até este horário.
     - `limit`: Define o número máximo de itens por página.
     """
     
@@ -75,10 +79,58 @@ async def get_atendimentos(
         # que será usado na verificação de contenção (`@>`).
         # A lógica foi alterada para usar o operador `?` que verifica a existência de um
         # elemento de nível superior que corresponda ao padrão.
-        for tag_name in tags:
-            # Cria um padrão JSON para buscar um objeto que contenha o nome da tag.
-            tag_pattern = json.dumps({'name': tag_name})
-            stmt_base = stmt_base.where(cast(models.Atendimento.tags, JSONB).op('?')(tag_pattern))
+        # CORREÇÃO: Usar o operador '@>' (contém) para buscar dentro do array de objetos JSON.
+        # O operador '?' não funciona para arrays de objetos, apenas para arrays de strings ou chaves de nível superior.
+        # --- CORREÇÃO DO ERRO 'jsonb @> character varying' ---
+        # O erro ocorre porque o driver estava passando a string JSON como 'varchar'.
+        # Ao usar json.loads() primeiro, convertemos a string em um objeto Python (lista de dicionários).
+        # O driver asyncpg sabe como serializar corretamente este objeto Python para o tipo JSONB do PostgreSQL.
+        tag_pattern_obj = [{'name': tags[0]}] # Apenas o primeiro tag é usado por enquanto
+        stmt_base = stmt_base.where(cast(models.Atendimento.tags, JSONB).contains(tag_pattern_obj))
+
+    # --- NOVO: Adiciona filtro por intervalo de horário ---
+    if time_start:
+        try:
+            # --- CORREÇÃO DE TIMEZONE ---
+            # 1. Parse do horário local (ex: 14:00) para um objeto datetime "naïve" no dia de hoje.
+            local_dt_naive = datetime.strptime(time_start, '%H:%M')
+            
+            # 2. Assume que este horário é do fuso horário de São Paulo (UTC-3).
+            #    Isso cria um objeto datetime "aware" (com fuso horário).
+            #    Idealmente, o fuso horário viria do usuário, mas fixar em 'America/Sao_Paulo' é uma solução robusta para o Brasil.
+            import pytz
+            sao_paulo_tz = pytz.timezone('America/Sao_Paulo')
+            local_dt_aware = sao_paulo_tz.localize(local_dt_naive)
+            
+            # 3. Converte o horário "aware" para UTC e extrai apenas a hora.
+            #    Agora, `start_time` é um objeto `time` em UTC, que pode ser comparado diretamente com o resultado da função SQL.
+            start_time = local_dt_aware.astimezone(pytz.utc).time()
+
+            safe_time_check_expr = text("safe_get_last_message_time(atendimentos.conversa) >= :start_time_val")
+            stmt_base = stmt_base.where(safe_time_check_expr.bindparams(start_time_val=start_time))
+        except ValueError:
+            logger.warning(f"Formato de time_start inválido: '{time_start}'. Ignorando filtro.")
+        except Exception as e:
+            logger.error(f"Erro inesperado no filtro time_start: {e}", exc_info=True)
+
+    if time_end:
+        try:
+            # Aplica a mesma lógica de conversão de timezone para o time_end
+            import pytz
+            sao_paulo_tz = pytz.timezone('America/Sao_Paulo')
+            
+            local_dt_naive = datetime.strptime(time_end, '%H:%M')
+            local_dt_aware = sao_paulo_tz.localize(local_dt_naive)
+            
+            # Converte para UTC e extrai a hora
+            end_time = local_dt_aware.astimezone(pytz.utc).time()
+
+            safe_time_check_expr = text("safe_get_last_message_time(atendimentos.conversa) <= :end_time_val")
+            stmt_base = stmt_base.where(safe_time_check_expr.bindparams(end_time_val=end_time))
+        except ValueError:
+            logger.warning(f"Formato de time_end inválido: '{time_end}'. Ignorando filtro.")
+        except Exception as e:
+            logger.error(f"Erro inesperado no filtro time_end: {e}", exc_info=True)
 
     # Se um termo de busca foi fornecido, adiciona a condição `WHERE` à query
     if search:

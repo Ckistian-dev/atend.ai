@@ -7,7 +7,8 @@ import { subDays, startOfMonth, endOfMonth, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { Loader2, TrendingUp, CheckCircle, Percent, Cpu, Send, AlertCircle, Calendar as CalendarIcon } from 'lucide-react';
+
+import { Loader2, TrendingUp, CheckCircle, Percent, Cpu, Send, AlertCircle, Calendar as CalendarIcon, Lightbulb, Zap, ArrowRight, BarChart3, AlertTriangle } from 'lucide-react';
 registerLocale('pt-BR', ptBR);
 
 // Mapeamento centralizado de cores para consistência
@@ -16,6 +17,92 @@ const STATUS_COLORS = {
     "Total": "#144cd1", // Cor para a nova linha de total
     "Aguardando Resposta": "#e5da61",
     "Concluído": "#5fd395",
+};
+
+// --- NOVO: Componente para renderizar o relatório de análise da IA ---
+const AnalysisReport = ({ analysisData }) => {
+    // CORREÇÃO: A resposta da IA pode vir aninhada ou não.
+    // Esta lógica verifica se há uma única chave principal (como 'analise_de_conversao')
+    // e usa o objeto interno. Se não, usa o objeto de dados diretamente.
+    const isNested = Object.keys(analysisData).length === 1 && typeof analysisData[Object.keys(analysisData)[0]] === 'object';
+    const report = isNested ? analysisData[Object.keys(analysisData)[0]] : analysisData;
+
+    const impactColors = {
+        'Alto': 'bg-red-100 text-red-800',
+        'Médio': 'bg-yellow-100 text-yellow-800',
+        'Baixo': 'bg-blue-100 text-blue-800',
+    };
+
+    const Section = ({ icon, title, children }) => (
+        <div className="mb-8">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                    {icon}
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+            </div>
+            <div className="pl-11 space-y-4">{children}</div>
+        </div>
+    );
+
+    return (
+        <div className="mt-6 p-6 bg-gray-50 border border-gray-200 rounded-lg">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Relatório de Análise da IA</h2>
+            <p className="text-sm text-gray-500 mb-8">Aqui está a análise gerada com base nos dados e na sua pergunta.</p>
+
+            {report.diagnostico_geral && (
+                <Section icon={<BarChart3 size={16} />} title="Diagnóstico Geral">
+                    <p className="text-gray-600 text-sm leading-relaxed">{report.diagnostico_geral}</p>
+                </Section>
+            )}
+
+            {report.principais_pontos_de_friccao?.length > 0 && (
+                <Section icon={<AlertTriangle size={16} />} title="Principais Pontos de Fricção">
+                    <div className="space-y-4">
+                        {report.principais_pontos_de_friccao.map((item, index) => (
+                            <div key={index} className="p-4 bg-white border border-gray-200 rounded-lg">
+                                <div className="flex justify-between items-start">
+                                    <h4 className="font-semibold text-gray-700">{item.area}</h4>
+                                    {item.impacto_na_conversao && (
+                                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${impactColors[item.impacto_na_conversao] || 'bg-gray-100 text-gray-800'}`}>
+                                            Impacto: {item.impacto_na_conversao}
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-sm text-gray-600 mt-2">{item.observacoes}</p>
+                            </div>
+                        ))}
+                    </div>
+                </Section>
+            )}
+
+            {report.insights_acionaveis?.length > 0 && (
+                <Section icon={<Lightbulb size={16} />} title="Insights e Sugestões">
+                    <div className="space-y-4">
+                        {report.insights_acionaveis.map((insight, index) => (
+                            <div key={index} className="p-4 bg-white border border-gray-200 rounded-lg">
+                                <h4 className="font-semibold text-gray-700 mb-2">{insight.titulo}</h4>
+                                <ul className="list-disc list-inside space-y-1">
+                                    {insight.sugestoes.map((sugestao, sIndex) => (
+                                        <li key={sIndex} className="text-sm text-gray-600">{sugestao}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                </Section>
+            )}
+
+            {report.proximos_passos_recomendados && (
+                <Section icon={<Zap size={16} />} title="Próximos Passos Recomendados">
+                    <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                        <ArrowRight size={20} className="text-blue-500 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-blue-800">{report.proximos_passos_recomendados}</p>
+                    </div>
+                </Section>
+            )}
+        </div>
+    );
 };
 
 // --- COMPONENTES DO DASHBOARD ---
@@ -184,9 +271,7 @@ const AIAnalyzer = ({ onAnalyze, isLoading, analysis, error }) => {
                 </div>
             )}
             {analysis && !isLoading && (
-                <div className="mt-6 p-6 bg-gray-50 border border-gray-200 rounded-lg prose prose-sm max-w-none">
-                    <div dangerouslySetInnerHTML={{ __html: analysis.replace(/\n/g, '<br />') }} />
-                </div>
+                <AnalysisReport analysisData={analysis} />
             )}
         </div>
     );
@@ -245,7 +330,7 @@ const Dashboard = () => {
                 start_date_str: dateRange.startDate.toISOString(),
                 end_date_str: dateRange.endDate.toISOString(),
             });
-            setAnalysisResult(response.data.analysis);
+            setAnalysisResult(response.data.analysis); // CORREÇÃO: Extrai o objeto de dentro da chave 'analysis'
         } catch (err) {
             console.error("Erro na análise da IA:", err);
             setAnalysisError(err.response?.data?.detail || 'Falha ao se comunicar com o serviço de análise.');

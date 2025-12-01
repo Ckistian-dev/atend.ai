@@ -270,6 +270,47 @@ class GeminiService:
             history_for_ia.append({"remetente": role, "mensagem": content})
         return history_for_ia
 
+    def _format_analysis_json_to_markdown(self, analysis_data: Dict[str, Any]) -> str:
+        """Converte o JSON de análise da IA em uma string Markdown formatada."""
+        markdown_parts = []
+
+        # Extrai a chave principal, que pode variar (ex: 'analise_de_conversao')
+        if not isinstance(analysis_data, dict):
+            return str(analysis_data) # Retorna como string se não for um dicionário
+
+        data = next(iter(analysis_data.values()), {}) if len(analysis_data) == 1 and isinstance(next(iter(analysis_data.values()), None), dict) else analysis_data
+
+        if 'diagnostico_geral' in data:
+            markdown_parts.append(f"## Diagnóstico Geral\n\n{data['diagnostico_geral']}\n")
+
+        if 'principais_pontos_de_friccao' in data and data['principais_pontos_de_friccao']:
+            markdown_parts.append("## Principais Pontos de Fricção\n")
+            for item in data['principais_pontos_de_friccao']:
+                area = item.get('area') or item.get('ponto', 'Área não especificada')
+                observacoes = item.get('observacoes') or item.get('detalhe', 'N/A')
+                impacto = item.get('impacto_na_conversao')
+                
+                markdown_parts.append(f"### {area}")
+                if impacto:
+                    markdown_parts.append(f"**Impacto na Conversão:** {impacto}\n")
+                markdown_parts.append(f"{observacoes}\n")
+
+        if 'insights_acionaveis' in data and data['insights_acionaveis']:
+            markdown_parts.append("## Insights Acionáveis e Sugestões\n")
+            for insight in data['insights_acionaveis']:
+                markdown_parts.append(f"### {insight.get('titulo', 'Sugestão')}\n")
+                for sugestao in insight.get('sugestoes', []):
+                    markdown_parts.append(f"- {sugestao}")
+                markdown_parts.append("") # Adiciona uma linha em branco
+
+        if 'proximos_passos_recomendados' in data:
+            markdown_parts.append(f"## Próximos Passos\n\n{data['proximos_passos_recomendados']}")
+
+        if not markdown_parts: # Fallback se a estrutura for inesperada
+            return "A análise foi gerada, mas em um formato não esperado para formatação automática."
+
+        return "\n".join(markdown_parts)
+
     async def analyze_data(
         self,
         question: str,
@@ -277,13 +318,13 @@ class GeminiService:
         atendimentos: List[models.Atendimento], # Lista de atendimentos do período
         persona: Optional[models.Config],       # A persona padrão
         db: AsyncSession,
-    ) -> str:
+    ) -> Dict[str, Any]:
         """
         Usa a IA para analisar dados do sistema com base em uma pergunta do usuário.
+        Retorna um dicionário JSON com a análise estruturada.
         """
         logger.info(f"Iniciando análise de dados para user_id={user.id} com a pergunta: '{question[:100]}...'")
 
-        # Simplifica os dados para não sobrecarregar o prompt
         simplified_atendimentos = [
             {
                 "id": at.id, "status": at.status, "created_at": at.created_at.isoformat(),
@@ -291,35 +332,43 @@ class GeminiService:
                 "conversa_length": len(at.conversa or "[]")
             } for at in atendimentos
         ]
-
-        # Simplifica o contexto da persona, se existir
         persona_context = None
         if persona and persona.contexto_json:
             persona_context = {"nome_persona": persona.nome_config, "contexto": persona.contexto_json}
 
         analysis_prompt = {
-            "objetivo": "Você é um analista de dados sênior e especialista em atendimento ao cliente. Sua tarefa é analisar os dados fornecidos para responder à pergunta do usuário de forma clara, objetiva e com insights acionáveis.",
+            "objetivo": "Você é um analista de dados sênior. Analise os dados fornecidos para responder à pergunta do usuário. Sua resposta DEVE ser um objeto JSON.",
             "pergunta_usuario": question,
             "dados_contexto": {
                 "resumo_usuario": {"id": user.id, "email": user.email, "tokens_restantes": user.tokens},
                 "contexto_persona_ia": persona_context or "Nenhum contexto de persona foi fornecido para esta análise.",
                 "atendimentos_periodo": simplified_atendimentos
             },
-            "regras_resposta": [
-                "1. Responda diretamente à pergunta do usuário.",
-                "2. Use os dados fornecidos para embasar sua análise. Cite exemplos se for relevante.",
-                "3. Se a pergunta for sobre melhorias, forneça sugestões práticas e realistas.",
-                "4. Formate sua resposta usando Markdown para melhor legibilidade (negrito, listas, etc.).",
-                "5. Seja conciso, mas completo. Evite respostas genéricas.",
-                "6. Se os dados não forem suficientes para responder, explique o porquê e sugira que tipo de informação seria necessária."
-            ]
+            "formato_resposta_obrigatorio": {
+                "descricao": "Sua resposta DEVE ser um único objeto JSON válido, sem nenhum texto ou formatação adicional (como ```json). Siga a estrutura sugerida para organizar sua análise.",
+                "estrutura_sugerida": {
+                    "analise_de_conversao": {
+                        "diagnostico_geral": "Um parágrafo resumindo a situação.",
+                        "principais_pontos_de_friccao": [
+                            {"area": "Nome da Área (ex: Preços)", "observacoes": "Detalhes observados em texto simples.", "impacto_na_conversao": "Alto/Médio/Baixo"}
+                        ],
+                        "insights_acionaveis": [
+                            {"titulo": "Título da Sugestão", "sugestoes": ["Sugestão 1 em texto simples.", "Sugestão 2 em texto simples."]}
+                        ],
+                        "proximos_passos_recomendados": "Recomendação final."
+                    }
+                }
+            }
         }
 
         prompt_str = json.dumps(analysis_prompt, ensure_ascii=False, indent=2)
 
-        # Usa _generate_with_retry, mas sem o formato JSON, pois queremos texto livre.
+        gen_config_override = self.generation_config.copy()
+        gen_config_override["response_mime_type"] = "application/json"
+        
         response = await self._generate_with_retry(prompt_str, db, user, is_media=False)
-        return response.text.strip()
+        analysis_json = json.loads(response.text)
+        return analysis_json
 
 
 _gemini_service_instance = None
