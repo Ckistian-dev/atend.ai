@@ -1,14 +1,20 @@
 // src/pages/Dashboard.jsx
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../api/axiosConfig';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { subDays, startOfMonth, endOfMonth, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
-import { Loader2, TrendingUp, CheckCircle, Percent, Cpu, Send, AlertCircle, Calendar as CalendarIcon, Lightbulb, Zap, ArrowRight, BarChart3, AlertTriangle } from 'lucide-react';
+import {
+    Loader2, TrendingUp, CheckCircle, Percent, Cpu, Send, AlertCircle,
+    Calendar as CalendarIcon, Lightbulb, Zap, ArrowRight, BarChart3,
+    AlertTriangle, FileDown
+} from 'lucide-react';
 registerLocale('pt-BR', ptBR);
 
 // Mapeamento centralizado de cores para consistência
@@ -21,6 +27,56 @@ const STATUS_COLORS = {
 
 // --- NOVO: Componente para renderizar o relatório de análise da IA ---
 const AnalysisReport = ({ analysisData }) => {
+    const reportRef = useRef(null);
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const handleDownloadPdf = () => {
+        const input = reportRef.current;
+        if (!input) return;
+
+        setIsDownloading(true);
+
+        html2canvas(input, {
+            scale: 2, // Aumenta a resolução para melhor qualidade
+            useCORS: true,
+            backgroundColor: '#f9fafb' // Cor de fundo do container
+        }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const ratio = canvasWidth / canvasHeight;
+
+            const imgWidth = pdfWidth - 20; // Margem de 10mm de cada lado
+            let imgHeight = imgWidth / ratio;
+            let heightLeft = imgHeight;
+            let position = 10; // Margem superior
+
+            pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+            heightLeft -= (pdfHeight - 20);
+
+            while (heightLeft > 0) {
+                pdf.addPage();
+                position = heightLeft - imgHeight + 10;
+                pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                heightLeft -= (pdfHeight - 20);
+            }
+
+            pdf.save(`relatorio-ia-${new Date().toISOString().split('T')[0]}.pdf`);
+            setIsDownloading(false);
+        }).catch(() => {
+            setIsDownloading(false);
+            alert("Ocorreu um erro ao gerar o PDF.");
+        });
+    };
+
     // CORREÇÃO: A resposta da IA pode vir aninhada ou não.
     // Esta lógica verifica se há uma única chave principal (como 'analise_de_conversao')
     // e usa o objeto interno. Se não, usa o objeto de dados diretamente.
@@ -46,9 +102,21 @@ const AnalysisReport = ({ analysisData }) => {
     );
 
     return (
-        <div className="mt-6 p-6 bg-gray-50 border border-gray-200 rounded-lg">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Relatório de Análise da IA</h2>
-            <p className="text-sm text-gray-500 mb-8">Aqui está a análise gerada com base nos dados e na sua pergunta.</p>
+        <div ref={reportRef} className="mt-6 p-6 bg-gray-50 border border-gray-200 rounded-lg">
+            <div className="flex justify-between items-start mb-8">
+                <div>
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">Relatório de Análise da IA</h2>
+                    <p className="text-sm text-gray-500">Aqui está a análise gerada com base nos dados e na sua pergunta.</p>
+                </div>
+                <button
+                    onClick={handleDownloadPdf}
+                    disabled={isDownloading}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg shadow-sm text-sm font-medium hover:bg-gray-700 transition-colors disabled:bg-gray-400 disabled:cursor-wait"
+                >
+                    {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
+                    {isDownloading ? 'A gerar...' : 'Baixar PDF'}
+                </button>
+            </div>
 
             {report.diagnostico_geral && (
                 <Section icon={<BarChart3 size={16} />} title="Diagnóstico Geral">

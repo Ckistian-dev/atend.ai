@@ -347,6 +347,19 @@ async def get_dashboard_data(
 
     consumo_medio_tokens = (tokens_consumidos / total_atendimentos) if total_atendimentos > 0 else 0
 
+    # --- NOVO: Lógica para Atividade Recente ---
+    # Busca o último atendimento atualizado no período para exibir no header.
+    recent_activity_query = await db.execute(
+        select(models.Atendimento)
+        .where(
+            models.Atendimento.user_id == user_id,
+            models.Atendimento.created_at.between(start_date, end_date)
+        )
+        .order_by(models.Atendimento.updated_at.desc())
+        .limit(1)
+    )
+    recent_activity = recent_activity_query.scalars().first()
+
     dashboard_data = {
         "stats": {
             "totalAtendimentos": {
@@ -369,7 +382,17 @@ async def get_dashboard_data(
         "charts": {
             "atendimentosPorSituacao": atendimentos_por_situacao,
             "contatosPorDia": contatos_por_dia
-        }
+        },
+        # Adiciona a atividade recente ao payload. Retorna como uma lista para manter
+        # a compatibilidade com o frontend que espera `recentActivity[0]`.
+        "recentActivity": [
+            {
+                "id": recent_activity.id,
+                "whatsapp": recent_activity.whatsapp,
+                "situacao": recent_activity.status,
+                "observacao": recent_activity.observacoes
+            }
+        ] if recent_activity else []
     }
     return dashboard_data
 
