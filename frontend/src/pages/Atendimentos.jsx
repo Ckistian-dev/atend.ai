@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import api from '../api/axiosConfig';
 import { Search, MessageSquare, Edit, Trash2, AlertTriangle, ChevronLeft, ChevronRight, X as XIcon, Tag, Download, Plus, MessageSquarePlus, Loader2 } from 'lucide-react';
 
@@ -256,7 +257,7 @@ const CreateModal = ({ personas, statusOptions, onSave, onClose }) => {
 
     const handleSave = () => {
         if (!whatsapp.trim()) {
-            alert("O número do WhatsApp é obrigatório.");
+            toast.error("O número do WhatsApp é obrigatório.");
             return;
         }
 
@@ -458,7 +459,7 @@ function Atendimentos() {
             );
         } catch (err) {
             console.error("Erro ao salvar edição:", err);
-            alert('Erro ao guardar as alterações. A interface será revertida.');
+            toast.error('Erro ao guardar as alterações. A interface será revertida.');
             setAtendimentos(originalAtendimentos); // Reverte
         }
     };
@@ -476,7 +477,7 @@ function Atendimentos() {
             // fetchData(false); 
         } catch (err) {
             console.error("Erro ao apagar atendimento:", err);
-            alert('Erro ao apagar o atendimento. A lista será recarregada.');
+            toast.error('Erro ao apagar o atendimento. A lista será recarregada.');
             setAtendimentos(originalAtendimentos); // Reverte
             setTotalAtendimentos(prev => prev + 1); // Reverte contador
             // Força refetch em caso de erro
@@ -486,6 +487,7 @@ function Atendimentos() {
     };
 
     const handleCreate = async (newAtendimentoData) => {
+        let errorMessage = 'Ocorreu um erro ao criar o atendimento.';
         try {
             const response = await api.post('/atendimentos/', newAtendimentoData);
             // Adiciona o novo atendimento no início da lista para feedback imediato
@@ -498,7 +500,7 @@ function Atendimentos() {
             } else if (err.response?.data?.detail) {
                 errorMessage = err.response.data.detail;
             }
-            alert(errorMessage);
+            toast.error(errorMessage);
             // Não fecha o modal em caso de erro para o usuário corrigir
         }
     };
@@ -535,7 +537,7 @@ function Atendimentos() {
             const itemsToExport = response.data.items;
 
             if (itemsToExport.length === 0) {
-                alert("Nenhum atendimento para exportar com os filtros atuais.");
+                toast.info("Nenhum atendimento para exportar com os filtros atuais.");
                 return;
             }
 
@@ -587,7 +589,7 @@ function Atendimentos() {
 
         } catch (err) {
             console.error("Erro ao exportar atendimentos:", err);
-            alert("Ocorreu um erro ao tentar exportar os dados. Tente novamente.");
+            toast.error("Ocorreu um erro ao tentar exportar os dados. Tente novamente.");
         }
     };
 

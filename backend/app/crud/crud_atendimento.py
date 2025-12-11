@@ -449,3 +449,20 @@ async def get_atendimentos_para_processar(db: AsyncSession) -> List[models.Atend
     except Exception as e:
         logger.error(f"Erro ao buscar atendimentos para processar (em massa): {e}", exc_info=True)
         return []
+
+async def get_atendimentos_for_followup(db: AsyncSession, user_id: int, earliest_time: datetime, latest_time: datetime) -> list[models.Atendimento]:
+    """
+    Busca atendimentos de um usuário em 'Aguardando Resposta' dentro da janela de tempo para follow-up.
+    """
+    stmt = (
+        select(models.Atendimento)
+        .where(
+            models.Atendimento.user_id == user_id,
+            models.Atendimento.status == "Aguardando Resposta",
+            models.Atendimento.updated_at < earliest_time,
+            models.Atendimento.updated_at > latest_time
+        )
+        .options(joinedload(models.Atendimento.active_persona)) # Eager load persona
+    )
+    result = await db.execute(stmt)
+    return result.scalars().unique().all()

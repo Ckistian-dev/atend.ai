@@ -186,8 +186,8 @@ const Header = () => {
                 <div className="flex items-center gap-4 sm:gap-5">
                     {agentStatus && <AgentStatus status={agentStatus} onToggle={handleToggleAgentStatus} />}
                     
-                    {/* Animação de entrada para nova atividade com styled-jsx */}
-                    <style jsx global>{`
+                    {/* Animação de entrada para nova atividade */}
+                    <style>{`
                         .activity-ticker-wrapper {
                             position: relative;
                             height: 34px; /* Ajuste conforme a altura do seu componente ActivityTicker */

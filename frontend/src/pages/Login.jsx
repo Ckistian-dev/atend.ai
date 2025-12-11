@@ -109,7 +109,7 @@ function Login() {
                     
                     <div className="text-center mt-12">
                         <p className="text-sm text-gray-500">
-                            Desenvolvido por <a href="https://ckistian-programando-solucoes.vercel.app" target="_blank" rel="noopener noreferrer" className="font-semibold text-gray-800 hover:underline">Ckistian Programando Soluções</a>
+                            Desenvolvido por <a href="https://digitalforme.cjssolucoes.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-gray-800 hover:underline">CJS Soluções</a>
                         </p>
                     </div>
                 </div>

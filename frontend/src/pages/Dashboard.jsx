@@ -232,8 +232,8 @@ const DateRangeFilter = ({ onDateChange }) => {
             </div>
             {showCustomPicker && (
                 <div className="absolute top-full right-0 mt-2 bg-white p-4 rounded-xl shadow-lg border border-gray-200 z-20 w-80">
-                     <p className="text-sm font-semibold text-gray-700 mb-3">Selecione um período</p>
-                     <DatePicker
+                    <p className="text-sm font-semibold text-gray-700 mb-3">Selecione um período</p>
+                    <DatePicker
                         selectsRange={true}
                         startDate={customRange[0]}
                         endDate={customRange[1]}
@@ -244,23 +244,23 @@ const DateRangeFilter = ({ onDateChange }) => {
                         locale="pt-BR"
                         dateFormat="dd/MM/yyyy"
                         maxDate={new Date()}
-                     />
-                     <div className="flex justify-end gap-2 mt-3">
+                    />
+                    <div className="flex justify-end gap-2 mt-3">
                         <button onClick={() => setShowCustomPicker(false)} className="px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200">
                             Cancelar
                         </button>
-                        <button 
+                        <button
                             onClick={() => {
                                 if (customRange[0] && customRange[1]) {
                                     onDateChange(customRange[0], customRange[1]);
                                     setShowCustomPicker(false);
                                 }
-                            }} 
+                            }}
                             className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-300"
                             disabled={!customRange[0] || !customRange[1]}>
                             Aplicar
                         </button>
-                     </div>
+                    </div>
                 </div>
             )}
         </div>
@@ -272,9 +272,9 @@ const AIAnalyzer = ({ onAnalyze, isLoading, analysis, error }) => {
     const [selectedContexts, setSelectedContexts] = useState(['atendimentos', 'persona']);
 
     const handleContextChange = (context) => {
-        setSelectedContexts(prev => 
-            prev.includes(context) 
-                ? prev.filter(c => c !== context) 
+        setSelectedContexts(prev =>
+            prev.includes(context)
+                ? prev.filter(c => c !== context)
                 : [...prev, context]
         );
     };
@@ -286,14 +286,25 @@ const AIAnalyzer = ({ onAnalyze, isLoading, analysis, error }) => {
         }
     };
 
+    const predefinedQuestions = [
+        "Qual o principal motivo de contato dos clientes?",
+        "Quais são os pontos de maior atrito nas conversas?",
+        "Sugira 3 melhorias para o meu processo de atendimento com base nos dados.",
+    ];
+
+    const handlePredefinedQuestionClick = (q) => {
+        setQuestion(q);
+    };
+
+
     return (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mt-8">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Análise com IA</h3>
             <p className="text-gray-500 mb-6">
-                Faça uma pergunta e selecione os contextos que a IA deve usar para responder. 
+                Faça uma pergunta e selecione os contextos que a IA deve usar para responder.
                 A análise dos atendimentos <strong className="font-semibold text-gray-700">respeitará o filtro de período</strong> selecionado acima.
             </p>
-            
+
             <div className="mb-4 flex items-center gap-6">
                 <p className="text-sm font-semibold text-gray-700">Incluir na análise:</p>
                 <div className="flex items-center gap-4">
@@ -323,6 +334,22 @@ const AIAnalyzer = ({ onAnalyze, isLoading, analysis, error }) => {
                 </button>
             </form>
 
+            <div className="mt-4">
+                <div className="flex flex-wrap gap-2">
+                    {predefinedQuestions.map((q, index) => (
+                        <button
+                            key={index}
+                            type="button"
+                            onClick={() => handlePredefinedQuestionClick(q)}
+                            className="flex items-center gap-2 text-sm text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full hover:bg-blue-100 hover:text-blue-800 transition-colors"
+                        >
+                            <Lightbulb size={14} />
+                            <span>{q}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             {isLoading && (
                 <div className="mt-6 flex items-center justify-center text-gray-500">
                     <Loader2 size={24} className="animate-spin mr-3" />
@@ -330,7 +357,7 @@ const AIAnalyzer = ({ onAnalyze, isLoading, analysis, error }) => {
                 </div>
             )}
             {error && (
-                 <div className="mt-6 p-4 bg-red-50 text-red-700 border border-red-200 rounded-lg flex items-center gap-3">
+                <div className="mt-6 p-4 bg-red-50 text-red-700 border border-red-200 rounded-lg flex items-center gap-3">
                     <AlertCircle size={20} />
                     <div>
                         <p className="font-semibold">Ocorreu um erro</p>
@@ -392,7 +419,7 @@ const Dashboard = () => {
         setAnalysisResult('');
         setAnalysisError('');
         try {
-            const response = await api.post('/dashboard/analyze', { 
+            const response = await api.post('/dashboard/analyze', {
                 question,
                 contexts,
                 start_date_str: dateRange.startDate.toISOString(),
@@ -444,7 +471,7 @@ const Dashboard = () => {
             {isLoading && <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10"><Loader2 size={32} className="animate-spin text-blue-500" /></div>}
 
             {data && (
-                <div className="space-y-8"> 
+                <div className="space-y-8">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
                         {/* Coluna Esquerda: Cards e Gráfico de Linhas */}
                         <div className="lg:col-span-2 space-y-8 flex flex-col">
@@ -467,8 +494,8 @@ const Dashboard = () => {
                                         {Object.entries(STATUS_COLORS)
                                             .filter(([status]) => status !== 'Total') // <-- Adicionado filtro para não duplicar
                                             .map(([status, color]) => (
-                                            <Line key={status} type="monotone" dataKey={status} stroke={color} strokeWidth={2} name={status} dot={false} />
-                                        ))}
+                                                <Line key={status} type="monotone" dataKey={status} stroke={color} strokeWidth={2} name={status} dot={false} />
+                                            ))}
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
@@ -479,14 +506,14 @@ const Dashboard = () => {
                             <h3 className="text-lg font-semibold text-gray-800 mb-4">Distribuição por Situação</h3>
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                                    <Pie 
-                                        data={data?.charts?.atendimentosPorSituacao || []} 
-                                        dataKey="value" 
-                                        nameKey="name" 
-                                        cx="50%" 
-                                        cy="50%" 
+                                    <Pie
+                                        data={data?.charts?.atendimentosPorSituacao || []}
+                                        dataKey="value"
+                                        nameKey="name"
+                                        cx="50%"
+                                        cy="50%"
                                         innerRadius={60} // <-- Transforma em gráfico de rosca
-                                        outerRadius={100} 
+                                        outerRadius={100}
                                         paddingAngle={3}
                                         label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
                                     >

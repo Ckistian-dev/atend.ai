@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axiosConfig';
+import toast from 'react-hot-toast';
 import {
     Plus, Save, Trash2, FileText, ChevronRight, Loader2,
     Link as LinkIcon, Star, CheckCircle, Folder, Copy, Share2
@@ -149,8 +150,8 @@ function Configs() {
 
     // --- Sync Sheets ---
     const handleSyncSheet = async () => {
-        if (!selectedConfig) return alert("Salve a configuração antes de sincronizar.");
-        if (!spreadsheetId) return alert("Insira o ID ou Link da planilha.");
+        if (!selectedConfig) return toast.error("Salve a configuração antes de sincronizar.");
+        if (!spreadsheetId) return toast.error("Insira o ID ou Link da planilha.");
 
         setIsSyncing(true);
         setError('');
@@ -162,7 +163,7 @@ function Configs() {
             // Atualiza o form data localmente para garantir integridade ao salvar depois
             setFormData(prev => ({ ...prev, contexto_json: response.data.contexto_json }));
 
-            alert(`Sucesso! ${response.data.sheets_found.length} abas encontradas.`);
+            toast.success(`Sucesso! ${response.data.sheets_found.length} abas encontradas.`);
         } catch (err) {
             setError(err.response?.data?.detail || 'Falha ao sincronizar. Verifique se compartilhou a planilha com o e-mail do robô.');
         } finally {
@@ -172,8 +173,8 @@ function Configs() {
 
     // --- Sync Drive ---
     const handleSyncDrive = async () => {
-        if (!selectedConfig) return alert("Salve a configuração antes de sincronizar.");
-        if (!driveFolderId) return alert("Insira o ID da pasta do Drive.");
+        if (!selectedConfig) return toast.error("Salve a configuração antes de sincronizar.");
+        if (!driveFolderId) return toast.error("Insira o ID da pasta do Drive.");
 
         setIsSyncing(true);
         setError('');
@@ -193,7 +194,7 @@ function Configs() {
             // Atualiza o form data localmente
             setFormData(prev => ({ ...prev, arquivos_drive_json: driveData }));
 
-            alert(`Sucesso! ${response.data.files_count} arquivos encontrados.`);
+            toast.success(`Sucesso! ${response.data.files_count} arquivos encontrados.`);
         } catch (err) {
             setError(err.response?.data?.detail || 'Falha ao sincronizar Drive. Verifique o ID e o compartilhamento.');
         } finally {

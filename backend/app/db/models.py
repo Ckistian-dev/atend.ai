@@ -1,7 +1,7 @@
 from sqlalchemy import ( Column, Integer, String, ForeignKey, Text, DateTime, func, Enum as SQLEnum )
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import JSONB
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 import enum
 
@@ -23,8 +23,9 @@ class User(Base):
     atendente_online: Mapped[bool] = mapped_column(default=False, nullable=False, server_default="false", comment="Status de disponibilidade do atendente humano")
     tokens: Mapped[int] = mapped_column(Integer, default=0)
     default_persona_id: Mapped[Optional[int]] = mapped_column(ForeignKey("configs.id"), nullable=True)
-    followup_interval_minutes: Mapped[int] = mapped_column(Integer, default=0)
 
+    followup_active: Mapped[bool] = mapped_column(default=False, nullable=False, server_default="false", comment="Define se o sistema de followup está ativo para este usuário")
+    followup_config: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Configurações de followup (intervalos, horários, mensagens)")
     configs: Mapped[List["Config"]] = relationship(back_populates="owner", foreign_keys="[Config.user_id]", cascade="all, delete-orphan")
     atendimentos: Mapped[List["Atendimento"]] = relationship(back_populates="owner", cascade="all, delete-orphan")
     default_persona: Mapped[Optional["Config"]] = relationship(foreign_keys=[default_persona_id])

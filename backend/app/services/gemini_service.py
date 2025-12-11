@@ -264,6 +264,56 @@ class GeminiService:
         # Fallback caso o loop termine sem sucesso (não deve acontecer com a lógica acima)
         return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": "Falha crítica no loop de geração de resposta da IA." }
 
+    async def generate_followup_action(
+        self,
+        whatsapp: models.Atendimento,
+        conversation_history_db: List[dict],
+        followup_config: Dict[str, Any],
+        db: AsyncSession,
+        user: models.User
+    ) -> dict:
+        """
+        Gera uma mensagem de follow-up baseada na inatividade e nas configurações do usuário.
+        """
+        try:
+            formatted_history = self._format_history_for_prompt(conversation_history_db)
+
+            master_prompt = {
+                "instrucao_geral": (
+                    "Você é um assistente de IA especialista em reengajamento de clientes. Sua única tarefa é gerar uma mensagem de follow-up. Siga estas regras:\n"
+                    "1. *Contexto é Rei:* A configuração `followup_config` contém a mensagem que você DEVE usar como base. Você pode fazer pequenas adaptações para soar mais natural, mas o sentido principal deve ser mantido.\n"
+                    "2. *Verifique o Histórico:* Analise o `historico_conversa` para entender o último tópico discutido. Sua mensagem de follow-up deve ser relevante a esse tópico, se possível.\n"
+                    "3. *Seja Conciso e Amigável:* A mensagem deve ser curta, amigável e convidar o cliente a continuar a conversa. Não seja insistente.\n"
+                    "4. *Não Cumprimente Novamente:* Verifique no histórico se já houve um cumprimento. Se sim, não cumprimente de novo.\n"
+                    "5. *Não Faça Perguntas Abertas Demais:* Em vez de 'Posso ajudar em algo mais?', tente algo como 'Conseguiu ver o que te enviei sobre [tópico]?' ou 'Ainda ficou alguma dúvida sobre [tópico]?'.\n"
+                    "6. *Formato de Resposta:* Sua resposta DEVE ser um objeto JSON contendo apenas a chave `mensagem_para_enviar` com o texto da mensagem. Se decidir que nenhuma mensagem deve ser enviada, o valor deve ser `null`."
+                ),
+                "formato_resposta_obrigatorio": {
+                    "descricao": "Sua resposta DEVE ser um único objeto JSON válido.",
+                    "chaves": {
+                        "mensagem_para_enviar": "O texto da mensagem de follow-up a ser enviada. Se decidir não enviar, o valor deve ser null."
+                    }
+                },
+                "followup_config": followup_config, # Contém a mensagem base para o intervalo atual
+                "dados_atuais_conversa": {
+                    "tarefa_imediata": "Analisar a última interação e a `followup_config` para criar uma mensagem de reengajamento.",
+                    "nome_contato_atual": whatsapp.nome_contato,
+                    "historico_conversa": formatted_history
+                }
+            }
+            
+            final_prompt_str = json.dumps(master_prompt, ensure_ascii=False, indent=2, cls=SetEncoder)
+            
+            response = await self._generate_with_retry(final_prompt_str, db, user)
+            
+            clean_response = response.text.strip().replace("```json", "").replace("```", "")
+            
+            return json.loads(clean_response)
+
+        except Exception as e:
+            logger.error(f"Erro ao gerar ação de follow-up com Gemini: {e}", exc_info=True)
+            return { "mensagem_para_enviar": None }
+
     def _format_history_for_prompt(self, db_history: List[dict]) -> List[Dict[str, str]]:
         history_for_ia = []
         for msg in db_history:

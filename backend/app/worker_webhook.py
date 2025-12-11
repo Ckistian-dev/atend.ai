@@ -1,23 +1,18 @@
 import aio_pika
-import os
 import json
 import logging
 import asyncio
 import time  # <--- IMPORT NOVO PARA O CONTROLE DE TEMPO
 
+# Importa as configurações centralizadas
+from app.core.config import settings
 # Importa as funções de processamento que contêm a lógica de negócio
 from app.services.webhook_processor import process_official_message_task, process_official_status_task
 
 # Configuração básica de logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-RABBITMQ_URL = os.getenv("RABBITMQ_URL")
-QUEUE_NAME = os.getenv("RABBITMQ_WEBHOOK_QUEUE")
 logger = logging.getLogger(__name__)
-
-# Configuração do tempo de corte para ignorar mensagens antigas (em segundos)
-# 300 segundos = 5 minutos
-MAX_MESSAGE_AGE_SECONDS = 300
 
 async def process_message(body: bytes) -> bool:
     """
@@ -44,8 +39,8 @@ async def process_message(body: bytes) -> bool:
                 msg_time = int(message_timestamp)
                 age = current_time - msg_time
                 
-                if age > MAX_MESSAGE_AGE_SECONDS:
-                    logger.warning(f"🚫 [ANTI-FLOOD] Mensagem IGNORADA! Atraso de {age}s (Limite: {MAX_MESSAGE_AGE_SECONDS}s). Timestamp: {msg_time}")
+                if age > settings.MAX_MESSAGE_AGE_SECONDS:
+                    logger.warning(f"🚫 [ANTI-FLOOD] Mensagem IGNORADA! Atraso de {age}s (Limite: {settings.MAX_MESSAGE_AGE_SECONDS}s). Timestamp: {msg_time}")
                     # Retorna True para confirmar (ack) a mensagem e removê-la da fila sem processar
                     return True
                     
@@ -78,7 +73,7 @@ async def process_message(body: bytes) -> bool:
 
 async def main() -> None:
     # aio_pika gerencia a reconexão automaticamente com `connect_robust`
-    connection = await aio_pika.connect_robust(RABBITMQ_URL)
+    connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
     logger.info("Conexão com RabbitMQ estabelecida.")
 
     async with connection:
@@ -89,9 +84,9 @@ async def main() -> None:
         await channel.set_qos(prefetch_count=1)
 
         # Declara a fila, garantindo que ela exista e seja durável
-        queue = await channel.declare_queue(QUEUE_NAME, durable=True)
+        queue = await channel.declare_queue(settings.RABBITMQ_WEBHOOK_QUEUE, durable=True)
 
-        logger.info(f"[*] Aguardando mensagens na fila '{QUEUE_NAME}'. Para sair, pressione CTRL+C")
+        logger.info(f"[*] Aguardando mensagens na fila '{settings.RABBITMQ_WEBHOOK_QUEUE}'. Para sair, pressione CTRL+C")
 
         # Itera sobre as mensagens da fila de forma assíncrona
         async with queue.iterator() as queue_iter:

@@ -42,7 +42,7 @@ services:
   # --- API (FastAPI) ---
   api:
     # MUDANÇA AQUI: Agora aponta para o Docker Hub
-    image: ckistian/atendai-backend:v1.0.2
+    image: ckistian/atendai-backend:latest
     container_name: atendai_api
     restart: always
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
@@ -63,7 +63,7 @@ services:
 
   # --- Worker Webhook ---
   worker-webhook:
-    image: ckistian/atendai-backend:v1.0.2
+    image: ckistian/atendai-backend:latest
     container_name: atendai_worker_webhook
     restart: always
     command: ["python", "-m", "app.worker_webhook"]
@@ -72,6 +72,7 @@ services:
       - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
       - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
       - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - MAX_MESSAGE_AGE_SECONDS=${MAX_MESSAGE_AGE_SECONDS}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -80,7 +81,7 @@ services:
 
   # --- Worker Agent ---
   worker-agent:
-    image: ckistian/atendai-backend:v1.0.2
+    image: ckistian/atendai-backend:latest
     container_name: atendai_worker_agent
     restart: always
     command: ["python", "-m", "app.worker_agent"]
@@ -95,6 +96,21 @@ services:
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - FRONTEND_URL=${FRONTEND_URL}
       - GOOGLE_SERVICE_ACCOUNT_JSON=${GOOGLE_SERVICE_ACCOUNT_JSON}
+    depends_on:
+      postgres:
+        condition: service_healthy
+  
+  # --- Worker Followup ---
+  worker-followup:
+    image: ckistian/atendai-backend:latest
+    container_name: atendai_worker_followup
+    restart: always
+    command: ["python", "-m", "app.worker_followup"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
     depends_on:
       postgres:
         condition: service_healthy

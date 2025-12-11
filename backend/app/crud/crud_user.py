@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
 from app.db import models
 import logging
 from typing import Optional, List
@@ -45,3 +46,15 @@ async def get_users_with_agent_running(db: AsyncSession) -> List[models.User]:
     result = await db.execute(stmt)
     users = result.scalars().all()
     return users
+
+async def get_users_with_followup_active(db: AsyncSession) -> List[models.User]:
+    """
+    Busca todos os usuários com o sistema de follow-up ativo.
+    """
+    stmt = (
+        select(models.User)
+        .where(models.User.followup_active == True)
+        .options(joinedload(models.User.default_persona)) # Eager load a persona padrão
+    )
+    result = await db.execute(stmt)
+    return result.scalars().unique().all()

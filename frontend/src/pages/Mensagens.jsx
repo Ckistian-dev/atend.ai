@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../api/axiosConfig'; // Presumindo que você tenha este arquivo de configuração do Axios
+import toast from 'react-hot-toast';
 import {
     Loader2, MoreVertical
 } from 'lucide-react';
@@ -471,7 +472,7 @@ function Mensagens() {
                 // O interceptor já deve ter iniciado o redirect, mas garantimos
                 window.location.href = '/login';
             } else {
-                alert("Não foi possível baixar o documento.");
+                toast.error("Não foi possível baixar o documento.");
             }
         } finally {
             setIsDownloadingMedia(false);
@@ -740,7 +741,7 @@ function Mensagens() {
             }
         } catch (err) {
             console.error("Erro ao salvar edição:", err);
-            alert('Erro ao guardar as alterações. A interface será revertida.');
+            toast.error('Erro ao guardar as alterações. A interface será revertida.');
             setAtendimentos(originalAtendimentos); // Reverte
         }
     };

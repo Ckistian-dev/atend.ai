@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     GOOGLE_API_KEYS: str     # Chaves da API Gemini (separadas por vírgula)
     
     GOOGLE_SERVICE_ACCOUNT_JSON: str
+
+    MAX_MESSAGE_AGE_SECONDS: int = 300 # Tempo (s) para ignorar webhooks antigos na fila. Padrão: 5 minutos.
     
     model_config = SettingsConfigDict(
         env_file=".env",

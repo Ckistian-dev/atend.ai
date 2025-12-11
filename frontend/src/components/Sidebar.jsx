@@ -6,9 +6,8 @@ import {
     Bot,
     Settings,
     LogOut,
-    Rocket,
-    Link as LinkIcon,
-    Archive // --- NOVO: Ícone para Finalizados ---
+    History, // --- NOVO: Ícone para Follow-up ---
+    Archive,
 } from 'lucide-react';
 
 // --- ALTERADO: Aceita a prop 'currentUserApiType' ---
@@ -28,6 +27,7 @@ const Sidebar = ({ currentUserApiType }) => {
         { icon: MessageSquareText, name: 'Atendimentos', path: '/atendimentos' },
         { icon: Archive, name: 'Mensagens', path: '/mensagens' },
         { icon: Bot, name: 'Persona & Contexto', path: '/configs' },
+        { icon: History, name: 'Follow-up', path: '/followup' },
     ];
 
     // 2. Cria a lista final de itens

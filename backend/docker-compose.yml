@@ -80,6 +80,7 @@ services:
       - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
       - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
       - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - MAX_MESSAGE_AGE_SECONDS=${MAX_MESSAGE_AGE_SECONDS}
     depends_on:
       # O worker só inicia DEPOIS que o RabbitMQ e o Postgres estiverem prontos.
       rabbitmq:
@@ -107,6 +108,22 @@ services:
       - GOOGLE_SERVICE_ACCOUNT_JSON=${GOOGLE_SERVICE_ACCOUNT_JSON}
     depends_on:
       # O agente depende apenas do banco de dados para iniciar.
+      postgres:
+        condition: service_healthy
+  
+  # --- NOVO SERVIÇO: O Worker de Follow-up ---
+  worker-followup:
+    build: .
+    container_name: atendai_worker_followup
+    command: ["python", "-m", "app.worker_followup"]
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    depends_on:
       postgres:
         condition: service_healthy
 
