@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MoreVertical, Tag, CheckCircle2, MailWarning } from 'lucide-react';
+import { MoreVertical, Tag, CheckCircle2, MailWarning, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import TagEditor from './TagEditor';
+import NameEditor from './NameEditor'; // Importa o novo componente
 
 // --- Componente: Item de Contato na Lista (MODIFICADO) ---
 const ContactItem = ({
@@ -154,6 +155,12 @@ const ContactItem = ({
         e.stopPropagation();
         onUpdateStatus(mensagem.id, { status: newStatus })
         setActiveSubMenu(null); // Fecha o submenu de status
+    };
+
+    // --- NOVA FUNÇÃO: Salva o nome do editor ---
+    const handleSaveName = (newName) => {
+        onUpdateStatus(mensagem.id, { nome_contato: newName });
+        setActiveSubMenu(null); // Fecha o editor
     };
 
     // --- NOVAS FUNÇÕES PARA O EDITOR DE TAGS ---
@@ -320,6 +327,14 @@ const ContactItem = ({
                         </button>
                         <button
                             type="button"
+                            onClick={() => { setActiveSubMenu('name'); setIsMainMenuOpen(false); }}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                            <Edit size={16} className="text-gray-500" />
+                            Alterar Nome
+                        </button>
+                        <button
+                            type="button"
                             onClick={() => { setActiveSubMenu('tags'); setIsMainMenuOpen(false); }}
                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                         >
@@ -362,6 +377,15 @@ const ContactItem = ({
                             );
                         })}
                     </div>
+                )}
+
+                {/* --- SUBMENU DE NOME (NOVO) --- */}
+                {activeSubMenu === 'name' && (
+                    <NameEditor
+                        currentName={mensagem.nome_contato || ''}
+                        onSave={handleSaveName}
+                        onClose={() => setActiveSubMenu(null)}
+                    />
                 )}
 
                 {/* --- SUBMENU DE TAGS (MODIFICADO) --- */}

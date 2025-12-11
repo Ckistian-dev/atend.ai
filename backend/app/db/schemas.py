@@ -81,6 +81,7 @@ class UserUpdate(BaseModel):
     tokens: Optional[int] = None
     default_persona_id: Optional[int] = None
     agent_running: Optional[bool] = None
+    atendente_online: Optional[bool] = None
     followup_interval_minutes: Optional[int] = None
     wbp_phone_number_id: Optional[str] = Field(None, description="ID do Número de Telefone na WhatsApp Business Platform")
     wbp_access_token: Optional[str] = Field(None, description="Token de Acesso da WBP (fornecer descriptografado, será criptografado)")
@@ -90,6 +91,7 @@ class User(UserBase):
     id: int
     tokens: int
     agent_running: bool
+    atendente_online: bool
     default_persona_id: Optional[int] = None
     followup_interval_minutes: int
     wbp_phone_number_id: Optional[str] = None

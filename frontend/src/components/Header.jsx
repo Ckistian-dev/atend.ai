@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { CSSTransition, SwitchTransition } from 'react-transition-group';
-import { Ticket, User as UserIcon, AlertCircle, Zap, Activity } from 'lucide-react';
+import { Ticket, User as UserIcon, AlertCircle, Zap, Activity, UserCheck, UserX } from 'lucide-react';
 import api from '../api/axiosConfig';
 
 // --- Sub-componente para o Status do Agente ---
@@ -149,6 +149,25 @@ const Header = () => {
         }
     };
 
+    const handleToggleAttendantStatus = async () => {
+        if (!user) return;
+
+        const originalStatus = user.atendente_online;
+        const newStatus = !originalStatus;
+
+        // Atualização otimista da UI
+        setUser(prevUser => ({ ...prevUser, atendente_online: newStatus }));
+
+        try {
+            await api.put('/users/me', { atendente_online: newStatus });
+        } catch (err) {
+            console.error("Erro ao alternar status do atendente:", err);
+            // Reverte em caso de erro
+            setUser(prevUser => ({ ...prevUser, atendente_online: originalStatus }));
+            setError(true);
+        }
+    };
+
     const renderContent = () => {
         if (loading) {
             return <div className="h-8 bg-gray-200 rounded-full w-96 animate-pulse"></div>;
@@ -213,10 +232,29 @@ const Header = () => {
                         <span className="font-semibold text-gray-800">{user?.tokens ?? '...'}</span>
                         <span className="text-sm hidden sm:inline">Tokens</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                        <UserIcon size={18} />
-                        <span className="font-medium">{user?.email ?? '...'}</span>
-                    </div>
+                    {user ? (
+                        <button
+                            onClick={handleToggleAttendantStatus}
+                            className={`flex items-center gap-2.5 text-sm px-3 py-1.5 rounded-full transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue ${
+                                user.atendente_online
+                                    ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                    : 'bg-red-100 text-red-800 hover:bg-red-200'
+                            }`}
+                            title={`Você está ${user.atendente_online ? 'Online' : 'Offline'}. Clique para alterar.`}
+                        >
+                            <span className="relative flex h-2.5 w-2.5">
+                                {user.atendente_online && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
+                                <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${user.atendente_online ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                            </span>
+                            {user.atendente_online ? <UserCheck size={16} /> : <UserX size={16} />}
+                            <span className="font-medium hidden sm:inline">{user.email}</span>
+                        </button>
+                    ) : (
+                        <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                            <UserIcon size={18} />
+                            <span className="font-medium">...</span>
+                        </div>
+                    )}
                 </div>
             </div>
         );

@@ -138,7 +138,25 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
             if caption and not media_info_gemini:
                 formatted_msg_content += f"\n[Legenda]: {caption}"
 
-        # ... (outros tipos de mensagem como 'contacts', 'location') ...
+        elif msg_type == 'location':
+            location_data = message_data.get('location', {})
+            latitude = location_data.get('latitude')
+            longitude = location_data.get('longitude')
+            name = location_data.get('name')
+            address = location_data.get('address')
+
+            if latitude and longitude:
+                maps_link = f"https://www.google.com/maps/search/?api=1&query={latitude},{longitude}"
+                location_parts = ["[Localização Recebida]"]
+                if name:
+                    location_parts.append(f"Nome: {name}")
+                if address:
+                    location_parts.append(f"Endereço: {address}")
+                location_parts.append(f"Ver no mapa: {maps_link}")
+                formatted_msg_content = "\n".join(location_parts)
+            else:
+                formatted_msg_content = "[Localização recebida, mas sem coordenadas]"
+
         else:
             logger.info(f"WBP Webhook: Tipo de mensagem não tratado: {msg_type}. Payload: {message_data}")
             formatted_msg_content = f"[Mensagem do tipo '{msg_type}' recebida, conteúdo não processado]"
@@ -180,7 +198,7 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
             formatted_msg = schemas.FormattedMessage(
                 id=msg_id_wamid, role='user', content=formatted_msg_content or None,
                 timestamp=timestamp_s, status='unread',
-                type=msg_type if msg_type in ['image', 'audio', 'document', 'video', 'sticker'] else 'text',
+                type=msg_type if msg_type in ['image', 'audio', 'document', 'video', 'sticker', 'location'] else 'text',
                 media_id=media_id_from_payload, mime_type=mime_type_original,
                 filename=message_data.get('document', {}).get('filename')
             )

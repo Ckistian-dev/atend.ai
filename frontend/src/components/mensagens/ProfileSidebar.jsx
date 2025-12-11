@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Phone, FileText, Tag, MoreVertical, CheckCircle2 } from 'lucide-react';
+import { Phone, FileText, Tag, MoreVertical, CheckCircle2, Edit } from 'lucide-react';
 import TagEditor from './TagEditor'; // Importa o novo componente
+import NameEditor from './NameEditor'; // Importa o novo componente
 
 // --- NOVO Componente: Sidebar de Perfil do Contato ---
 const ProfileSidebar = ({
@@ -47,6 +48,12 @@ const ProfileSidebar = ({
         e.stopPropagation();
         onUpdateStatus(atendimento.id, { status: newStatus });
         setActiveSubMenu(null);
+    };
+
+    // --- NOVA FUNÇÃO: Salva o nome do editor ---
+    const handleSaveName = (newName) => {
+        onUpdateTags(atendimento.id, { nome_contato: newName });
+        setActiveSubMenu(null); // Fecha o editor
     };
 
     const handleToggleTag = (tag) => {
@@ -103,6 +110,14 @@ const ProfileSidebar = ({
                                 </button>
                                 <button
                                     type="button"
+                                    onClick={() => { setActiveSubMenu('name'); setIsMainMenuOpen(false); }}
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                >
+                                    <Edit size={16} className="text-gray-500" />
+                                    Alterar Nome
+                                </button>
+                                <button
+                                    type="button"
                                     onClick={() => { setActiveSubMenu('tags'); setIsMainMenuOpen(false); }}
                                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                                 >
@@ -119,6 +134,15 @@ const ProfileSidebar = ({
                                 allTags={allTags}
                                 onToggleTag={handleToggleTag}
                                 onSaveNewTag={handleSaveNewTag}
+                                onClose={() => setActiveSubMenu(null)}
+                            />
+                        )}
+
+                        {/* --- SUBMENU DE NOME (NOVO) --- */}
+                        {activeSubMenu === 'name' && (
+                            <NameEditor
+                                currentName={atendimento.nome_contato || ''}
+                                onSave={handleSaveName}
                                 onClose={() => setActiveSubMenu(null)}
                             />
                         )}

@@ -92,10 +92,11 @@ const Pagination = ({ currentPage, totalPages, onPageChange, totalItems }) => {
 };
 
 // --- MODAL DE EDIÇÃO ---
-const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allTags, setAllTags }) => {
+const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allTags, setAllTags }) => { // eslint-disable-line
     const [status, setStatus] = useState(atendimento.status);
     // Garante que personaId tenha um valor padrão (null ou o primeiro ID) se o atual for inválido
     const [personaId, setPersonaId] = useState(atendimento.active_persona_id ?? (personas?.[0]?.id ?? null));
+    const [nomeContato, setNomeContato] = useState(atendimento.nome_contato || '');
     const [currentTags, setCurrentTags] = useState(atendimento.tags || []);
     const [newTagName, setNewTagName] = useState('');
     const [newTagColor, setNewTagColor] = useState('#6b7280');
@@ -128,7 +129,12 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allT
     const handleSave = () => {
         // Converte personaId para número ao salvar, tratando null/undefined
         const finalPersonaId = personaId ? parseInt(personaId, 10) : null;
-        onSave(atendimento.id, { status, active_persona_id: finalPersonaId, tags: currentTags });
+        onSave(atendimento.id, {
+            status,
+            active_persona_id: finalPersonaId,
+            tags: currentTags,
+            nome_contato: nomeContato.trim() || null
+        });
         onClose();
     };
 
@@ -147,6 +153,16 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allT
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Editar Atendimento</h3>
                 <p className="text-sm text-gray-500 mb-6">A alterar o atendimento de: <strong className="text-gray-700">{atendimento.whatsapp}</strong></p>
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Contato</label>
+                        <input
+                            type="text"
+                            value={nomeContato}
+                            onChange={e => setNomeContato(e.target.value)}
+                            placeholder="Nome do contato"
+                            className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        />
+                    </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Situação</label>
                         <select value={status} onChange={e => setStatus(e.target.value)} className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
@@ -232,57 +248,11 @@ const DeleteConfirmationModal = ({ atendimento, onConfirm, onClose }) => (
 );
 
 // --- NOVO: MODAL DE CRIAÇÃO ---
-const CreateModal = ({ personas, statusOptions, templates, onSave, onClose }) => {
+const CreateModal = ({ personas, statusOptions, onSave, onClose }) => {
     const [whatsapp, setWhatsapp] = useState('');
     const [nomeContato, setNomeContato] = useState('');
     const [status, setStatus] = useState('Novo Atendimento');
     const [personaId, setPersonaId] = useState(personas?.[0]?.id ?? '');
-
-    // Estados para o template
-    const [selectedTemplateName, setSelectedTemplateName] = useState('');
-    const [templateVariables, setTemplateVariables] = useState({});
-
-    const selectedTemplate = useMemo(() => {
-        if (!selectedTemplateName) return null;
-        return templates.find(t => t.name === selectedTemplateName);
-    }, [selectedTemplateName, templates]);
-
-    const templateVariableNames = useMemo(() => {
-        if (!selectedTemplate) return [];
-        const headerText = selectedTemplate.components.find(c => c.type === 'HEADER')?.text || '';
-        const bodyText = selectedTemplate.components.find(c => c.type === 'BODY')?.text || '';
-        const combinedText = `${headerText} ${bodyText}`;
-        // CORREÇÃO: A regex agora aceita palavras (\w+) além de apenas dígitos (\d+).
-        const matches = combinedText.match(/{{\s*(\w+)\s*}}/g) || [];
-        return [...new Set(matches.map(v => v.replace(/[{}]/g, '').trim()))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-    }, [selectedTemplate]);
-
-    // --- NOVO: Lógica para gerar o texto de preview ---
-    const previewText = useMemo(() => {
-        if (!selectedTemplate) return '';
-
-        const header = selectedTemplate.components.find(c => c.type === 'HEADER')?.text || '';
-        const body = selectedTemplate.components.find(c => c.type === 'BODY')?.text || '';
-        let combinedText = `${header}\n${body}`.trim();
-
-        // Substitui as variáveis no texto
-        return combinedText.replace(/{{\s*(\w+)\s*}}/g, (match, varName) => {
-            const value = templateVariables[varName];
-            // Se a variável tiver um valor, usa. Senão, mostra o placeholder.
-            return value
-                ? `<strong class="font-bold text-black">${value}</strong>`
-                : `<span class="italic text-blue-600 opacity-80">${match}</span>`;
-        });
-    }, [selectedTemplate, templateVariables]);
-
-
-    useEffect(() => {
-        const initialVars = templateVariableNames.reduce((acc, name) => {
-            acc[name] = '';
-            return acc;
-        }, {});
-        setTemplateVariables(initialVars);
-    }, [templateVariableNames]);
 
     const handleSave = () => {
         if (!whatsapp.trim()) {
@@ -296,14 +266,6 @@ const CreateModal = ({ personas, statusOptions, templates, onSave, onClose }) =>
             status,
             active_persona_id: personaId ? parseInt(personaId, 10) : null,
         };
-
-        if (selectedTemplate) {
-            payload.template_name = selectedTemplate.name;
-            payload.template_language_code = selectedTemplate.language;
-            payload.template_components = [
-                { type: 'body', parameters: templateVariableNames.map(name => ({ type: 'text', text: templateVariables[name] || '' })) }
-            ];
-        }
 
         onSave(payload);
         onClose();
@@ -335,42 +297,6 @@ const CreateModal = ({ personas, statusOptions, templates, onSave, onClose }) =>
                             {(personas || []).map(p => <option key={p.id} value={p.id}>{p.nome_config}</option>)}
                         </select>
                     </div>
-
-                    {/* Seção de Template */}
-                    <div className="pt-6 border-t"> {/* pt-6 */}
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Iniciar com Template (Opcional)</label>
-                        <select value={selectedTemplateName} onChange={e => setSelectedTemplateName(e.target.value)} className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <option value="">Nenhum Template</option>
-                            {(templates || []).map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
-                        </select>
-                    </div>
-
-                    {/* --- INÍCIO: Seção de Preview e Variáveis --- */}
-                    {selectedTemplate && (
-                        <div className="space-y-4 pt-4">
-                            {/* Preview da Mensagem */}
-                            <div className="p-4 bg-gray-100 rounded-lg" style={{ backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)), url('https://static.vecteezy.com/system/resources/previews/021/736/713/non_2x/doodle-lines-arrows-circles-and-curves-hand-drawn-design-elements-isolated-on-white-background-for-infographic-illustration-vector.jpg')`, backgroundSize: 'contain' }}>
-                                <h4 className="text-sm font-semibold text-gray-700 mb-3">Pré-visualização</h4>
-                                <div className="flex justify-end">
-                                    <div className="relative max-w-md py-2 px-3 rounded-lg shadow-sm break-words bg-[#d9fdd3] text-gray-800">
-                                        <p className="whitespace-pre-wrap text-sm" dangerouslySetInnerHTML={{ __html: previewText.replace(/\n/g, '<br />') }} />
-                                        <span className="text-xs text-gray-400 float-right ml-2 mt-1">
-                                            {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Inputs das Variáveis */}
-                            {templateVariableNames.length > 0 && templateVariableNames.map(name => (
-                                <div key={name}>
-                                    <label className="block text-xs font-mono text-gray-500 mb-1">{`{{${name}}}`}</label>
-                                    <input type="text" value={templateVariables[name] || ''} onChange={e => setTemplateVariables(prev => ({ ...prev, [name]: e.target.value }))} placeholder={`Valor para {{${name}}}`}
-                                        className="block w-full px-3 py-2 text-sm rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-                                </div>
-                            ))}
-                        </div>
-                    )}
                 </div>
                 <div className="mt-8 flex justify-end gap-4">
                     <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">Cancelar</button>
@@ -397,7 +323,6 @@ function Atendimentos() {
 
     const [statusOptions, setStatusOptions] = useState([]); // Agora é dinâmico
     const [userData, setUserData] = useState(null); // Novo
-    const [templates, setTemplates] = useState([]); // Novo para templates
     const [allTags, setAllTags] = useState([]); // Para o modal de edição
 
     const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1', 10)); // Lê a página da URL
@@ -420,13 +345,12 @@ function Atendimentos() {
                 page: currentPage,
                 limit: limit
             };
-            const [atendimentosRes, personasRes, userRes, situationsRes, tagsRes, templatesRes] = await Promise.all([
+            const [atendimentosRes, personasRes, userRes, situationsRes, tagsRes] = await Promise.all([
                 api.get('/atendimentos/', { params }),
                 api.get('/configs/'),
                 api.get('/auth/me'),
                 api.get('/configs/situations'),
-                api.get('/atendimentos/tags'),
-                api.get('/atendimentos/whatsapp/templates') // <-- NOVO: Busca de templates
+                api.get('/atendimentos/tags')
             ]);
 
             setAtendimentos(atendimentosRes.data.items);
@@ -436,7 +360,6 @@ function Atendimentos() {
             setPersonas(personasRes.data);
             setUserData(userRes.data);
             setStatusOptions(situationsRes.data); // <-- ADICIONADO: Define o estado com os dados da API
-            setTemplates(templatesRes.data); // <-- NOVO: Salva os templates
 
             // CORREÇÃO: Só atualiza a URL se o componente ainda estiver montado.
             // Isso evita que uma busca de dados antiga, de uma página que já foi "deixada para trás",
@@ -570,8 +493,6 @@ function Atendimentos() {
             setTotalAtendimentos(prev => prev + 1);
             setIsCreateModalOpen(false); // Fecha o modal
         } catch (err) {
-            console.error("Erro ao criar atendimento:", err);
-            let errorMessage = 'Erro ao criar o atendimento.';
             if (err.response?.status === 409) {
                 errorMessage = 'Já existe um atendimento para este número de WhatsApp.';
             } else if (err.response?.data?.detail) {
@@ -809,7 +730,7 @@ function Atendimentos() {
             {modalData.type === 'conversation' && modalData.data && <ConversationModal onClose={handleCloseModals} conversation={modalData.data.conversa} contactIdentifier={modalData.data.nome_contato || modalData.data.whatsapp} />}
             {modalData.type === 'edit' && modalData.data && <EditModal onClose={handleCloseModals} atendimento={modalData.data} personas={personas} statusOptions={statusOptions} onSave={handleSaveEdit} allTags={allTags} setAllTags={setAllTags} />}
             {modalData.type === 'delete' && modalData.data && <DeleteConfirmationModal onClose={handleCloseModals} atendimento={modalData.data} onConfirm={handleConfirmDelete} />}
-            {isCreateModalOpen && <CreateModal onClose={() => setIsCreateModalOpen(false)} onSave={handleCreate} personas={personas} statusOptions={statusOptions} templates={templates} />}
+            {isCreateModalOpen && <CreateModal onClose={() => setIsCreateModalOpen(false)} onSave={handleCreate} personas={personas} statusOptions={statusOptions} />}
         </div>
     );
 }

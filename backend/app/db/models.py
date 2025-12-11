@@ -20,6 +20,7 @@ class User(Base):
     wbp_business_account_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="ID da Conta do WhatsApp Business na Meta")
 
     agent_running: Mapped[bool] = mapped_column(default=False, nullable=False, server_default="false")
+    atendente_online: Mapped[bool] = mapped_column(default=False, nullable=False, server_default="false", comment="Status de disponibilidade do atendente humano")
     tokens: Mapped[int] = mapped_column(Integer, default=0)
     default_persona_id: Mapped[Optional[int]] = mapped_column(ForeignKey("configs.id"), nullable=True)
     followup_interval_minutes: Mapped[int] = mapped_column(Integer, default=0)

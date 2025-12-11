@@ -6,9 +6,9 @@ services:
     image: postgres:15-alpine
     container_name: atendai_db
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=atendai_local
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     ports:
       # Expõe a porta para que você possa conectar com um cliente de DB localmente
       - "5434:5432"
@@ -26,8 +26,8 @@ services:
     image: rabbitmq:3-management-alpine
     container_name: atendai_rabbitmq
     environment:
-      - RABBITMQ_DEFAULT_USER=user
-      - RABBITMQ_DEFAULT_PASS=password
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
     ports:
       # Porta para a aplicação se conectar
       - "5672:5672"
@@ -56,14 +56,11 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # --- VARIÁVEL ATUALIZADA para conectar ao container do Postgres ---
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/atendai_local
-      # --- VARIÁVEIS DE AMBIENTE ATUALIZADAS PARA RABBITMQ ---
-      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672/
-      - RABBITMQ_WEBHOOK_QUEUE=atendai-webhook-queue-local
-      - GOOGLE_API_KEYS=AIzaSyAmF-Wqo_AlK5scpkDxaSNlhWbz8Tw9NwY
-      # O token agora bate com o que a Meta está enviando
-      - WBP_VERIFY_TOKEN=meu-atendai-e-secreto-987654
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - WBP_VERIFY_TOKEN=${WBP_VERIFY_TOKEN}
     depends_on:
       # A API só inicia DEPOIS que o RabbitMQ e o Postgres estiverem prontos.
       rabbitmq:
@@ -79,12 +76,10 @@ services:
     volumes:
       - .:/app
     environment:
-      # --- VARIÁVEL ATUALIZADA para conectar ao container do Postgres ---
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/atendai_local
-      # --- VARIÁVEIS DE AMBIENTE ATUALIZADAS PARA RABBITMQ ---
-      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672/
-      - RABBITMQ_WEBHOOK_QUEUE=atendai-webhook-queue-local
-      - GOOGLE_API_KEYS=AIzaSyAmF-Wqo_AlK5scpkDxaSNlhWbz8Tw9NwY
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
     depends_on:
       # O worker só inicia DEPOIS que o RabbitMQ e o Postgres estiverem prontos.
       rabbitmq:
@@ -100,10 +95,16 @@ services:
     volumes:
       - .:/app
     environment:
-      # --- VARIÁVEL ATUALIZADA para conectar ao container do Postgres ---
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/atendai_local
-      # --- VARIÁVEIS ADICIONADAS para consistência e para o agente de IA ---
-      - GOOGLE_API_KEYS=AIzaSyAmF-Wqo_AlK5scpkDxaSNlhWbz8Tw9NwY
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - SECRET_KEY=${SECRET_KEY}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
+      - WBP_VERIFY_TOKEN=${WBP_VERIFY_TOKEN}
+      - WBP_WEBHOOK_URL=${WBP_WEBHOOK_URL}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - GOOGLE_SERVICE_ACCOUNT_JSON=${GOOGLE_SERVICE_ACCOUNT_JSON}
     depends_on:
       # O agente depende apenas do banco de dados para iniciar.
       postgres:

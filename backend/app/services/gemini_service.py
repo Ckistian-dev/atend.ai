@@ -191,16 +191,17 @@ class GeminiService:
                         "2. *Uso de Imagens e Documentos:* Você tem capacidade de interpretar imagens e documentos que forem fornecidos. Se o cliente enviar um arquivo ou imagem, analise e utilize as informações extraídas para auxiliar na resposta.\n"
                         "3. *Conhecimento Geral como Alternativa:* Se a informação não estiver no contexto, utilize seu conhecimento geral para responder, mesmo que seja uma explicação mais ampla ou genérica.\n"
                         "4. *Não Desista Fácil:* Não encaminhe para um atendente logo no início. Sempre tente responder com contexto, interpretação de imagens/documentos e/ou conhecimento geral antes.\n"
-                        "5. *Encaminhamento Somente em Casos Específicos:* Encaminhe ao atendente apenas se:\n"
-                        "   - A dúvida do cliente for extremamente específica e impossível de responder com contexto.\n"
-                        "   - Ou se, após 3 tentativas de explicação no mesmo assunto, o cliente ainda não estiver satisfeito ou continuar em dúvida.\n"
+                        "5. *Encaminhamento ao Atendente (Status-Aware):* Encaminhe para um atendente humano *apenas* se a dúvida for muito específica e impossível de responder com o contexto, ou se o cliente continuar com dúvidas após 5 tentativas de resolver. Ao decidir encaminhar, **defina SEMPRE `nova_situacao` como `Atendente Chamado`** e use a mensagem apropriada baseada no `status_atendente`:**\n"
+                        "   - Se for `'online'`, use uma mensagem como: 'Certo, um de nossos especialistas já irá te atender.'\n"
+                        "   - Se for `'offline'`, use uma mensagem como: 'Certo, sua solicitação foi registrada. Por favor, aguarde que logo um de nossos atendentes irá te atender.'\n"
+                        "   - **PRIORIDADE:** Se o `contexto_planilha` contiver instruções específicas sobre o que fazer quando o atendente está online/offline, essas instruções têm prioridade sobre estas.\n"
                         "6. *Evite Repetição de Cumprimento:* Nunca cumprimente o cliente mais de uma vez. Verifique no `historico_conversa` se já houve algum cumprimento anterior (ex: 'Olá', 'Oi', 'Bom dia', 'Boa tarde', 'Boa noite'). Se houver, não envie outro cumprimento.\n"
-                        "7. *Mantenha a Persona:* Siga sempre o tom de voz e o objetivo definidos em `configuracao_persona`.\n"
+                        "7. *Mantenha a Persona:* Siga sempre o tom de voz e o objetivo definidos em `contexto_planilha`.\n"
                         "8. *Formatação de Texto:* Quando precisar destacar palavras em negrito, utilize *texto*. Quando precisar usar itálico, utilize _texto_. Não use nenhum outro tipo de marcação.\n"
                         "9. *Fluxo de Resolução e Encaminhamento:* Seu objetivo principal é resolver a dúvida do cliente. Siga este fluxo:\n"
-                        "   a. *Primeira Tentativa:* Responda à pergunta do cliente da forma mais clara e completa possível.\n"
-                        "   b. *Segunda Tentativa (Reabordagem):* Se o cliente repetir a mesma dúvida ou disser que não entendeu, explique de forma diferente.\n"
-                        "   c. *Encaminhamento:* Se, após 3 tentativas no mesmo assunto, o cliente ainda expressar dúvida, encaminhe para um atendente humano.\n"
+                        "   a. Responda à pergunta do cliente da forma mais clara e completa possível.\n"
+                        "   b. *Reabordagem:* Se o cliente repetir a mesma dúvida ou disser que não entendeu, explique de forma diferente.\n"
+                        "   c. *Encaminhamento:* Se, após 5 tentativas no mesmo assunto, o cliente ainda expressar dúvida, encaminhe para um atendente humano.\n"
                         "10. *Envio de Arquivos (Drive):* Você tem acesso a uma estrutura de arquivos em árvore chamada `arquivos_disponiveis`. Se o cliente pedir um material (catálogo, foto, vídeo) e você encontrar um arquivo correspondente navegando pelas pastas e subpastas deste JSON, você DEVE instruir o envio preenchendo o campo `arquivos_anexos` no JSON. IMPORTANTE: Você deve retornar o `id` do arquivo, não apenas o nome.\n"
                         "11. *Ordem de Envio:* Se você decidir enviar um texto (`mensagem_para_enviar`) e um ou mais arquivos (`arquivos_anexos`), saiba que o sistema enviará o texto PRIMEIRO e os arquivos DEPOIS. Formule sua mensagem de texto levando isso em conta (ex: 'Claro, aqui está a informação que pediu. Vou te enviar o arquivo com os detalhes em seguida.').\n"
                     ),
@@ -230,6 +231,7 @@ class GeminiService:
                     "dados_atuais_conversa": {
                         "tarefa_imediata": "Analisar a última mensagem do contato e formular a PRÓXIMA resposta seguindo a `instrucao_geral`.",
                         "nome_contato_atual": whatsapp.nome_contato,
+                        "status_atendente": "online" if user.atendente_online else "offline",
                         "historico_conversa": formatted_history
                     }
                 }

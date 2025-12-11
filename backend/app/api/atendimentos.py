@@ -44,8 +44,8 @@ async def get_atendimentos(
     tags: Optional[List[str]] = Query(None, description="Lista de nomes de tags para filtrar"),
     page: int = Query(1, ge=1, description="Número da página"),
     limit: int = Query(20, ge=1, le=10000, description="Itens por página"),
-    time_start: Optional[str] = Query(None, description="Horário de início do filtro (HH:MM)"),
-    time_end: Optional[str] = Query(None, description="Horário de fim do filtro (HH:MM)")
+    time_start: Optional[str] = Query(None, description="Data e horário de início do filtro (YYYY-MM-DDTHH:MM)"),
+    time_end: Optional[str] = Query(None, description="Data e horário de fim do filtro (YYYY-MM-DDTHH:MM)")
 ):
     """
     Lista todos os atendimentos para o usuário logado, com suporte a busca e paginação.
@@ -91,43 +91,38 @@ async def get_atendimentos(
     # --- NOVO: Adiciona filtro por intervalo de horário ---
     if time_start:
         try:
-            # --- CORREÇÃO DE TIMEZONE ---
-            # 1. Parse do horário local (ex: 14:00) para um objeto datetime "naïve" no dia de hoje.
-            local_dt_naive = datetime.strptime(time_start, '%H:%M')
+            # 1. Parse da string 'YYYY-MM-DDTHH:MM' para um objeto datetime "naïve".
+            local_dt_naive = datetime.fromisoformat(time_start)
             
-            # 2. Assume que este horário é do fuso horário de São Paulo (UTC-3).
-            #    Isso cria um objeto datetime "aware" (com fuso horário).
+            # 2. Assume que este horário é do fuso horário local (ex: São Paulo) e o torna "aware".
             #    Idealmente, o fuso horário viria do usuário, mas fixar em 'America/Sao_Paulo' é uma solução robusta para o Brasil.
             import pytz
             sao_paulo_tz = pytz.timezone('America/Sao_Paulo')
             local_dt_aware = sao_paulo_tz.localize(local_dt_naive)
             
-            # 3. Converte o horário "aware" para UTC e extrai apenas a hora.
-            #    Agora, `start_time` é um objeto `time` em UTC, que pode ser comparado diretamente com o resultado da função SQL.
-            start_time = local_dt_aware.astimezone(pytz.utc).time()
+            # 3. Converte o horário "aware" para UTC, que é como o banco armazena.
+            start_datetime_utc = local_dt_aware.astimezone(pytz.utc)
 
-            safe_time_check_expr = text("safe_get_last_message_time(atendimentos.conversa) >= :start_time_val")
-            stmt_base = stmt_base.where(safe_time_check_expr.bindparams(start_time_val=start_time))
-        except ValueError:
+            # 4. Filtra usando a coluna `updated_at`, que reflete a última atividade.
+            stmt_base = stmt_base.where(models.Atendimento.updated_at >= start_datetime_utc)
+        except (ValueError, ImportError):
             logger.warning(f"Formato de time_start inválido: '{time_start}'. Ignorando filtro.")
         except Exception as e:
             logger.error(f"Erro inesperado no filtro time_start: {e}", exc_info=True)
 
     if time_end:
         try:
-            # Aplica a mesma lógica de conversão de timezone para o time_end
+            # Lógica similar para time_end
+            local_dt_naive = datetime.fromisoformat(time_end)
+            
             import pytz
             sao_paulo_tz = pytz.timezone('America/Sao_Paulo')
-            
-            local_dt_naive = datetime.strptime(time_end, '%H:%M')
             local_dt_aware = sao_paulo_tz.localize(local_dt_naive)
             
-            # Converte para UTC e extrai a hora
-            end_time = local_dt_aware.astimezone(pytz.utc).time()
+            end_datetime_utc = local_dt_aware.astimezone(pytz.utc)
 
-            safe_time_check_expr = text("safe_get_last_message_time(atendimentos.conversa) <= :end_time_val")
-            stmt_base = stmt_base.where(safe_time_check_expr.bindparams(end_time_val=end_time))
-        except ValueError:
+            stmt_base = stmt_base.where(models.Atendimento.updated_at <= end_datetime_utc)
+        except (ValueError, ImportError):
             logger.warning(f"Formato de time_end inválido: '{time_end}'. Ignorando filtro.")
         except Exception as e:
             logger.error(f"Erro inesperado no filtro time_end: {e}", exc_info=True)
@@ -195,12 +190,10 @@ async def update_atendimento(
 async def create_atendimento(
     atendimento_in: schemas.AtendimentoCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: models.User = Depends(dependencies.get_current_active_user),
-    whatsapp_service: WhatsAppService = Depends(get_whatsapp_service) # Adicionado
+    current_user: models.User = Depends(dependencies.get_current_active_user)
 ):
     """
-    Cria um novo atendimento manualmente. Se um template for fornecido,
-    envia a mensagem de template para o novo contato.
+    Cria um novo atendimento manualmente.
     """
     # Verifica se já existe um atendimento para este número
     existing_query = await db.execute(select(models.Atendimento).where(
@@ -214,26 +207,6 @@ async def create_atendimento(
     db_atendimento = await crud_atendimento.create_atendimento(db=db, atendimento_in=atendimento_in, user_id=current_user.id)
     await db.commit()
     await db.refresh(db_atendimento)
-
-    # Se um template foi fornecido, envia a mensagem
-    if atendimento_in.template_name and atendimento_in.template_language_code:
-        try:
-            await whatsapp_service.send_template_message(
-                user=current_user,
-                number=db_atendimento.whatsapp,
-                template_name=atendimento_in.template_name,
-                language_code=atendimento_in.template_language_code,
-                components=atendimento_in.template_components or []
-            )
-            # Recarrega o atendimento para incluir a mensagem enviada no histórico
-            await db.refresh(db_atendimento)
-        except MessageSendError as e:
-            # O atendimento foi criado, mas o envio do template falhou.
-            # Retorna o atendimento criado com um aviso.
-            logger.error(f"Atendimento {db_atendimento.id} criado, mas falha ao enviar template inicial: {e}")
-            # O ideal seria adicionar um status/observação, mas por simplicidade, retornamos como está.
-            # O frontend pode mostrar um alerta.
-            pass # Deixa passar e retorna o atendimento criado.
 
     return db_atendimento
 
@@ -278,7 +251,7 @@ class SendTemplatePayload(schemas.BaseModel):
     template_name: str
     language_code: str = "en_US"
     # Lista flexível para componentes de header, body, buttons
-    components: List[Dict[str, Any]]
+    components: Optional[List[Dict[str, Any]]] = None
 
 # Endpoint para um atendente humano enviar uma mensagem de texto
 @router.post("/{atendimento_id}/send_message", response_model=schemas.Atendimento)
@@ -642,9 +615,10 @@ async def send_template_message(
                 header_text = next((c.get('text', '') for c in target_template.get('components', []) if c['type'] == 'HEADER'), '')
                 body_text = next((c.get('text', '') for c in target_template.get('components', []) if c['type'] == 'BODY'), '')
 
-                # 3. Pega os valores das variáveis enviadas
-                header_params = next((c.get('parameters', []) for c in payload.components if c['type'] == 'header'), [])
-                body_params = next((c.get('parameters', []) for c in payload.components if c['type'] == 'body'), [])
+                # 3. Pega os valores das variáveis enviadas (se houver)
+                sent_components = payload.components or [] # Garante que é uma lista, mesmo se for None
+                header_params = next((c.get('parameters', []) for c in sent_components if c['type'] == 'header'), [])
+                body_params = next((c.get('parameters', []) for c in sent_components if c['type'] == 'body'), [])
 
                 # 4. Substitui as variáveis no texto
                 for i, param in enumerate(header_params):

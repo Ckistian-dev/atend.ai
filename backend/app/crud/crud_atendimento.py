@@ -33,6 +33,28 @@ async def get_atendimentos_by_user(db: AsyncSession, user_id: int) -> List[model
     )
     return result.scalars().all()
 
+async def create_atendimento(db: AsyncSession, atendimento_in: schemas.AtendimentoCreate, user_id: int) -> models.Atendimento:
+    """
+    Cria um novo atendimento e carrega seus relacionamentos para evitar erros de lazy-loading.
+    Não faz commit.
+    """
+    # Exclui os campos que não pertencem ao modelo do banco de dados, pois são usados apenas para a lógica de envio de template na rota.
+    create_data = atendimento_in.model_dump(exclude={'template_name', 'template_language_code', 'template_components'})
+
+    db_atendimento = models.Atendimento(
+        **create_data,
+        user_id=user_id
+    )
+    db.add(db_atendimento)
+    await db.flush() # Envia o objeto para o banco para obter um ID e valores padrão.
+
+    # Recarrega o objeto e seu relacionamento 'active_persona' explicitamente.
+    # Isso é crucial para que a resposta da API possa ser serializada sem erros de I/O (lazy loading).
+    await db.refresh(db_atendimento, attribute_names=['active_persona'])
+
+    # O commit será feito na rota que chamou a função.
+    return db_atendimento
+
 async def update_atendimento(db: AsyncSession, db_atendimento: models.Atendimento, atendimento_in: schemas.AtendimentoUpdate) -> models.Atendimento:
     """Atualiza os dados de um atendimento. Não faz commit."""
     update_data = atendimento_in.model_dump(exclude_unset=True)

@@ -200,7 +200,21 @@ const TemplateModal = ({ isOpen, onClose, onSend }) => {
             onClose(); // Fecha o modal em caso de sucesso
         } catch (err) {
             console.error("Erro ao enviar template:", err);
-            setError(err.response?.data?.detail || 'Falha ao enviar a mensagem de template.');
+            let errorMessage = 'Falha ao enviar a mensagem de template.';
+            const detail = err.response?.data?.detail;
+
+            if (detail) {
+                if (Array.isArray(detail) && detail.length > 0 && detail[0].msg) {
+                    // Erro de validação do Pydantic: ex: [{ loc: [...], msg: "...", type: "..." }]
+                    const firstError = detail[0];
+                    const fieldPath = firstError.loc ? ` (campo: ${firstError.loc.slice(1).join(' > ')})` : '';
+                    errorMessage = `${firstError.msg}${fieldPath}`;
+                } else if (typeof detail === 'string') {
+                    // Erro de HTTPException com uma string simples
+                    errorMessage = detail;
+                }
+            }
+            setError(errorMessage);
         } finally {
             setIsSending(false);
         }

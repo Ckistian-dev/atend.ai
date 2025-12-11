@@ -364,7 +364,7 @@ class WhatsAppService:
         to_number: str,
         template_name: str,
         language_code: str,
-        components: list
+        components: Optional[List[Dict[str, Any]]]
     ) -> Dict[str, Any]:
         """Envia uma mensagem de template via API Oficial (WBP)."""
         if not all([phone_number_id, access_token, to_number, template_name, language_code]):
@@ -374,17 +374,21 @@ class WhatsAppService:
         headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
         clean_to_number = self._normalize_number(to_number)
 
+        template_payload = {
+            "name": template_name,
+            "language": {
+                "code": language_code
+            }
+        }
+        # Adiciona a chave 'components' apenas se ela for fornecida e não for vazia.
+        if components:
+            template_payload["components"] = components
+
         payload = {
             "messaging_product": "whatsapp",
             "to": clean_to_number,
             "type": "template",
-            "template": {
-                "name": template_name,
-                "language": {
-                    "code": language_code
-                },
-                "components": components
-            }
+            "template": template_payload
         }
 
         logger.debug(f"WBP Send Template Payload to {clean_to_number}: {json.dumps(payload)}")
@@ -483,7 +487,7 @@ class WhatsAppService:
         number: str,
         template_name: str,
         language_code: str,
-        components: list
+        components: Optional[List[Dict[str, Any]]]
     ) -> Dict[str, Any]:
         """Adapter para enviar mensagem de template, tratando a autenticação do usuário."""
         if not all([user, number, template_name, language_code]):

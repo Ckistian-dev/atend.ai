@@ -45,7 +45,7 @@ const FilterPopover = ({
     return (
         <div
             ref={popoverRef}
-            className="absolute top-12 right-0 w-72 bg-white rounded-lg shadow-2xl z-30 border border-gray-200 animate-fade-in-up-fast"
+            className="absolute top-12 right-0 w-auto bg-white rounded-lg shadow-2xl z-30 border border-gray-200 animate-fade-in-up-fast"
             onClick={(e) => e.stopPropagation()}
         >
             <div className="p-3">
@@ -99,7 +99,7 @@ const FilterPopover = ({
                     <div>
                         <h5 className="text-xs font-bold text-gray-500 mb-2 flex items-center gap-1.5"><ListFilter size={14} /> ITENS POR PÁGINA</h5>
                         <div className="flex items-center gap-2">
-                            {[20, 50, 100, 500].map(value => {
+                            {[20, 50, 100].map(value => {
                                 const isSelected = limit === value;
                                 return (
                                     <button
@@ -121,22 +121,27 @@ const FilterPopover = ({
                     {/* ALTERADO: Filtro por Horário Personalizado */}
                     <div>
                         <h5 className="text-xs font-bold text-gray-500 mb-2 flex items-center gap-1.5"><Clock size={14} /> INTERVALO DE HORÁRIO</h5>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="time"
-                                title="Horário de início"
-                                value={timeStart || ''}
-                                onChange={(e) => onTimeStartChange(e.target.value)}
-                                className="w-1/2 px-2 py-1 text-sm rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                            <ArrowRight size={16} className="text-gray-400" />
-                            <input
-                                type="time"
-                                title="Horário de fim"
-                                value={timeEnd || ''}
-                                onChange={(e) => onTimeEndChange(e.target.value)}
-                                className="w-1/2 px-2 py-1 text-sm rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                            />
+                        <div className="space-y-2">
+                            <div>
+                                <label className="text-xs text-gray-600 ml-1">De:</label>
+                                <input
+                                    type="datetime-local"
+                                    title="Data e horário de início"
+                                    value={timeStart || ''}
+                                    onChange={(e) => onTimeStartChange(e.target.value)}
+                                    className="w-full px-2 py-1.5 text-sm rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-600 ml-1">Até:</label>
+                                <input
+                                    type="datetime-local"
+                                    title="Data e horário de fim"
+                                    value={timeEnd || ''}
+                                    onChange={(e) => onTimeEndChange(e.target.value)}
+                                    className="w-full px-2 py-1.5 text-sm rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>

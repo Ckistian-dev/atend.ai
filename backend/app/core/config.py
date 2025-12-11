@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 1 semana
 
+    # --- Configurações RabbitMQ ---
+    RABBITMQ_URL: str
+    RABBITMQ_WEBHOOK_QUEUE: str
+
     # --- Configurações da API Oficial (WhatsApp Business Platform) ---
     WBP_VERIFY_TOKEN: str # Token de verificação que VOCÊ CRIA para configurar o webhook na Meta
     WBP_WEBHOOK_URL: str # A URL COMPLETA do seu endpoint de webhook oficial (ex: https://seuapp.com/api/v1/webhook/official/webhook)
@@ -28,7 +32,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        # extra='ignore' # Para ignorar variáveis extras no .env, se necessário
+        extra='ignore' # Para ignorar variáveis extras no .env, se necessário
     )
 
 # Instância única das configurações para ser usada em toda a aplicação
@@ -41,4 +45,3 @@ if not settings.WBP_VERIFY_TOKEN:
      raise ValueError("WBP_VERIFY_TOKEN é obrigatório para a API Oficial.")
 if not settings.WBP_WEBHOOK_URL:
      raise ValueError("WBP_WEBHOOK_URL é obrigatório para a API Oficial.")
-
