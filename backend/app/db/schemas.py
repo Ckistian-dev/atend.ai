@@ -5,20 +5,20 @@ from datetime import datetime, timezone
 # --- Schemas de Configuração ---
 class ConfigBase(BaseModel):
     nome_config: str
-    contexto_json: Optional[Dict[str, Any]] = None
     spreadsheet_id: Optional[str] = None
+    spreadsheet_rag_id: Optional[str] = None
     drive_id: Optional[str] = None
-    arquivos_drive_json: Optional[Dict[str, Any]] = None
+    prompt: Optional[str] = None
 
 class ConfigCreate(ConfigBase):
     pass
 
 class ConfigUpdate(BaseModel):
     nome_config: Optional[str] = None
-    contexto_json: Optional[Dict[str, Any]] = None
     spreadsheet_id: Optional[str] = None
+    spreadsheet_rag_id: Optional[str] = None
     drive_id: Optional[str] = None
-    arquivos_drive_json: Optional[Dict[str, Any]] = None
+    prompt: Optional[str] = None
 
 class Config(ConfigBase):
     id: int

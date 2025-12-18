@@ -26,14 +26,14 @@ async def get_user_by_wbp_phone_number_id(db: AsyncSession, phone_number_id: str
     return result.scalars().first()
 
 
-async def decrement_user_tokens(db: AsyncSession, db_user: models.User, amount: int = 1):
-    """Diminui os tokens de um utilizador pela quantidade especificada."""
-    if db_user.tokens is not None and db_user.tokens >= amount:
-        db_user.tokens -= amount
-        logger.info(f"DEBUG: {amount} token(s) deduzido(s) do utilizador {db_user.id}. Restantes: {db_user.tokens}")
-        db.add(db_user)
-    else:
-        logger.warning(f"Utilizador {db_user.id} não possui tokens suficientes para deduzir {amount} token(s).")
+async def decrement_user_tokens(db: AsyncSession, db_user: models.User, usage: int):
+    """Deduz os tokens usados pelo usuário do seu saldo."""
+    if db_user.tokens is None:
+        db_user.tokens = 0
+    
+    db_user.tokens -= usage
+    logger.info(f"DEBUG: {usage} token(s) deduzido(s) do utilizador {db_user.id}. Restantes: {db_user.tokens}")
+    db.add(db_user)
         
 async def get_users_with_agent_running(db: AsyncSession) -> List[models.User]:
     """

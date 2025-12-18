@@ -71,7 +71,6 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
         # Reúne todas as informações necessárias para que a IA possa gerar uma resposta coerente.
         conversation_history = []
         persona_config = None
-        arquivos_drive_json = None
 
         try:
             # Abre uma nova sessão para ler os dados do atendimento.
@@ -95,9 +94,6 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                 if not persona_config:
                     raise ValueError("Nenhuma persona encontrada.")
                 
-                # Carrega a estrutura de arquivos do Google Drive que foi salva na configuração da persona.
-                arquivos_drive_json = persona_config.arquivos_drive_json
-
                 # Carrega o histórico da conversa a partir do campo JSON no banco de dados.
                 try:
                     conversation_history = json.loads(atendimento_context.conversa or "[]")
@@ -129,8 +125,7 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                 ia_response = await gemini_service.generate_conversation_action(
                     whatsapp=atendimento_context,
                     conversation_history_db=conversation_history,
-                    contexto_planilha=persona_config.contexto_json,
-                    arquivos_drive_json=arquivos_drive_json,
+                    persona=persona_config,
                     db=db_gemini_deduct, 
                     user=user_for_gemini
                 )

@@ -3,7 +3,7 @@
 services:
   # --- NOVO SERVIÇO: Banco de Dados PostgreSQL ---
   postgres:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg15
     container_name: atendai_db
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -123,8 +123,12 @@ services:
       - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
       - SECRET_KEY=${SECRET_KEY}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
 volumes:

@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import JSONB
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
+from pgvector.sqlalchemy import Vector
 import enum
 
 class Base(DeclarativeBase):
@@ -35,13 +36,25 @@ class Config(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     nome_config: Mapped[str] = mapped_column(String(100), nullable=False)
-    spreadsheet_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    spreadsheet_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="ID da Planilha de Instruções (System)")
+    spreadsheet_rag_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="ID da Planilha de Conhecimento (RAG)")
     drive_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="ID da pasta do Google Drive contendo mídias")
-    contexto_json: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
-    arquivos_drive_json: Mapped[Optional[List[Dict]]] = mapped_column(JSONB, nullable=True)
+    prompt: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="Contexto fixo gerado a partir das abas de sistema")
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
     owner: Mapped["User"] = relationship(back_populates="configs", foreign_keys=[user_id])
+    vectors: Mapped[List["KnowledgeVector"]] = relationship(back_populates="config", cascade="all, delete-orphan")
+
+class KnowledgeVector(Base):
+    __tablename__ = "contextos"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    config_id: Mapped[int] = mapped_column(ForeignKey("configs.id"), index=True)
+    content: Mapped[str] = mapped_column(Text, nullable=False, comment="Conteúdo textual formatado para RAG")
+    origin: Mapped[str] = mapped_column(String(50), nullable=False, comment="'sheet' ou 'drive'")
+    embedding: Mapped[Optional[List[float]]] = mapped_column(Vector(768), nullable=True, comment="Vetor de embedding (Google text-embedding-004)")
+
+    config: Mapped["Config"] = relationship(back_populates="vectors")
 
 class Atendimento(Base):
     __tablename__ = 'atendimentos'

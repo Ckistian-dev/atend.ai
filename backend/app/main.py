@@ -126,6 +126,8 @@ logger = logging.getLogger(__name__)
 async def create_db_and_tables():
     async with engine.begin() as conn:
         try:
+            # Ativa a extensão pgvector para suporte a embeddings
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
             # --- NOVO: Criação de função SQL customizada para segurança ---
             # Esta função SQL é criada para evitar erros de "invalid input syntax for type json".
             # Ela tenta de forma segura extrair o timestamp da última mensagem do campo 'conversa'.

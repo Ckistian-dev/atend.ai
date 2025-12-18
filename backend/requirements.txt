@@ -8,6 +8,7 @@ uvicorn[standard]
 sqlalchemy[asyncio]
 alembic
 asyncpg
+pgvector
 
 #--- Autenticação e Segurança ---
 
@@ -25,7 +26,7 @@ email-validator
 #--- Comunicação com APIs Externas ---
 
 httpx
-google-generativeai
+google-cloud-aiplatform
 
 #--- Google OAuth & People API (Novos) ---
 

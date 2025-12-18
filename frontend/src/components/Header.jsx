@@ -1,6 +1,6 @@
 // src/components/Header.jsx
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { CSSTransition, SwitchTransition } from 'react-transition-group';
 import { Ticket, User as UserIcon, AlertCircle, Zap, Activity, UserCheck, UserX } from 'lucide-react';
 import api from '../api/axiosConfig';
@@ -44,6 +44,50 @@ const ActivityTicker = ({ activity }) => {
             </div>
         </div>
     );
+};
+
+// --- Sub-componente para Animação de Números (Efeito Cassino) ---
+const CountUp = ({ end, duration = 1500 }) => {
+    const [count, setCount] = useState(0);
+    const countRef = useRef(0);
+    const requestRef = useRef();
+    const startTimeRef = useRef();
+
+    useEffect(() => {
+        const startValue = countRef.current;
+        const endValue = end;
+
+        if (startValue === endValue) return;
+
+        startTimeRef.current = null;
+
+        const animate = (time) => {
+            if (!startTimeRef.current) startTimeRef.current = time;
+            const progress = time - startTimeRef.current;
+            const percentage = Math.min(progress / duration, 1);
+            
+            // Easing: easeOutQuart para um efeito suave de desaceleração
+            const ease = 1 - Math.pow(1 - percentage, 4);
+            
+            const currentCount = Math.floor(startValue + (endValue - startValue) * ease);
+
+            setCount(currentCount);
+            countRef.current = currentCount;
+
+            if (progress < duration) {
+                requestRef.current = requestAnimationFrame(animate);
+            } else {
+                setCount(endValue);
+                countRef.current = endValue;
+            }
+        };
+
+        requestRef.current = requestAnimationFrame(animate);
+
+        return () => cancelAnimationFrame(requestRef.current);
+    }, [end, duration]);
+
+    return new Intl.NumberFormat('pt-BR').format(count);
 };
 
 const Header = () => {
@@ -229,7 +273,11 @@ const Header = () => {
                 <div className="flex items-center gap-4 sm:gap-5">
                     <div className="flex items-center gap-2 text-gray-600" title="Os seus tokens restantes">
                         <Ticket size={20} className="text-brand-blue" />
-                        <span className="font-semibold text-gray-800">{user?.tokens ?? '...'}</span>
+                        <span className="font-semibold text-gray-800">
+                            {user?.tokens !== undefined && user?.tokens !== null
+                                ? <CountUp end={user.tokens} />
+                                : '...'}
+                        </span>
                         <span className="text-sm hidden sm:inline">Tokens</span>
                     </div>
                     {user ? (

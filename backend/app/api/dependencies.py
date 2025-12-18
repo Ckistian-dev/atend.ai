@@ -19,5 +19,5 @@ async def get_current_active_user(
     """
     user = await crud_user.get_user_by_email(db, email=token_data.email)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404, detail="Utilizador não encontrado")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Utilizador não encontrado")
     return user

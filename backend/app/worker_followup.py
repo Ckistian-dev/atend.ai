@@ -99,17 +99,12 @@ async def process_followups_for_user(user: models.User, db: AsyncSession):
                 logger.warning(f"Follow-up (At. {at.id}): Pulando, sem persona ativa no atendimento e sem persona padrão no usuário.")
                 continue
 
-            contexto_planilha = persona_config.contexto_json
-            arquivos_drive_json = persona_config.arquivos_drive_json
-
             ia_response = await gemini_service.generate_conversation_action(
                 whatsapp=at,
                 conversation_history_db=conversa,
-                contexto_planilha=contexto_planilha,
-                arquivos_drive_json=arquivos_drive_json,
+                persona=persona_config,
                 db=db,
-                user=user,
-                followup_interval_hours=target_interval['hours']
+                user=user
             )
 
             message_to_send = ia_response.get("mensagem_para_enviar")

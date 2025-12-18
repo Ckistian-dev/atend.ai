@@ -1,13 +1,16 @@
-import google.generativeai as genai
-from google.api_core import exceptions
-import time
+from google import genai
+from google.genai import types
 import logging
 import json
 import asyncio
+import re
 from typing import Optional, List, Dict, Any
 from collections.abc import Set
+import numpy as np
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
 
 from app.core.config import settings
 from app.db import models
@@ -32,21 +35,20 @@ class GeminiService:
             raise ValueError("A lista de GOOGLE_API_KEYS não pode estar vazia.")
             
         self.current_key_index = 0
-        self.model = None
         self.generation_config = {"temperature": 0.5, "top_p": 1, "top_k": 1}
         
         self._initialize_model()
 
     def _initialize_model(self):
-        """Inicializa ou re-inicializa o cliente Gemini com a chave atual."""
+        """Inicializa o cliente Gemini com a chave atual usando o novo SDK."""
         try:
             current_key = self.api_keys[self.current_key_index]
-            genai.configure(api_key=current_key)
-            self.model = genai.GenerativeModel(
-                model_name='gemini-2.5-flash',
-                generation_config=self.generation_config
-            )
-            logger.info(f"✅ Cliente Gemini inicializado com sucesso (chave índice {self.current_key_index}).")
+            
+            # NOVO SDK: Instancia o Client
+            # http_options={'api_version': 'v1alpha'} pode ser usado se precisar de recursos beta
+            self.client = genai.Client(api_key=current_key)
+            
+            logger.info(f"✅ Cliente Gemini (New SDK) inicializado com sucesso (chave índice {self.current_key_index}).")
         except Exception as e:
             logger.error(f"🚨 ERRO CRÍTICO ao configurar o Gemini com a chave índice {self.current_key_index}: {e}", exc_info=True)
             raise
@@ -63,22 +65,55 @@ class GeminiService:
         prompt: Any, 
         db: AsyncSession, 
         user: models.User, 
-        is_media: bool = False
-    ) -> genai.types.GenerateContentResponse:
+        is_media: bool = False,
+        system_instruction: Optional[str] = None
+    ):  # Removido o tipo de retorno estrito para evitar erros de importação cruzada por enquanto
         """
-        Executa a chamada para a API Gemini, deduz um token em caso de sucesso,
-        e possui lógica de retentativa e rotação de chaves.
+        Executa a chamada para a API Gemini (Novo SDK), deduz token e rotaciona chaves.
         """
-        gen_config_override = self.generation_config.copy()
-        logger.debug(
-            f"Iniciando _generate_with_retry para user_id={user.id}, is_media={is_media}. "
-            f"Chave inicial índice: {self.current_key_index}"
-        )
-        if not is_media and isinstance(prompt, str):
-            logger.debug(f"Prompt (texto) para a IA: {prompt[:500]}...") # Loga parte do prompt
+        
+        # Configuração do novo SDK
+        # Adaptamos o dicionário antigo para o novo objeto de configuração
+        config_args = {
+            "temperature": self.generation_config.get("temperature", 0.5),
+            "top_p": self.generation_config.get("top_p", 1),
+            "top_k": self.generation_config.get("top_k", 1),
+        }
 
         if not is_media and isinstance(prompt, str):
-            gen_config_override["response_mime_type"] = "application/json"
+            logger.debug(f"Prompt (texto) para a IA: {prompt[:500]}...")
+            # No novo SDK, response_mime_type entra na config
+            config_args["response_mime_type"] = "application/json"
+
+        # Adiciona system_instruction se fornecido
+        if system_instruction:
+            config_args["system_instruction"] = system_instruction
+
+        # Cria o objeto de configuração tipado
+        gen_config = types.GenerateContentConfig(**config_args)
+
+        # --- DEBUG: PRINT PROMPT ---
+        try:
+            debug_msg = f"\n{'='*20} PROMPT ENVIADO PARA IA {'='*20}\n"
+            
+            if system_instruction:
+                debug_msg += f"--- SYSTEM INSTRUCTION ---\n{system_instruction}\n{'-'*30}\n"
+
+            if isinstance(prompt, str):
+                debug_msg += f"{prompt}\n"
+            elif isinstance(prompt, list):
+                for p in prompt:
+                    if isinstance(p, str):
+                        debug_msg += f"[TEXTO]: {p}\n"
+                    else:
+                        debug_msg += f"[MÍDIA/OBJETO]: {type(p)}\n"
+            debug_msg += f"{'='*60}\n"
+            
+            # Salva o último prompt em arquivo (sobrescreve)
+            with open("last_prompt.txt", "w", encoding="utf-8") as f:
+                f.write(debug_msg)
+        except Exception as e:
+            print(f"Erro ao printar/salvar prompt: {e}")
 
         initial_key_index = self.current_key_index
         max_attempts_per_key = 2
@@ -90,89 +125,218 @@ class GeminiService:
                         f"Tentando gerar conteúdo com a chave índice {self.current_key_index} "
                         f"(tentativa {attempt + 1}/{max_attempts_per_key})."
                     )
-                    loop = asyncio.get_running_loop()
-                    response = await loop.run_in_executor(
-                        None, 
-                        lambda: self.model.generate_content(prompt, generation_config=gen_config_override)
+                    
+                    # --- MUDANÇA PRINCIPAL: Chamada Assíncrona Nativa (.aio) ---
+                    # Não precisa mais de run_in_executor
+                    response = await self.client.aio.models.generate_content(
+                        model='gemini-2.5-flash', # Modelo corrigido para versão estável
+                        contents=prompt,
+                        config=gen_config
                     )
                     
-                    # --- LÓGICA DE DECRÉSCIMO DE TOKEN ---
-                    logger.info(f"Sucesso na chamada à API Gemini para o utilizador {user.id}. Deduzindo token.")
+                    # --- LÓGICA DE TOKEN (ODÔMETRO) ---
+                    # Extrai o uso real de tokens da resposta do Gemini
+                    usage_metadata = response.usage_metadata
+                    total_tokens = usage_metadata.total_token_count if usage_metadata else 0
+
+                    logger.info(f"Sucesso na chamada à API Gemini para o utilizador {user.id}. Deduzindo {total_tokens} tokens.")
                     try:
-                        await crud_user.decrement_user_tokens(db, db_user=user)
+                        await crud_user.decrement_user_tokens(db, db_user=user, usage=total_tokens)
                         await db.commit()
                         await db.refresh(user)
-                        logger.info(f"Token deduzido para o utilizador {user.id}. Tokens restantes: {user.tokens}")
                     except Exception as token_err:
-                        logger.error(f"Falha ao deduzir token para o utilizador {user.id} após sucesso da IA: {token_err}", exc_info=True)
+                        logger.error(f"Falha ao deduzir tokens: {token_err}", exc_info=True)
                         await db.rollback()
                     
                     return response
 
-                except exceptions.ResourceExhausted as e:
-                    # Se a cota foi excedida, não adianta tentar de novo com a mesma chave.
-                    # Quebra o loop de tentativas para forçar a rotação imediata.
-                    logger.warning(f"Quota da API excedida (429) com a chave {self.current_key_index}. Rotacionando para a próxima chave...")
-                    break
-                except (exceptions.InvalidArgument, genai.types.BlockedPromptException) as e:
-                    logger.error(f"Erro não recuperável com a API Gemini: {type(e).__name__}. Não haverá nova tentativa. Erro: {e}", exc_info=True)
-                    raise e
+                # Captura erros do novo SDK (geralmente ServerError ou ClientError)
+                # O erro 429 (Quota) agora geralmente vem como um ClientError com status 429
                 except Exception as e:
-                    logger.error(f"Erro inesperado ({type(e).__name__}) na API Gemini com a chave {self.current_key_index}. Tentativa {attempt + 1}/{max_attempts_per_key}. Erro: {e}")
-                    logger.info("Aguardando 5 segundos antes de tentar novamente...")
-                    await asyncio.sleep(5)
+                    error_str = str(e).lower()
+                    
+                    # Detecção de Erro de Cota (429) ou Recurso Esgotado
+                    if "429" in error_str or "resource exhausted" in error_str or "quota" in error_str:
+                        logger.warning(f"Quota da API excedida (429) com a chave {self.current_key_index}. Rotacionando...")
+                        break # Sai do loop 'for' para rotacionar a chave
+                    
+                    # Detecção de bloqueio de segurança ou prompt inválido
+                    elif "blocked" in error_str or "invalid argument" in error_str:
+                        logger.error(f"Erro não recuperável (Bloqueio/Inválido): {e}")
+                        raise e
+                        
+                    else:
+                        # Erros genéricos de conexão/servidor
+                        logger.error(f"Erro inesperado na API Gemini: {e}. Tentativa {attempt + 1}.")
+                        await asyncio.sleep(2) # Espera um pouco antes de tentar de novo na mesma chave
             
+            # Se saiu do loop 'for', significa que precisa trocar de chave
             new_key_index = self._rotate_key()
             
             if new_key_index == initial_key_index:
-                logger.critical(f"Todas as {len(self.api_keys)} chaves de API falharam. Nenhuma tentativa adicional será feita.")
-                raise Exception(f"Todas as {len(self.api_keys)} chaves de API excederam a quota. Não é possível continuar.")
+                logger.critical(f"Todas as {len(self.api_keys)} chaves de API falharam.")
+                raise Exception("Todas as chaves de API excederam a quota.")
 
     async def transcribe_and_analyze_media(
         self, 
-        media_data: dict, 
+        media_data: dict,  # Espera receber: {"data": bytes, "mime_type": str}
         db_history: List[dict], 
-        contexto_planilha: Optional[Dict[str, Any]],
+        persona: models.Config,
         db: AsyncSession,
         user: models.User
     ) -> str:
         logger.info(f"Iniciando transcrição/análise para mídia do tipo {media_data.get('mime_type')}")
-        prompt_parts = []
         
-        if 'audio' in media_data['mime_type']:
-            task = "Sua única tarefa é transcrever o áudio a seguir. Retorne apenas o texto transcrito, sem adicionar nenhuma outra palavra ou formatação."
-            prompt_parts.extend([task, media_data])
-        else:
-            formatted_history = self._format_history_for_prompt(db_history)
-            media_analysis_prompt = {
-                "instrucao_geral": "Você é um especialista em extração de dados de documentos e imagens. Sua tarefa é analisar o arquivo enviado pelo contato e extrair as informações relevantes, usando o contexto da conversa e da planilha para entender o que é importante. O resultado será usado como contexto para outra IA e não deve ter o tom da persona.",
-                "regras": [
-                    "1. Foco na Extração de Dados: Sua prioridade não é apenas descrever, mas EXTRAIR os dados importantes do arquivo (imagem ou documento). Use o `historico_conversa` e o `contexto_planilha` para identificar quais informações são relevantes (ex: dados de um produto, informações de um comprovante, etc.).",
-                    "2. Seja um Extrator, Não um Assistente: Sua resposta deve ser puramente a informação extraída. Não converse, não cumprimente, não use a persona do assistente. Apenas forneça os dados.",
-                    "3. Transcrição Literal se Necessário: Se o arquivo for um documento de texto ou um comprovante, transcreva as informações importantes de forma literal e estruturada.",
-                    "4. Resposta Limpa e Direta: Sua resposta final deve ser APENAS o texto da análise/transcrição, sem nenhuma outra palavra, título ou formatação."
-                ],
-                "contexto_planilha": contexto_planilha or {"aviso": "Nenhum contexto de planilha foi fornecido para esta análise."},
-                "historico_conversa": formatted_history,
-            }
-            prompt_text = json.dumps(media_analysis_prompt, ensure_ascii=False, indent=2, cls=SetEncoder)
-            prompt_parts.extend([prompt_text, media_data])
-
+        # --- 1. PREPARAÇÃO DA MÍDIA PARA O NOVO SDK ---
         try:
-            response = await self._generate_with_retry(prompt_parts, db, user, is_media=True)
+            file_bytes = media_data.get("data")
+            mime_type = media_data.get("mime_type")
+
+            if not file_bytes:
+                raise ValueError("Bytes do arquivo não encontrados em media_data")
+
+            # Cria o objeto Part nativo do novo SDK
+            # Isso substitui a lógica antiga de upload ou passagem de objetos complexos
+            media_part = types.Part.from_bytes(
+                data=file_bytes, 
+                mime_type=mime_type
+            )
+        except Exception as e:
+            logger.error(f"Erro ao preparar objeto de mídia para o Gemini: {e}")
+            return "[Erro interno ao processar o arquivo de mídia]"
+
+        # --- 2. MONTAGEM DO PROMPT (Lista de conteúdos) ---
+        prompt_contents = []
+        
+        # Lógica para Áudio (Transcrição)
+        if 'audio' in mime_type or 'mpeg' in mime_type or 'ogg' in mime_type:
+            task_text = "Sua única tarefa é transcrever o áudio a seguir. Retorne apenas o texto transcrito, sem adicionar nenhuma outra palavra, introdução ou formatação."
+            prompt_contents = [task_text, media_part]
+            
+        # Lógica para Imagem/Documento (Análise Visual)
+        else:
+            system_instruction = persona.prompt or "Você é um especialista em extração de dados."
+            
+            last_user_msg = next((m.get('content', '') for m in reversed(db_history) if m.get('role') == 'user'), "")
+            rag_context = await self._retrieve_rag_context(db, persona.id, last_user_msg)
+            
+            history_str = self._format_history_optimized(db_history)
+            
+            prompt_text = (
+                f"## CONTEXTO (RAG)\n{rag_context}\n\n"
+                f"## HISTÓRICO RECENTE\n{history_str}\n\n"
+                "## INSTRUÇÃO DE ANÁLISE\n"
+                "Você é um especialista em extração de dados. Analise o arquivo fornecido.\n"
+                "1. Extraia todos os dados visíveis e relevantes (preços, produtos, nomes, endereços).\n"
+                "2. Se for um comprovante, extraia valor, data e beneficiário.\n"
+                "3. Não converse. Apenas retorne os dados extraídos em texto claro.\n"
+                "4. Use o contexto e histórico acima para entender o que buscar."
+            )
+            
+            # Ordem: Prompt de texto primeiro, Mídia depois (ou vice-versa, Gemini entende ambos)
+            prompt_contents = [prompt_text, media_part]
+
+        # --- 3. CHAMADA À API ---
+        try:
+            # Passamos a lista (texto + mídia) para o método que criamos anteriormente
+            # O _generate_with_retry já está preparado para receber 'prompt' como string OU lista
+            response = await self._generate_with_retry(prompt_contents, db, user, is_media=True, system_instruction=system_instruction)
+            
             transcription = response.text.strip()
             logger.info(f"Transcrição/Análise gerada: '{transcription[:100]}...'")
             return transcription
+            
         except Exception as e:
-            logger.error(f"Erro ao transcrever/analisar mídia após todas as tentativas: {e}", exc_info=True)
-            return f"[Erro ao processar mídia: {media_data.get('mime_type')}]"
+            logger.error(f"Erro ao transcrever/analisar mídia com Gemini: {e}", exc_info=True)
+            return f"[Erro ao processar mídia: {mime_type}]"
+
+    async def generate_embedding(self, text: str) -> List[float]:
+        """Gera embedding para um texto usando o modelo do Google (text-embedding-004)."""
+        try:
+            # O novo SDK usa client.aio.models.embed_content
+            response = await self.client.aio.models.embed_content(
+                model="text-embedding-004",
+                contents=text
+            )
+            if response.embeddings:
+                return response.embeddings[0].values
+            return []
+        except Exception as e:
+            logger.error(f"Erro ao gerar embedding: {e}")
+            return []
+
+    async def generate_embeddings_batch(self, texts: List[str], batch_size: int = 100) -> List[List[float]]:
+        """Gera embeddings para uma lista de textos em lotes (batching)."""
+        all_embeddings = []
+        
+        # Divide a lista total em pedaços menores (chunks) para respeitar limites da API
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i:i + batch_size]
+            try:
+                # O novo SDK suporta lista de strings em 'contents' para processamento em lote
+                response = await self.client.aio.models.embed_content(
+                    model="text-embedding-004",
+                    contents=batch
+                )
+                
+                if response.embeddings:
+                    # Extrai os valores de cada embedding retornado, mantendo a ordem
+                    batch_embeddings = [e.values for e in response.embeddings]
+                    all_embeddings.extend(batch_embeddings)
+                else:
+                    logger.warning(f"Batch {i} retornou sem embeddings.")
+                    all_embeddings.extend([[] for _ in batch])
+
+            except Exception as e:
+                logger.error(f"Erro ao gerar embeddings em lote (índice {i}): {e}")
+                # Adiciona listas vazias para não quebrar o alinhamento dos índices com os textos originais
+                all_embeddings.extend([[] for _ in batch])
+        
+        return all_embeddings
+
+    async def _retrieve_rag_context(self, db: AsyncSession, config_id: int, query_text: str) -> str:
+        """Busca contexto relevante na base vetorial (PGVector) usando similaridade de cosseno."""
+        if not query_text: return ""
+        
+        # 1. Gera o embedding da pergunta do usuário
+        query_embedding = await self.generate_embedding(query_text)
+        
+        if not query_embedding:
+            logger.warning("Falha ao gerar embedding da query. Retornando vazio.")
+            return ""
+
+        # 2. Busca vetorial ordenada pela distância de cosseno
+        stmt = select(models.KnowledgeVector.content).where(
+            models.KnowledgeVector.config_id == config_id
+        ).order_by(
+            models.KnowledgeVector.embedding.cosine_distance(query_embedding)
+        ).limit(10) # Busca os 10 trechos mais relevantes
+        
+        result = await db.execute(stmt)
+        chunks = result.scalars().all()
+        
+        if not chunks: return ""
+        
+        # Remove duplicatas exatas de conteúdo
+        unique_chunks = list(dict.fromkeys(chunks))
+        
+        return "\n---\n".join(unique_chunks)
+
+    def _format_history_optimized(self, db_history: List[dict]) -> str:
+        """Formata o histórico como texto estruturado (User/AI) com janela deslizante de 10 msgs."""
+        recent_messages = db_history[-10:]
+        formatted_lines = []
+        for msg in recent_messages:
+            role = "AI" if msg.get("role") == "assistant" else "User"
+            content = msg.get("content", "").replace("\n", " ").strip()
+            formatted_lines.append(f"{role}: {content}")
+        return "\n".join(formatted_lines)
 
     async def generate_conversation_action(
         self,
         whatsapp: models.Atendimento,
         conversation_history_db: List[dict],
-        contexto_planilha: Optional[Dict[str, Any]],
-        arquivos_drive_json: Optional[Dict[str, Any]], # <-- Novo parâmetro para receber a árvore de arquivos
+        persona: models.Config,
         db: AsyncSession,
         user: models.User
     ) -> dict:
@@ -182,63 +346,44 @@ class GeminiService:
 
         for attempt in range(max_retries):
             try:
-                formatted_history = self._format_history_for_prompt(conversation_history_db)
+                # 1. Coleta de Contexto
+                system_instruction = persona.prompt or "Você é um assistente útil."
+                
+                # Gera o histórico formatado (últimas 10 msgs) ANTES do RAG
+                history_str = self._format_history_optimized(conversation_history_db)
+                
+                # Usa o histórico completo (formatado) para buscar contexto (Sheets + Drive)
+                rag_context = await self._retrieve_rag_context(db, persona.id, history_str)
 
-                master_prompt = {
-                    "instrucao_geral": (
-                        "Você é um assistente de IA especialista em atendimento. Siga estas regras em ordem de prioridade:\n"
-                        "1. *Prioridade Máxima ao Contexto:* Sua principal fonte de verdade é o `contexto_planilha` e os `arquivos_disponiveis`. *Sempre* procure a resposta nestes contextos primeiro.\n"
-                        "2. *Uso de Imagens e Documentos:* Você tem capacidade de interpretar imagens e documentos que forem fornecidos. Se o cliente enviar um arquivo ou imagem, analise e utilize as informações extraídas para auxiliar na resposta.\n"
-                        "3. *Conhecimento Geral como Alternativa:* Se a informação não estiver no contexto, utilize seu conhecimento geral para responder, mesmo que seja uma explicação mais ampla ou genérica.\n"
-                        "4. *Não Desista Fácil:* Não encaminhe para um atendente logo no início. Sempre tente responder com contexto, interpretação de imagens/documentos e/ou conhecimento geral antes.\n"
-                        "5. *Encaminhamento ao Atendente (Status-Aware):* Encaminhe para um atendente humano *apenas* se a dúvida for muito específica e impossível de responder com o contexto, ou se o cliente continuar com dúvidas após 5 tentativas de resolver. Ao decidir encaminhar, **defina SEMPRE `nova_situacao` como `Atendente Chamado`** e use a mensagem apropriada baseada no `status_atendente`:**\n"
-                        "   - Se for `'online'`, use uma mensagem como: 'Certo, um de nossos especialistas já irá te atender.'\n"
-                        "   - Se for `'offline'`, use uma mensagem como: 'Certo, sua solicitação foi registrada. Por favor, aguarde que logo um de nossos atendentes irá te atender.'\n"
-                        "   - **PRIORIDADE:** Se o `contexto_planilha` contiver instruções específicas sobre o que fazer quando o atendente está online/offline, essas instruções têm prioridade sobre estas.\n"
-                        "6. *Evite Repetição de Cumprimento:* Nunca cumprimente o cliente mais de uma vez. Verifique no `historico_conversa` se já houve algum cumprimento anterior (ex: 'Olá', 'Oi', 'Bom dia', 'Boa tarde', 'Boa noite'). Se houver, não envie outro cumprimento.\n"
-                        "7. *Mantenha a Persona:* Siga sempre o tom de voz e o objetivo definidos em `contexto_planilha`.\n"
-                        "8. *Formatação de Texto:* Quando precisar destacar palavras em negrito, utilize *texto*. Quando precisar usar itálico, utilize _texto_. Não use nenhum outro tipo de marcação.\n"
-                        "9. *Fluxo de Resolução e Encaminhamento:* Seu objetivo principal é resolver a dúvida do cliente. Siga este fluxo:\n"
-                        "   a. Responda à pergunta do cliente da forma mais clara e completa possível.\n"
-                        "   b. *Reabordagem:* Se o cliente repetir a mesma dúvida ou disser que não entendeu, explique de forma diferente.\n"
-                        "   c. *Encaminhamento:* Se, após 5 tentativas no mesmo assunto, o cliente ainda expressar dúvida, encaminhe para um atendente humano.\n"
-                        "10. *Envio de Arquivos (Drive):* Você tem acesso a uma estrutura de arquivos em árvore chamada `arquivos_disponiveis`. Se o cliente pedir um material (catálogo, foto, vídeo) e você encontrar um arquivo correspondente navegando pelas pastas e subpastas deste JSON, você DEVE instruir o envio preenchendo o campo `arquivos_anexos` no JSON. IMPORTANTE: Você deve retornar o `id` do arquivo, não apenas o nome.\n"
-                        "11. *Ordem de Envio:* Se você decidir enviar um texto (`mensagem_para_enviar`) e um ou mais arquivos (`arquivos_anexos`), saiba que o sistema enviará o texto PRIMEIRO e os arquivos DEPOIS. Formule sua mensagem de texto levando isso em conta (ex: 'Claro, aqui está a informação que pediu. Vou te enviar o arquivo com os detalhes em seguida.').\n"
-                    ),
-                    "formato_resposta_obrigatorio": {
-                        "descricao": "Sua resposta DEVE ser um único objeto JSON válido, sem nenhum texto ou formatação adicional (como ```json).",
-                        "chaves": {
-                            "mensagem_para_enviar": "O texto da mensagem a ser enviada ao contato. Se decidir que não deve enviar uma mensagem agora, o valor deve ser null.",
-                            "nova_situacao": "Aguardando Resposta, Atendente Chamado ou Concluído.",
-                            "nome_contato": "O nome do contato, se ele se apresentar ou for mencionado. Se o nome já existir nos `dados_atuais_conversa` ou não for mencionado, retorne o valor existente ou null.",
-                            "observacoes": "Um resumo da conversa. Seja conciso e objetivo, focando nos pontos principais da interação para ser salvo como um registro interno no CRM.",
-                            "arquivos_anexos": {
-                                "descricao": "Uma LISTA de arquivos a serem enviados. Se não houver, o valor deve ser null ou uma lista vazia [].",
-                                "formato_item": {
-                                    "nome_exato": "Nome visual do arquivo (ex: catalogo.pdf).",
-                                    "id_arquivo": "O ID único do arquivo encontrado na árvore `arquivos_disponiveis`.",
-                                    "tipo_midia": "image, video ou document"
-                                }
-                            }
-                        },
-                        "regras_importantes": {
-                            "Sempre escape barras invertidas (\\) com outra barra (\\\\) dentro dos valores de string do JSON.",
-                            "O JSON deve ser estritamente válido e pronto para ser processado por um parser."
-                        }
-                    },
-                    "contexto_planilha": contexto_planilha or {"aviso": "Nenhum contexto de planilha foi fornecido."},
-                    "arquivos_disponiveis": arquivos_drive_json or {"aviso": "Nenhum arquivo do Drive vinculado."},
-                    "dados_atuais_conversa": {
-                        "tarefa_imediata": "Analisar a última mensagem do contato e formular a PRÓXIMA resposta seguindo a `instrucao_geral`.",
-                        "nome_contato_atual": whatsapp.nome_contato,
-                        "status_atendente": "online" if user.atendente_online else "offline",
-                        "historico_conversa": formatted_history
-                    }
-                }
+                # 2. Montagem do Prompt (Texto Estruturado)
+                prompt_text = (
+                    f"# CONTEXTO (RAG)\n{rag_context}\n\n"
+                    f"# HISTÓRICO\n{history_str}\n\n"
+                    f"# DADOS DO CLIENTE\n"
+                    f"Nome: {whatsapp.nome_contato or 'Não identificado'}\n"
+                    f"Status Atendente: {'online' if user.atendente_online else 'offline'}\n\n"
+                    f"# TAREFA\n"
+                    f"Responda ao último 'User' agindo estritamente como a persona definida.\n\n"
+                    f"# REGRAS DE EXECUÇÃO\n"
+                    f"1. **Fonte de Verdade:** Use prioritariamente o CONTEXTO (RAG). Se não encontrar, use conhecimento geral sensato, mas evite alucinar dados técnicos.\n"
+                    f"2. **Arquivos:** Se o cliente pedir foto/catálogo e o arquivo estiver listado no RAG, inclua-o em `arquivos_anexos` usando o ID exato. No texto, avise que está enviando.\n"
+                    f"3. **Encaminhamento:** Tente resolver. Só mude `nova_situacao` para 'Atendente Chamado' se for um caso complexo fora da base ou após persistência do erro.\n"
+                    f"4. **Comunicação:** Não repita saudações (Oi/Olá) se já houver no histórico. Seja direto e use *negrito* para destaques.\n"
+                    f"5. **Fluxo:** O sistema envia o texto PRIMEIRO e os arquivos DEPOIS. Considere isso na sua resposta.\n\n"
+                    f"# FORMATO DE RESPOSTA (JSON OBRIGATÓRIO)\n"
+                    f"Retorne APENAS um JSON válido, sem blocos de código (```json).\n"
+                    f"{{\n"
+                    f'  "mensagem_para_enviar": "Texto da resposta aqui (ou null)",\n'
+                    f'  "nova_situacao": "Aguardando Resposta" | "Atendente Chamado" | "Concluído",\n'
+                    f'  "nome_contato": "Nome extraído ou null",\n'
+                    f'  "observacoes": "Resumo curto para CRM",\n'
+                    f'  "arquivos_anexos": [\n'
+                    f'    {{ "nome_exato": "nome.pdf", "id_arquivo": "ID_DO_RAG", "tipo_midia": "image" }}\n'
+                    f'  ]\n'
+                    f"}}"
+                )
                 
-                final_prompt_str = json.dumps(master_prompt, ensure_ascii=False, indent=2, cls=SetEncoder)
-                
-                response = await self._generate_with_retry(final_prompt_str, db, user)
+                response = await self._generate_with_retry(prompt_text, db, user, system_instruction=system_instruction)
                 last_response = response
                 
                 clean_response = response.text.strip().replace("```json", "").replace("```", "")
@@ -276,35 +421,22 @@ class GeminiService:
         Gera uma mensagem de follow-up baseada na inatividade e nas configurações do usuário.
         """
         try:
-            formatted_history = self._format_history_for_prompt(conversation_history_db)
+            history_str = self._format_history_optimized(conversation_history_db)
 
-            master_prompt = {
-                "instrucao_geral": (
-                    "Você é um assistente de IA especialista em reengajamento de clientes. Sua única tarefa é gerar uma mensagem de follow-up. Siga estas regras:\n"
-                    "1. *Contexto é Rei:* A configuração `followup_config` contém a mensagem que você DEVE usar como base. Você pode fazer pequenas adaptações para soar mais natural, mas o sentido principal deve ser mantido.\n"
-                    "2. *Verifique o Histórico:* Analise o `historico_conversa` para entender o último tópico discutido. Sua mensagem de follow-up deve ser relevante a esse tópico, se possível.\n"
-                    "3. *Seja Conciso e Amigável:* A mensagem deve ser curta, amigável e convidar o cliente a continuar a conversa. Não seja insistente.\n"
-                    "4. *Não Cumprimente Novamente:* Verifique no histórico se já houve um cumprimento. Se sim, não cumprimente de novo.\n"
-                    "5. *Não Faça Perguntas Abertas Demais:* Em vez de 'Posso ajudar em algo mais?', tente algo como 'Conseguiu ver o que te enviei sobre [tópico]?' ou 'Ainda ficou alguma dúvida sobre [tópico]?'.\n"
-                    "6. *Formato de Resposta:* Sua resposta DEVE ser um objeto JSON contendo apenas a chave `mensagem_para_enviar` com o texto da mensagem. Se decidir que nenhuma mensagem deve ser enviada, o valor deve ser `null`."
-                ),
-                "formato_resposta_obrigatorio": {
-                    "descricao": "Sua resposta DEVE ser um único objeto JSON válido.",
-                    "chaves": {
-                        "mensagem_para_enviar": "O texto da mensagem de follow-up a ser enviada. Se decidir não enviar, o valor deve ser null."
-                    }
-                },
-                "followup_config": followup_config, # Contém a mensagem base para o intervalo atual
-                "dados_atuais_conversa": {
-                    "tarefa_imediata": "Analisar a última interação e a `followup_config` para criar uma mensagem de reengajamento.",
-                    "nome_contato_atual": whatsapp.nome_contato,
-                    "historico_conversa": formatted_history
-                }
-            }
+            prompt_text = (
+                f"## TAREFA: FOLLOW-UP\n"
+                f"Você é um assistente de IA especialista em reengajamento. Gere uma mensagem de follow-up.\n\n"
+                f"## CONFIGURAÇÃO DE FOLLOW-UP\n{json.dumps(followup_config, ensure_ascii=False)}\n\n"
+                f"## DADOS\nNome Contato: {whatsapp.nome_contato}\n\n"
+                f"## HISTÓRICO RECENTE\n{history_str}\n\n"
+                f"## REGRAS\n"
+                f"1. Use a mensagem da configuração como base, adaptando levemente para naturalidade.\n"
+                f"2. Seja curto, amigável e não insistente.\n"
+                f"3. Não cumprimente novamente se já houver cumprimento no histórico.\n"
+                f"4. Retorne APENAS um JSON válido: {{ \"mensagem_para_enviar\": \"texto...\" }}\n"
+            )
             
-            final_prompt_str = json.dumps(master_prompt, ensure_ascii=False, indent=2, cls=SetEncoder)
-            
-            response = await self._generate_with_retry(final_prompt_str, db, user)
+            response = await self._generate_with_retry(prompt_text, db, user)
             
             clean_response = response.text.strip().replace("```json", "").replace("```", "")
             
@@ -313,14 +445,6 @@ class GeminiService:
         except Exception as e:
             logger.error(f"Erro ao gerar ação de follow-up com Gemini: {e}", exc_info=True)
             return { "mensagem_para_enviar": None }
-
-    def _format_history_for_prompt(self, db_history: List[dict]) -> List[Dict[str, str]]:
-        history_for_ia = []
-        for msg in db_history:
-            role = "ia" if msg.get("role") == "assistant" else "contato"
-            content = msg.get("content", "")
-            history_for_ia.append({"remetente": role, "mensagem": content})
-        return history_for_ia
 
     def _format_analysis_json_to_markdown(self, analysis_data: Dict[str, Any]) -> str:
         """Converte o JSON de análise da IA em uma string Markdown formatada."""
@@ -377,48 +501,126 @@ class GeminiService:
         """
         logger.info(f"Iniciando análise de dados para user_id={user.id} com a pergunta: '{question[:100]}...'")
 
-        simplified_atendimentos = [
-            {
-                "id": at.id, "status": at.status, "created_at": at.created_at.isoformat(),
-                "updated_at": at.updated_at.isoformat(), "observacoes": at.observacoes,
-                "conversa_length": len(at.conversa or "[]")
-            } for at in atendimentos
-        ]
+        # 1. System Instruction
+        system_instruction = (
+            "Você é um analista de dados sênior especialista em atendimento ao cliente.\n"
+            "Sua tarefa é analisar os dados fornecidos e responder à pergunta do usuário.\n"
+            "Sua resposta DEVE ser estritamente um objeto JSON válido, sem markdown de código.\n"
+            "Siga a estrutura sugerida para organizar sua análise."
+        )
+
+        # 2. Processamento dos dados quantitativos (Estatísticas Gerais)
+        total = len(atendimentos)
+        status_counts = {}
+        for at in atendimentos:
+            status_counts[at.status] = status_counts.get(at.status, 0) + 1
+        
+        stats_summary = {
+            "total_atendimentos": total,
+            "distribuicao_status": status_counts,
+            "periodo_analisado": "Verificar datas nos filtros"
+        }
+
+        # 3. RAG em Memória para dados qualitativos (Conversas/Observações)
+        # Prepara textos para embedding (Limitado aos 100 mais recentes para performance)
+        docs_for_embedding = []
+        atendimentos_map = {} 
+        
+        # Ordena por data de atualização (mais recentes primeiro) se ainda não estiver
+        sorted_atendimentos = sorted(atendimentos, key=lambda x: x.updated_at, reverse=True)[:100]
+
+        for idx, at in enumerate(sorted_atendimentos):
+            conversa_text = ""
+            try:
+                msgs = json.loads(at.conversa or "[]")
+                # Pega as últimas 5 mensagens para contexto
+                last_msgs = msgs[-5:]
+                conversa_text = " | ".join([f"{m.get('role')}: {m.get('content')}" for m in last_msgs])
+            except:
+                conversa_text = "Sem histórico legível."
+
+            doc_text = (
+                f"Status: {at.status}. "
+                f"Observações: {at.observacoes or ''}. "
+                f"Conversa recente: {conversa_text}"
+            )
+            docs_for_embedding.append(doc_text)
+            atendimentos_map[idx] = at
+
+        relevant_atendimentos_data = []
+        
+        if docs_for_embedding and question:
+            try:
+                q_embedding = await self.generate_embedding(question)
+                if q_embedding:
+                    doc_embeddings = await self.generate_embeddings_batch(docs_for_embedding)
+                    
+                    scores = []
+                    q_vec = np.array(q_embedding)
+                    norm_q = np.linalg.norm(q_vec)
+
+                    for d_vec in doc_embeddings:
+                        if not d_vec:
+                            scores.append(-1)
+                            continue
+                        d_vec_np = np.array(d_vec)
+                        norm_d = np.linalg.norm(d_vec_np)
+                        if norm_q == 0 or norm_d == 0:
+                            scores.append(0)
+                        else:
+                            scores.append(np.dot(q_vec, d_vec_np) / (norm_q * norm_d))
+                    
+                    # Seleciona Top 15 mais relevantes
+                    top_indices = np.argsort(scores)[::-1][:15]
+                    
+                    for idx in top_indices:
+                        if scores[idx] > 0.25: # Threshold de relevância
+                            at = atendimentos_map[idx]
+                            relevant_atendimentos_data.append({
+                                "id": at.id,
+                                "nome": at.nome_contato,
+                                "status": at.status,
+                                "observacoes": at.observacoes,
+                                "trecho_conversa": docs_for_embedding[idx]
+                            })
+            except Exception as e:
+                logger.error(f"Erro no RAG do Dashboard: {e}")
+
         persona_context = None
-        if persona and persona.contexto_json:
-            persona_context = {"nome_persona": persona.nome_config, "contexto": persona.contexto_json}
+        if persona:
+            persona_context = {"nome_persona": persona.nome_config, "contexto": persona.prompt}
 
         analysis_prompt = {
-            "objetivo": "Você é um analista de dados sênior. Analise os dados fornecidos para responder à pergunta do usuário. Sua resposta DEVE ser um objeto JSON.",
             "pergunta_usuario": question,
-            "dados_contexto": {
+            "dados_estatisticos": stats_summary,
+            "dados_qualitativos_relevantes": relevant_atendimentos_data,
+            "contexto_adicional": {
                 "resumo_usuario": {"id": user.id, "email": user.email, "tokens_restantes": user.tokens},
-                "contexto_persona_ia": persona_context or "Nenhum contexto de persona foi fornecido para esta análise.",
-                "atendimentos_periodo": simplified_atendimentos
+                "contexto_persona_ia": persona_context or "N/A",
             },
-            "formato_resposta_obrigatorio": {
-                "descricao": "Sua resposta DEVE ser um único objeto JSON válido, sem nenhum texto ou formatação adicional (como ```json). Siga a estrutura sugerida para organizar sua análise.",
-                "estrutura_sugerida": {
-                    "analise_de_conversao": {
-                        "diagnostico_geral": "Um parágrafo resumindo a situação.",
-                        "principais_pontos_de_friccao": [
-                            {"area": "Nome da Área (ex: Preços)", "observacoes": "Detalhes observados em texto simples.", "impacto_na_conversao": "Alto/Médio/Baixo"}
-                        ],
-                        "insights_acionaveis": [
-                            {"titulo": "Título da Sugestão", "sugestoes": ["Sugestão 1 em texto simples.", "Sugestão 2 em texto simples."]}
-                        ],
-                        "proximos_passos_recomendados": "Recomendação final."
-                    }
+            "instrucoes_formato": {
+                "analise_de_conversao": {
+                    "diagnostico_geral": "Um parágrafo resumindo a situação.",
+                    "principais_pontos_de_friccao": [
+                        {"area": "Nome da Área (ex: Preços)", "observacoes": "Detalhes observados em texto simples.", "impacto_na_conversao": "Alto/Médio/Baixo"}
+                    ],
+                    "insights_acionaveis": [
+                        {"titulo": "Título da Sugestão", "sugestoes": ["Sugestão 1 em texto simples.", "Sugestão 2 em texto simples."]}
+                    ],
+                    "proximos_passos_recomendados": "Recomendação final."
                 }
             }
         }
 
         prompt_str = json.dumps(analysis_prompt, ensure_ascii=False, indent=2)
 
-        gen_config_override = self.generation_config.copy()
-        gen_config_override["response_mime_type"] = "application/json"
-        
-        response = await self._generate_with_retry(prompt_str, db, user, is_media=False)
+        response = await self._generate_with_retry(
+            prompt_str, 
+            db, 
+            user, 
+            is_media=False, 
+            system_instruction=system_instruction
+        )
         analysis_json = json.loads(response.text)
         return analysis_json
 

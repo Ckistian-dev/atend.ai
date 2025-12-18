@@ -3,7 +3,7 @@ import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import {
     Plus, Save, Trash2, FileText, ChevronRight, Loader2,
-    Link as LinkIcon, Star, CheckCircle, Folder, Copy, Share2
+    Link as LinkIcon, Star, CheckCircle, Folder, Copy, Share2, Database, ExternalLink
 } from 'lucide-react';
 
 // --- CONFIGURAÇÃO ---
@@ -28,14 +28,13 @@ function Configs() {
     const [error, setError] = useState('');
 
     // Estados Sheets
-    const [spreadsheetId, setSpreadsheetId] = useState('');
-    const [syncedSheets, setSyncedSheets] = useState([]);
+    const [spreadsheetId, setSpreadsheetId] = useState(''); // System
+    const [spreadsheetRagId, setSpreadsheetRagId] = useState(''); // RAG
 
     // Estados Drive (Novo)
     const [driveFolderId, setDriveFolderId] = useState('');
-    const [syncedFiles, setSyncedFiles] = useState([]);
 
-    const [activeTab, setActiveTab] = useState('contexto'); // 'contexto' ou 'drive'
+    const [activeTab, setActiveTab] = useState('system'); // 'system', 'rag', 'drive'
 
     const fetchData = useCallback(async () => {
         setIsLoading(true);
@@ -67,13 +66,12 @@ function Configs() {
 
         // Sheets
         setSpreadsheetId(config.spreadsheet_id || '');
-        setSyncedSheets(config.contexto_json ? Object.keys(config.contexto_json) : []);
+        setSpreadsheetRagId(config.spreadsheet_rag_id || '');
 
         // Drive
         setDriveFolderId(config.drive_id || '');
-        setSyncedFiles(config.arquivos_drive_json || []);
 
-        setActiveTab('contexto');
+        setActiveTab('system');
         setError('');
     };
 
@@ -81,10 +79,9 @@ function Configs() {
         setSelectedConfig(null);
         setFormData(initialFormData);
         setSpreadsheetId('');
-        setSyncedSheets([]);
+        setSpreadsheetRagId('');
         setDriveFolderId('');
-        setSyncedFiles([]);
-        setActiveTab('contexto');
+        setActiveTab('system');
         setError('');
     };
 
@@ -102,6 +99,7 @@ function Configs() {
             contexto_json: formData.contexto_json,
             arquivos_drive_json: formData.arquivos_drive_json,
             spreadsheet_id: spreadsheetId,
+            spreadsheet_rag_id: spreadsheetRagId,
             drive_id: driveFolderId
         };
         try {
@@ -148,22 +146,25 @@ function Configs() {
         navigator.clipboard.writeText(BOT_EMAIL);
     };
 
-    // --- Sync Sheets ---
-    const handleSyncSheet = async () => {
+    // --- Sync Sheets (Genérico) ---
+    const handleSyncSheet = async (type) => {
         if (!selectedConfig) return toast.error("Salve a configuração antes de sincronizar.");
-        if (!spreadsheetId) return toast.error("Insira o ID ou Link da planilha.");
+        
+        const targetId = type === 'rag' ? spreadsheetRagId : spreadsheetId;
+        if (!targetId) return toast.error("Insira o ID ou Link da planilha.");
 
         setIsSyncing(true);
         setError('');
         try {
-            const payload = { config_id: selectedConfig.id, spreadsheet_id: spreadsheetId };
+            const payload = { config_id: selectedConfig.id, spreadsheet_id: targetId, type: type };
             const response = await api.post('/configs/sync_sheet', payload);
 
-            setSyncedSheets(Object.keys(response.data.contexto_json) || []);
-            // Atualiza o form data localmente para garantir integridade ao salvar depois
-            setFormData(prev => ({ ...prev, contexto_json: response.data.contexto_json }));
+            if (type === 'system') {
+                // Atualiza o form data localmente para garantir integridade ao salvar depois
+                setFormData(prev => ({ ...prev, contexto_json: null }));
+            }
 
-            toast.success(`Sucesso! ${response.data.sheets_found.length} abas encontradas.`);
+            toast.success(`Sucesso! ${response.data.sheets_found.length} abas sincronizadas (${type.toUpperCase()}).`);
         } catch (err) {
             setError(err.response?.data?.detail || 'Falha ao sincronizar. Verifique se compartilhou a planilha com o e-mail do robô.');
         } finally {
@@ -182,24 +183,41 @@ function Configs() {
             const payload = { config_id: selectedConfig.id, drive_id: driveFolderId };
             const response = await api.post('/configs/sync_drive', payload);
 
-            // A resposta agora é um objeto com a árvore de arquivos
-            const driveData = response.data.arquivos_drive_json || {};
-
-            // A função de renderização espera uma lista simples de arquivos,
-            // então vamos extrair os arquivos da raiz para exibição.
-            // A estrutura completa (com subpastas) é salva no `formData`.
-            const rootFiles = driveData.arquivos || [];
-            setSyncedFiles(rootFiles);
+            const filesCount = response.data.files_found || 0;
 
             // Atualiza o form data localmente
-            setFormData(prev => ({ ...prev, arquivos_drive_json: driveData }));
+            setFormData(prev => ({ ...prev, arquivos_drive_json: null }));
 
-            toast.success(`Sucesso! ${response.data.files_count} arquivos encontrados.`);
+            // Conta total de arquivos recursivamente para exibir no Toast
+            const countFiles = (node) => {
+                let count = node.arquivos?.length || 0;
+                node.subpastas?.forEach(sub => count += countFiles(sub));
+                return count;
+            };
+
+            toast.success(`Sucesso! ${filesCount} arquivos encontrados.`);
         } catch (err) {
             setError(err.response?.data?.detail || 'Falha ao sincronizar Drive. Verifique o ID e o compartilhamento.');
         } finally {
             setIsSyncing(false);
         }
+    };
+
+    const extractId = (value) => {
+        if (!value) return "";
+        const sheetMatch = value.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+        if (sheetMatch) return sheetMatch[1];
+        const folderMatch = value.match(/\/folders\/([a-zA-Z0-9-_]+)/);
+        if (folderMatch) return folderMatch[1];
+        return value;
+    };
+
+    const openResource = (id, type) => {
+        if (!id) return;
+        const baseUrl = type === 'drive' 
+            ? 'https://drive.google.com/drive/folders/' 
+            : 'https://docs.google.com/spreadsheets/d/';
+        window.open(`${baseUrl}${id}`, '_blank');
     };
 
     const labelClass = "block text-sm font-semibold text-gray-700 mb-1";
@@ -248,8 +266,11 @@ function Configs() {
 
                             {/* Abas */}
                             <div className="flex border-b border-gray-200 mb-6">
-                                <button type="button" onClick={() => setActiveTab('contexto')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'contexto' ? 'border-b-2 border-brand-blue text-brand-blue' : 'text-gray-500 hover:text-gray-800'}`}>
-                                    <LinkIcon size={18} /> Contexto (Sheets)
+                                <button type="button" onClick={() => setActiveTab('system')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'system' ? 'border-b-2 border-brand-blue text-brand-blue' : 'text-gray-500 hover:text-gray-800'}`}>
+                                    <LinkIcon size={18} /> Instruções (System)
+                                </button>
+                                <button type="button" onClick={() => setActiveTab('rag')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'rag' ? 'border-b-2 border-brand-blue text-brand-blue' : 'text-gray-500 hover:text-gray-800'}`}>
+                                    <Database size={18} /> Conhecimento (RAG)
                                 </button>
                                 <button type="button" onClick={() => setActiveTab('drive')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'drive' ? 'border-b-2 border-brand-blue text-brand-blue' : 'text-gray-500 hover:text-gray-800'}`}>
                                     <Folder size={18} /> Arquivos (Drive)
@@ -262,15 +283,18 @@ function Configs() {
                                 </div>
                             )}
 
-                            {/* CONTEÚDO ABA: SHEETS */}
-                            {activeTab === 'contexto' && (
+                            {/* CONTEÚDO ABA: SYSTEM (INSTRUÇÕES) */}
+                            {activeTab === 'system' && (
                                 <div className="animate-fade-in space-y-6">
                                     <div>
-                                        <label htmlFor="spreadsheetId" className={labelClass}>Link ou ID da Planilha</label>
+                                        <label htmlFor="spreadsheetId" className={labelClass}>Link da Planilha de Instruções</label>
                                         <div className="flex items-center gap-4">
-                                            <input id="spreadsheetId" name="spreadsheetId" value={spreadsheetId} onChange={(e) => setSpreadsheetId(e.target.value)} className={inputClass} placeholder="https://docs.google.com/spreadsheets/d/..." />
-                                            <button type="button" onClick={handleSyncSheet} disabled={isSyncing || !selectedConfig} className="flex items-center gap-2 bg-brand-blue text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-brand-blue-dark transition-all disabled:bg-gray-400 disabled:cursor-not-allowed">
+                                            <input id="spreadsheetId" name="spreadsheetId" value={spreadsheetId} onChange={(e) => setSpreadsheetId(extractId(e.target.value))} className={inputClass} placeholder="Cole o Link da Planilha aqui..." />
+                                            <button type="button" onClick={() => handleSyncSheet('system')} disabled={isSyncing || !selectedConfig} className="flex items-center gap-2 bg-brand-blue text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-brand-blue-dark transition-all disabled:bg-gray-400 disabled:cursor-not-allowed">
                                                 {isSyncing ? <Loader2 className="animate-spin" size={20} /> : "Sincronizar"}
+                                            </button>
+                                            <button type="button" onClick={() => openResource(spreadsheetId, 'sheet')} disabled={!spreadsheetId} className="p-2 text-gray-500 hover:text-brand-blue transition-colors disabled:opacity-50" title="Abrir no Navegador">
+                                                <ExternalLink size={24} />
                                             </button>
                                         </div>
                                     </div>
@@ -279,7 +303,7 @@ function Configs() {
                                     <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 text-sm text-gray-700 space-y-4">
                                         <div className="flex items-center gap-2 font-semibold text-blue-800">
                                             <Share2 size={18} />
-                                            <h4>Como conectar sua planilha</h4>
+                                            <h4>Como conectar sua planilha de Instruções</h4>
                                         </div>
 
                                         <ol className="list-decimal list-inside space-y-2 text-gray-600">
@@ -297,27 +321,42 @@ function Configs() {
                                                 </button>
                                             </li>
                                             <li>Defina ele como <strong>Leitor</strong> e salve.</li>
-                                            <li>Volte para a Planilha e copie o <strong>ID da URL:</strong></li>
-                                            <li> Ex: /spreadsheets/d/<strong>1BxiMVs0XRA5nFMdKVBdBNj...</strong>/edit</li>
-                                            <li> Cole o link copiado no campo acima. </li>
+                                            <li>Volte para a Planilha e copie a <strong>URL</strong> do navegador e cole acima ↑</li>
+                                            <li> <strong>Dica:</strong> Use esta planilha para definir Persona, Regras de Negócio e Etapas de Venda.</li>
                                         </ol>
                                     </div>
+                                </div>
+                            )}
 
-                                    {syncedSheets.length > 0 && (
-                                        <div className="p-4 bg-green-50 rounded-lg border border-green-200 animate-fade-in">
-                                            <div className="flex items-center gap-2">
-                                                <CheckCircle className="text-green-600" size={20} />
-                                                <p className="font-semibold text-green-800">Contexto Sincronizado!</p>
-                                            </div>
-                                            <div className="flex flex-wrap gap-2 mt-3">
-                                                {syncedSheets.map(sheetName => (
-                                                    <span key={sheetName} className="px-3 py-1 bg-green-200 text-green-900 text-xs font-medium rounded-full">
-                                                        {sheetName}
-                                                    </span>
-                                                ))}
-                                            </div>
+                            {/* CONTEÚDO ABA: RAG (CONHECIMENTO) */}
+                            {activeTab === 'rag' && (
+                                <div className="animate-fade-in space-y-6">
+                                    <div>
+                                        <label htmlFor="spreadsheetRagId" className={labelClass}>Link da Planilha de Conhecimento</label>
+                                        <div className="flex items-center gap-4">
+                                            <input id="spreadsheetRagId" name="spreadsheetRagId" value={spreadsheetRagId} onChange={(e) => setSpreadsheetRagId(extractId(e.target.value))} className={inputClass} placeholder="Cole o Link da Planilha aqui..." />
+                                            <button type="button" onClick={() => handleSyncSheet('rag')} disabled={isSyncing || !selectedConfig} className="flex items-center gap-2 bg-brand-blue text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-brand-blue-dark transition-all disabled:bg-gray-400 disabled:cursor-not-allowed">
+                                                {isSyncing ? <Loader2 className="animate-spin" size={20} /> : "Sincronizar"}
+                                            </button>
+                                            <button type="button" onClick={() => openResource(spreadsheetRagId, 'sheet')} disabled={!spreadsheetRagId} className="p-2 text-gray-500 hover:text-brand-blue transition-colors disabled:opacity-50" title="Abrir no Navegador">
+                                                <ExternalLink size={24} />
+                                            </button>
                                         </div>
-                                    )}
+                                    </div>
+
+                                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 text-sm text-gray-700 space-y-4">
+                                        <div className="flex items-center gap-2 font-semibold text-brand-blue">
+                                            <Database size={18} />
+                                            <h4>Base de Conhecimento (RAG)</h4>
+                                        </div>
+
+                                        <ol className="list-decimal list-inside space-y-2 text-gray-600">
+                                            <li>Siga o mesmo processo de compartilhamento com o email do bot.</li>
+                                            <li>Use esta planilha para dados volumosos: <strong>Catálogo de Produtos, Tabela de Preços, FAQ, Lista de Serviços.</strong></li>
+                                            <li>O sistema irá ler todas as abas e transformar em vetores de busca.</li>
+                                            <li>Isso permite que a IA encontre informações específicas sem sobrecarregar o prompt principal.</li>
+                                        </ol>
+                                    </div>
                                 </div>
                             )}
 
@@ -325,11 +364,14 @@ function Configs() {
                             {activeTab === 'drive' && (
                                 <div className="animate-fade-in space-y-6">
                                     <div>
-                                        <label htmlFor="driveFolderId" className={labelClass}>ID da Pasta do Google Drive</label>
+                                        <label htmlFor="driveFolderId" className={labelClass}>Link da Pasta do Google Drive</label>
                                         <div className="flex items-center gap-4">
-                                            <input id="driveFolderId" name="driveFolderId" value={driveFolderId} onChange={(e) => setDriveFolderId(e.target.value)} className={inputClass} placeholder="Ex: 1BxiMVs0XRA5nFMdKVBdBNj..." />
+                                            <input id="driveFolderId" name="driveFolderId" value={driveFolderId} onChange={(e) => setDriveFolderId(extractId(e.target.value))} className={inputClass} placeholder="Cole o Link da Pasta aqui..." />
                                             <button type="button" onClick={handleSyncDrive} disabled={isSyncing || !selectedConfig} className="flex items-center gap-2 bg-brand-blue text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-brand-blue-dark transition-all disabled:bg-gray-400 disabled:cursor-not-allowed">
                                                 {isSyncing ? <Loader2 className="animate-spin" size={20} /> : "Sincronizar"}
+                                            </button>
+                                            <button type="button" onClick={() => openResource(driveFolderId, 'drive')} disabled={!driveFolderId} className="p-2 text-gray-500 hover:text-brand-blue transition-colors disabled:opacity-50" title="Abrir no Navegador">
+                                                <ExternalLink size={24} />
                                             </button>
                                         </div>
                                     </div>
@@ -356,33 +398,11 @@ function Configs() {
                                                 </button>
                                             </li>
                                             <li>Defina ele como <strong>Leitor</strong> e salve.</li>
-                                            <li>Volte para a pasta e copie o <strong>ID final da URL</strong></li>
-                                            <li> Ex: /drive/folders/<strong>1BxiMVs0XRA5nFMdKVBdBNj...</strong> </li>
+                                            <li>Volte para a pasta e copie o <strong>Link (URL)</strong> do navegador</li>
+                                            <li> Ex: https://drive.google.com/drive/folders/<strong>1BxiMVs0XRA5nFMdKVBdBNj...</strong> </li>
                                             <li> Cole o link copiado no campo acima. </li>
                                         </ol>
                                     </div>
-
-                                    {/* --- CORREÇÃO AQUI --- */}
-                                    {/* Verifica se o objeto da árvore existe e se tem arquivos ou subpastas */}
-                                    {formData.arquivos_drive_json && (formData.arquivos_drive_json.arquivos?.length > 0 || formData.arquivos_drive_json.subpastas?.length > 0) ? (
-                                        <div className="p-4 bg-green-50 rounded-lg border border-gray-200 animate-fade-in">
-                                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
-                                                <CheckCircle className="text-green-600" size={20} />
-                                                <p className="font-semibold text-gray-700">Arquivos Sincronizados</p>
-                                            </div>
-                                            {/* A função recursiva para renderizar a árvore */}
-                                            <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-2 text-sm">
-                                                <RenderDriveTree node={formData.arquivos_drive_json} />
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        driveFolderId && !isSyncing && (
-                                            <div className="text-center py-6 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
-                                                <Folder size={32} className="mx-auto mb-2 opacity-20" />
-                                                <p className="text-sm">Nenhum arquivo sincronizado ainda.</p>
-                                            </div>
-                                        )
-                                    )}
                                 </div>
                             )}
                         </div>
@@ -399,37 +419,5 @@ function Configs() {
         </div>
     );
 }
-
-// --- NOVO COMPONENTE AUXILIAR ---
-// Componente recursivo para renderizar a árvore de arquivos do Drive
-const RenderDriveTree = ({ node }) => {
-    if (!node || (!node.arquivos?.length && !node.subpastas?.length)) {
-        return null;
-    }
-
-    return (
-        <div className="pl-4 border-l border-gray-200">
-            {/* Renderiza arquivos na pasta atual */}
-            {node.arquivos?.map(file => (
-                <div key={file.id} className="flex items-center gap-2 py-1">
-                    <FileText size={14} className="text-gray-400 flex-shrink-0" />
-                    <span className="text-gray-700">{file.nome}</span>
-                </div>
-            ))}
-
-            {/* Renderiza subpastas recursivamente */}
-            {node.subpastas?.map(subfolder => (
-                <div key={subfolder.nome} className="mt-2">
-                    <div className="flex items-center gap-2 font-semibold text-gray-800">
-                        <Folder size={16} className="text-gray-800" />
-                        {subfolder.nome}
-                    </div>
-                    {/* Chamada recursiva */}
-                    <RenderDriveTree node={subfolder} />
-                </div>
-            ))}
-        </div>
-    );
-};
 
 export default Configs;
