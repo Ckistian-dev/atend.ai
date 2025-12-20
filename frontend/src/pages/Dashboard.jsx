@@ -1,6 +1,6 @@
 // src/pages/Dashboard.jsx
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import api from '../api/axiosConfig';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { subDays, startOfMonth, endOfMonth, format } from 'date-fns';
@@ -175,17 +175,35 @@ const AnalysisReport = ({ analysisData }) => {
 
 // --- COMPONENTES DO DASHBOARD ---
 
-const StatCard = ({ icon, label, value, color }) => (
-    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
-        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${color}`}>
-            {icon}
+const StatCard = ({ icon, label, value, color }) => {
+    const formattedValue = useMemo(() => {
+        if (value === undefined || value === null) return '...';
+
+        if (typeof value === 'number') {
+            return value.toLocaleString('pt-BR');
+        }
+
+        if (typeof value === 'string' && !value.includes('%')) {
+            const parsed = parseFloat(value);
+            if (!isNaN(parsed)) {
+                return parsed.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+        }
+        return value;
+    }, [value]);
+
+    return (
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${color}`}>
+                {icon}
+            </div>
+            <div>
+                <p className="text-2xl font-bold text-gray-800">{formattedValue}</p>
+                <p className="text-xs text-gray-500">{label}</p>
+            </div>
         </div>
-        <div>
-            <p className="text-2xl font-bold text-gray-800">{value}</p>
-            <p className="text-xs text-gray-500">{label}</p>
-        </div>
-    </div>
-);
+    );
+};
 
 const DateRangeFilter = ({ onDateChange }) => {
     const [active, setActive] = useState('30d'); // '7d', '30d', 'this_month', 'custom'
@@ -211,6 +229,7 @@ const DateRangeFilter = ({ onDateChange }) => {
             setShowCustomPicker(!showCustomPicker);
             return; // Não chama onDateChange ainda
         } else {
+            setShowCustomPicker(false);
             start = subDays(end, ranges[key].days);
         }
         onDateChange(start, end);

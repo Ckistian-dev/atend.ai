@@ -98,6 +98,7 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allT
     // Garante que personaId tenha um valor padrão (null ou o primeiro ID) se o atual for inválido
     const [personaId, setPersonaId] = useState(atendimento.active_persona_id ?? (personas?.[0]?.id ?? null));
     const [nomeContato, setNomeContato] = useState(atendimento.nome_contato || '');
+    const [observacoes, setObservacoes] = useState(atendimento.observacoes || '');
     const [currentTags, setCurrentTags] = useState(atendimento.tags || []);
     const [newTagName, setNewTagName] = useState('');
     const [newTagColor, setNewTagColor] = useState('#6b7280');
@@ -134,7 +135,8 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allT
             status,
             active_persona_id: finalPersonaId,
             tags: currentTags,
-            nome_contato: nomeContato.trim() || null
+            nome_contato: nomeContato.trim() || null,
+            observacoes: observacoes.trim() || null
         });
         onClose();
     };
@@ -180,43 +182,92 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allT
                             {personaOptions}
                         </select>
                     </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Observações (Internas)</label>
+                        <textarea
+                            value={observacoes}
+                            onChange={e => setObservacoes(e.target.value)}
+                            rows={3}
+                            className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            placeholder="Anotações sobre o atendimento..."
+                        />
+                    </div>
 
                     {/* Seção de Tags */}
                     <div className="pt-6 border-t">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
-                        <div className="flex flex-wrap gap-2 mb-4 p-2 bg-gray-50 rounded-md min-h-[40px]">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Gerenciar Tags</label>
+                        
+                        {/* Tags Atuais */}
+                        <div className="flex flex-wrap gap-2 mb-3 p-2 bg-white border border-gray-200 rounded-md min-h-[42px] items-center">
+                            {currentTags.length === 0 && <span className="text-gray-400 text-sm italic px-1">Nenhuma tag selecionada</span>}
                             {currentTags.map(tag => (
-                                <span key={tag.name} className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-white rounded-full" style={{ backgroundColor: tag.color }}>
+                                <span key={tag.name} className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-white rounded-full shadow-sm transition-transform hover:scale-105" style={{ backgroundColor: tag.color }}>
                                     {tag.name}
-                                    <button onClick={() => handleRemoveTag(tag.name)} className="opacity-70 hover:opacity-100"><XIcon size={12} /></button>
+                                    <button onClick={() => handleRemoveTag(tag.name)} className="hover:text-red-200 focus:outline-none"><XIcon size={14} /></button>
                                 </span>
                             ))}
                         </div>
 
-                        <div className="mb-4">
-                            <p className="block text-sm font-medium text-gray-700 mb-2">Adicionar tag existente:</p>
-                            <div className="flex flex-wrap gap-2">
-                                {availableTags.map(tag => (
-                                    <button key={tag.name} type="button" onClick={() => handleToggleTag(tag)} className="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-200 rounded-full hover:bg-gray-300">
-                                        + {tag.name}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <p className="block text-sm font-medium text-gray-700 mb-2">Criar nova tag:</p>
-                            <div className="flex items-center gap-2">
-                                <input type="color" value={newTagColor} onChange={e => setNewTagColor(e.target.value)} className="h-8 w-8 p-0 border-none rounded" />
+                        {/* Input de Busca/Criação */}
+                        <div className="flex gap-2 mb-3">
+                             <div className="relative flex-grow">
                                 <input
                                     type="text"
                                     value={newTagName}
                                     onChange={e => setNewTagName(e.target.value)}
-                                    placeholder="Nome da nova tag..."
-                                    className="flex-grow block w-full px-3 py-2 text-sm rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    placeholder="Buscar ou criar tag..."
+                                    className="block w-full pl-3 pr-10 py-2 text-sm rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleAddTag();
+                                        }
+                                    }}
                                 />
-                                <button type="button" onClick={handleAddTag} className="px-4 py-2 bg-gray-700 text-white text-sm rounded-md hover:bg-gray-800">Adicionar</button>
-                            </div>
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+                                     <input 
+                                        type="color" 
+                                        value={newTagColor} 
+                                        onChange={e => setNewTagColor(e.target.value)} 
+                                        className="h-6 w-6 p-0 border-none rounded-full cursor-pointer overflow-hidden" 
+                                        title="Cor da nova tag"
+                                    />
+                                </div>
+                             </div>
+                             <button 
+                                type="button" 
+                                onClick={handleAddTag} 
+                                disabled={!newTagName.trim()}
+                                className="px-3 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                title="Criar nova tag"
+                             >
+                                <Plus size={20} />
+                             </button>
+                        </div>
+
+                        {/* Lista de Tags Disponíveis (Filtrada) */}
+                        <div className="max-h-32 overflow-y-auto border border-gray-100 rounded-md p-2 bg-gray-50">
+                             <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Disponíveis</p>
+                             <div className="flex flex-wrap gap-2">
+                                {availableTags
+                                    .filter(t => t.name.toLowerCase().includes(newTagName.toLowerCase()))
+                                    .map(tag => (
+                                    <button 
+                                        key={tag.name} 
+                                        type="button" 
+                                        onClick={() => handleToggleTag(tag)} 
+                                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-full hover:bg-gray-100 hover:border-gray-300 transition-all shadow-sm"
+                                    >
+                                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }}></span>
+                                        {tag.name}
+                                    </button>
+                                ))}
+                                {availableTags.filter(t => t.name.toLowerCase().includes(newTagName.toLowerCase())).length === 0 && (
+                                    <span className="text-xs text-gray-400 italic">
+                                        {newTagName ? "Nenhuma tag existente encontrada. Clique em + para criar." : "Todas as tags disponíveis já foram selecionadas."}
+                                    </span>
+                                )}
+                             </div>
                         </div>
                     </div>
                 </div>
@@ -253,6 +304,7 @@ const CreateModal = ({ personas, statusOptions, onSave, onClose }) => {
     const [whatsapp, setWhatsapp] = useState('');
     const [nomeContato, setNomeContato] = useState('');
     const [status, setStatus] = useState('Novo Atendimento');
+    const [observacoes, setObservacoes] = useState('');
     const [personaId, setPersonaId] = useState(personas?.[0]?.id ?? '');
 
     const handleSave = () => {
@@ -265,6 +317,7 @@ const CreateModal = ({ personas, statusOptions, onSave, onClose }) => {
             whatsapp: whatsapp.trim(),
             nome_contato: nomeContato.trim() || null,
             status,
+            observacoes: observacoes.trim() || null,
             active_persona_id: personaId ? parseInt(personaId, 10) : null,
         };
 
@@ -297,6 +350,16 @@ const CreateModal = ({ personas, statusOptions, onSave, onClose }) => {
                             <option value="">-- Nenhuma --</option>
                             {(personas || []).map(p => <option key={p.id} value={p.id}>{p.nome_config}</option>)}
                         </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Observações (Internas)</label>
+                        <textarea
+                            value={observacoes}
+                            onChange={e => setObservacoes(e.target.value)}
+                            rows={3}
+                            className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            placeholder="Anotações iniciais..."
+                        />
                     </div>
                 </div>
                 <div className="mt-8 flex justify-end gap-4">
@@ -526,66 +589,29 @@ function Atendimentos() {
 
     const handleExport = async () => {
         try {
-            // Busca todos os atendimentos sem paginação para exportar
-            const response = await api.get('/atendimentos/', {
+            const toastId = toast.loading('A gerar relatório...');
+            
+            // Chama o endpoint de exportação com responseType blob
+            const response = await api.get('/atendimentos/export', {
                 params: {
                     search: searchTerm,
-                    limit: 9999, // Um limite alto para buscar todos os resultados filtrados
-                    page: 1
-                }
+                    // Adicione outros filtros aqui se implementar na UI (status, tags, datas)
+                },
+                responseType: 'blob' // Importante para download de arquivo binário
             });
-            const itemsToExport = response.data.items;
 
-            if (itemsToExport.length === 0) {
-                toast.info("Nenhum atendimento para exportar com os filtros atuais.");
-                return;
-            }
-
-            // --- INÍCIO DA CONVERSÃO PARA CSV ---
-            const headers = [
-                "WhatsApp", "Nome do Contato", "Situação", "Observações", 
-                "Tags", "Nome da Persona Ativa", 
-                "Criado em", "Última Atualização", "Conversa"
-            ];
-
-            const csvRows = [headers.join(',')]; // Adiciona o cabeçalho
-
-            const escapeCsvCell = (cell) => {
-                if (cell === null || cell === undefined) return '""';
-                const strCell = String(cell);
-                // Se a célula contém vírgula, aspas ou quebra de linha, envolve com aspas
-                if (strCell.includes(',') || strCell.includes('"') || strCell.includes('\n')) {
-                    // Escapa as aspas internas duplicando-as
-                    return `"${strCell.replace(/"/g, '""')}"`;
-                }
-                return `"${strCell}"`; // Envolve tudo em aspas para segurança
-            };
-
-            for (const item of itemsToExport) {
-                const tags = item.tags ? item.tags.map(t => t.name).join('; ') : '';
-                const personaName = item.active_persona ? item.active_persona.nome_config : '';
-                
-                const row = [
-                    item.whatsapp, item.nome_contato, item.status, item.observacoes,
-                    tags, personaName, 
-                    item.created_at, item.updated_at, item.conversa
-                ].map(escapeCsvCell);
-                
-                csvRows.push(row.join(','));
-            }
-            // --- FIM DA CONVERSÃO PARA CSV ---
-
-            // Dispara o download no navegador
-            const csvContent = csvRows.join('\n');
-            const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' }); // Adiciona BOM para Excel
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `atendimentos_${new Date().toISOString().split('T')[0]}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            // Cria URL para download a partir do Blob recebido
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `atendimentos_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            
+            toast.dismiss(toastId);
+            toast.success("Download iniciado!");
 
         } catch (err) {
             console.error("Erro ao exportar atendimentos:", err);
@@ -632,7 +658,7 @@ function Atendimentos() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                     <input
                         type="text"
-                        placeholder="Pesquisar por telefone, situação ou observação..."
+                        placeholder="Pesquisar por telefone, situação ou resumo..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -687,9 +713,9 @@ function Atendimentos() {
                                                     ) : <span className="text-gray-400 text-xs italic">Nenhuma</span>}
                                                 </div>
                                             </td>
-                                            <td className="p-4 text-sm text-gray-600 max-w-xl truncate" title={at.observacoes}> {/* Removido truncate */}
-                                                {at.observacoes ? (
-                                                    <p className="line-clamp-2">{at.observacoes}</p> // Usa line-clamp se quiser limitar visualmente
+                                            <td className="p-4 text-sm text-gray-600 max-w-xl truncate" title={at.resumo}> {/* Removido truncate */}
+                                                {at.resumo ? (
+                                                    <p className="line-clamp-2">{at.resumo}</p> // Usa line-clamp se quiser limitar visualmente
                                                 ) : (
                                                     <span className="text-gray-400 italic">Nenhuma</span>
                                                 )}

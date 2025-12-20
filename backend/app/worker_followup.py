@@ -62,9 +62,12 @@ async def process_followups_for_user(user: models.User, db: AsyncSession):
     gemini_service = get_gemini_service()
     whatsapp_service = get_whatsapp_service()
 
-    min_hours = intervals[0]['hours']
     now = datetime.now(timezone.utc)
-    earliest_time = now - timedelta(hours=min_hours)
+    
+    # Busca atendimentos atualizados nas últimas 24h (filtro amplo no banco)
+    # Passamos 'now' como earliest_time para ignorar o filtro de "mais antigo que X" do SQL,
+    # pois faremos a verificação precisa do timestamp do cliente via Python.
+    earliest_time = now
     latest_time = now - timedelta(hours=24)
 
     atendimentos = await crud_atendimento.get_atendimentos_for_followup(
@@ -73,36 +76,73 @@ async def process_followups_for_user(user: models.User, db: AsyncSession):
 
     for at in atendimentos:
         try:
-            inactive_duration = now - at.updated_at
-            inactive_hours = inactive_duration.total_seconds() / 3600
+            conversa = json.loads(at.conversa or "[]")
+            
+            # 1. Encontrar o timestamp da ÚLTIMA MENSAGEM DO CLIENTE
+            last_client_ts = 0
+            for msg in reversed(conversa):
+                if msg.get('role') == 'user':
+                    raw_ts = msg.get('timestamp')
+                    # Tratamento robusto para timestamp (int/float ou string ISO)
+                    if isinstance(raw_ts, (int, float)):
+                        last_client_ts = float(raw_ts)
+                    elif isinstance(raw_ts, str):
+                        try:
+                            dt = datetime.fromisoformat(raw_ts.replace("Z", "+00:00"))
+                            last_client_ts = dt.timestamp()
+                        except: pass
+                    break
+            
+            if last_client_ts == 0:
+                continue
 
-            target_interval = next((interval for interval in reversed(intervals) if inactive_hours >= interval['hours']), None)
+            # 2. Calcular inatividade baseada no CLIENTE
+            time_since_client = now.timestamp() - last_client_ts
+            inactive_hours = time_since_client / 3600
+
+            # Janela de 24h estrita baseada na mensagem do cliente
+            if inactive_hours > 24:
+                continue
+
+            # 3. Verificar intervalos pendentes
+            target_interval = None
+            
+            for interval in intervals:
+                hours = interval['hours']
+                if inactive_hours >= hours:
+                    # Verifica se JÁ ENVIAMOS este follow-up APÓS a última mensagem do cliente
+                    tag = f"followup_{hours}h_sent"
+                    already_sent = False
+                    
+                    for msg in conversa:
+                        # Pega timestamp da mensagem
+                        m_ts = 0
+                        m_raw = msg.get('timestamp')
+                        if isinstance(m_raw, (int, float)): m_ts = float(m_raw)
+                        elif isinstance(m_raw, str):
+                            try: m_ts = datetime.fromisoformat(m_raw.replace("Z", "+00:00")).timestamp()
+                            except: pass
+                        
+                        # Só conta se foi enviada DEPOIS do cliente falar
+                        if m_ts > last_client_ts and msg.get('tag') == tag:
+                            already_sent = True
+                            break
+                    
+                    if not already_sent:
+                        target_interval = interval
+                        break # Envia apenas o primeiro intervalo pendente (sequencial)
             
             if not target_interval:
                 continue
 
-            conversa = json.loads(at.conversa or "[]")
             followup_key = f"followup_{target_interval['hours']}h_sent"
             
-            if any(msg.get("tag") == followup_key for msg in conversa):
-                continue
-
             logger.info(f"Follow-up (At. {at.id}): Inativo por {inactive_hours:.2f}h. Gerando follow-up de {target_interval['hours']}h.")
 
-            # A persona ativa já é carregada na busca de atendimentos
-            persona_config = at.active_persona
-            # Se não houver persona no atendimento, usa a padrão do usuário (também já carregada)
-            if not persona_config:
-                persona_config = user.default_persona
-
-            if not persona_config:
-                logger.warning(f"Follow-up (At. {at.id}): Pulando, sem persona ativa no atendimento e sem persona padrão no usuário.")
-                continue
-
-            ia_response = await gemini_service.generate_conversation_action(
+            # Chama o serviço de IA específico para follow-up
+            ia_response = await gemini_service.generate_followup_action(
                 whatsapp=at,
                 conversation_history_db=conversa,
-                persona=persona_config,
                 db=db,
                 user=user
             )
@@ -131,6 +171,7 @@ async def followup_poller():
     logger.info("Worker-Followup: Iniciando poller de follow-up...")
     while True:
         try:
+            logger.info(f"Verificando atendimentos para follow-up...")
             async with SessionLocal() as db:
                 users_with_followup = await crud_user.get_users_with_followup_active(db)
                 
@@ -139,6 +180,7 @@ async def followup_poller():
                     await asyncio.gather(*tasks)
 
             await asyncio.sleep(300)
+            
         except Exception as e:
             logger.error(f"Worker-Followup: Erro crítico no loop: {e}", exc_info=True)
             await asyncio.sleep(300)

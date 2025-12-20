@@ -14,7 +14,7 @@ from sqlalchemy import select
 
 from app.core.config import settings
 from app.db import models
-from app.crud import crud_user
+from app.crud import crud_user, crud_atendimento
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,9 @@ class GeminiService:
             
         self.current_key_index = 0
         self.generation_config = {"temperature": 0.5, "top_p": 1, "top_k": 1}
+        # NOVO: Multiplicador para o custo de tokens de output, para normalizar pelo custo de input.
+        # Baseado no custo informado: Input $0,30, Output $2,50 por milhão de tokens.
+        self.output_token_multiplier = 2.5 / 0.3
         
         self._initialize_model()
 
@@ -66,7 +69,8 @@ class GeminiService:
         db: AsyncSession, 
         user: models.User, 
         is_media: bool = False,
-        system_instruction: Optional[str] = None
+        system_instruction: Optional[str] = None,
+        atendimento_id: Optional[int] = None
     ):  # Removido o tipo de retorno estrito para evitar erros de importação cruzada por enquanto
         """
         Executa a chamada para a API Gemini (Novo SDK), deduz token e rotaciona chaves.
@@ -129,7 +133,7 @@ class GeminiService:
                     # --- MUDANÇA PRINCIPAL: Chamada Assíncrona Nativa (.aio) ---
                     # Não precisa mais de run_in_executor
                     response = await self.client.aio.models.generate_content(
-                        model='gemini-2.5-flash', # Modelo corrigido para versão estável
+                        model='gemini-2.5-flash', # Modelo corrigido para versão estável e mais recente
                         contents=prompt,
                         config=gen_config
                     )
@@ -137,13 +141,32 @@ class GeminiService:
                     # --- LÓGICA DE TOKEN (ODÔMETRO) ---
                     # Extrai o uso real de tokens da resposta do Gemini
                     usage_metadata = response.usage_metadata
-                    total_tokens = usage_metadata.total_token_count if usage_metadata else 0
+                    tokens_to_deduct = 0 # Inicializa com 0
 
-                    logger.info(f"Sucesso na chamada à API Gemini para o utilizador {user.id}. Deduzindo {total_tokens} tokens.")
+                    if usage_metadata:
+                        input_tokens = usage_metadata.prompt_token_count
+                        output_tokens = usage_metadata.candidates_token_count
+                        
+                        # Calcula o custo equivalente em "tokens de input"
+                        equivalent_total_tokens = input_tokens + (output_tokens * self.output_token_multiplier)
+                        
+                        # Arredonda para o inteiro mais próximo para dedução
+                        tokens_to_deduct = round(equivalent_total_tokens)
+
+                        logger.info(
+                            f"Uso de tokens (User {user.id}): "
+                            f"Input={input_tokens}, Output={output_tokens}. "
+                            f"Custo Equivalente (x{self.output_token_multiplier:.2f}) = {tokens_to_deduct} tokens."
+                        )
+                    else:
+                        logger.warning(f"Não foi possível obter metadados de uso de tokens para o user {user.id}.")
+
                     try:
-                        await crud_user.decrement_user_tokens(db, db_user=user, usage=total_tokens)
-                        await db.commit()
-                        await db.refresh(user)
+                        if tokens_to_deduct > 0:
+                            logger.info(f"Sucesso na chamada à API Gemini para o utilizador {user.id}. Deduzindo {tokens_to_deduct} tokens.")
+                            await crud_user.decrement_user_tokens(db, db_user=user, usage=tokens_to_deduct, atendimento_id=atendimento_id)
+                            await db.commit()
+                            await db.refresh(user)
                     except Exception as token_err:
                         logger.error(f"Falha ao deduzir tokens: {token_err}", exc_info=True)
                         await db.rollback()
@@ -183,7 +206,8 @@ class GeminiService:
         db_history: List[dict], 
         persona: models.Config,
         db: AsyncSession,
-        user: models.User
+        user: models.User,
+        atendimento_id: Optional[int] = None
     ) -> str:
         logger.info(f"Iniciando transcrição/análise para mídia do tipo {media_data.get('mime_type')}")
         
@@ -207,6 +231,7 @@ class GeminiService:
 
         # --- 2. MONTAGEM DO PROMPT (Lista de conteúdos) ---
         prompt_contents = []
+        system_instruction = None
         
         # Lógica para Áudio (Transcrição)
         if 'audio' in mime_type or 'mpeg' in mime_type or 'ogg' in mime_type:
@@ -240,7 +265,7 @@ class GeminiService:
         try:
             # Passamos a lista (texto + mídia) para o método que criamos anteriormente
             # O _generate_with_retry já está preparado para receber 'prompt' como string OU lista
-            response = await self._generate_with_retry(prompt_contents, db, user, is_media=True, system_instruction=system_instruction)
+            response = await self._generate_with_retry(prompt_contents, db, user, is_media=True, system_instruction=system_instruction, atendimento_id=atendimento_id)
             
             transcription = response.text.strip()
             logger.info(f"Transcrição/Análise gerada: '{transcription[:100]}...'")
@@ -305,28 +330,52 @@ class GeminiService:
             logger.warning("Falha ao gerar embedding da query. Retornando vazio.")
             return ""
 
-        # 2. Busca vetorial ordenada pela distância de cosseno
-        stmt = select(models.KnowledgeVector.content).where(
+        # 2. Busca principal: Top 10 mais relevantes (qualquer origem)
+        stmt_general = select(models.KnowledgeVector).where(
             models.KnowledgeVector.config_id == config_id
         ).order_by(
             models.KnowledgeVector.embedding.cosine_distance(query_embedding)
-        ).limit(10) # Busca os 10 trechos mais relevantes
+        ).limit(10)
         
-        result = await db.execute(stmt)
-        chunks = result.scalars().all()
+        result_general = await db.execute(stmt_general)
+        general_vectors = result_general.scalars().all()
         
-        if not chunks: return ""
+        if not general_vectors: return ""
+
+        # Verifica se já existe algum do Drive na lista principal
+        has_drive = any(v.origin == 'drive' for v in general_vectors)
         
-        # Remove duplicatas exatas de conteúdo
+        final_vectors = list(general_vectors)
+
+        # Se não tem drive, tentamos buscar especificamente o melhor do drive
+        if not has_drive:
+            stmt_drive = select(models.KnowledgeVector).where(
+                models.KnowledgeVector.config_id == config_id,
+                models.KnowledgeVector.origin == 'drive'
+            ).order_by(
+                models.KnowledgeVector.embedding.cosine_distance(query_embedding)
+            ).limit(1)
+            
+            result_drive = await db.execute(stmt_drive)
+            best_drive = result_drive.scalars().first()
+            
+            if best_drive:
+                # Se encontrou, substitui o último da lista geral (o menos relevante dos 10)
+                # ou adiciona se a lista for menor que 10
+                if len(final_vectors) >= 10:
+                    final_vectors.pop() # Remove o último
+                final_vectors.append(best_drive)
+        
+        # Extrai conteúdo e remove duplicatas
+        chunks = [v.content for v in final_vectors]
         unique_chunks = list(dict.fromkeys(chunks))
         
         return "\n---\n".join(unique_chunks)
 
     def _format_history_optimized(self, db_history: List[dict]) -> str:
-        """Formata o histórico como texto estruturado (User/AI) com janela deslizante de 10 msgs."""
-        recent_messages = db_history[-10:]
+        """Formata o histórico completo como texto estruturado (User/AI)."""
         formatted_lines = []
-        for msg in recent_messages:
+        for msg in db_history:
             role = "AI" if msg.get("role") == "assistant" else "User"
             content = msg.get("content", "").replace("\n", " ").strip()
             formatted_lines.append(f"{role}: {content}")
@@ -349,11 +398,28 @@ class GeminiService:
                 # 1. Coleta de Contexto
                 system_instruction = persona.prompt or "Você é um assistente útil."
                 
-                # Gera o histórico formatado (últimas 10 msgs) ANTES do RAG
+                # Busca tags disponíveis e atuais para o prompt
+                available_tags = await crud_atendimento.get_all_user_tags(db, user.id)
+                available_tags_names = [t['name'] for t in available_tags]
+                
+                current_tags_names = []
+                if whatsapp.tags:
+                     current_tags_names = [t['name'] for t in whatsapp.tags]
+
+                # Gera o histórico formatado para o PROMPT
                 history_str = self._format_history_optimized(conversation_history_db)
                 
-                # Usa o histórico completo (formatado) para buscar contexto (Sheets + Drive)
-                rag_context = await self._retrieve_rag_context(db, persona.id, history_str)
+                # --- RAG QUERY BUILDER (Foco Exponencial) ---
+                # Prioriza drasticamente as últimas mensagens para o embedding de busca.
+                rag_query = ""
+                if conversation_history_db:
+                    # Pega as últimas 3 mensagens (Contexto Imediato)
+                    recent_msgs = conversation_history_db[-5:]
+                    rag_query = self._format_history_optimized(recent_msgs)
+
+
+                # Usa a query focada para buscar contexto
+                rag_context = await self._retrieve_rag_context(db, persona.id, rag_query)
 
                 # 2. Montagem do Prompt (Texto Estruturado)
                 prompt_text = (
@@ -361,29 +427,34 @@ class GeminiService:
                     f"# HISTÓRICO\n{history_str}\n\n"
                     f"# DADOS DO CLIENTE\n"
                     f"Nome: {whatsapp.nome_contato or 'Não identificado'}\n"
+                    f"Tags Atuais: {json.dumps(current_tags_names, ensure_ascii=False)}\n"
                     f"Status Atendente: {'online' if user.atendente_online else 'offline'}\n\n"
+                    f"# TAGS DISPONÍVEIS\n"
+                    f"{json.dumps(available_tags_names, ensure_ascii=False)}\n\n"
                     f"# TAREFA\n"
                     f"Responda ao último 'User' agindo estritamente como a persona definida.\n\n"
                     f"# REGRAS DE EXECUÇÃO\n"
                     f"1. **Fonte de Verdade:** Use prioritariamente o CONTEXTO (RAG). Se não encontrar, use conhecimento geral sensato, mas evite alucinar dados técnicos.\n"
                     f"2. **Arquivos:** Se o cliente pedir foto/catálogo e o arquivo estiver listado no RAG, inclua-o em `arquivos_anexos` usando o ID exato. No texto, avise que está enviando.\n"
                     f"3. **Encaminhamento:** Tente resolver. Só mude `nova_situacao` para 'Atendente Chamado' se for um caso complexo fora da base ou após persistência do erro.\n"
-                    f"4. **Comunicação:** Não repita saudações (Oi/Olá) se já houver no histórico. Seja direto e use *negrito* para destaques.\n"
-                    f"5. **Fluxo:** O sistema envia o texto PRIMEIRO e os arquivos DEPOIS. Considere isso na sua resposta.\n\n"
+                    f"4. **Comunicação:** Não repita saudações (Oi/Olá) se já houver no histórico. Seja direto e use *negrito* para destaques. Não repita o que o cliente já disse.\n"
+                    f"5. **Fluxo:** O sistema envia o texto PRIMEIRO e os arquivos DEPOIS. Considere isso na sua resposta.\n"
+                    f"6. **Tags:** Analise a conversa e veja se alguma tag disponível se aplica. Retorne apenas o nome das tags em `tags_sugeridas` para adicionar (ou null).\n\n"
                     f"# FORMATO DE RESPOSTA (JSON OBRIGATÓRIO)\n"
                     f"Retorne APENAS um JSON válido, sem blocos de código (```json).\n"
                     f"{{\n"
                     f'  "mensagem_para_enviar": "Texto da resposta aqui (ou null)",\n'
                     f'  "nova_situacao": "Aguardando Resposta" | "Atendente Chamado" | "Concluído",\n'
                     f'  "nome_contato": "Nome extraído ou null",\n'
-                    f'  "observacoes": "Resumo curto para CRM",\n'
+                    f'  "tags_sugeridas": ["Tag1", "Tag2"] | null,\n'
+                    f'  "resumo": "Resumo curto da conversa inteira para CRM",\n'
                     f'  "arquivos_anexos": [\n'
                     f'    {{ "nome_exato": "nome.pdf", "id_arquivo": "ID_DO_RAG", "tipo_midia": "image" }}\n'
                     f'  ]\n'
                     f"}}"
                 )
                 
-                response = await self._generate_with_retry(prompt_text, db, user, system_instruction=system_instruction)
+                response = await self._generate_with_retry(prompt_text, db, user, system_instruction=system_instruction, atendimento_id=whatsapp.id)
                 last_response = response
                 
                 clean_response = response.text.strip().replace("```json", "").replace("```", "")
@@ -400,20 +471,19 @@ class GeminiService:
                     await asyncio.sleep(2)  # Aguarda antes da próxima tentativa
                 else:
                     logger.error(f"Erro de decodificação JSON após {max_retries} tentativas. Resposta final: {response_text}", exc_info=True)
-                    return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": f"Falha da IA ao gerar JSON válido após {max_retries} tentativas: {str(e)}" }
+                    return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "resumo": f"Falha da IA ao gerar JSON válido após {max_retries} tentativas: {str(e)}" }
             
             except Exception as e:
                 logger.error(f"Erro ao gerar ação de conversação com Gemini: {e}", exc_info=True)
-                return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": f"Falha da IA: {str(e)}" }
+                return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "resumo": f"Falha da IA: {str(e)}" }
         
         # Fallback caso o loop termine sem sucesso (não deve acontecer com a lógica acima)
-        return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "observacoes": "Falha crítica no loop de geração de resposta da IA." }
+        return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "resumo": "Falha crítica no loop de geração de resposta da IA." }
 
     async def generate_followup_action(
         self,
         whatsapp: models.Atendimento,
         conversation_history_db: List[dict],
-        followup_config: Dict[str, Any],
         db: AsyncSession,
         user: models.User
     ) -> dict:
@@ -426,7 +496,6 @@ class GeminiService:
             prompt_text = (
                 f"## TAREFA: FOLLOW-UP\n"
                 f"Você é um assistente de IA especialista em reengajamento. Gere uma mensagem de follow-up.\n\n"
-                f"## CONFIGURAÇÃO DE FOLLOW-UP\n{json.dumps(followup_config, ensure_ascii=False)}\n\n"
                 f"## DADOS\nNome Contato: {whatsapp.nome_contato}\n\n"
                 f"## HISTÓRICO RECENTE\n{history_str}\n\n"
                 f"## REGRAS\n"
@@ -436,7 +505,7 @@ class GeminiService:
                 f"4. Retorne APENAS um JSON válido: {{ \"mensagem_para_enviar\": \"texto...\" }}\n"
             )
             
-            response = await self._generate_with_retry(prompt_text, db, user)
+            response = await self._generate_with_retry(prompt_text, db, user, atendimento_id=whatsapp.id)
             
             clean_response = response.text.strip().replace("```json", "").replace("```", "")
             
@@ -541,7 +610,7 @@ class GeminiService:
 
             doc_text = (
                 f"Status: {at.status}. "
-                f"Observações: {at.observacoes or ''}. "
+                f"Resumo: {at.resumo or ''}. "
                 f"Conversa recente: {conversa_text}"
             )
             docs_for_embedding.append(doc_text)
@@ -580,7 +649,7 @@ class GeminiService:
                                 "id": at.id,
                                 "nome": at.nome_contato,
                                 "status": at.status,
-                                "observacoes": at.observacoes,
+                                "resumo": at.resumo,
                                 "trecho_conversa": docs_for_embedding[idx]
                             })
             except Exception as e:

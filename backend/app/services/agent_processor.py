@@ -140,7 +140,7 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                         at_ia_fail = await db_ia_fail.get(models.Atendimento, atendimento_id)
                         if at_ia_fail:
                             at_ia_fail.status = "Erro IA"
-                            at_ia_fail.observacoes = f"IA Error: {str(ia_err)[:250]}"
+                            at_ia_fail.resumo = f"IA Error: {str(ia_err)[:250]}"
                             at_ia_fail.updated_at = datetime.now(timezone.utc)
             except Exception: pass
             return
@@ -149,8 +149,9 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
         # A resposta da IA é processada e as ações correspondentes (enviar texto, enviar arquivo) são executadas.
         message_to_send = ia_response.get("mensagem_para_enviar")
         intended_status_after_send = ia_response.get("nova_situacao", "Aguardando Resposta")
-        intended_observation = ia_response.get("observacoes", "")
+        intended_resumo = ia_response.get("resumo", "")
         contact_name_from_ia = ia_response.get("nome_contato")
+        tags_sugeridas = ia_response.get("tags_sugeridas")
         
         # Extração dos dados do anexo, se a IA solicitou um.
         arquivos_anexos = ia_response.get("arquivos_anexos") # <-- Alterado para o plural
@@ -242,7 +243,7 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                         else:
                             logger.error(f"Agente: Falha permanente no download do Drive para ID {file_id} após {max_retries} tentativas.")
                             intended_status_after_send = "Erro Drive"
-                            intended_observation += f" | Falha permanente no download do arquivo {nome_arquivo} (ID: {file_id})."
+                            intended_resumo += f" | Falha permanente no download do arquivo {nome_arquivo} (ID: {file_id})."
 
         # --- ETAPA 5: ATUALIZAÇÃO FINAL DO ATENDIMENTO ---
         # Consolida todas as mudanças no banco de dados.
@@ -276,12 +277,31 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                              at_final.status = intended_status_after_send 
                         
                         # Salva as observações da IA, o histórico de conversa atualizado e a data de atualização.
-                        at_final.observacoes = intended_observation
+                        at_final.resumo = intended_resumo
                         at_final.conversa = json.dumps(current_hist, ensure_ascii=False)
                         
                         # Atualiza o nome do contato se a IA retornou um novo nome e o campo atual está vazio.
                         if contact_name_from_ia and not at_final.nome_contato:
                             at_final.nome_contato = contact_name_from_ia
+
+                        # Atualiza tags se houver sugestão da IA
+                        if tags_sugeridas and isinstance(tags_sugeridas, list):
+                            try:
+                                # Busca tags disponíveis para obter as cores corretas
+                                all_user_tags = await crud_atendimento.get_all_user_tags(db_final, user.id)
+                                tag_map = {t['name']: t for t in all_user_tags}
+                                
+                                current_tags = list(at_final.tags) if at_final.tags else []
+                                current_tag_names = {t['name'] for t in current_tags}
+                                
+                                for tag_name in tags_sugeridas:
+                                    # Só adiciona se a tag existir no mapa e ainda não estiver no atendimento
+                                    if tag_name in tag_map and tag_name not in current_tag_names:
+                                        current_tags.append(tag_map[tag_name])
+                                
+                                at_final.tags = current_tags
+                            except Exception as e:
+                                logger.error(f"Agente: Erro ao atualizar tags sugeridas pela IA: {e}")
 
                         at_final.updated_at = datetime.now(timezone.utc)
             
@@ -300,7 +320,7 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                     at_fail = await db_fail.get(models.Atendimento, atendimento_id)
                     if at_fail and at_fail.status == "Gerando Resposta":
                         at_fail.status = "Erro IA"
-                        at_fail.observacoes = f"Outer Error: {str(outer_err)[:100]}"
+                        at_fail.resumo = f"Outer Error: {str(outer_err)[:100]}"
         except: pass
 
 

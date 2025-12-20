@@ -3,6 +3,9 @@ import logging
 import json
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Body, Response, Query
+from fastapi.responses import StreamingResponse
+import csv
+import io
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
@@ -33,13 +36,104 @@ logger = logging.getLogger(__name__)
 # Criação do roteador da API para os endpoints de atendimentos
 router = APIRouter()
 
+# Endpoint para exportar atendimentos (Streaming)
+@router.get("/export", summary="Exportar atendimentos para CSV")
+async def export_atendimentos(
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(dependencies.get_current_active_user),
+    search: Optional[str] = Query(None, description="Termo de busca"),
+    status: Optional[List[str]] = Query(None, description="Filtro de status"),
+    tags: Optional[List[str]] = Query(None, description="Filtro de tags"),
+    time_start: Optional[str] = Query(None, description="Início do período"),
+    time_end: Optional[str] = Query(None, description="Fim do período")
+):
+    """
+    Gera um CSV com todos os atendimentos filtrados, usando streaming para suportar grandes volumes de dados.
+    """
+    # --- 1. Reconstrução da Query de Filtro (Mesma lógica do get_atendimentos) ---
+    stmt_base = select(models.Atendimento).where(models.Atendimento.user_id == current_user.id)
+
+    last_client_ts = func.get_last_user_msg_timestamp(models.Atendimento.conversa)
+    sort_expression = func.coalesce(last_client_ts, models.Atendimento.updated_at)
+
+    if status:
+        stmt_base = stmt_base.where(models.Atendimento.status.in_(status))
+
+    if tags:
+        tag_pattern_obj = [{'name': tags[0]}]
+        stmt_base = stmt_base.where(cast(models.Atendimento.tags, JSONB).contains(tag_pattern_obj))
+
+    if time_start:
+        try:
+            local_dt_naive = datetime.fromisoformat(time_start)
+            import pytz
+            sao_paulo_tz = pytz.timezone('America/Sao_Paulo')
+            local_dt_aware = sao_paulo_tz.localize(local_dt_naive)
+            start_datetime_utc = local_dt_aware.astimezone(pytz.utc)
+            stmt_base = stmt_base.where(sort_expression >= start_datetime_utc)
+        except Exception: pass
+
+    if time_end:
+        try:
+            local_dt_naive = datetime.fromisoformat(time_end)
+            import pytz
+            sao_paulo_tz = pytz.timezone('America/Sao_Paulo')
+            local_dt_aware = sao_paulo_tz.localize(local_dt_naive)
+            end_datetime_utc = local_dt_aware.astimezone(pytz.utc)
+            stmt_base = stmt_base.where(sort_expression <= end_datetime_utc)
+        except Exception: pass
+
+    if search:
+        search_term = f"%{search.lower()}%"
+        stmt_base = stmt_base.where(
+            (models.Atendimento.whatsapp.ilike(search_term)) |
+            (models.Atendimento.status.ilike(search_term)) |
+            (models.Atendimento.resumo.ilike(search_term))
+        )
+
+    # --- 2. Generator para Streaming ---
+    async def stream_csv():
+        yield "\uFEFF" # BOM para Excel abrir UTF-8 corretamente
+        
+        output = io.StringIO()
+        writer = csv.writer(output, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+        
+        # Cabeçalho
+        writer.writerow(["WhatsApp", "Nome do Contato", "Situação", "Resumo", "Observações", "Tags", "Persona Ativa", "Criado em", "Última Atualização", "Conversa"])
+        yield output.getvalue()
+        output.seek(0)
+        output.truncate(0)
+
+        # Processamento em Lotes (Batch) para economizar memória
+        batch_size = 1000
+        offset = 0
+
+        while True:
+            stmt_batch = stmt_base.order_by(sort_expression.desc()).offset(offset).limit(batch_size).options(joinedload(models.Atendimento.active_persona))
+            result = await db.execute(stmt_batch)
+            items = result.scalars().unique().all()
+
+            if not items: break
+
+            for item in items:
+                tags_str = "; ".join([t['name'] for t in item.tags]) if item.tags else ""
+                persona_name = item.active_persona.nome_config if item.active_persona else ""
+                writer.writerow([item.whatsapp, item.nome_contato or "", item.status, item.resumo or "", item.observacoes or "", tags_str, persona_name, item.created_at, item.updated_at, item.conversa or ""])
+            
+            yield output.getvalue()
+            output.seek(0); output.truncate(0)
+            offset += batch_size
+
+    filename = f"atendimentos_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
+    return StreamingResponse(stream_csv(), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename={filename}"})
+
 # Endpoint para listar os atendimentos com paginação e busca
 @router.get("/", response_model=schemas.AtendimentoPage)
 async def get_atendimentos(
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(dependencies.get_current_active_user),
     # Parâmetros de query para busca e paginação, com valores padrão e validações
-    search: Optional[str] = Query(None, description="Termo de busca para contato, status ou observação"),
+    search: Optional[str] = Query(None, description="Termo de busca para contato, status ou resumo"),
     status: Optional[List[str]] = Query(None, description="Lista de status para filtrar"),
     tags: Optional[List[str]] = Query(None, description="Lista de nomes de tags para filtrar"),
     page: int = Query(1, ge=1, description="Número da página"),
@@ -49,7 +143,7 @@ async def get_atendimentos(
 ):
     """
     Lista todos os atendimentos para o usuário logado, com suporte a busca e paginação.
-    - `search`: Filtra os resultados por número de WhatsApp, status ou observações.
+    - `search`: Filtra os resultados por número de WhatsApp, status ou resumo.
     - `page`: Define a página de resultados a ser retornada.
     - `tags`: Filtra por uma lista de nomes de tags.
     - `status`: Filtra por uma lista de status específicos.
@@ -66,6 +160,12 @@ async def get_atendimentos(
         select(models.Atendimento)
         .where(models.Atendimento.user_id == current_user.id)
     )
+
+    # --- LÓGICA DE ORDENAÇÃO POR ÚLTIMA MENSAGEM DO CLIENTE ---
+    # Define a expressão para pegar o timestamp da última mensagem do cliente via função SQL
+    last_client_ts = func.get_last_user_msg_timestamp(models.Atendimento.conversa)
+    # Usa updated_at como fallback caso não haja mensagem do cliente (ex: atendimento recém criado)
+    sort_expression = func.coalesce(last_client_ts, models.Atendimento.updated_at)
 
     # --- NOVO: Adiciona filtro por status, se fornecido ---
     # A query agora pode receber uma lista de status (ex: status=Concluído&status=Atendente Chamado)
@@ -104,7 +204,7 @@ async def get_atendimentos(
             start_datetime_utc = local_dt_aware.astimezone(pytz.utc)
 
             # 4. Filtra usando a coluna `updated_at`, que reflete a última atividade.
-            stmt_base = stmt_base.where(models.Atendimento.updated_at >= start_datetime_utc)
+            stmt_base = stmt_base.where(sort_expression >= start_datetime_utc)
         except (ValueError, ImportError):
             logger.warning(f"Formato de time_start inválido: '{time_start}'. Ignorando filtro.")
         except Exception as e:
@@ -121,7 +221,7 @@ async def get_atendimentos(
             
             end_datetime_utc = local_dt_aware.astimezone(pytz.utc)
 
-            stmt_base = stmt_base.where(models.Atendimento.updated_at <= end_datetime_utc)
+            stmt_base = stmt_base.where(sort_expression <= end_datetime_utc)
         except (ValueError, ImportError):
             logger.warning(f"Formato de time_end inválido: '{time_end}'. Ignorando filtro.")
         except Exception as e:
@@ -133,7 +233,7 @@ async def get_atendimentos(
         stmt_base = stmt_base.where(
             (models.Atendimento.whatsapp.ilike(search_term)) |
             (models.Atendimento.status.ilike(search_term)) |
-            (models.Atendimento.observacoes.ilike(search_term))
+            (models.Atendimento.resumo.ilike(search_term))
         )
 
     # Cria uma query separada para contar o número total de registros que correspondem ao filtro
@@ -144,7 +244,7 @@ async def get_atendimentos(
     # Constrói a query final para buscar os dados da página atual
     stmt_data = (
         stmt_base
-        .order_by(models.Atendimento.updated_at.desc()) # Ordena pelos mais recentes
+        .order_by(sort_expression.desc()) # Ordena pelos mais recentes (cliente)
         .offset(skip) # Pula os registros das páginas anteriores
         .limit(limit) # Limita ao número de itens por página
         .options(

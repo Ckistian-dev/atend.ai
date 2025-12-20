@@ -128,29 +128,37 @@ async def create_db_and_tables():
         try:
             # Ativa a extensão pgvector para suporte a embeddings
             await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-            # --- NOVO: Criação de função SQL customizada para segurança ---
-            # Esta função SQL é criada para evitar erros de "invalid input syntax for type json".
-            # Ela tenta de forma segura extrair o timestamp da última mensagem do campo 'conversa'.
-            # Se o campo não for um JSON válido ou a estrutura estiver errada, ela retorna NULL em vez de dar erro.
+            
+            # --- NOVO: Função para obter timestamp da última mensagem do CLIENTE ---
             await conn.execute(text("""
-                CREATE OR REPLACE FUNCTION safe_get_last_message_time(conversa_text TEXT)
-                RETURNS TIME WITHOUT TIME ZONE AS $$
+                CREATE OR REPLACE FUNCTION get_last_user_msg_timestamp(conversa_text TEXT)
+                RETURNS TIMESTAMP WITH TIME ZONE AS $$
                 DECLARE
-                    last_msg_timestamp BIGINT;
+                    last_ts BIGINT;
                 BEGIN
-                    -- Verifica se o texto parece ser um array JSON não vazio
-                    IF conversa_text ~ '^\s*\[.+.\]\s*$' THEN
-                        last_msg_timestamp := (conversa_text::jsonb -> -1 ->> 'timestamp')::bigint;
-                        RETURN (TO_TIMESTAMP(last_msg_timestamp) AT TIME ZONE 'UTC')::TIME;
+                    IF conversa_text IS NULL OR length(conversa_text) < 2 THEN
+                        RETURN NULL;
                     END IF;
-                    RETURN NULL;
-                EXCEPTION WHEN others THEN
-                    -- Em qualquer erro (JSON inválido, campo faltando, etc.), retorna NULL
+                    
+                    BEGIN
+                        SELECT (elem->>'timestamp')::bigint INTO last_ts
+                        FROM jsonb_array_elements(conversa_text::jsonb) AS elem
+                        WHERE elem->>'role' = 'user'
+                        ORDER BY (elem->>'timestamp')::bigint DESC
+                        LIMIT 1;
+                        
+                        IF last_ts IS NOT NULL THEN
+                            RETURN TO_TIMESTAMP(last_ts) AT TIME ZONE 'UTC';
+                        END IF;
+                    EXCEPTION WHEN others THEN
+                        RETURN NULL;
+                    END;
                     RETURN NULL;
                 END;
                 $$ LANGUAGE plpgsql IMMUTABLE;
             """))
-            logger.info("Função SQL 'safe_get_last_message_time' verificada/criada.")
+            logger.info("Função SQL 'get_last_user_msg_timestamp' verificada/criada.")
+
             # await conn.run_sync(models.Base.metadata.drop_all)
             await conn.run_sync(models.Base.metadata.create_all)
             logger.info("Tabelas do banco de dados verificadas/criadas com sucesso.")
@@ -189,7 +197,7 @@ API_PREFIX = "/api/v1"
 # Incluir todos os routers (igual)
 app.include_router(auth_router, prefix=f"{API_PREFIX}/auth", tags=["Autenticação"])
 app.include_router(configs_router, prefix=f"{API_PREFIX}/configs", tags=["Personas e Contexto"])
-app.include_router(webhook_router, prefix=f"{API_PREFIX}/webhook", tags=["Webhook (Evolution & Oficial)"])
+app.include_router(webhook_router, prefix=f"{API_PREFIX}/webhook", tags=["Webhook"])
 app.include_router(dashboard_router, prefix=f"{API_PREFIX}/dashboard", tags=["Dashboard"])
 app.include_router(atendimentos_router, prefix=f"{API_PREFIX}/atendimentos", tags=["Atendimentos"])
 app.include_router(agent_router, prefix=f"{API_PREFIX}/agent", tags=["Agente"])

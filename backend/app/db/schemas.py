@@ -29,6 +29,7 @@ class Config(ConfigBase):
 class AtendimentoUpdate(BaseModel):
     status: Optional[str] = None
     active_persona_id: Optional[int] = None
+    resumo: Optional[str] = None
     observacoes: Optional[str] = None
     conversa: Optional[Any] = None
     nome_contato: Optional[str] = None
@@ -40,6 +41,7 @@ class AtendimentoCreate(BaseModel):
     nome_contato: Optional[str] = None
     status: Optional[str] = "Novo Atendimento"
     active_persona_id: Optional[int] = None
+    resumo: Optional[str] = None
     observacoes: Optional[str] = None
     tags: Optional[List[Dict[str, str]]] = Field(default_factory=list)
     # Campos opcionais para iniciar com um template
@@ -55,6 +57,7 @@ class Atendimento(BaseModel):
     user_id: int
     active_persona_id: Optional[int] = None
     status: str
+    resumo: Optional[str] = None
     observacoes: Optional[str] = None
     conversa: Optional[str] = "[]"
     created_at: datetime
@@ -62,6 +65,7 @@ class Atendimento(BaseModel):
     whatsapp: str
     nome_contato: Optional[str] = None
     tags: Optional[List[Dict[str, str]]] = Field(default_factory=list)
+    token_usage: Optional[int] = 0
     active_persona: Optional[Config] = None
     model_config = {"from_attributes": True}
 

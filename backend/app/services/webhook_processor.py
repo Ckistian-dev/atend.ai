@@ -170,12 +170,13 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
                         db_history=json.loads(atendimento_ctx.conversa or "[]"),
                         persona=persona,
                         db=db_gemini_ctx,
-                        user=user_for_gemini
+                        user=user_for_gemini,
+                        atendimento_id=atendimento_id
                     )
                 
                 # Formata a mensagem final que vai para o banco
                 prefix_tipo = "Áudio" if 'audio' in mime_type_original else "Imagem/Doc"
-                formatted_msg_content = f"[{prefix_tipo} Transcrito pela IA]: {analysis_result}"
+                formatted_msg_content = f"[{prefix_tipo} Transcrito]: {analysis_result}"
                 
                 if caption: 
                     formatted_msg_content += f"\n[Legenda Original]: {caption}"

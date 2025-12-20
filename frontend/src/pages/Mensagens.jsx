@@ -996,6 +996,7 @@ function Mensagens() {
                                     allTags={allTags}
                                     onUpdateTags={handleUpdateAtendimento}
                                     onAddNewTag={handleAddNewTag}
+                                    onUpdateStatus={handleUpdateAtendimento}
                                 />
                             </div>
                         </div>

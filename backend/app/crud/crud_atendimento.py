@@ -7,6 +7,7 @@ from app.db import models, schemas
 from datetime import datetime, timedelta, timezone # Import timezone
 from typing import List, Tuple, Optional, Dict, Any
 import json # Import json
+from app.crud import crud_user
 
 logger = logging.getLogger(__name__)
 
@@ -329,45 +330,13 @@ async def get_dashboard_data(
     
     # 3. Converte o dicionário para a lista final.
     contatos_por_dia = list(all_days_in_period.values())
-    # --- 4. Consumo de Tokens (Estimativa) ---
-    # Esta é uma estimativa, pois não temos um log de transações de tokens.
-    # A lógica é: (Tokens no início do mês - Tokens atuais) / atendimentos no período.
-    # Isso pode ser impreciso se o período cruzar meses.
-    # Uma implementação futura ideal teria uma tabela de transações de tokens.
     
-    # Para simplificar, vamos calcular o consumo médio como um valor fixo por enquanto.
-    # Em um cenário real, buscaríamos o usuário e faríamos o cálculo.
-    # user = await crud_user.get_user(db, user_id=user_id)
-    # tokens_consumidos = 9999 - user.tokens 
-    # consumo_medio_tokens = (tokens_consumidos / total_atendimentos) if total_atendimentos > 0 else 0
-    # Por enquanto, retornamos um valor simulado.
-    consumo_medio_tokens = 1.25 # Valor simulado
-    # Lógica aprimorada: Contar tokens consumidos analisando o histórico de conversas.
-    # Cada mensagem com role 'assistant' no período representa um token consumido.
-    atendimentos_no_periodo_query = await db.execute(base_query)
-    atendimentos_no_periodo = atendimentos_no_periodo_query.scalars().all()
-
-    tokens_consumidos = 0
-    for atendimento in atendimentos_no_periodo:
-        try:
-            conversa_list = json.loads(atendimento.conversa or "[]")
-            for msg in conversa_list:
-                # Verifica se a mensagem é do assistente e está dentro do período
-                if msg.get('role') == 'assistant':
-                    msg_timestamp = msg.get('timestamp')
-                    if msg_timestamp:
-                        # Converte timestamp (pode ser int ou str ISO) para datetime
-                        if isinstance(msg_timestamp, (int, float)):
-                            msg_dt = datetime.fromtimestamp(msg_timestamp, tz=timezone.utc)
-                        else:
-                            msg_dt = datetime.fromisoformat(str(msg_timestamp).replace("Z", "+00:00"))
-                        
-                        if start_date <= msg_dt <= end_date:
-                            tokens_consumidos += 1
-        except (json.JSONDecodeError, TypeError, ValueError):
-            continue # Ignora conversas malformadas
-
-    consumo_medio_tokens = (tokens_consumidos / total_atendimentos) if total_atendimentos > 0 else 0
+    # --- 4. Consumo de Tokens (Real) ---
+    # Busca o total de tokens consumidos no período usando a tabela de histórico
+    total_tokens_periodo = await crud_user.get_token_usage_in_period(db, user_id, start_date, end_date)
+    
+    # Calcula a média por atendimento
+    consumo_medio_tokens = (total_tokens_periodo / total_atendimentos) if total_atendimentos > 0 else 0
 
     # --- NOVO: Lógica para Atividade Recente ---
     # Busca o último atendimento atualizado no período para exibir no header.
@@ -412,7 +381,7 @@ async def get_dashboard_data(
                 "id": recent_activity.id,
                 "whatsapp": recent_activity.whatsapp,
                 "situacao": recent_activity.status,
-                "observacao": recent_activity.observacoes
+                "resumo": recent_activity.resumo
             }
         ] if recent_activity else []
     }
