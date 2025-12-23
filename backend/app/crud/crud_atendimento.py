@@ -293,8 +293,9 @@ async def get_dashboard_data(
 
     date_series_query = await db.execute(
         select(
-            func.date_trunc('day', models.Atendimento.created_at).label('day'),
+            func.date_trunc('day', func.timezone('America/Sao_Paulo', models.Atendimento.created_at)).label('day'),
             func.count(models.Atendimento.id).label('total'),
+            func.sum(models.Atendimento.token_usage).label('tokens'),
             *status_filters
         ).where(
             models.Atendimento.user_id == user_id,
@@ -313,7 +314,8 @@ async def get_dashboard_data(
         day_key = current_day.strftime('%d/%m')
         all_days_in_period[day_key] = {
             "date": day_key,
-            "total": 0
+            "total": 0,
+            "tokens": 0
         }
         for status in status_colors.keys():
             all_days_in_period[day_key][status] = 0
@@ -327,6 +329,7 @@ async def get_dashboard_data(
             for status in status_colors.keys():
                 all_days_in_period[day_key][status] = row.get(status, 0)
             all_days_in_period[day_key]['total'] = row.get('total', 0)
+            all_days_in_period[day_key]['tokens'] = row.get('tokens', 0) or 0
     
     # 3. Converte o dicionário para a lista final.
     contatos_por_dia = list(all_days_in_period.values())

@@ -31,7 +31,7 @@ function Login() {
             localStorage.setItem('accessToken', response.data.access_token);
             
             // Redireciona para a página que o usuário tentou acessar ou para o dashboard
-            const redirectPath = location.state?.from?.pathname || '/dashboard';
+            const redirectPath = location.state?.from?.pathname || '/mensagens';
             navigate(redirectPath);
 
         } catch (err) {

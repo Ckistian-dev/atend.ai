@@ -7,6 +7,7 @@ import re
 from typing import Optional, List, Dict, Any
 from collections.abc import Set
 import numpy as np
+from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -35,7 +36,13 @@ class GeminiService:
             raise ValueError("A lista de GOOGLE_API_KEYS não pode estar vazia.")
             
         self.current_key_index = 0
-        self.generation_config = {"temperature": 0.5, "top_p": 1, "top_k": 1}
+        self.generation_config = {
+            "temperature": 0.7,        # Aumentei: Deixa a fala menos "dura" e mais coloquial.
+            "top_p": 0.95,             # Ajuste fino: Mantém a coerência mas corta alucinações absurdas.
+            "top_k": 40,               # O PULO DO GATO: De 1 para 40. Permite variar o vocabulário.
+            "frequency_penalty": 0.6,  # CRÍTICO: Penaliza palavras que ele já falou muito (evita o "Ótimo!" repetido).
+            "presence_penalty": 0.4    # Ajuda a não ficar repetindo o que o usuário acabou de dizer.
+        }
         # NOVO: Multiplicador para o custo de tokens de output, para normalizar pelo custo de input.
         # Baseado no custo informado: Input $0,30, Output $2,50 por milhão de tokens.
         self.output_token_multiplier = 2.5 / 0.3
@@ -98,7 +105,8 @@ class GeminiService:
 
         # --- DEBUG: PRINT PROMPT ---
         try:
-            debug_msg = f"\n{'='*20} PROMPT ENVIADO PARA IA {'='*20}\n"
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            debug_msg = f"\n{'='*20} PROMPT ENVIADO PARA IA [{timestamp}] {'='*20}\n"
             
             if system_instruction:
                 debug_msg += f"--- SYSTEM INSTRUCTION ---\n{system_instruction}\n{'-'*30}\n"
@@ -113,8 +121,8 @@ class GeminiService:
                         debug_msg += f"[MÍDIA/OBJETO]: {type(p)}\n"
             debug_msg += f"{'='*60}\n"
             
-            # Salva o último prompt em arquivo (sobrescreve)
-            with open("last_prompt.txt", "w", encoding="utf-8") as f:
+            # Salva o prompt em arquivo (append/log)
+            with open("last_prompt.txt", "a", encoding="utf-8") as f:
                 f.write(debug_msg)
         except Exception as e:
             print(f"Erro ao printar/salvar prompt: {e}")
@@ -330,47 +338,37 @@ class GeminiService:
             logger.warning("Falha ao gerar embedding da query. Retornando vazio.")
             return ""
 
-        # 2. Busca principal: Top 10 mais relevantes (qualquer origem)
-        stmt_general = select(models.KnowledgeVector).where(
+        # 2. Busca diversificada por Origem (Abas e Drive)
+        # Identifica todas as origens distintas (ex: 'Preços', 'FAQ', 'drive') para este config
+        stmt_origins = select(models.KnowledgeVector.origin).where(
             models.KnowledgeVector.config_id == config_id
-        ).order_by(
-            models.KnowledgeVector.embedding.cosine_distance(query_embedding)
-        ).limit(10)
+        ).distinct()
         
-        result_general = await db.execute(stmt_general)
-        general_vectors = result_general.scalars().all()
+        result_origins = await db.execute(stmt_origins)
+        origins = result_origins.scalars().all()
         
-        if not general_vectors: return ""
-
-        # Verifica se já existe algum do Drive na lista principal
-        has_drive = any(v.origin == 'drive' for v in general_vectors)
+        final_vectors = []
         
-        final_vectors = list(general_vectors)
-
-        # Se não tem drive, tentamos buscar especificamente o melhor do drive
-        if not has_drive:
-            stmt_drive = select(models.KnowledgeVector).where(
+        # Para cada origem encontrada (cada aba e o drive), busca os 5 mais relevantes
+        for origin in origins:
+            stmt_origin = select(models.KnowledgeVector).where(
                 models.KnowledgeVector.config_id == config_id,
-                models.KnowledgeVector.origin == 'drive'
+                models.KnowledgeVector.origin == origin
             ).order_by(
                 models.KnowledgeVector.embedding.cosine_distance(query_embedding)
-            ).limit(1)
+            ).limit(5)
             
-            result_drive = await db.execute(stmt_drive)
-            best_drive = result_drive.scalars().first()
-            
-            if best_drive:
-                # Se encontrou, substitui o último da lista geral (o menos relevante dos 10)
-                # ou adiciona se a lista for menor que 10
-                if len(final_vectors) >= 10:
-                    final_vectors.pop() # Remove o último
-                final_vectors.append(best_drive)
+            result_origin = await db.execute(stmt_origin)
+            vectors = result_origin.scalars().all()
+            final_vectors.extend(vectors)
+        
+        if not final_vectors: return ""
         
         # Extrai conteúdo e remove duplicatas
         chunks = [v.content for v in final_vectors]
         unique_chunks = list(dict.fromkeys(chunks))
         
-        return "\n---\n".join(unique_chunks)
+        return "\n".join(unique_chunks)
 
     def _format_history_optimized(self, db_history: List[dict]) -> str:
         """Formata o histórico completo como texto estruturado (User/AI)."""
@@ -431,6 +429,15 @@ class GeminiService:
                     f"Status Atendente: {'online' if user.atendente_online else 'offline'}\n\n"
                     f"# TAGS DISPONÍVEIS\n"
                     f"{json.dumps(available_tags_names, ensure_ascii=False)}\n\n"
+                    f"# DIRETRIZES DE HUMANIZAÇÃO (CRÍTICO)\n"
+                    f"- **Zero 'Corporatiquês':** PROIBIDO começar frases com 'Ótimo', 'Excelente', 'Perfeito', 'Entendido', 'Compreendo'. Isso denuncia que você é um robô. Vá direto ao ponto.\n"
+                    f"- **Não seja Papagaio:** NUNCA repita ou parafraseie o que o usuário acabou de dizer (ex: 'Entendi que você quer saber o preço...'). Apenas dê a resposta.\n"
+                    f"- **Continuidade Real:** Trate o histórico como uma conversa contínua de WhatsApp. Se já houver mensagens anteriores, JAMAIS use 'Olá' ou apresentações novamente. Aja como se tivesse respondido há 1 minuto.\n"
+                    f"- **Conexão Lógica:** Use conectivos de conversa real ('Então...', 'Nesse caso...', 'Ah, sobre isso...'). Evite listas com bullets se puder responder em uma frase corrida.\n"
+                    f"- **Espelhamento de Tom:** Se a mensagem do cliente for curta (ex: 'qual o preço?'), seja direto ('Custa R$ 50,00'). Se ele for detalhista, explique mais. Não escreva um 'textão' para quem perguntou 'sim ou não'.\n"
+                    f"- **Formatação de Chat:** Evite listas com marcadores (bullets) ou negrito excessivo a menos que seja estritamente necessário (como uma lista de itens). No WhatsApp, pessoas usam parágrafos curtos, não tópicos de Powerpoint.\n"
+                    f"- **Banalidade Controlada:** Em vez de 'Sinto muito pelo inconveniente causado', use algo mais leve como 'Poxa, entendo o problema' ou 'Que chato isso, vamos resolver'. Evite desculpas exageradas e submissas.\n"
+                    f"- **Proibido 'Posso ajudar em algo mais?':** NUNCA termine a frase com essa pergunta clichê a cada resposta. Só pergunte isso se o assunto estiver claramente encerrado. Deixe a conversa fluir naturalmente.\n"
                     f"# TAREFA\n"
                     f"Responda ao último 'User' agindo estritamente como a persona definida.\n\n"
                     f"# REGRAS DE EXECUÇÃO\n"
@@ -495,7 +502,7 @@ class GeminiService:
 
             prompt_text = (
                 f"## TAREFA: FOLLOW-UP\n"
-                f"Você é um assistente de IA especialista em reengajamento. Gere uma mensagem de follow-up.\n\n"
+                f"Você é um assistente especialista em reengajamento. Gere uma mensagem de follow-up.\n\n"
                 f"## DADOS\nNome Contato: {whatsapp.nome_contato}\n\n"
                 f"## HISTÓRICO RECENTE\n{history_str}\n\n"
                 f"## REGRAS\n"

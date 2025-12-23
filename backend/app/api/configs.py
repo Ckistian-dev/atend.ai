@@ -164,27 +164,30 @@ async def sync_google_sheet(
 
         elif sync_type == "rag":
             # MODO RAG: Todas as abas viram Vetores
+            rag_items = []
             for sheet_name, rows in sheet_data_json.items():
                 formatted_lines = [line for row in rows if (line := format_row_dense(sheet_name, row))]
                 if formatted_lines:
-                    all_rag_lines.extend(formatted_lines)
+                    for line in formatted_lines:
+                        rag_items.append({"content": line, "origin": sheet_name})
             
             # Processamento em Lote dos Embeddings
-            if all_rag_lines:
-                embeddings = await gemini_service.generate_embeddings_batch(all_rag_lines)
-                for line, embedding in zip(all_rag_lines, embeddings):
+            if rag_items:
+                lines_to_embed = [item["content"] for item in rag_items]
+                embeddings = await gemini_service.generate_embeddings_batch(lines_to_embed)
+                for item, embedding in zip(rag_items, embeddings):
                     if embedding:
                         contextos_buffer.append(models.KnowledgeVector(
                             config_id=db_config.id,
-                            content=line,
-                            origin="sheet", # Mantemos 'sheet' para identificar origem planilha
+                            content=item["content"],
+                            origin=item["origin"], # Nome da aba
                             embedding=embedding
                         ))
             
-            # Limpa vetores anteriores desta origem e insere novos
+            # Limpa vetores anteriores que NÃO sejam do Drive (remove 'sheet' antigo e abas nomeadas)
             await db.execute(delete(models.KnowledgeVector).where(
                 models.KnowledgeVector.config_id == db_config.id,
-                models.KnowledgeVector.origin == "sheet"
+                models.KnowledgeVector.origin != "drive"
             ))
             if contextos_buffer:
                 db.add_all(contextos_buffer)

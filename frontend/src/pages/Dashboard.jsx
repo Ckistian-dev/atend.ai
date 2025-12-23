@@ -23,6 +23,7 @@ const STATUS_COLORS = {
     "Total": "#144cd1", // Cor para a nova linha de total
     "Aguardando Resposta": "#e5da61",
     "Concluído": "#5fd395",
+    "Tokens": "#8b5cf6", // Cor violeta para tokens
 };
 
 // --- NOVO: Componente para renderizar o relatório de análise da IA ---
@@ -453,6 +454,12 @@ const Dashboard = () => {
         }
     };
 
+    const formatTokenAxis = (tick) => {
+        if (tick >= 1000000) return `${(tick / 1000000).toFixed(1).replace('.0', '')}M`;
+        if (tick >= 1000) return `${(tick / 1000).toFixed(0)}k`;
+        return tick;
+    };
+
     if (isLoading && !data) {
         return (
             <div className="flex h-full items-center justify-center bg-gray-50">
@@ -506,14 +513,16 @@ const Dashboard = () => {
                                     <LineChart data={data?.charts?.contatosPorDia || []} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                                         <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                                        <YAxis tick={{ fontSize: 12 }} />
-                                        <Tooltip />
+                                        <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
+                                        <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} tickFormatter={formatTokenAxis} />
+                                        <Tooltip formatter={(value, name) => [typeof value === 'number' ? value.toLocaleString('pt-BR') : value, name]} />
                                         <Legend wrapperStyle={{ fontSize: "14px" }} />
-                                        <Line type="monotone" dataKey="total" stroke={STATUS_COLORS['Total']} strokeWidth={3} name="Total" dot={false} />
+                                        <Line yAxisId="left" type="monotone" dataKey="total" stroke={STATUS_COLORS['Total']} strokeWidth={3} name="Total" dot={false} />
+                                        <Line yAxisId="right" type="monotone" dataKey="tokens" stroke={STATUS_COLORS['Tokens']} strokeWidth={2} name="Tokens" dot={false} strokeDasharray="3 3" />
                                         {Object.entries(STATUS_COLORS)
-                                            .filter(([status]) => status !== 'Total') // <-- Adicionado filtro para não duplicar
+                                            .filter(([status]) => status !== 'Total' && status !== 'Tokens') // <-- Adicionado filtro para não duplicar
                                             .map(([status, color]) => (
-                                                <Line key={status} type="monotone" dataKey={status} stroke={color} strokeWidth={2} name={status} dot={false} />
+                                                <Line key={status} yAxisId="left" type="monotone" dataKey={status} stroke={color} strokeWidth={2} name={status} dot={false} />
                                             ))}
                                     </LineChart>
                                 </ResponsiveContainer>
