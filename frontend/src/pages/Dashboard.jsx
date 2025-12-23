@@ -408,8 +408,8 @@ const Dashboard = () => {
         setError('');
         try {
             const params = {
-                start_date_str: startDate.toISOString(),
-                end_date_str: endDate.toISOString(),
+                start_date_str: format(startDate, "yyyy-MM-dd'T'HH:mm:ssXXX"),
+                end_date_str: format(endDate, "yyyy-MM-dd'T'HH:mm:ssXXX"),
             };
             const response = await api.get('/dashboard/', { params });
             setData(response.data);
@@ -441,8 +441,8 @@ const Dashboard = () => {
             const response = await api.post('/dashboard/analyze', {
                 question,
                 contexts,
-                start_date_str: dateRange.startDate.toISOString(),
-                end_date_str: dateRange.endDate.toISOString(),
+                start_date_str: format(dateRange.startDate, "yyyy-MM-dd'T'HH:mm:ssXXX"),
+                end_date_str: format(dateRange.endDate, "yyyy-MM-dd'T'HH:mm:ssXXX"),
             });
             setAnalysisResult(response.data.analysis); // CORREÇÃO: Extrai o objeto de dentro da chave 'analysis'
         } catch (err) {
