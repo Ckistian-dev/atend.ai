@@ -438,3 +438,17 @@ async def get_atendimentos_for_followup(db: AsyncSession, user_id: int, earliest
     )
     result = await db.execute(stmt)
     return result.scalars().unique().all()
+
+async def get_atendimentos_by_status_and_inactivity(db: AsyncSession, user_id: int, status: str, days_inactive: int) -> List[models.Atendimento]:
+    """Busca atendimentos com um status específico que não foram atualizados há X dias."""
+    limit_date = datetime.now(timezone.utc) - timedelta(days=days_inactive)
+    stmt = (
+        select(models.Atendimento)
+        .where(
+            models.Atendimento.user_id == user_id,
+            models.Atendimento.status == status,
+            models.Atendimento.updated_at < limit_date
+        )
+    )
+    result = await db.execute(stmt)
+    return result.scalars().all()

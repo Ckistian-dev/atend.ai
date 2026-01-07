@@ -31,6 +31,9 @@ class Settings(BaseSettings):
 
     MAX_MESSAGE_AGE_SECONDS: int = 300 # Tempo (s) para ignorar webhooks antigos na fila. Padrão: 5 minutos.
     
+    ADMIN_EMAIL: str
+    ADMIN_PASSWORD: str
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -450,6 +450,25 @@ class WhatsAppService:
         if not all([user, number, media_type, file_bytes, filename]):
             raise ValueError("User, number, media_type, file_bytes, e filename são obrigatórios.")
 
+        # --- NORMALIZAÇÃO DE TIPO (FIX) ---
+        # O WhatsApp aceita apenas: audio, document, image, video, sticker.
+        # Se vier 'pdf', 'doc', etc. (comum em retornos de IA), forçamos 'document'.
+        media_type = media_type.lower().strip()
+        valid_types = ['audio', 'document', 'image', 'video', 'sticker']
+        
+        if media_type not in valid_types:
+            if media_type in ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv']:
+                media_type = 'document'
+            elif media_type in ['jpg', 'jpeg', 'png']:
+                media_type = 'image'
+            elif media_type in ['mp3', 'ogg', 'wav']:
+                media_type = 'audio'
+            elif media_type in ['mp4', 'mov', 'avi']:
+                media_type = 'video'
+            else:
+                logger.warning(f"WBP: Tipo de mídia '{media_type}' desconhecido. Forçando 'document'.")
+                media_type = 'document'
+
         # Tenta adivinhar o mimetype se não for fornecido
         if not mimetype:
             mimetype, _ = mimetypes.guess_type(filename)

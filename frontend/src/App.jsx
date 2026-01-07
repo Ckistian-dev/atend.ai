@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Atendimentos from './pages/Atendimentos';
 import Configs from './pages/Configs';
 import Mensagens from './pages/Mensagens';
+import Admin from './pages/Admin';
 import Followup from './pages/Followup';
 
 // Importação dos componentes de layout
@@ -26,6 +27,7 @@ function App() {
         <Route path="atendimentos" element={<Atendimentos />} />
         <Route path="mensagens" element={<Mensagens />} />
         <Route path="configs" element={<Configs />} />
+        <Route path="admin" element={<Admin />} />
         <Route path="followup" element={<Followup />} />
         
         {/* Redireciona a rota raiz para o dashboard */}

@@ -35,7 +35,7 @@ async def receive_official_webhook(request: Request, background_tasks: Backgroun
                                 background_tasks.add_task(send_webhook_to_queue, value_payload)
                             else:
                                 logger.info("Webhook: Payload 'value' recebido sem 'messages' ou 'statuses'. Nada a fazer.")
-            
+
             return Response(status_code=200)
         else:
             logger.warning(f"WBP Webhook: Payload recebido com estrutura inválida: {payload}")

@@ -6,6 +6,7 @@ import api from '../api/axiosConfig.js'; // Verifique se o caminho está correto
 
 const MainLayout = () => {
     const [currentUserApiType, setCurrentUserApiType] = useState(null);
+    const [isSuperUser, setIsSuperUser] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
 
@@ -17,6 +18,7 @@ const MainLayout = () => {
                 const response = await api.get('/auth/me');
                 // Armazenamos o tipo de API no estado
                 setCurrentUserApiType(response.data.api_type);
+                setIsSuperUser(response.data.is_superuser);
             } catch (error) {
                 console.error("Erro ao buscar dados do usuário:", error);
                 // Se falhar (ex: token expirado), desloga o usuário
@@ -45,7 +47,7 @@ const MainLayout = () => {
             {/* Passamos o api_type para a Sidebar.
               A Sidebar usará isso para decidir se mostra o link "Finalizados".
             */}
-            <Sidebar currentUserApiType={currentUserApiType} />
+            <Sidebar currentUserApiType={currentUserApiType} isSuperUser={isSuperUser} />
             
             <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Seu Header (cabeçalho superior) */}
@@ -61,4 +63,3 @@ const MainLayout = () => {
 };
 
 export default MainLayout;
-

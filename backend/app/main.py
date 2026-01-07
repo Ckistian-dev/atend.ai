@@ -1,7 +1,12 @@
 import logging
 import logging.config # <<< NOVO IMPORT
 import sys # <<< NOVO IMPORT (para direcionar handler)
-from fastapi import FastAPI, BackgroundTasks
+from dotenv import load_dotenv
+
+load_dotenv() # Carrega variáveis do arquivo .env para o ambiente
+
+from fastapi import FastAPI, BackgroundTasks, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +23,8 @@ from app.api.dashboard import router as dashboard_router
 from app.api.atendimentos import router as atendimentos_router
 from app.api.agent import router as agent_router
 from app.api.users import router as users_router
+from app.api.admin import router as admin_router
+from app.api.landingpage import router as landingpage_router
 
 # --- CONFIGURAÇÃO DETALHADA DE LOGGING ---
 LOGGING_CONFIG = {
@@ -124,11 +131,15 @@ logger = logging.getLogger(__name__)
 
 
 async def create_db_and_tables():
+    # Tenta criar a extensão vector separadamente (evita falha crítica se permissões forem insuficientes)
+    try:
+        async with engine.begin() as conn:
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+    except Exception as e:
+        logger.warning(f"Aviso: Não foi possível criar a extensão 'vector'. Erro: {e}")
+
     async with engine.begin() as conn:
         try:
-            # Ativa a extensão pgvector para suporte a embeddings
-            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-            
             # --- NOVO: Função para obter timestamp da última mensagem do CLIENTE ---
             await conn.execute(text("""
                 CREATE OR REPLACE FUNCTION get_last_user_msg_timestamp(conversa_text TEXT)
@@ -192,6 +203,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- HANDLER GLOBAL DE ERROS ---
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Erro não tratado: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"message": "Erro interno do servidor", "detail": str(exc)},
+    )
+
 API_PREFIX = "/api/v1"
 
 # Incluir todos os routers (igual)
@@ -201,7 +221,10 @@ app.include_router(webhook_router, prefix=f"{API_PREFIX}/webhook", tags=["Webhoo
 app.include_router(dashboard_router, prefix=f"{API_PREFIX}/dashboard", tags=["Dashboard"])
 app.include_router(atendimentos_router, prefix=f"{API_PREFIX}/atendimentos", tags=["Atendimentos"])
 app.include_router(agent_router, prefix=f"{API_PREFIX}/agent", tags=["Agente"])
+app.include_router(admin_router, prefix=f"{API_PREFIX}/admin", tags=["Admin"])
 app.include_router(users_router, prefix=f"{API_PREFIX}/users", tags=["Utilizadores"])
+app.include_router(landingpage_router, prefix=f"{API_PREFIX}/landingpage", tags=["Landing Page"])
+
 
 @app.get("/", tags=["Root"])
 def read_root():

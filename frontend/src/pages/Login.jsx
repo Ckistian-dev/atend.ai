@@ -30,9 +30,14 @@ function Login() {
             
             localStorage.setItem('accessToken', response.data.access_token);
             
-            // Redireciona para a página que o usuário tentou acessar ou para o dashboard
-            const redirectPath = location.state?.from?.pathname || '/mensagens';
-            navigate(redirectPath);
+            // Se o login for de admin, redireciona direto para /admin
+            if (response.data.is_admin) {
+                navigate('/admin');
+            } else {
+                // Para usuários normais, mantém o redirecionamento padrão
+                const redirectPath = location.state?.from?.pathname || '/mensagens';
+                navigate(redirectPath);
+            }
 
         } catch (err) {
             setError('Email ou senha inválidos. Tente novamente.');

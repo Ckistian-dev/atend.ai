@@ -20,8 +20,10 @@ cryptography # Adicionado para criptografia do token Google
 #--- Configuração e Utilitários ---
 
 pydantic-settings
+python-dotenv
 python-multipart
 email-validator
+pytz
 
 #--- Comunicação com APIs Externas ---
 

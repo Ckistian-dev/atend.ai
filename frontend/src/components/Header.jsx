@@ -224,6 +224,11 @@ const Header = () => {
                 </div>
             );
         }
+
+        if (user?.is_superuser) {
+            return null;
+        }
+
         return (
             <div className="w-full flex justify-between items-center">
                 {/* Lado Esquerdo */}
@@ -309,7 +314,7 @@ const Header = () => {
     };
 
     return (
-        <header className="bg-white p-4 border-b border-gray-200 flex items-center shadow-sm">
+        <header className="bg-white p-4 border-b border-gray-200 flex items-center shadow-sm min-h-16">
             {renderContent()}
         </header>
     );

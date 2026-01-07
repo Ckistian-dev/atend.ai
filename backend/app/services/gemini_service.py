@@ -3,11 +3,12 @@ from google.genai import types
 import logging
 import json
 import asyncio
+import pytz
 import re
 from typing import Optional, List, Dict, Any
 from collections.abc import Set
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -69,6 +70,21 @@ class GeminiService:
         logger.warning(f"Alternando para a chave de API do Google com índice {self.current_key_index}.")
         self._initialize_model()
         return self.current_key_index
+
+    def _parse_json_response(self, response_text: str) -> dict:
+        """Limpa e parseia JSON da resposta da IA, com tratamento de erros de escape."""
+        clean_response = response_text.strip().replace("```json", "").replace("```", "")
+        
+        try:
+            return json.loads(clean_response)
+        except json.JSONDecodeError:
+            # Tenta corrigir backslashes soltos (comum em caminhos de arquivo ou LaTeX)
+            # Regex: Backslash não seguido de escape válido -> Dobra o backslash
+            try:
+                fixed_response = re.sub(r'\\(?![/\"\\bfnrtu])', r'\\\\', clean_response)
+                return json.loads(fixed_response)
+            except json.JSONDecodeError:
+                raise
 
     async def _generate_with_retry(
         self, 
@@ -141,7 +157,7 @@ class GeminiService:
                     # --- MUDANÇA PRINCIPAL: Chamada Assíncrona Nativa (.aio) ---
                     # Não precisa mais de run_in_executor
                     response = await self.client.aio.models.generate_content(
-                        model='gemini-2.5-flash', # Modelo corrigido para versão estável e mais recente
+                        model='gemini-2.5-flash-lite', # Modelo corrigido para versão estável e mais recente
                         contents=prompt,
                         config=gen_config
                     )
@@ -248,22 +264,19 @@ class GeminiService:
             
         # Lógica para Imagem/Documento (Análise Visual)
         else:
-            system_instruction = persona.prompt or "Você é um especialista em extração de dados."
-            
-            last_user_msg = next((m.get('content', '') for m in reversed(db_history) if m.get('role') == 'user'), "")
-            rag_context = await self._retrieve_rag_context(db, persona.id, last_user_msg)
+            system_instruction = "Você é um especialista em análise visual e interpretação de conteúdo."
             
             history_str = self._format_history_optimized(db_history)
             
             prompt_text = (
-                f"## CONTEXTO (RAG)\n{rag_context}\n\n"
                 f"## HISTÓRICO RECENTE\n{history_str}\n\n"
                 "## INSTRUÇÃO DE ANÁLISE\n"
-                "Você é um especialista em extração de dados. Analise o arquivo fornecido.\n"
-                "1. Extraia todos os dados visíveis e relevantes (preços, produtos, nomes, endereços).\n"
-                "2. Se for um comprovante, extraia valor, data e beneficiário.\n"
-                "3. Não converse. Apenas retorne os dados extraídos em texto claro.\n"
-                "4. Use o contexto e histórico acima para entender o que buscar."
+                "Analise a mídia fornecida (imagem, documento ou vídeo) e descreva seu conteúdo de forma abrangente e detalhada. O objetivo é fornecer um resumo completo que capture todos os aspectos importantes para que a IA de conversação possa entender o contexto sem precisar 'ver' a mídia.\n\n"
+                "1. **Descrição Geral:** Comece com uma descrição geral do que a mídia mostra (ex: 'Foto de uma piscina em um jardim', 'Documento de orçamento', 'Vídeo curto mostrando o funcionamento de um produto').\n"
+                "2. **Detalhes Visuais (para imagens/vídeos):** Descreva os elementos principais, cores, ambiente, pessoas, objetos, texto visível, e qualquer detalhe que pareça relevante para a conversa.\n"
+                "3. **Extração de Dados (se aplicável):** Se a mídia contiver dados estruturados (como tabelas, listas, preços, nomes, endereços, datas, valores em um comprovante), extraia-os de forma clara.\n"
+                "4. **Contexto e Intenção:** Com base no histórico da conversa, tente inferir a intenção do usuário ao enviar a mídia. O que ele quer mostrar ou perguntar?\n"
+                "5. **Formato da Resposta:** Retorne um texto claro e bem estruturado. Use bullet points (*) para listas, se ajudar na clareza. Não converse, apenas forneça a análise."
             )
             
             # Ordem: Prompt de texto primeiro, Mídia depois (ou vice-versa, Gemini entende ambos)
@@ -370,6 +383,29 @@ class GeminiService:
         
         return "\n".join(unique_chunks)
 
+    def _get_datetime_context(self, user: models.User) -> str:
+        """Gera o contexto de data e hora atual, incluindo dia da semana em PT-BR."""
+        now_utc = datetime.now(timezone.utc)
+        datetime_context = f"Data e Hora Atuais (UTC): {now_utc.strftime('%Y-%m-%d %H:%M:%S %Z')}\n"
+
+        user_timezone_str = "America/Sao_Paulo" # Default
+        if user.followup_config and isinstance(user.followup_config, dict):
+            user_timezone_str = user.followup_config.get("timezone", "America/Sao_Paulo")
+        
+        try:
+            user_tz = pytz.timezone(user_timezone_str)
+            now_local = now_utc.astimezone(user_tz)
+            
+            weekdays = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
+            weekday_name = weekdays[now_local.weekday()]
+            
+            datetime_context += f"Data e Hora Local do Usuário ({user_timezone_str}): {now_local.strftime('%Y-%m-%d %H:%M:%S')} ({weekday_name})\n"
+        except pytz.UnknownTimeZoneError:
+            logger.warning(f"Timezone desconhecida '{user_timezone_str}' para o usuário {user.id}. Usando apenas UTC.")
+            pass 
+            
+        return datetime_context
+
     def _format_history_optimized(self, db_history: List[dict]) -> str:
         """Formata o histórico completo como texto estruturado (User/AI)."""
         formatted_lines = []
@@ -419,9 +455,13 @@ class GeminiService:
                 # Usa a query focada para buscar contexto
                 rag_context = await self._retrieve_rag_context(db, persona.id, rag_query)
 
+                # --- Contexto de Data e Hora ---
+                datetime_context = self._get_datetime_context(user)
+
                 # 2. Montagem do Prompt (Texto Estruturado)
                 prompt_text = (
                     f"# CONTEXTO (RAG)\n{rag_context}\n\n"
+                    f"# DATA E HORA ATUAL\n{datetime_context}\n"
                     f"# HISTÓRICO\n{history_str}\n\n"
                     f"# DADOS DO CLIENTE\n"
                     f"Nome: {whatsapp.nome_contato or 'Não identificado'}\n"
@@ -437,16 +477,20 @@ class GeminiService:
                     f"- **Espelhamento de Tom:** Se a mensagem do cliente for curta (ex: 'qual o preço?'), seja direto ('Custa R$ 50,00'). Se ele for detalhista, explique mais. Não escreva um 'textão' para quem perguntou 'sim ou não'.\n"
                     f"- **Formatação de Chat:** Evite listas com marcadores (bullets) ou negrito excessivo a menos que seja estritamente necessário (como uma lista de itens). No WhatsApp, pessoas usam parágrafos curtos, não tópicos de Powerpoint.\n"
                     f"- **Banalidade Controlada:** Em vez de 'Sinto muito pelo inconveniente causado', use algo mais leve como 'Poxa, entendo o problema' ou 'Que chato isso, vamos resolver'. Evite desculpas exageradas e submissas.\n"
-                    f"- **Proibido 'Posso ajudar em algo mais?':** NUNCA termine a frase com essa pergunta clichê a cada resposta. Só pergunte isso se o assunto estiver claramente encerrado. Deixe a conversa fluir naturalmente.\n"
+                    f"- **Proibido Repetir Nomes:** Use o nome do cliente APENAS na primeira saudação do dia. Nas mensagens seguintes, JAMAIS comece com 'Ah, {whatsapp.nome_contato}', 'Olá {whatsapp.nome_contato}' ou similares. Fale direto.\n"
+                    f"- **Zero Interjeições Artificiais:** Não comece frases com 'Ah, entendo!', 'Compreendo perfeitamente', 'Excelente pergunta'. Isso soa falso. Vá direto para a resposta técnica/comercial.\n"
+                    f"- **Parágrafos Únicos:** Tente responder tudo em UM ou TRES parágrafos no máximo. Evite quebrar a resposta em várias linhas curtas para não gerar spam de notificações.\n"
                     f"# TAREFA\n"
                     f"Responda ao último 'User' agindo estritamente como a persona definida.\n\n"
                     f"# REGRAS DE EXECUÇÃO\n"
                     f"1. **Fonte de Verdade:** Use prioritariamente o CONTEXTO (RAG). Se não encontrar, use conhecimento geral sensato, mas evite alucinar dados técnicos.\n"
                     f"2. **Arquivos:** Se o cliente pedir foto/catálogo e o arquivo estiver listado no RAG, inclua-o em `arquivos_anexos` usando o ID exato. No texto, avise que está enviando.\n"
-                    f"3. **Encaminhamento:** Tente resolver. Só mude `nova_situacao` para 'Atendente Chamado' se for um caso complexo fora da base ou após persistência do erro.\n"
+                    f"3. **Encaminhamento:** Tente resolver ao máximo. Insista na resolução antes de sugerir um humano. Antes de encaminhar, SEMPRE pergunte se o cliente deseja falar com um atendente. Só mude `nova_situacao` para 'Atendente Chamado' após a confirmação explícita do cliente.\n"
                     f"4. **Comunicação:** Não repita saudações (Oi/Olá) se já houver no histórico. Seja direto e use *negrito* para destaques. Não repita o que o cliente já disse.\n"
                     f"5. **Fluxo:** O sistema envia o texto PRIMEIRO e os arquivos DEPOIS. Considere isso na sua resposta.\n"
-                    f"6. **Tags:** Analise a conversa e veja se alguma tag disponível se aplica. Retorne apenas o nome das tags em `tags_sugeridas` para adicionar (ou null).\n\n"
+                    f"6. **Tags:** Analise a conversa e veja se alguma tag disponível se aplica. Retorne apenas o nome das tags em `tags_sugeridas` para adicionar (ou null).\n"
+                    f"7. **Capacidade de Visão:** Você TEM a capacidade de ver e analisar imagens, vídeos, áudios e documentos (PDFs) enviados pelo usuário. Se o histórico mostrar '[Imagem/Doc Transcrito]', trate como se tivesse visto o arquivo original.\n"
+                    f"8. **Solicitar Nome:** Se o nome do cliente estiver 'Não identificado', pergunte o nome dele logo no início da interação.\n\n"
                     f"# FORMATO DE RESPOSTA (JSON OBRIGATÓRIO)\n"
                     f"Retorne APENAS um JSON válido, sem blocos de código (```json).\n"
                     f"{{\n"
@@ -464,9 +508,7 @@ class GeminiService:
                 response = await self._generate_with_retry(prompt_text, db, user, system_instruction=system_instruction, atendimento_id=whatsapp.id)
                 last_response = response
                 
-                clean_response = response.text.strip().replace("```json", "").replace("```", "")
-                
-                return json.loads(clean_response)
+                return self._parse_json_response(response.text)
 
             except json.JSONDecodeError as e:
                 response_text = last_response.text if last_response else "N/A"
@@ -499,10 +541,12 @@ class GeminiService:
         """
         try:
             history_str = self._format_history_optimized(conversation_history_db)
+            datetime_context = self._get_datetime_context(user)
 
             prompt_text = (
                 f"## TAREFA: FOLLOW-UP\n"
                 f"Você é um assistente especialista em reengajamento. Gere uma mensagem de follow-up.\n\n"
+                f"## CONTEXTO TEMPORAL\n{datetime_context}\n\n"
                 f"## DADOS\nNome Contato: {whatsapp.nome_contato}\n\n"
                 f"## HISTÓRICO RECENTE\n{history_str}\n\n"
                 f"## REGRAS\n"
@@ -514,9 +558,7 @@ class GeminiService:
             
             response = await self._generate_with_retry(prompt_text, db, user, atendimento_id=whatsapp.id)
             
-            clean_response = response.text.strip().replace("```json", "").replace("```", "")
-            
-            return json.loads(clean_response)
+            return self._parse_json_response(response.text)
 
         except Exception as e:
             logger.error(f"Erro ao gerar ação de follow-up com Gemini: {e}", exc_info=True)
@@ -697,9 +739,30 @@ class GeminiService:
             is_media=False, 
             system_instruction=system_instruction
         )
-        analysis_json = json.loads(response.text)
-        return analysis_json
+        return self._parse_json_response(response.text)
 
+    async def generate_persona_prompt(
+        self,
+        company_description: str,
+        db: AsyncSession,
+        user: models.User
+    ) -> str:
+        """Gera um prompt de sistema (persona) com base na descrição da empresa e instruções."""
+        prompt_text = (
+            f"Atue como um Especialista em Engenharia de Prompt e Estrategista de Vendas.\n"
+            f"Seu objetivo é escrever um 'System Prompt' (Persona) para um assistente de WhatsApp que deve parecer 100% humano.\n\n"
+            f"DIRETRIZES PARA O PROMPT GERADO:\n"
+            f"1. TOM E ESTILO: A linguagem deve ser natural, amigável e típica de WhatsApp (mensagens curtas, uso de emojis, sem formalismo excessivo). Proibido usar frases como 'em que posso ajudar hoje?' ou termos robóticos. Proibido admitir que é uma IA.\n"
+            f"2. ABERTURA OBRIGATÓRIA: O assistente deve sempre iniciar a primeira interação dizendo: 'Olá! Sou o [Nome] da [Nome da Empresa]. Com quem eu falo?' para obter o nome do cliente.\n"
+            f"3. CRIATIVIDADE EM PRODUTOS/PREÇOS: Se a descrição da empresa não fornecer uma lista detalhada, a IA deve inventar produtos, serviços e preços condizentes com o nicho, apresentando-os com total naturalidade e autoridade, como se fizessem parte do catálogo oficial.\n"
+            f"4. FLUXO DE CONVERSA: O atendimento deve ser focado em entender a necessidade do cliente, oferecer as opções geradas e conduzir para o fechamento ou agendamento, dependendo do nicho.\n"
+            f"5. REGRAS: Nunca quebrar o personagem. Se o cliente perguntar algo muito fora do escopo, o assistente deve contornar de forma humana (ex: 'vou confirmar essa informação com o financeiro').\n\n"
+            f"Informações para basear a criação:\n{company_description}\n\n"
+            f"Retorne APENAS o texto do system prompt gerado, sem introduções, sem formatação markdown (```) e pronto para uso."
+        )
+        
+        response = await self._generate_with_retry(prompt_text, db, user)
+        return response.text.strip()
 
 _gemini_service_instance = None
 def get_gemini_service():

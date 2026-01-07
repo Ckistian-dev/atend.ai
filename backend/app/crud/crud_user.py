@@ -18,6 +18,12 @@ async def get_user_by_email(db: AsyncSession, email: str) -> models.User | None:
     result = await db.execute(select(models.User).filter(models.User.email == email))
     return result.scalars().first()
 
+async def get_users(db: AsyncSession, skip: int = 0, limit: int = 100) -> List[models.User]:
+    """Busca todos os utilizadores com paginação, ordenados por ID."""
+    result = await db.execute(select(models.User).order_by(models.User.id).offset(skip).limit(limit))
+    users = result.scalars().all()
+    return users
+
 async def get_user_by_wbp_phone_number_id(db: AsyncSession, phone_number_id: str) -> Optional[models.User]:
     """Busca um utilizador pelo ID do número de telefone da API Oficial."""
     if not phone_number_id:

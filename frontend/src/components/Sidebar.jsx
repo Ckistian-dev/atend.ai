@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 // --- ALTERADO: Aceita a prop 'currentUserApiType' ---
-const Sidebar = ({ currentUserApiType }) => {
+const Sidebar = ({ currentUserApiType, isSuperUser }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const navigate = useNavigate();
 
@@ -31,7 +31,7 @@ const Sidebar = ({ currentUserApiType }) => {
     ];
 
     // 2. Cria a lista final de itens
-    const navItems = [...baseNavItems];
+    const navItems = isSuperUser ? [] : [...baseNavItems];
 
     return (
         <aside

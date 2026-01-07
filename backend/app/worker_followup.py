@@ -18,6 +18,19 @@ logging.basicConfig(level=logging.INFO,
                     stream=sys.stdout)
 logger = logging.getLogger(__name__)
 
+def _get_ts_from_message(msg: dict) -> float:
+    """Helper to extract a float timestamp from a message dict."""
+    raw_ts = msg.get('timestamp')
+    if isinstance(raw_ts, (int, float)):
+        return float(raw_ts)
+    elif isinstance(raw_ts, str):
+        try:
+            # Handles ISO format strings like '2024-01-01T12:00:00Z' or '2024-01-01T12:00:00+00:00'
+            return datetime.fromisoformat(raw_ts.replace("Z", "+00:00")).timestamp()
+        except (ValueError, TypeError):
+            pass
+    return 0.0
+
 def is_within_business_hours(config: dict) -> bool:
     """Verifica se a hora atual está dentro do horário comercial configurado."""
     try:
@@ -56,6 +69,28 @@ async def process_followups_for_user(user: models.User, db: AsyncSession):
         return
 
     intervals = sorted(config.get("intervals", []), key=lambda x: x['hours'])
+    auto_conclude_days = config.get("auto_conclude_days", 0)
+
+    # --- LÓGICA DE AUTO-CONCLUSÃO ---
+    if auto_conclude_days and isinstance(auto_conclude_days, int) and auto_conclude_days > 0:
+        try:
+            old_tickets = await crud_atendimento.get_atendimentos_by_status_and_inactivity(
+                db, user.id, "Atendente Chamado", auto_conclude_days
+            )
+            
+            if old_tickets:
+                for ticket in old_tickets:
+                    ticket.status = "Concluído"
+                    # Atualiza timestamp para refletir a conclusão
+                    ticket.updated_at = datetime.now(timezone.utc)
+                    db.add(ticket)
+                
+                await db.commit()
+                logger.info(f"Follow-up: {len(old_tickets)} atendimentos 'Atendente Chamado' auto-concluídos para user {user.id} (Inatividade > {auto_conclude_days} dias).")
+        except Exception as e:
+            logger.error(f"Erro na auto-conclusão para user {user.id}: {e}", exc_info=True)
+
+    # Se não houver intervalos configurados, encerra aqui (após ter tentado a auto-conclusão)
     if not intervals:
         return
 
@@ -82,21 +117,33 @@ async def process_followups_for_user(user: models.User, db: AsyncSession):
             last_client_ts = 0
             for msg in reversed(conversa):
                 if msg.get('role') == 'user':
-                    raw_ts = msg.get('timestamp')
-                    # Tratamento robusto para timestamp (int/float ou string ISO)
-                    if isinstance(raw_ts, (int, float)):
-                        last_client_ts = float(raw_ts)
-                    elif isinstance(raw_ts, str):
-                        try:
-                            dt = datetime.fromisoformat(raw_ts.replace("Z", "+00:00"))
-                            last_client_ts = dt.timestamp()
-                        except: pass
-                    break
+                    last_client_ts = _get_ts_from_message(msg)
+                    if last_client_ts > 0:
+                        break
             
             if last_client_ts == 0:
                 continue
 
-            # 2. Calcular inatividade baseada no CLIENTE
+            # 1.5. Anti-Burst: Verificar se um follow-up foi enviado recentemente.
+            last_followup_ts = 0
+            for msg in reversed(conversa):
+                if msg.get('type') == 'followup':
+                    ts = _get_ts_from_message(msg)
+                    if ts > last_client_ts: # Só conta follow-ups após a última msg do cliente
+                        last_followup_ts = ts
+                        break # Pega o mais recente
+
+            # Se um follow-up já foi enviado, garante um intervalo mínimo antes de enviar o próximo.
+            if last_followup_ts > 0 and intervals:
+                # Usa o primeiro intervalo como o "gap" mínimo para evitar rajadas.
+                min_gap_hours = intervals[0]['hours']
+                time_since_last_followup_hours = (now.timestamp() - last_followup_ts) / 3600
+                
+                if time_since_last_followup_hours < min_gap_hours:
+                    # logger.debug(f"Follow-up (At. {at.id}): Pulando, último follow-up enviado há {time_since_last_followup_hours:.2f}h (mínimo {min_gap_hours}h).")
+                    continue
+
+            # 2. Calcular inatividade baseada na ÚLTIMA MENSAGEM DO CLIENTE
             time_since_client = now.timestamp() - last_client_ts
             inactive_hours = time_since_client / 3600
 
@@ -115,14 +162,7 @@ async def process_followups_for_user(user: models.User, db: AsyncSession):
                     already_sent = False
                     
                     for msg in conversa:
-                        # Pega timestamp da mensagem
-                        m_ts = 0
-                        m_raw = msg.get('timestamp')
-                        if isinstance(m_raw, (int, float)): m_ts = float(m_raw)
-                        elif isinstance(m_raw, str):
-                            try: m_ts = datetime.fromisoformat(m_raw.replace("Z", "+00:00")).timestamp()
-                            except: pass
-                        
+                        m_ts = _get_ts_from_message(msg)
                         # Só conta se foi enviada DEPOIS do cliente falar
                         if m_ts > last_client_ts and msg.get('tag') == tag:
                             already_sent = True

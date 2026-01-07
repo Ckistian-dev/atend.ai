@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
-import { Save, Loader2, Plus, Trash2, Clock, History, Info } from 'lucide-react';
+import { Save, Loader2, Plus, Trash2, Clock, History, Info, CheckCircle } from 'lucide-react';
 
 const initialConfig = {
     business_hours: {
@@ -10,7 +10,8 @@ const initialConfig = {
         days: [1, 2, 3, 4, 5] // Seg-Sex
     },
     // O frontend agora usa {value, unit} e converte para {hours} ao salvar.
-    intervals: [ { value: 2, unit: 'hours' }, { value: 8, unit: 'hours' } ]
+    intervals: [{ value: 2, unit: 'hours' }, { value: 8, unit: 'hours' }],
+    auto_conclude_days: 0
 };
 
 function Followup() {
@@ -41,7 +42,11 @@ function Followup() {
                     }
                     return { value: interval.hours, unit: 'hours' };
                 });
-                setConfig({ ...backendConfig, intervals: frontendIntervals });
+                setConfig({
+                    ...backendConfig,
+                    intervals: frontendIntervals,
+                    auto_conclude_days: backendConfig.auto_conclude_days || 0
+                });
             } else {
                 setConfig(initialConfig);
             }
@@ -70,7 +75,8 @@ function Followup() {
                     hoursValue = interval.value / 60; // Converte minutos para fração de hora
                 }
                 return { hours: hoursValue };
-            })
+            }),
+            auto_conclude_days: parseInt(config.auto_conclude_days, 10) || 0
         };
 
         try {
@@ -164,11 +170,10 @@ function Followup() {
                         <div className="flex items-center gap-4">
                             <button
                                 onClick={() => setIsActive(!isActive)}
-                                className={`flex items-center gap-2.5 text-sm px-4 py-2 rounded-full font-semibold transition-all transform hover:scale-105 ${
-                                    isActive
+                                className={`flex items-center gap-2.5 text-sm px-4 py-2 rounded-full font-semibold transition-all transform hover:scale-105 ${isActive
                                         ? 'bg-green-100 text-green-800 hover:bg-green-200'
                                         : 'bg-red-100 text-red-800 hover:bg-red-200'
-                                }`}
+                                    }`}
                             >
                                 <History size={16} />
                                 {isActive ? 'Follow-up Ativo' : 'Follow-up Inativo'}
@@ -217,6 +222,8 @@ function Followup() {
                         </div>
                     </div>
 
+
+
                     {/* Intervalos */}
                     <div className="bg-white p-6 rounded-xl shadow-lg border h-full flex flex-col">
                         <div className="flex justify-between items-center mb-2">
@@ -259,6 +266,25 @@ function Followup() {
                                 <Info size={16} className="flex-shrink-0 mt-0.5" />
                                 <p>A mensagem de follow-up é gerada pela IA com base no contexto da conversa e nas suas configurações de persona.</p>
                             </div>
+                        </div>
+                    </div>
+                    {/* Card 2: Auto-conclusão */}
+                    <div className="bg-white p-6 rounded-xl shadow-lg border h-full">
+                        <h3 className="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
+                            <CheckCircle size={20} className="text-green-600" /> Auto-conclusão
+                        </h3>
+                        <p className="text-gray-500 mb-6 text-sm">Defina após quantos dias sem interação os atendimentos em "Atendente Chamado" devem ser concluídos automaticamente.</p>
+                        <div className="flex items-center gap-3">
+                            <span className="text-sm text-gray-600">Concluir após</span>
+                            <input
+                                type="number"
+                                min="0"
+                                max="365"
+                                value={config.auto_conclude_days}
+                                onChange={e => setConfig(prev => ({ ...prev, auto_conclude_days: parseInt(e.target.value, 10) || 0 }))}
+                                className="w-20 p-1.5 border border-gray-300 rounded-md text-center font-medium text-sm focus:ring-brand-blue focus:border-brand-blue"
+                            />
+                            <span className="text-sm text-gray-600">dias (0 para desativar)</span>
                         </div>
                     </div>
                 </div>

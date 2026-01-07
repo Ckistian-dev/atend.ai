@@ -93,6 +93,7 @@ function Mensagens() {
 
     // --- NOVO: Estado para a sidebar de perfil ---
     const [isProfileSidebarOpen, setIsProfileSidebarOpen] = useState(false);
+    const sidebarRef = useRef(null);
 
     // --- ALTERADO: Controla qual editor de tag está aberto pelo ID do atendimento ---
     const [openTagEditorId, setOpenTagEditorId] = useState(null);
@@ -838,6 +839,22 @@ function Mensagens() {
         }
     };
 
+    // --- Efeito para fechar a sidebar ao clicar fora (Desktop) ---
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (isProfileSidebarOpen && sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+                setIsProfileSidebarOpen(false);
+            }
+        }
+
+        if (isProfileSidebarOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isProfileSidebarOpen]);
+
     if (isLoading && !currentUser) {
         return <div className="flex h-screen items-center justify-center text-gray-600">A carregar interface de mensagens...</div>;
     }
@@ -973,7 +990,7 @@ function Mensagens() {
                         {/* A sidebar agora é posicionada de forma absoluta em telas menores para deslizar sobre o conteúdo */}
                         {/* Em telas maiores (md), a largura é animada para um efeito de "encolher". A largura máxima é definida no contêiner pai para evitar que ele "salte" durante a animação. */}
                         <div 
-                            onMouseLeave={() => setIsProfileSidebarOpen(false)} // --- ADICIONADO: Fecha ao tirar o mouse de cima
+                            ref={sidebarRef}
                             className={`
                             absolute md:relative top-0 right-0 h-full md:max-w-sm flex-shrink-0
                             transition-all duration-300 ease-in-out
