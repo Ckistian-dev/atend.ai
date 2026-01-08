@@ -47,7 +47,11 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
 
     // Texto a ser exibido (transcrição, análise ou mensagem original)
     // Mostra um placeholder se for mídia sem conteúdo textual ainda
-    const displayText = msg.content || (hasMedia ? `[${type === 'image' ? 'Imagem' : type === 'audio' ? 'Áudio' : type === 'video' ? 'Vídeo' : 'Documento'}${msg.filename ? `: ${msg.filename}` : ''}]` : ''); // <-- 2. ADICIONADO 'video'
+    let displayText = msg.content || (hasMedia ? `[${type === 'image' ? 'Imagem' : type === 'audio' ? 'Áudio' : type === 'video' ? 'Vídeo' : 'Documento'}${msg.filename ? `: ${msg.filename}` : ''}]` : ''); // <-- 2. ADICIONADO 'video'
+
+    if (['image', 'video', 'document'].includes(type)) {
+        displayText = null;
+    }
 
     // --- CORREÇÃO: A sintaxe do 'if/else if' estava incorreta. ---
     // Texto do botão (agora com a sintaxe correta)

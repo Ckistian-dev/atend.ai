@@ -38,7 +38,7 @@ class GeminiService:
             
         self.current_key_index = 0
         self.generation_config = {
-            "temperature": 0.7,        # Aumentei: Deixa a fala menos "dura" e mais coloquial.
+            "temperature": 0.5,        # Aumentei: Deixa a fala menos "dura" e mais coloquial.
             "top_p": 0.95,             # Ajuste fino: Mantém a coerência mas corta alucinações absurdas.
             "top_k": 40,               # O PULO DO GATO: De 1 para 40. Permite variar o vocabulário.
             "frequency_penalty": 0.6,  # CRÍTICO: Penaliza palavras que ele já falou muito (evita o "Ótimo!" repetido).
@@ -369,7 +369,7 @@ class GeminiService:
                 models.KnowledgeVector.origin == origin
             ).order_by(
                 models.KnowledgeVector.embedding.cosine_distance(query_embedding)
-            ).limit(5)
+            ).limit(10)
             
             result_origin = await db.execute(stmt_origin)
             vectors = result_origin.scalars().all()
@@ -471,8 +471,9 @@ class GeminiService:
                     f"{json.dumps(available_tags_names, ensure_ascii=False)}\n\n"
                     f"# DIRETRIZES DE HUMANIZAÇÃO (CRÍTICO)\n"
                     f"- **Zero 'Corporatiquês':** PROIBIDO começar frases com 'Ótimo', 'Excelente', 'Perfeito', 'Entendido', 'Compreendo'. Isso denuncia que você é um robô. Vá direto ao ponto.\n"
-                    f"- **Não seja Papagaio:** NUNCA repita ou parafraseie o que o usuário acabou de dizer (ex: 'Entendi que você quer saber o preço...'). Apenas dê a resposta.\n"
+                    f"- **NÃO SE REPITA (REGRA CRÍTICA):** Analise o histórico. É PROIBIDO repetir informações, perguntas, ações ou parafrasear o que o usuário disse. Se você já deu uma informação, não a dê novamente. Se o cliente aponta um erro seu, corrija o erro diretamente, sem reiniciar o fluxo de recomendação.\n"
                     f"- **Continuidade Real:** Trate o histórico como uma conversa contínua de WhatsApp. Se já houver mensagens anteriores, JAMAIS use 'Olá' ou apresentações novamente. Aja como se tivesse respondido há 1 minuto.\n"
+                    f"- **Zero Saudações Repetidas:** Se já houve um cumprimento no histórico recente, NÃO inicie a resposta com 'Olá', 'Oi', 'Bom dia', etc. Continue a conversa diretamente.\n"
                     f"- **Conexão Lógica:** Use conectivos de conversa real ('Então...', 'Nesse caso...', 'Ah, sobre isso...'). Evite listas com bullets se puder responder em uma frase corrida.\n"
                     f"- **Espelhamento de Tom:** Se a mensagem do cliente for curta (ex: 'qual o preço?'), seja direto ('Custa R$ 50,00'). Se ele for detalhista, explique mais. Não escreva um 'textão' para quem perguntou 'sim ou não'.\n"
                     f"- **Formatação de Chat:** Evite listas com marcadores (bullets) ou negrito excessivo a menos que seja estritamente necessário (como uma lista de itens). No WhatsApp, pessoas usam parágrafos curtos, não tópicos de Powerpoint.\n"
@@ -486,7 +487,7 @@ class GeminiService:
                     f"1. **Fonte de Verdade:** Use prioritariamente o CONTEXTO (RAG). Se não encontrar, use conhecimento geral sensato, mas evite alucinar dados técnicos.\n"
                     f"2. **Arquivos:** Se o cliente pedir foto/catálogo e o arquivo estiver listado no RAG, inclua-o em `arquivos_anexos` usando o ID exato. No texto, avise que está enviando.\n"
                     f"3. **Encaminhamento:** Tente resolver ao máximo. Insista na resolução antes de sugerir um humano. Antes de encaminhar, SEMPRE pergunte se o cliente deseja falar com um atendente. Só mude `nova_situacao` para 'Atendente Chamado' após a confirmação explícita do cliente.\n"
-                    f"4. **Comunicação:** Não repita saudações (Oi/Olá) se já houver no histórico. Seja direto e use *negrito* para destaques. Não repita o que o cliente já disse.\n"
+                    f"4. **Comunicação:** Seja direto e use *negrito* para destaques. A regra de NÃO REPETIR é a mais importante de todas.\n"
                     f"5. **Fluxo:** O sistema envia o texto PRIMEIRO e os arquivos DEPOIS. Considere isso na sua resposta.\n"
                     f"6. **Tags:** Analise a conversa e veja se alguma tag disponível se aplica. Retorne apenas o nome das tags em `tags_sugeridas` para adicionar (ou null).\n"
                     f"7. **Capacidade de Visão:** Você TEM a capacidade de ver e analisar imagens, vídeos, áudios e documentos (PDFs) enviados pelo usuário. Se o histórico mostrar '[Imagem/Doc Transcrito]', trate como se tivesse visto o arquivo original.\n"
