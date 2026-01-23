@@ -161,7 +161,7 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
         # --- LÓGICA DE ENVIO DE MENSAGEM DE TEXTO ---
         if message_to_send and isinstance(message_to_send, str) and message_to_send.strip():
             # Limpa e divide a mensagem em parágrafos para enviá-las separadamente, melhorando a legibilidade no WhatsApp.
-            message_to_send_cleaned = message_to_send.strip().replace('\\n', '\n')
+            message_to_send_cleaned = message_to_send.strip().replace('\\n', '\n').replace('\\', '')
             message_parts = [part.strip() for part in message_to_send_cleaned.split('\n\n') if part.strip()]
 
             for i, part in enumerate(message_parts):

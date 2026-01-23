@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Download, Loader2 } from 'lucide-react';
+import { AlertTriangle, Download, Loader2, FileText } from 'lucide-react';
 
 // Importa o novo componente de áudio
 import AudioPlayer from './AudioPlayer';
@@ -49,7 +49,7 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
     // Mostra um placeholder se for mídia sem conteúdo textual ainda
     let displayText = msg.content || (hasMedia ? `[${type === 'image' ? 'Imagem' : type === 'audio' ? 'Áudio' : type === 'video' ? 'Vídeo' : 'Documento'}${msg.filename ? `: ${msg.filename}` : ''}]` : ''); // <-- 2. ADICIONADO 'video'
 
-    if (['image', 'video', 'document'].includes(type)) {
+    if (['image', 'video'].includes(type)) {
         displayText = null;
     }
 
@@ -95,23 +95,33 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
 
         case 'document': // O case de vídeo foi separado
             return (
-                <div className="space-y-1">
-
-                    {/* Exibe o botão se tiver media_id */}
-                    {hasMedia && (
-                        <div className="mt-1">{type === 'document' ? (// Documento usa link direto
-                                <button
-                                    type="button"
-                                    // <<-- O onClick chama a nova função
-                                    onClick={() => onDownloadDocument(msg.media_id, msg.filename)}
-                                    disabled={isDownloading} // <<-- Usa o estado de loading
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded border border-gray-300 bg-gray-50 hover:bg-gray-100 text-gray-700 ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                >
-                                    {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-                                    {buttonText}
-                                </button>
-                            ) : null}</div>
-                    )}
+                <div className="space-y-2">
+                    {/* Card do Documento */}
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg max-w-sm hover:bg-gray-100 transition-colors">
+                        <div className="bg-blue-100 p-2 rounded-full text-blue-600 flex-shrink-0">
+                            <FileText size={20} />
+                        </div>
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                            <p className="text-sm font-medium text-gray-900 truncate" title={msg.filename}>
+                                {msg.filename || 'Documento'}
+                            </p>
+                            <p className="text-xs text-gray-500 uppercase">
+                                {msg.mime_type ? msg.mime_type.split('/')[1] : 'ARQUIVO'}
+                            </p>
+                        </div>
+                        
+                        {hasMedia && (
+                            <button
+                                type="button"
+                                onClick={() => onDownloadDocument(msg.media_id, msg.filename)}
+                                disabled={isDownloading}
+                                className={`p-2 rounded-full text-gray-500 hover:text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                title="Baixar Documento"
+                            >
+                                {isDownloading ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
+                            </button>
+                        )}
+                    </div>
                 </div>
             );
 

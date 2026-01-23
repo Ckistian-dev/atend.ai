@@ -24,6 +24,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 # Importações de módulos locais da aplicação
 from app.api import dependencies
+from app.core.config import settings
 from app.db.database import get_db
 from app.db import models, schemas
 from app.crud import crud_atendimento, crud_user
@@ -561,14 +562,10 @@ async def get_whatsapp_templates(
             detail="ID da Conta do WhatsApp Business não está configurado para este usuário."
         )
 
-    if not current_user.wbp_access_token:
-        raise HTTPException(status_code=400, detail="Token de acesso do WhatsApp não configurado.")
-
     try:
-        decrypted_token = decrypt_token(current_user.wbp_access_token)
         templates = await whatsapp_service.get_templates_official(
             business_account_id=current_user.wbp_business_account_id,
-            access_token=decrypted_token
+            access_token=settings.WBP_ACCESS_TOKEN
         )
         return templates
     except (MessageSendError, ValueError) as e:
@@ -591,15 +588,8 @@ async def download_media_directly(
     # 1. Validações de segurança e configuração
     db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, user_id=current_user.id)
     if not db_atendimento: raise HTTPException(status_code=404, detail="Atendimento não encontrado.")
-    if not current_user.wbp_access_token: raise HTTPException(status_code=403, detail="Token não configurado.")
 
-    # Descriptografa o token de acesso do WhatsApp armazenado no banco
-    decrypted_token = "TOKEN_ERRO_DECRIPT"
-    try:
-        decrypted_token = decrypt_token(current_user.wbp_access_token)
-    except Exception as e:
-        logger.error(f"Erro ao descriptografar token p/ download (User {current_user.id}): {e}")
-        raise HTTPException(status_code=500, detail="Erro nas credenciais.")
+    decrypted_token = settings.WBP_ACCESS_TOKEN
 
     # 2. Processo de download via proxy
     media_url: Optional[str] = None
@@ -645,8 +635,21 @@ async def download_media_directly(
              media_bytes = media_response.content
              logger.info(f"Mídia {media_id} baixada ({len(media_bytes)} bytes, tipo: {content_type}). Retornando para o frontend.")
 
+             # Tenta encontrar o nome do arquivo no histórico da conversa
+             filename = "download"
+             try:
+                 conversa_list = json.loads(db_atendimento.conversa or "[]")
+                 for msg in conversa_list:
+                     if msg.get("media_id") == media_id:
+                         filename = msg.get("filename") or "download"
+                         break
+             except Exception as e:
+                 logger.warning(f"Erro ao buscar filename para media {media_id}: {e}")
+
+             headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+
              # d. Retorna os bytes do arquivo diretamente para o navegador do usuário
-             return Response(content=media_bytes, media_type=content_type)
+             return Response(content=media_bytes, media_type=content_type, headers=headers)
 
     # Tratamento de erros HTTP que podem ocorrer na comunicação com a API da Meta
     except httpx.HTTPStatusError as e:
@@ -702,10 +705,9 @@ async def send_template_message(
         content_for_history = f"[Template: {payload.template_name}]\n"
         try:
             # 1. Busca a definição do template para obter o texto original
-            decrypted_token = decrypt_token(current_user.wbp_access_token)
             templates = await whatsapp_service.get_templates_official(
                 business_account_id=current_user.wbp_business_account_id,
-                access_token=decrypted_token
+                access_token=settings.WBP_ACCESS_TOKEN
             )
             
             target_template = next((t for t in templates if t['name'] == payload.template_name and t['language'] == payload.language_code), None)

@@ -46,10 +46,6 @@ async def create_user_by_admin(
 
     hashed_password = get_password_hash(user_data.pop("password"))
 
-    # Criptografa o token de acesso da WBP se for fornecido
-    if "wbp_access_token" in user_data and user_data["wbp_access_token"]:
-        user_data["wbp_access_token"] = encrypt_token(user_data["wbp_access_token"])
-    
     new_user = models.User(
         hashed_password=hashed_password,
         **user_data
@@ -76,15 +72,22 @@ async def update_user_by_admin(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     update_data = user_in.model_dump(exclude_unset=True)
+
+    if "email" in update_data and update_data["email"] != user_to_update.email:
+        existing_user = await crud_user.get_user_by_email(db, email=update_data["email"])
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already registered.",
+            )
+
     # Garante que não tentamos salvar is_superuser no banco
     update_data.pop("is_superuser", None)
 
-    if "password" in update_data and update_data["password"]:
-        user_to_update.hashed_password = get_password_hash(update_data.pop("password"))
-
-    # Criptografa o token de acesso da WBP se for fornecido
-    if "wbp_access_token" in update_data and update_data["wbp_access_token"]:
-        update_data["wbp_access_token"] = encrypt_token(update_data["wbp_access_token"])
+    if "password" in update_data:
+        password = update_data.pop("password")
+        if password:
+            user_to_update.hashed_password = get_password_hash(password)
 
     for field, value in update_data.items():
         if hasattr(user_to_update, field):

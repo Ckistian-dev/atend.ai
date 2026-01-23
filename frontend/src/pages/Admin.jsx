@@ -25,7 +25,6 @@ const UserModal = ({ user, onSave, onClose, isCreating = false }) => {
         followup_active: user?.followup_active ?? false,
         default_persona_id: user?.default_persona_id || '',
         wbp_phone_number_id: user?.wbp_phone_number_id || '',
-        wbp_access_token: '', // Sempre vazio por segurança
         wbp_business_account_id: user?.wbp_business_account_id || '',
     });
     
@@ -138,9 +137,6 @@ const UserModal = ({ user, onSave, onClose, isCreating = false }) => {
 
             if (!isCreating && !payload.password) {
                 delete payload.password; // Não envia senha em branco na atualização
-            }
-            if (!payload.wbp_access_token) {
-                delete payload.wbp_access_token; // Não envia token em branco
             }
             await onSave(user?.id, payload);
             onClose();
@@ -265,10 +261,6 @@ const UserModal = ({ user, onSave, onClose, isCreating = false }) => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">ID da Conta Business (WBP)</label>
                                 <input type="text" name="wbp_business_account_id" value={formData.wbp_business_account_id} onChange={handleChange} className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Token de Acesso (WBP)</label>
-                                <input type="password" name="wbp_access_token" value={formData.wbp_access_token} onChange={handleChange} placeholder="Deixe em branco para não alterar" className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
                             </div>
                         </div>
                     )}

@@ -89,10 +89,10 @@ class UserCreateByAdmin(UserCreate):
     followup_active: Optional[bool] = False
     followup_config: Optional[Dict[str, Any]] = None
     wbp_phone_number_id: Optional[str] = Field(None, description="ID do Número de Telefone na WhatsApp Business Platform")
-    wbp_access_token: Optional[str] = Field(None, description="Token de Acesso da WBP (fornecer descriptografado, será criptografado)")
     wbp_business_account_id: Optional[str] = Field(None, description="ID da Conta do WhatsApp Business na Meta")
 
 class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
     tokens: Optional[int] = None
     default_persona_id: Optional[int] = None
     agent_running: Optional[bool] = None
@@ -100,7 +100,6 @@ class UserUpdate(BaseModel):
     followup_active: Optional[bool] = None
     followup_config: Optional[Dict[str, Any]] = None
     wbp_phone_number_id: Optional[str] = Field(None, description="ID do Número de Telefone na WhatsApp Business Platform")
-    wbp_access_token: Optional[str] = Field(None, description="Token de Acesso da WBP (fornecer descriptografado, será criptografado)")
     wbp_business_account_id: Optional[str] = Field(None, description="ID da Conta do WhatsApp Business na Meta")
     password: Optional[str] = Field(None, description="Definir uma nova senha para o usuário")
 

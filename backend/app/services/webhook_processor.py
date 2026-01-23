@@ -5,6 +5,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 from typing import Optional, Dict, Any
 
+from app.core.config import settings
 from app.db.database import SessionLocal
 from app.crud import crud_user, crud_atendimento, crud_config
 from app.db import models, schemas
@@ -99,12 +100,12 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
             if media_id:
                 logger.info(f"WBP Webhook: Mídia {msg_type} recebida ({mime_type_original}). Baixando...")
                 
-                if not user.wbp_access_token:
-                    formatted_msg_content = f"[Mídia ({msg_type}) ignorada: Token não configurado]"
+                if not settings.WBP_ACCESS_TOKEN:
+                    formatted_msg_content = f"[Mídia ({msg_type}) ignorada: Token não configurado no .env]"
                 else:
                     try:
-                        # 1. Descriptografa token
-                        decrypted_token = decrypt_token(user.wbp_access_token)
+                        # 1. Pega token do settings
+                        decrypted_token = settings.WBP_ACCESS_TOKEN
                         
                         # 2. Pega URL (Usa o service atualizado)
                         media_url = await whatsapp_service.get_media_url_official(media_id, decrypted_token)

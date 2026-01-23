@@ -6,6 +6,7 @@ import os
 import uuid
 import tempfile
 import asyncio
+from app.core.config import settings
 from app.services.security import decrypt_token
 from app.db import models
 import subprocess
@@ -414,14 +415,10 @@ class WhatsAppService:
         if not user or not number or not text:
              raise ValueError("User, number, and text are required for sending messages.")
         try:
-            if not user.wbp_phone_number_id or not user.wbp_access_token:
-                raise ValueError(f"Usuário {user.id} configurado, mas 'wbp_phone_number_id' ou 'wbp_access_token' não definidos/criptografados.")
-            try:
-                decrypted_token = decrypt_token(user.wbp_access_token)
-            except Exception as decrypt_err:
-                logger.error(f"Falha ao descriptografar WBP token para user {user.id}: {decrypt_err}")
-                raise ValueError(f"Não foi possível descriptografar o token de acesso para enviar mensagem (User {user.id}).") from decrypt_err
-            return await self.send_text_message_official(user.wbp_phone_number_id, decrypted_token, number, text)
+            if not user.wbp_phone_number_id:
+                raise ValueError(f"Usuário {user.id} configurado, mas 'wbp_phone_number_id' não definido.")
+            
+            return await self.send_text_message_official(user.wbp_phone_number_id, settings.WBP_ACCESS_TOKEN, number, text)
 
 
         except MessageSendError as e:
@@ -477,17 +474,11 @@ class WhatsAppService:
                 logger.warning(f"Não foi possível adivinhar o mimetype de {filename}, usando {mimetype}.")
 
         try:
-            if not user.wbp_phone_number_id or not user.wbp_access_token:
-                raise ValueError(f"Usuário {user.id} configurado, mas 'wbp_phone_number_id' ou 'wbp_access_token' não definidos.")
-            
-            try:
-                decrypted_token = decrypt_token(user.wbp_access_token)
-            except Exception as decrypt_err:
-                logger.error(f"Falha ao descriptografar WBP token (envio de mídia) para user {user.id}: {decrypt_err}")
-                raise ValueError(f"Não foi possível descriptografar o token de acesso (User {user.id}).") from decrypt_err
+            if not user.wbp_phone_number_id:
+                raise ValueError(f"Usuário {user.id} configurado, mas 'wbp_phone_number_id' não definido.")
             
             return await self.send_media_message_official(
-                user.wbp_phone_number_id, decrypted_token, number, media_type, 
+                user.wbp_phone_number_id, settings.WBP_ACCESS_TOKEN, number, media_type, 
                 file_bytes, filename, mimetype, caption
             )
 
@@ -513,17 +504,11 @@ class WhatsAppService:
             raise ValueError("User, number, template_name e language_code são obrigatórios.")
 
         try:
-            if not user.wbp_phone_number_id or not user.wbp_access_token:
-                raise ValueError(f"Usuário {user.id} não tem 'wbp_phone_number_id' ou 'wbp_access_token' configurados.")
-
-            try:
-                decrypted_token = decrypt_token(user.wbp_access_token)
-            except Exception as decrypt_err:
-                logger.error(f"Falha ao descriptografar WBP token (template) para user {user.id}: {decrypt_err}")
-                raise ValueError(f"Não foi possível descriptografar o token de acesso (User {user.id}).") from decrypt_err
+            if not user.wbp_phone_number_id:
+                raise ValueError(f"Usuário {user.id} não tem 'wbp_phone_number_id' configurado.")
 
             return await self.send_template_message_official(
-                user.wbp_phone_number_id, decrypted_token, number, template_name, language_code, components
+                user.wbp_phone_number_id, settings.WBP_ACCESS_TOKEN, number, template_name, language_code, components
             )
         except (MessageSendError, ValueError) as e:
             raise e

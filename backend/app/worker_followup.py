@@ -187,9 +187,17 @@ async def process_followups_for_user(user: models.User, db: AsyncSession):
                 user=user
             )
 
+            action = ia_response.get("action")
             message_to_send = ia_response.get("mensagem_para_enviar")
 
-            if message_to_send:
+            if action == "skip":
+                logger.info(f"Follow-up (At. {at.id}): IA decidiu pular o follow-up (Risco de loop/insatisfação).")
+                continue
+
+            elif message_to_send:
+                # Limpa a mensagem (remove backslashes e corrige newlines literais)
+                message_to_send = message_to_send.replace('\\n', '\n').replace('\\', '')
+                
                 sent_info = await whatsapp_service.send_text_message(user, at.whatsapp, message_to_send)
                 
                 new_message = {

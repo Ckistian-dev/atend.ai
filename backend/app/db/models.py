@@ -17,7 +17,6 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
 
     wbp_phone_number_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True, comment="ID do Número de Telefone na WhatsApp Business Platform")
-    wbp_access_token: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True, comment="Token de Acesso da WBP (CR IPTOGRAFADO!)")
     wbp_business_account_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="ID da Conta do WhatsApp Business na Meta")
 
     agent_running: Mapped[bool] = mapped_column(default=False, nullable=False, server_default="false")

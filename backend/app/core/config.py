@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     SECRET_KEY: str # Usada para assinar os tokens JWT
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7 # 1 semana
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 31 # 1 Mês
 
     # --- Configurações RabbitMQ ---
     RABBITMQ_URL: str
@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     # --- Configurações da API Oficial (WhatsApp Business Platform) ---
     WBP_VERIFY_TOKEN: str # Token de verificação que VOCÊ CRIA para configurar o webhook na Meta
     WBP_WEBHOOK_URL: str # A URL COMPLETA do seu endpoint de webhook oficial (ex: https://seuapp.com/api/v1/webhook/official/webhook)
+    WBP_ACCESS_TOKEN: str
 
     ENCRYPTION_KEY: str      # Chave para criptografar tokens sensíveis (Google Refresh Token, WBP Access Token)
 

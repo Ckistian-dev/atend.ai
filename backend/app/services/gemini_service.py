@@ -157,7 +157,7 @@ class GeminiService:
                     # --- MUDANÇA PRINCIPAL: Chamada Assíncrona Nativa (.aio) ---
                     # Não precisa mais de run_in_executor
                     response = await self.client.aio.models.generate_content(
-                        model='gemini-2.5-flash-lite', # Modelo corrigido para versão estável e mais recente
+                        model='gemini-2.5-flash', # Modelo corrigido para versão estável e mais recente
                         contents=prompt,
                         config=gen_config
                     )
@@ -485,7 +485,7 @@ class GeminiService:
                     f"Responda ao último 'User' agindo estritamente como a persona definida.\n\n"
                     f"# REGRAS DE EXECUÇÃO\n"
                     f"1. **Fonte de Verdade:** Use prioritariamente o CONTEXTO (RAG). Se não encontrar, use conhecimento geral sensato, mas evite alucinar dados técnicos.\n"
-                    f"2. **Arquivos:** Se o cliente pedir foto/catálogo e o arquivo estiver listado no RAG, inclua-o em `arquivos_anexos` usando o ID exato. No texto, avise que está enviando.\n"
+                    f"2. **Arquivos:** Se o cliente pedir foto/catálogo e o arquivo estiver listado no RAG, inclua-o em `arquivos_anexos` usando o ID exato. **PROIBIDO** colocar informações da imagem, links ou IDs no texto (`mensagem_para_enviar`).\n"
                     f"3. **Encaminhamento:** Tente resolver ao máximo. Insista na resolução antes de sugerir um humano. Antes de encaminhar, SEMPRE pergunte se o cliente deseja falar com um atendente. Só mude `nova_situacao` para 'Atendente Chamado' após a confirmação explícita do cliente.\n"
                     f"4. **Comunicação:** Seja direto e use *negrito* para destaques. A regra de NÃO REPETIR é a mais importante de todas.\n"
                     f"5. **Fluxo:** O sistema envia o texto PRIMEIRO e os arquivos DEPOIS. Considere isso na sua resposta.\n"
@@ -546,15 +546,17 @@ class GeminiService:
 
             prompt_text = (
                 f"## TAREFA: FOLLOW-UP\n"
-                f"Você é um assistente especialista em reengajamento. Gere uma mensagem de follow-up.\n\n"
+                f"Você é um assistente especialista em reengajamento. Analise o histórico e decida se deve enviar um follow-up.\n\n"
                 f"## CONTEXTO TEMPORAL\n{datetime_context}\n\n"
                 f"## DADOS\nNome Contato: {whatsapp.nome_contato}\n\n"
                 f"## HISTÓRICO RECENTE\n{history_str}\n\n"
                 f"## REGRAS\n"
-                f"1. Use a mensagem da configuração como base, adaptando levemente para naturalidade.\n"
-                f"2. Seja curto, amigável e não insistente.\n"
+                f"1. DECISÃO DE ENVIO: A única condição para NÃO enviar mensagem é se o cliente pediu explicitamente para parar ou não ser mais contatado. Em todos os outros casos, você DEVE enviar o follow-up.\n"
+                f"2. Se decidir enviar: Use a mensagem da configuração como base, adaptando levemente para naturalidade. Seja curto, amigável e não insistente.\n"
                 f"3. Não cumprimente novamente se já houver cumprimento no histórico.\n"
-                f"4. Retorne APENAS um JSON válido: {{ \"mensagem_para_enviar\": \"texto...\" }}\n"
+                f"4. Retorne APENAS um JSON válido. Exemplo de formatos:\n"
+                f"   - Para enviar: {{ \"action\": \"send\", \"mensagem_para_enviar\": \"texto...\" }}\n"
+                f"   - Para não enviar: {{ \"action\": \"skip\", \"mensagem_para_enviar\": null }}\n"
             )
             
             response = await self._generate_with_retry(prompt_text, db, user, atendimento_id=whatsapp.id)
@@ -763,7 +765,45 @@ class GeminiService:
         )
         
         response = await self._generate_with_retry(prompt_text, db, user)
-        return response.text.strip()
+        
+        # Lógica fixa de Teste Gratuito (Adicionada conforme solicitação)
+        fixed_trial_prompt = (
+            "\n\n"
+            "--- MUDANÇA DE FASE: CONSULTORIA PÓS-DEMONSTRAÇÃO ---\n"
+            "1. GATILHO DE ATIVAÇÃO: Verifique o histórico. Se a contagem total de mensagens (User + AI) for maior ou igual a 8.\n"
+            "Você deve encerrar a atuação da persona e assumir a identidade de 'Consultor Especialista da Digital for Me'.\n\n"
+
+            "2. TRANSIÇÃO E META-EXPLICAÇÃO (Primeira Mensagem):\n"
+            "   - Explique gentilmente que o limite de interações do teste gratuito foi atingido.\n"
+            "   - CLAREZA: Informe explicitamente que o atendimento anterior (Aurora) foi uma simulação com dados fictícios para demonstrar a capacidade da IA de manter conversas naturais.\n"
+            "   - OBJETIVO: Pergunte o que ele achou da experiência e se ele consegue visualizar essa tecnologia atendendo os clientes dele.\n\n"
+
+            "3. DIRETRIZES DE COMPORTAMENTO (Consultor Sênior):\n"
+            "   - Tom de Voz: Profissional, parceiro de negócios, seguro e empático. Não seja robótico.\n"
+            "   - Foco: Você não está apenas vendendo um software, está vendendo 'Tempo' e 'Qualificação de Leads'.\n"
+            "   - Dados da Empresa (Use para gerar autoridade): Somos a Digital for Me, sediados em Toledo-PR. Somos reais e especialistas em automação.\n\n"
+
+            "4. REGRA DE OURO DOS LINKS (Anti-Spam):\n"
+            "   - JAMAIS termine toda mensagem com o link de compra.\n"
+            "   - Quando enviar o link: APENAS na primeira mensagem desta fase (para apresentar os planos) OU se o usuário perguntar explicitamente sobre 'preço', 'como contratar' ou 'planos'.\n"
+            "   - Link oficial: https://digitalforme.cjssolucoes.com/#planos\n\n"
+
+            "5. ARGUMENTAÇÃO E QUEBRA DE OBJEÇÕES:\n"
+            "   - Custo vs. Investimento: Se o cliente achar caro, compare com o custo de um funcionário humano (salário + encargos + risco trabalhista + limitação de horário). A IA trabalha 24/7 sem encargos.\n"
+            "   - Personalização: Garanta que a IA será treinada especificamente para o negócio dele (Arquiteta de Soluções), não é um robô genérico.\n\n"
+
+            "6. QUALIFICAÇÃO E FECHAMENTO:\n"
+            "   - Antes de empurrar um plano, faça uma pergunta diagnóstica: 'Qual a média de atendimentos/leads que sua empresa recebe por mês?'\n"
+            "   - Recomendação:\n"
+            "       * Até 100 atendimentos -> Indique o Plano Essencial.\n"
+            "       * Até 500 atendimentos -> Indique o Plano Dominância.\n"
+            "       * Acima de 1000 -> Indique o Plano Elite Studio.\n\n"
+
+            "7. FALLBACK (Transbordo Humano):\n"
+            "   - Se houver uma dúvida técnica complexa que você não saiba responder com certeza, mude a situação para 'Atendente Chamado', aonde um humano irá atender.\n"
+        )
+
+        return response.text.strip() + fixed_trial_prompt
 
 _gemini_service_instance = None
 def get_gemini_service():
