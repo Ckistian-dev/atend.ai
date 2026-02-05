@@ -13,6 +13,7 @@ import Followup from './pages/Followup';
 // Importação dos componentes de layout
 import MainLayout from './components/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
+import GlobalNotificationHandler from './components/GlobalNotificationHandler';
 
 function App() {
   // A lógica de autenticação permanece a mesma
@@ -22,7 +23,7 @@ function App() {
       
       {/* Rotas protegidas dentro do layout principal */}
       {/* O MainLayout agora busca seus próprios dados (api_type) */}
-      <Route path="/" element={ <ProtectedRoute> <MainLayout /> </ProtectedRoute> }>
+      <Route path="/" element={ <ProtectedRoute> <GlobalNotificationHandler /> <MainLayout /> </ProtectedRoute> }>
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="atendimentos" element={<Atendimentos />} />
         <Route path="mensagens" element={<Mensagens />} />

@@ -157,7 +157,9 @@ function Configs() {
         setError('');
         try {
             const payload = { config_id: selectedConfig.id, spreadsheet_id: targetId, type: type };
-            const response = await api.post('/configs/sync_sheet', payload);
+            const response = await api.post('/configs/sync_sheet', payload, {
+                timeout: 1200000 // 20 minutos para planilhas grandes
+            });
 
             if (type === 'system') {
                 // Atualiza o form data localmente para garantir integridade ao salvar depois
@@ -181,7 +183,9 @@ function Configs() {
         setError('');
         try {
             const payload = { config_id: selectedConfig.id, drive_id: driveFolderId };
-            const response = await api.post('/configs/sync_drive', payload);
+            const response = await api.post('/configs/sync_drive', payload, {
+                timeout: 1200000 // 20 minutos para pastas grandes
+            });
 
             const filesCount = response.data.files_found || 0;
 

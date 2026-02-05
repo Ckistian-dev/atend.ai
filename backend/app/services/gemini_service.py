@@ -369,7 +369,7 @@ class GeminiService:
                 models.KnowledgeVector.origin == origin
             ).order_by(
                 models.KnowledgeVector.embedding.cosine_distance(query_embedding)
-            ).limit(10)
+            ).limit(5)
             
             result_origin = await db.execute(stmt_origin)
             vectors = result_origin.scalars().all()
@@ -381,12 +381,43 @@ class GeminiService:
         chunks = [v.content for v in final_vectors]
         unique_chunks = list(dict.fromkeys(chunks))
         
-        return "\n".join(unique_chunks)
+        # Formatação inteligente: Agrupa chunks com cabeçalhos repetidos
+        formatted_text = ""
+        previous_lines = []
+
+        for chunk in unique_chunks:
+            current_lines = chunk.strip().split('\n')
+            
+            # Verifica quantas linhas iniciais são iguais ao chunk anterior
+            match_count = 0
+            min_len = min(len(previous_lines), len(current_lines))
+            
+            for i in range(min_len):
+                if previous_lines[i] == current_lines[i]:
+                    match_count += 1
+                else:
+                    break
+            
+            # Se houver correspondência de cabeçalho (pelo menos 1 linha), adiciona apenas o restante
+            if match_count > 0:
+                new_content = "\n".join(current_lines[match_count:])
+                if new_content:
+                    formatted_text += "\n" + new_content
+            else:
+                # Se não houver correspondência, adiciona o chunk inteiro
+                if formatted_text:
+                    formatted_text += "\n\n"
+                formatted_text += chunk.strip()
+            
+            previous_lines = current_lines
+
+        return formatted_text
 
     def _get_datetime_context(self, user: models.User) -> str:
         """Gera o contexto de data e hora atual, incluindo dia da semana em PT-BR."""
         now_utc = datetime.now(timezone.utc)
-        datetime_context = f"Data e Hora Atuais (UTC): {now_utc.strftime('%Y-%m-%d %H:%M:%S %Z')}\n"
+        
+        datetime_context = f"Data e Hora Atuais (UTC): {now_utc.strftime('%Y-%m-%d %H:%M:%S')} UTC\n"
 
         user_timezone_str = "America/Sao_Paulo" # Default
         if user.followup_config and isinstance(user.followup_config, dict):
@@ -480,7 +511,7 @@ class GeminiService:
                     f"- **Banalidade Controlada:** Em vez de 'Sinto muito pelo inconveniente causado', use algo mais leve como 'Poxa, entendo o problema' ou 'Que chato isso, vamos resolver'. Evite desculpas exageradas e submissas.\n"
                     f"- **Proibido Repetir Nomes:** Use o nome do cliente APENAS na primeira saudação do dia. Nas mensagens seguintes, JAMAIS comece com 'Ah, {whatsapp.nome_contato}', 'Olá {whatsapp.nome_contato}' ou similares. Fale direto.\n"
                     f"- **Zero Interjeições Artificiais:** Não comece frases com 'Ah, entendo!', 'Compreendo perfeitamente', 'Excelente pergunta'. Isso soa falso. Vá direto para a resposta técnica/comercial.\n"
-                    f"- **Parágrafos Únicos:** Tente responder tudo em UM ou TRES parágrafos no máximo. Evite quebrar a resposta em várias linhas curtas para não gerar spam de notificações.\n"
+                    f"- **Parágrafos Únicos:** Tente responder tudo em UM ou TRES parágrafos no máximo. Evite quebrar a resposta em várias linhas curtas para não gerar spam de notificações.\n\n"
                     f"# TAREFA\n"
                     f"Responda ao último 'User' agindo estritamente como a persona definida.\n\n"
                     f"# REGRAS DE EXECUÇÃO\n"
@@ -785,8 +816,16 @@ class GeminiService:
 
             "4. REGRA DE OURO DOS LINKS (Anti-Spam):\n"
             "   - JAMAIS termine toda mensagem com o link de compra.\n"
-            "   - Quando enviar o link: APENAS na primeira mensagem desta fase (para apresentar os planos) OU se o usuário perguntar explicitamente sobre 'preço', 'como contratar' ou 'planos'.\n"
-            "   - Link oficial: https://digitalforme.cjssolucoes.com/#planos\n\n"
+            "   - Quando enviar o link: APENAS se o usuário perguntar explicitamente sobre 'preço', 'como contratar' ou 'planos', ou após recomendar um plano específico.\n"
+            "   - Links de Pagamento (PayPal) e Detalhes dos Planos:\n"
+            "       * CRM Start (R$ 97,00/Mês): https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-8CH598740K3040248NGB2CRA\n"
+            "         (Inclui: Plataforma CRM Completa, Gestão de Funil de Vendas, Integração WhatsApp Oficial, Créditos para Teste de IA, Suporte IA)\n"
+            "       * Plano Essencial (R$ 297,00/Mês): https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-1XB92324FX039614ENGB2DEA\n"
+            "         (Inclui: Atendimento Humanizado Ativo, 50% Reversão em Créditos, Integração WhatsApp Oficial, Plataforma CRM Completa, Configuração Guiada Inclusa)\n"
+            "       * Plano Dominância (R$ 597,00/Mês): https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-24K680067A731431ENGB2DSI\n"
+            "         (Inclui: Tudo do Plano Essencial, Acesso antecipado Prospect AI, Prospecção de Novos Leads, 100% Reversão em Créditos, Suporte Prioritário)\n"
+            "       * Plano Elite Studio (A Partir de R$ 997,00/Mês): https://www.paypal.com/webapps/billing/plans/subscribe?plan_id=P-3VJ82116B1880631XNGB2D5Y\n"
+            "         (Inclui: Voz Ativa em Futuros Desenvolvimentos, Personalizações sob Demanda, Engenharia de Prompt Dedicada, Estratégias de Alta Escala, 100% Reversão em Créditos, Acesso aos Bastidores)\n\n"
 
             "5. ARGUMENTAÇÃO E QUEBRA DE OBJEÇÕES:\n"
             "   - Custo vs. Investimento: Se o cliente achar caro, compare com o custo de um funcionário humano (salário + encargos + risco trabalhista + limitação de horário). A IA trabalha 24/7 sem encargos.\n"
@@ -797,7 +836,8 @@ class GeminiService:
             "   - Recomendação:\n"
             "       * Até 100 atendimentos -> Indique o Plano Essencial.\n"
             "       * Até 500 atendimentos -> Indique o Plano Dominância.\n"
-            "       * Acima de 1000 -> Indique o Plano Elite Studio.\n\n"
+            "       * Acima de 1000 -> Indique o Plano Elite Studio.\n"
+            "   - Ao recomendar o plano, envie o link de pagamento correspondente listado na seção 4.\n\n"
 
             "7. FALLBACK (Transbordo Humano):\n"
             "   - Se houver uma dúvida técnica complexa que você não saiba responder com certeza, mude a situação para 'Atendente Chamado', aonde um humano irá atender.\n"

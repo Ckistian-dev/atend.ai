@@ -29,22 +29,46 @@ SITUATIONS = [
 
 # --- Funções Auxiliares de Engenharia de Dados ---
 
-def format_row_dense(sheet_name: str, row: Dict[str, Any]) -> str:
+def format_sheet_to_csv_system(sheet_name: str, rows: List[Dict[str, Any]]) -> str:
     """
-    Converte uma linha de dados em string densa 'Pipe & Header'.
-    Regra: Ignora chaves com valores nulos/vazios para economizar tokens.
+    Converte uma aba inteira em formato CSV para o System Prompt.
+    Formato:
+    # Nome da Aba
+    Header1|Header2
+    Val1|Val2
     """
-    parts = []
-    for key, val in row.items():
-        if val is not None:
-            val_str = str(val).strip()
-            if val_str:
-                parts.append(f"{key}: {val_str}")
-    
-    if not parts:
+    if not rows:
         return ""
     
-    return f"[{sheet_name.upper()}] " + " | ".join(parts)
+    headers = list(rows[0].keys())
+    lines = [f"# {sheet_name}", "|".join(headers)]
+    
+    for row in rows:
+        values = [str(row.get(h, "") or "").strip().replace("\n", "\\n").replace("\r", "") for h in headers]
+        lines.append("|".join(values))
+        
+    return "\n".join(lines)
+
+def format_row_to_csv_rag(sheet_name: str, row: Dict[str, Any]) -> str:
+    """
+    Converte uma linha em formato CSV com cabeçalho para o RAG.
+    Garante contexto para o embedding mantendo o par Header/Value.
+    Ignora colunas vazias nesta linha para economizar tokens.
+    """
+    headers = []
+    values = []
+    
+    for key, val in row.items():
+        if val is not None:
+            val_str = str(val).strip().replace("\n", "\\n").replace("\r", "")
+            if val_str:
+                headers.append(key)
+                values.append(val_str)
+    
+    if not headers:
+        return ""
+    
+    return f"# {sheet_name}\n" + "|".join(headers) + "\n" + "|".join(values)
 
 def flatten_drive_tree(node: Dict[str, Any], path: str = "") -> List[str]:
     """Recursivamente achata a árvore de arquivos em linhas de texto estruturado."""
@@ -54,24 +78,26 @@ def flatten_drive_tree(node: Dict[str, Any], path: str = "") -> List[str]:
     # Constrói caminho visual (ex: Marketing > Campanhas)
     current_path = f"{path} > {current_name}" if path else current_name
     
-    # Define Categoria e Subcategoria baseado na estrutura de pastas
-    path_parts = current_path.split(" > ")
-    categoria = path_parts[0] if len(path_parts) > 0 else "Geral"
-    subcategoria = path_parts[1] if len(path_parts) > 1 else ""
-    
     for f in node.get("arquivos", []):
-        # Formato denso e rico para RAG
-        parts = []
-        parts.append(f"Categoria: {categoria}")
-        if subcategoria: parts.append(f"Subcategoria: {subcategoria}")
+        # Formato CSV estilo Sheets RAG
+        row_data = {
+            "Categorias": current_path,
+            "Arquivo": f.get('nome'),
+            "Tipo": f.get('tipo'),
+            "ID": f.get('id')
+        }
         
-        if f.get('nome'): parts.append(f"Arquivo: {f.get('nome')}")
-        if f.get('tipo'): parts.append(f"Tipo: {f.get('tipo')}")
-        if f.get('id'): parts.append(f"ID: {f.get('id')}") # ID é crucial para o envio
-        if f.get('link'): parts.append(f"Link: {f.get('link')}")
-        parts.append(f"Pasta: {current_path}")
+        headers = []
+        values = []
         
-        lines.append(f"[DRIVE] " + " | ".join(parts))
+        for key, val in row_data.items():
+            if val:
+                val_str = str(val).strip().replace("\n", "\\n").replace("\r", "")
+                headers.append(key)
+                values.append(val_str)
+        
+        if headers:
+            lines.append(f"# DRIVE\n" + "|".join(headers) + "\n" + "|".join(values))
         
     for sub in node.get("subpastas", []):
         lines.extend(flatten_drive_tree(sub, current_path))
@@ -152,24 +178,23 @@ async def sync_google_sheet(
 
         # --- Lógica Separada por Tipo ---
         if sync_type == "system":
-            # MODO SYSTEM: Todas as abas viram Prompt Fixo
+            # MODO SYSTEM: Todas as abas viram Prompt Fixo (CSV)
             for sheet_name, rows in sheet_data_json.items():
-                formatted_lines = [line for row in rows if (line := format_row_dense(sheet_name, row))]
-                if formatted_lines:
-                    section = f"## {sheet_name}\n" + "\n".join(formatted_lines)
-                    prompt_buffer.append(section)
+                csv_section = format_sheet_to_csv_system(sheet_name, rows)
+                if csv_section:
+                    prompt_buffer.append(csv_section)
             
             # Atualiza System Prompt e JSON de visualização
             db_config.prompt = "\n\n".join(prompt_buffer)
 
         elif sync_type == "rag":
-            # MODO RAG: Todas as abas viram Vetores
+            # MODO RAG: Todas as abas viram Vetores (CSV por linha)
             rag_items = []
             for sheet_name, rows in sheet_data_json.items():
-                formatted_lines = [line for row in rows if (line := format_row_dense(sheet_name, row))]
-                if formatted_lines:
-                    for line in formatted_lines:
-                        rag_items.append({"content": line, "origin": sheet_name})
+                for row in rows:
+                    csv_content = format_row_to_csv_rag(sheet_name, row)
+                    if csv_content:
+                        rag_items.append({"content": csv_content, "origin": sheet_name})
             
             # Processamento em Lote dos Embeddings
             if rag_items:

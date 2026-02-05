@@ -1,7 +1,5 @@
-# A linha 'version' foi removida por ser obsoleta
-
 services:
-  # --- NOVO SERVIÇO: Banco de Dados PostgreSQL ---
+  # --- Banco de Dados ---
   postgres:
     image: pgvector/pgvector:pg15
     container_name: atendai_db
@@ -10,18 +8,18 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
     ports:
-      # Expõe a porta para que você possa conectar com um cliente de DB localmente
       - "5434:5432"
     volumes:
-      # Garante que os dados do banco sobrevivam a reinicializações
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - atendai_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d atendai_local"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # --- NOVO SERVIÇO: RabbitMQ ---
+  # --- RabbitMQ ---
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: atendai_rabbitmq
@@ -29,24 +27,20 @@ services:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
     ports:
-      # Porta para a aplicação se conectar
       - "5672:5672"
-      # Porta para o painel de gerenciamento web
       - "15672:15672"
     volumes:
-      # Garante que as filas e mensagens sobrevivam a reinicializações
       - rabbitmq_data:/var/lib/rabbitmq/
-    # --- HEALTHCHECK ADICIONADO ---
-    # Esta seção define como o Docker deve verificar se o RabbitMQ está pronto.
+    networks:
+      - atendai_network
     healthcheck:
-      # Comando que verifica se a porta principal do RabbitMQ está respondendo.
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
-      interval: 10s # Verifica a cada 10 segundos.
-      timeout: 5s   # Considera falha se o comando demorar mais de 5 segundos.
-      retries: 5    # Tenta 5 vezes antes de marcar o contêiner como 'unhealthy'.
-      start_period: 20s # Dá 20 segundos de carência para o RabbitMQ iniciar antes de começar as verificações.
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
-  # Contêiner da API (FastAPI)
+  # --- API ---
   api:
     build: . 
     container_name: atendai_api
@@ -55,6 +49,8 @@ services:
       - .:/app
     ports:
       - "8000:8000"
+    networks:
+      - atendai_network
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
@@ -64,19 +60,20 @@ services:
       - ADMIN_EMAIL=${ADMIN_EMAIL}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
     depends_on:
-      # A API só inicia DEPOIS que o RabbitMQ e o Postgres estiverem prontos.
       rabbitmq:
         condition: service_healthy
       postgres:
         condition: service_healthy
 
-  # --- MUDANÇA AQUI: 'worker' foi renomeado para 'worker-webhook' ---
+  # --- Workers ---
   worker-webhook:
     build: . 
-    container_name: atendai_worker_webhook # Nome do contêiner atualizado
-    command: ["python", "-m", "app.worker_webhook"] # Comando aponta para o NOVO arquivo
+    container_name: atendai_worker_webhook
+    command: ["python", "-m", "app.worker_webhook"]
     volumes:
       - .:/app
+    networks:
+      - atendai_network
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
@@ -84,19 +81,19 @@ services:
       - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
       - MAX_MESSAGE_AGE_SECONDS=${MAX_MESSAGE_AGE_SECONDS}
     depends_on:
-      # O worker só inicia DEPOIS que o RabbitMQ e o Postgres estiverem prontos.
       rabbitmq:
         condition: service_healthy
       postgres:
         condition: service_healthy
 
-  # --- NOVO SERVIÇO: O Agente de IA ---
   worker-agent:
-    build: . # Usa a mesma imagem Docker
-    container_name: atendai_worker_agent # Novo nome de contêiner
-    command: ["python", "-m", "app.worker_agent"] # Comando aponta para o NOVO arquivo
+    build: . 
+    container_name: atendai_worker_agent
+    command: ["python", "-m", "app.worker_agent"]
     volumes:
       - .:/app
+    networks:
+      - atendai_network
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
@@ -109,17 +106,17 @@ services:
       - FRONTEND_URL=${FRONTEND_URL}
       - GOOGLE_SERVICE_ACCOUNT_JSON=${GOOGLE_SERVICE_ACCOUNT_JSON}
     depends_on:
-      # O agente depende apenas do banco de dados para iniciar.
       postgres:
         condition: service_healthy
-  
-  # --- NOVO SERVIÇO: O Worker de Follow-up ---
+
   worker-followup:
     build: .
     container_name: atendai_worker_followup
     command: ["python", "-m", "app.worker_followup"]
     volumes:
       - .:/app
+    networks:
+      - atendai_network
     environment:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
@@ -133,13 +130,14 @@ services:
       rabbitmq:
         condition: service_healthy
 
-# --- Túnel Serveo (Expõe a App para Webhook) ---
   tunnel:
     image: alpine:latest
     container_name: serveo_tunnel
     restart: always
     volumes:
       - ./data/ssh:/root/.ssh
+    networks:
+      - atendai_network
     environment:
       - AUTOSSH_GATETIME=0
     command: >
@@ -151,12 +149,17 @@ services:
       -o 'ConnectTimeout 10' 
       -o 'ExitOnForwardFailure yes' 
       -o 'StrictHostKeyChecking=no' 
+      -p 22
       -R ${SERVEO_SUBDOMAIN}:80:api:8000 serveo.net"
     depends_on:
-      - api
-      
+      api:
+        condition: service_started
+
+# --- Definição das Redes e Volumes ---
+networks:
+  atendai_network:
+    driver: bridge
+
 volumes:
-  # Volume para persistir os dados do RabbitMQ
   rabbitmq_data:
-  # --- NOVO VOLUME para persistir os dados do PostgreSQL ---
   postgres_data:

@@ -166,6 +166,7 @@ function Mensagens() {
                     const isNewLoad = limit === 20;
 
                     const newItems = serverData.items;
+
                     let combinedItems;
 
                     if (isNewLoad) {
@@ -241,6 +242,31 @@ function Mensagens() {
             isMounted = false;
             clearTimeout(timeoutId);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [fetchData]);
+
+    // --- NOVO: Polling de Background para Notificações e Título ---
+    useEffect(() => {
+        const isMountedRef = { current: true };
+        let timeoutId;
+
+        const backgroundPoll = async () => {
+            // Executa apenas se estiver em segundo plano para manter notificações e título atualizados
+            // O polling principal (acima) já cuida quando está visível
+            if (document.hidden) {
+                await fetchData(false, isMountedRef);
+            }
+
+            if (isMountedRef.current) {
+                timeoutId = setTimeout(backgroundPoll, 5000);
+            }
+        };
+
+        timeoutId = setTimeout(backgroundPoll, 5000);
+
+        return () => {
+            isMountedRef.current = false;
+            clearTimeout(timeoutId);
         };
     }, [fetchData]);
 
