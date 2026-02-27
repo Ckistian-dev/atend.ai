@@ -51,17 +51,16 @@ class GeminiService:
         self._initialize_model()
 
     def _initialize_model(self):
-        """Inicializa o cliente Gemini com a chave atual usando o novo SDK."""
+        """Inicializa o cliente Gemini."""
         try:
             current_key = self.api_keys[self.current_key_index]
             
-            # NOVO SDK: Instancia o Client
-            # http_options={'api_version': 'v1alpha'} pode ser usado se precisar de recursos beta
+            # Instanciação padrão (o SDK escolhe a versão correta para o modelo estável)
             self.client = genai.Client(api_key=current_key)
             
-            logger.info(f"✅ Cliente Gemini (New SDK) inicializado com sucesso (chave índice {self.current_key_index}).")
+            logger.info(f"✅ Cliente Gemini inicializado (chave índice {self.current_key_index}).")
         except Exception as e:
-            logger.error(f"🚨 ERRO CRÍTICO ao configurar o Gemini com a chave índice {self.current_key_index}: {e}", exc_info=True)
+            logger.error(f"🚨 ERRO CRÍTICO ao configurar o Gemini: {e}")
             raise
 
     def _rotate_key(self):
@@ -162,6 +161,18 @@ class GeminiService:
                         config=gen_config
                     )
                     
+                    # --- DEBUG: LOG RESPONSE ---
+                    try:
+                        timestamp_resp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        resp_msg = f"\n{'='*20} RESPOSTA DA IA [{timestamp_resp}] {'='*20}\n"
+                        resp_msg += f"{response.text}\n"
+                        resp_msg += f"{'='*60}\n"
+                        
+                        with open("last_prompt.txt", "a", encoding="utf-8") as f:
+                            f.write(resp_msg)
+                    except Exception as e:
+                        print(f"Erro ao salvar resposta no log: {e}")
+
                     # --- LÓGICA DE TOKEN (ODÔMETRO) ---
                     # Extrai o uso real de tokens da resposta do Gemini
                     usage_metadata = response.usage_metadata
@@ -297,12 +308,21 @@ class GeminiService:
             return f"[Erro ao processar mídia: {mime_type}]"
 
     async def generate_embedding(self, text: str) -> List[float]:
-        """Gera embedding para um texto usando o modelo do Google (text-embedding-004)."""
+        """
+        Gera embedding usando o modelo gemini-embedding-001.
+        Força 768 dimensões para compatibilidade e eficiência.
+        """
         try:
-            # O novo SDK usa client.aio.models.embed_content
+            # Configuração para reduzir de 3072 para 768 dimensões (Matryoshka)
+            # Isso economiza 4x de espaço no banco e mantém a performance.
+            embed_config = types.EmbedContentConfig(
+                output_dimensionality=768
+            )
+
             response = await self.client.aio.models.embed_content(
-                model="text-embedding-004",
-                contents=text
+                model="gemini-embedding-001",
+                contents=text,
+                config=embed_config
             )
             if response.embeddings:
                 return response.embeddings[0].values
@@ -312,17 +332,24 @@ class GeminiService:
             return []
 
     async def generate_embeddings_batch(self, texts: List[str], batch_size: int = 100) -> List[List[float]]:
-        """Gera embeddings para uma lista de textos em lotes (batching)."""
+        """
+        Gera embeddings em lote usando gemini-embedding-001 com 768 dimensões.
+        """
         all_embeddings = []
         
+        # Configuração para 768 dimensões
+        embed_config = types.EmbedContentConfig(
+            output_dimensionality=768
+        )
+
         # Divide a lista total em pedaços menores (chunks) para respeitar limites da API
         for i in range(0, len(texts), batch_size):
             batch = texts[i:i + batch_size]
             try:
-                # O novo SDK suporta lista de strings em 'contents' para processamento em lote
                 response = await self.client.aio.models.embed_content(
-                    model="text-embedding-004",
-                    contents=batch
+                    model="gemini-embedding-001",
+                    contents=batch,
+                    config=embed_config
                 )
                 
                 if response.embeddings:
@@ -335,7 +362,6 @@ class GeminiService:
 
             except Exception as e:
                 logger.error(f"Erro ao gerar embeddings em lote (índice {i}): {e}")
-                # Adiciona listas vazias para não quebrar o alinhamento dos índices com os textos originais
                 all_embeddings.extend([[] for _ in batch])
         
         return all_embeddings
@@ -362,14 +388,14 @@ class GeminiService:
         
         final_vectors = []
         
-        # Para cada origem encontrada (cada aba e o drive), busca os 5 mais relevantes
+        # Para cada origem encontrada (cada aba e o drive), busca os 10 mais relevantes
         for origin in origins:
             stmt_origin = select(models.KnowledgeVector).where(
                 models.KnowledgeVector.config_id == config_id,
                 models.KnowledgeVector.origin == origin
             ).order_by(
                 models.KnowledgeVector.embedding.cosine_distance(query_embedding)
-            ).limit(5)
+            ).limit(10)
             
             result_origin = await db.execute(stmt_origin)
             vectors = result_origin.scalars().all()
@@ -478,7 +504,7 @@ class GeminiService:
                 # Prioriza drasticamente as últimas mensagens para o embedding de busca.
                 rag_query = ""
                 if conversation_history_db:
-                    # Pega as últimas 3 mensagens (Contexto Imediato)
+                    # Pega as últimas 5 mensagens (Contexto Imediato)
                     recent_msgs = conversation_history_db[-5:]
                     rag_query = self._format_history_optimized(recent_msgs)
 
@@ -489,6 +515,12 @@ class GeminiService:
                 # --- Contexto de Data e Hora ---
                 datetime_context = self._get_datetime_context(user)
 
+                # --- Contexto de Agenda ---
+                calendar_context = ""
+                if persona.is_calendar_active and persona.available_hours:
+                    calendar_context = f"\n# DISPONIBILIDADE DE AGENDA\nOs horários disponíveis para agendamento são: {json.dumps(persona.available_hours, ensure_ascii=False)}.\n"
+                    calendar_context += "Se o cliente demonstrar interesse em agendar, verifique a disponibilidade e proponha um horário. Se confirmado, use a ação 'agendar_reuniao' no JSON.\n"
+
                 # 2. Montagem do Prompt (Texto Estruturado)
                 prompt_text = (
                     f"# CONTEXTO (RAG)\n{rag_context}\n\n"
@@ -496,6 +528,7 @@ class GeminiService:
                     f"# HISTÓRICO\n{history_str}\n\n"
                     f"# DADOS DO CLIENTE\n"
                     f"Nome: {whatsapp.nome_contato or 'Não identificado'}\n"
+                    f"{calendar_context}"
                     f"Tags Atuais: {json.dumps(current_tags_names, ensure_ascii=False)}\n"
                     f"Status Atendente: {'online' if user.atendente_online else 'offline'}\n\n"
                     f"# TAGS DISPONÍVEIS\n"
@@ -516,13 +549,14 @@ class GeminiService:
                     f"Responda ao último 'User' agindo estritamente como a persona definida.\n\n"
                     f"# REGRAS DE EXECUÇÃO\n"
                     f"1. **Fonte de Verdade:** Use prioritariamente o CONTEXTO (RAG). Se não encontrar, use conhecimento geral sensato, mas evite alucinar dados técnicos.\n"
-                    f"2. **Arquivos:** Se o cliente pedir foto/catálogo e o arquivo estiver listado no RAG, inclua-o em `arquivos_anexos` usando o ID exato. **PROIBIDO** colocar informações da imagem, links ou IDs no texto (`mensagem_para_enviar`).\n"
+                    f"2. **Arquivos:** Se o cliente pedir mídia, VERIFIQUE a lista '# DRIVE'. Se o arquivo estiver lá, use o ID EXATO. Se NÃO estiver, NÃO invente um ID e NÃO envie o arquivo. **PROIBIDO** usar IDs fictícios ou placeholders.\n"
                     f"3. **Encaminhamento:** Tente resolver ao máximo. Insista na resolução antes de sugerir um humano. Antes de encaminhar, SEMPRE pergunte se o cliente deseja falar com um atendente. Só mude `nova_situacao` para 'Atendente Chamado' após a confirmação explícita do cliente.\n"
                     f"4. **Comunicação:** Seja direto e use *negrito* para destaques. A regra de NÃO REPETIR é a mais importante de todas.\n"
                     f"5. **Fluxo:** O sistema envia o texto PRIMEIRO e os arquivos DEPOIS. Considere isso na sua resposta.\n"
                     f"6. **Tags:** Analise a conversa e veja se alguma tag disponível se aplica. Retorne apenas o nome das tags em `tags_sugeridas` para adicionar (ou null).\n"
                     f"7. **Capacidade de Visão:** Você TEM a capacidade de ver e analisar imagens, vídeos, áudios e documentos (PDFs) enviados pelo usuário. Se o histórico mostrar '[Imagem/Doc Transcrito]', trate como se tivesse visto o arquivo original.\n"
                     f"8. **Solicitar Nome:** Se o nome do cliente estiver 'Não identificado', pergunte o nome dele logo no início da interação.\n\n"
+                    f"9. **Agendamento:** Se o cliente confirmar um horário, retorne 'agendar_reuniao' em `acao_agenda` e a data/hora ISO em `data_agendamento`.\n\n"
                     f"# FORMATO DE RESPOSTA (JSON OBRIGATÓRIO)\n"
                     f"Retorne APENAS um JSON válido, sem blocos de código (```json).\n"
                     f"{{\n"
@@ -530,9 +564,11 @@ class GeminiService:
                     f'  "nova_situacao": "Aguardando Resposta" | "Atendente Chamado" | "Concluído",\n'
                     f'  "nome_contato": "Nome extraído ou null",\n'
                     f'  "tags_sugeridas": ["Tag1", "Tag2"] | null,\n'
+                    f'  "acao_agenda": "agendar_reuniao" | null,\n'
+                    f'  "data_agendamento": "YYYY-MM-DDTHH:MM:SS" | null,\n'
                     f'  "resumo": "Resumo curto da conversa inteira para CRM",\n'
                     f'  "arquivos_anexos": [\n'
-                    f'    {{ "nome_exato": "nome.pdf", "id_arquivo": "ID_DO_RAG", "tipo_midia": "image" }}\n'
+                    f'    {{ "nome_exato": "nome.pdf", "id_arquivo": "COPIAR_ID_DA_TABELA_DRIVE", "tipo_midia": "image" }}\n'
                     f'  ]\n'
                     f"}}"
                 )

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import api from '../api/axiosConfig';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 // O setIsAuthenticated não é mais necessário aqui, o ProtectedRoute cuida disso.
@@ -116,6 +116,11 @@ function Login() {
                         <p className="text-sm text-gray-500">
                             Desenvolvido por <a href="https://digitalforme.cjssolucoes.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-gray-800 hover:underline">CJS Soluções</a>
                         </p>
+                        <div className="text-xs text-gray-400 mt-4">
+                            <Link to="/politicies" className="hover:underline hover:text-gray-600 transition-colors">Política de Privacidade</Link>
+                            <span className="mx-2">·</span>
+                            <Link to="/terms-of-service" className="hover:underline hover:text-gray-600 transition-colors">Termos de Serviço</Link>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -9,6 +9,8 @@ import Configs from './pages/Configs';
 import Mensagens from './pages/Mensagens';
 import Admin from './pages/Admin';
 import Followup from './pages/Followup';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 
 // Importação dos componentes de layout
 import MainLayout from './components/MainLayout';
@@ -20,6 +22,10 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+
+      {/* Rotas Públicas de Políticas */}
+      <Route path="/politicies" element={<PrivacyPolicy />} />
+      <Route path="/terms-of-service" element={<TermsOfService />} />
       
       {/* Rotas protegidas dentro do layout principal */}
       {/* O MainLayout agora busca seus próprios dados (api_type) */}

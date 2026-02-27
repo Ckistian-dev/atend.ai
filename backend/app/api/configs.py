@@ -14,6 +14,8 @@ from app.api.dependencies import get_current_active_user
 from app.services.google_sheets_service import GoogleSheetsService
 from app.services.google_drive_service import get_drive_service
 from app.services.gemini_service import get_gemini_service
+from app.services.prospect_service import get_prospect_service
+from app.services.google_calendar_service import get_google_calendar_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -32,10 +34,6 @@ SITUATIONS = [
 def format_sheet_to_csv_system(sheet_name: str, rows: List[Dict[str, Any]]) -> str:
     """
     Converte uma aba inteira em formato CSV para o System Prompt.
-    Formato:
-    # Nome da Aba
-    Header1|Header2
-    Val1|Val2
     """
     if not rows:
         return ""
@@ -52,8 +50,6 @@ def format_sheet_to_csv_system(sheet_name: str, rows: List[Dict[str, Any]]) -> s
 def format_row_to_csv_rag(sheet_name: str, row: Dict[str, Any]) -> str:
     """
     Converte uma linha em formato CSV com cabeçalho para o RAG.
-    Garante contexto para o embedding mantendo o par Header/Value.
-    Ignora colunas vazias nesta linha para economizar tokens.
     """
     headers = []
     values = []
@@ -174,7 +170,6 @@ async def sync_google_sheet(
         
         prompt_buffer = []
         contextos_buffer = []
-        all_rag_lines = [] # Lista temporária para acumular linhas para embedding em lote
 
         # --- Lógica Separada por Tipo ---
         if sync_type == "system":
@@ -188,7 +183,7 @@ async def sync_google_sheet(
             db_config.prompt = "\n\n".join(prompt_buffer)
 
         elif sync_type == "rag":
-            # MODO RAG: Todas as abas viram Vetores (CSV por linha)
+            # MODO RAG: Gera embeddings
             rag_items = []
             for sheet_name, rows in sheet_data_json.items():
                 for row in rows:
@@ -196,24 +191,28 @@ async def sync_google_sheet(
                     if csv_content:
                         rag_items.append({"content": csv_content, "origin": sheet_name})
             
-            # Processamento em Lote dos Embeddings
             if rag_items:
                 lines_to_embed = [item["content"] for item in rag_items]
+                
+                # Gera embeddings usando o serviço corrigido (gemini-embedding-001 / 768 dims)
                 embeddings = await gemini_service.generate_embeddings_batch(lines_to_embed)
+                
+                # Sincroniza linha x embedding
                 for item, embedding in zip(rag_items, embeddings):
                     if embedding:
                         contextos_buffer.append(models.KnowledgeVector(
                             config_id=db_config.id,
                             content=item["content"],
-                            origin=item["origin"], # Nome da aba
+                            origin=item["origin"],
                             embedding=embedding
                         ))
             
-            # Limpa vetores anteriores que NÃO sejam do Drive (remove 'sheet' antigo e abas nomeadas)
+            # Limpa vetores anteriores que NÃO sejam do Drive
             await db.execute(delete(models.KnowledgeVector).where(
                 models.KnowledgeVector.config_id == db_config.id,
                 models.KnowledgeVector.origin != "drive"
             ))
+            
             if contextos_buffer:
                 db.add_all(contextos_buffer)
         
@@ -260,22 +259,20 @@ async def sync_google_drive(
     try:
         drive_service = get_drive_service()
         gemini_service = get_gemini_service()
-        # Chama o serviço (que pode ser síncrono, mas rodamos no endpoint async)
-        # Se a lib do google for síncrona, o ideal é usar run_in_executor, mas para simplicidade aqui:
+        
+        # Lista arquivos (assumindo que o service é async ou roda rápido)
         drive_data = await drive_service.list_files_in_folder(final_folder_id)
         
-        # O serviço retorna um dicionário com a estrutura da árvore e a contagem
         files_tree = drive_data.get("tree", {})
         files_count = drive_data.get("count", 0)
 
-        # --- Lógica de Processamento de Dados (Refatorada) ---
-        # 1. Achata a árvore para lista de strings densas
+        # 1. Achata a árvore
         drive_lines = flatten_drive_tree(files_tree)
-        
-        # 2. Prepara vetores para RAG (Grupo B)
-        # Usando processamento em lote
         contextos_buffer = []
+
+        # 2. Gera Embeddings se houver arquivos
         if drive_lines:
+            # O service cuida do batching (100 itens por vez)
             embeddings = await gemini_service.generate_embeddings_batch(drive_lines)
             for line, embedding in zip(drive_lines, embeddings):
                 if embedding:
@@ -286,11 +283,12 @@ async def sync_google_drive(
                         embedding=embedding
                     ))
 
-        # 3. Atualiza Vetores (Limpa anteriores da origem 'drive' e insere novos)
+        # 3. Atualiza BD (Remove apenas origem 'drive')
         await db.execute(delete(models.KnowledgeVector).where(
             models.KnowledgeVector.config_id == db_config.id,
             models.KnowledgeVector.origin == "drive"
         ))
+        
         if contextos_buffer:
             db.add_all(contextos_buffer)
 
@@ -314,3 +312,61 @@ async def get_situations():
     Retorna a lista padrão de situações de atendimento.
     """
     return SITUATIONS
+
+@router.get("/destinations", summary="Listar destinos para notificação (ProspectAI)")
+async def get_notification_destinations(
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """
+    Busca a lista de contatos e grupos disponíveis na API do ProspectAI.
+    """
+    service = get_prospect_service()
+    destinations = await service.list_destinations(db, current_user)
+    return destinations
+
+@router.get("/google-calendar/auth-url")
+async def get_calendar_auth_url(
+    redirect_uri: str,
+    current_user: models.User = Depends(get_current_active_user)
+):
+    service = get_google_calendar_service(None)
+    return {"authorization_url": service.get_authorization_url(redirect_uri)}
+
+@router.post("/google-calendar/callback")
+async def calendar_callback(
+    payload: Dict[str, Any] = Body(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    code = payload.get("code")
+    redirect_uri = payload.get("redirect_uri")
+    config_id = payload.get("config_id")
+    
+    if not all([code, redirect_uri, config_id]):
+        raise HTTPException(status_code=400, detail="Parâmetros ausentes.")
+        
+    db_config = await crud_config.get_config(db=db, config_id=config_id, user_id=current_user.id)
+    if not db_config:
+        raise HTTPException(status_code=404, detail="Configuração não encontrada.")
+        
+    service = get_google_calendar_service(db_config)
+    credentials = service.fetch_token(code, redirect_uri)
+    
+    db_config.google_calendar_credentials = credentials
+    db.add(db_config)
+    await db.commit()
+    return {"message": "Agenda conectada com sucesso."}
+
+@router.post("/google-calendar/{config_id}/disconnect")
+async def disconnect_calendar(
+    config_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    db_config = await crud_config.get_config(db=db, config_id=config_id, user_id=current_user.id)
+    if db_config:
+        db_config.google_calendar_credentials = None
+        db_config.is_calendar_active = False
+        await db.commit()
+    return {"message": "Agenda desconectada."}

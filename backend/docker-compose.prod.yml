@@ -57,6 +57,9 @@ services:
       - FRONTEND_URL=${FRONTEND_URL}
       - ADMIN_EMAIL=${ADMIN_EMAIL}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - PROSPECT_API_URL=${PROSPECT_API_URL}
+      - PROSPECT_EMAIL=${PROSPECT_EMAIL}
+      - PROSPECT_PASSWORD=${PROSPECT_PASSWORD}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -75,6 +78,9 @@ services:
       - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
       - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
       - MAX_MESSAGE_AGE_SECONDS=${MAX_MESSAGE_AGE_SECONDS}
+      - PROSPECT_API_URL=${PROSPECT_API_URL}
+      - PROSPECT_EMAIL=${PROSPECT_EMAIL}
+      - PROSPECT_PASSWORD=${PROSPECT_PASSWORD}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -98,6 +104,9 @@ services:
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - FRONTEND_URL=${FRONTEND_URL}
       - GOOGLE_SERVICE_ACCOUNT_JSON=${GOOGLE_SERVICE_ACCOUNT_JSON}
+      - PROSPECT_API_URL=${PROSPECT_API_URL}
+      - PROSPECT_EMAIL=${PROSPECT_EMAIL}
+      - PROSPECT_PASSWORD=${PROSPECT_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy

@@ -13,6 +13,8 @@ from app.db.database import SessionLocal
 from app.crud import crud_atendimento, crud_config, crud_user
 from app.services.whatsapp_service import get_whatsapp_service, MessageSendError
 from app.services.gemini_service import get_gemini_service
+from app.services.prospect_service import get_prospect_service
+from app.services.google_calendar_service import get_google_calendar_service
 from app.services.google_drive_service import get_drive_service # <--- Import do serviço de Drive
 from app.api.configs import SITUATIONS
 from app.db import models, schemas
@@ -152,6 +154,8 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
         intended_resumo = ia_response.get("resumo", "")
         contact_name_from_ia = ia_response.get("nome_contato")
         tags_sugeridas = ia_response.get("tags_sugeridas")
+        acao_agenda = ia_response.get("acao_agenda")
+        data_agendamento = ia_response.get("data_agendamento")
         
         # Extração dos dados do anexo, se a IA solicitou um.
         arquivos_anexos = ia_response.get("arquivos_anexos") # <-- Alterado para o plural
@@ -196,6 +200,11 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                 nome_arquivo = arquivo_anexo.get("nome_exato", "arquivo")
                 file_id = arquivo_anexo.get("id_arquivo")
                 tipo_midia = arquivo_anexo.get("tipo_midia", "document")
+
+                # --- SAFEGUARD: Ignorar IDs placeholders alucinados pela IA ---
+                if not file_id or "ID_DO_" in str(file_id).upper() or "ID_AQUI" in str(file_id).upper():
+                    logger.warning(f"Agente: ID de arquivo inválido/placeholder detectado ({file_id}). Ignorando envio para evitar erro 404.")
+                    continue
                 
                 logger.info(f"Agente: IA solicitou envio de arquivo {i+1}/{len(arquivos_anexos)}: {nome_arquivo} (ID: {file_id})")
                 
@@ -244,6 +253,31 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                             logger.error(f"Agente: Falha permanente no download do Drive para ID {file_id} após {max_retries} tentativas.")
                             intended_status_after_send = "Erro Drive"
                             intended_resumo += f" | Falha permanente no download do arquivo {nome_arquivo} (ID: {file_id})."
+
+        # --- LÓGICA DE AGENDAMENTO NO GOOGLE CALENDAR ---
+        if acao_agenda == "agendar_reuniao" and data_agendamento:
+            try:
+                if persona_config and persona_config.google_calendar_credentials:
+                    calendar_service = get_google_calendar_service(persona_config)
+                    service = calendar_service.get_service()
+                    
+                    dt_start = datetime.fromisoformat(data_agendamento)
+                    dt_end = dt_start + timedelta(hours=1) # Duração padrão de 1h
+                    
+                    event_body = {
+                        'summary': f'Atendimento: {atendimento_context.nome_contato or atendimento_context.whatsapp}',
+                        'description': f'Agendado automaticamente pela IA AtendAI.\nWhatsApp: {atendimento_context.whatsapp}',
+                        'start': {'dateTime': dt_start.isoformat(), 'timeZone': 'America/Sao_Paulo'},
+                        'end': {'dateTime': dt_end.isoformat(), 'timeZone': 'America/Sao_Paulo'},
+                    }
+                    
+                    event = service.events().insert(calendarId='primary', body=event_body).execute()
+                    logger.info(f"Agente: Reunião agendada com sucesso! Link: {event.get('htmlLink')}")
+                    intended_resumo += f" | Reunião agendada para {data_agendamento}."
+                else:
+                    logger.warning("Agente: IA solicitou agendamento mas Google Calendar não está configurado.")
+            except Exception as cal_err:
+                logger.error(f"Agente: Erro ao agendar no Google Calendar: {cal_err}")
 
         # --- ETAPA 5: ATUALIZAÇÃO FINAL DO ATENDIMENTO ---
         # Consolida todas as mudanças no banco de dados.
@@ -306,6 +340,29 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                         at_final.updated_at = datetime.now(timezone.utc)
             
             logger.info(f"Agente: Atendimento {atendimento_id} finalizado com sucesso.")
+
+            # --- NOTIFICAÇÃO PROSPECT AI (Fora da transação principal) ---
+            logger.info(f"Agente: Verificando se deve notificar ProspectAI. Status pretendido: '{intended_status_after_send}'")
+            if intended_status_after_send and intended_status_after_send.strip() == "Atendente Chamado":
+                try:
+                    async with SessionLocal() as db_notify:
+                        prospect_service = get_prospect_service()
+                        # Busca dados atualizados para a notificação
+                        at_notify = await db_notify.get(models.Atendimento, atendimento_id, options=[joinedload(models.Atendimento.active_persona)])
+                        user_notify = await db_notify.get(models.User, user.id)
+                        
+                        logger.info(f"Agente: Preparando notificação ProspectAI para Atendimento {atendimento_id} (Status: {intended_status_after_send})")
+                        if at_notify and user_notify:
+                            persona_notify = at_notify.active_persona
+                            if not persona_notify and user_notify.default_persona_id:
+                                persona_notify = await db_notify.get(models.Config, user_notify.default_persona_id)
+                            
+                            if persona_notify:
+                                await prospect_service.notify_atendente_if_needed(
+                                    db_notify, user_notify, at_notify, persona_notify, is_new_status=True
+                                )
+                except Exception as notify_err:
+                    logger.error(f"Agente: Erro ao disparar notificação ProspectAI: {notify_err}")
 
         except Exception as final_err:
             logger.error(f"Agente: Erro update final: {final_err}")

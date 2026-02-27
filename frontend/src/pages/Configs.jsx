@@ -1,19 +1,38 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import {
     Plus, Save, Trash2, FileText, ChevronRight, Loader2,
-    Link as LinkIcon, Star, CheckCircle, Folder, Copy, Share2, Database, ExternalLink
+    Link as LinkIcon, Star, CheckCircle, Folder, Copy, Share2, Database, ExternalLink, Bell, RefreshCw, Check, 
+    Calendar, Clock, X,
+    Search, User, Users
 } from 'lucide-react';
 
 // --- CONFIGURAÇÃO ---
 // Substitua pelo client_email do seu JSON de credenciais
 const BOT_EMAIL = "integracaoapi@integracaoapi-436218.iam.gserviceaccount.com";
 
+// Helper para normalizar JIDs brasileiros removendo o nono dígito
+const normalizeJid = (jid) => {
+    if (!jid) return '';
+    const parts = jid.split('@');
+    let id = parts[0];
+    // Se o ID começa com 55 e tem 13 dígitos (55 + DD + 9 + 8 dígitos), remove o 9 (posição 4)
+    if (id.startsWith('55') && id.length === 13 && id[4] === '9') {
+        id = id.slice(0, 4) + id.slice(5);
+    }
+    return parts.length > 1 ? `${id}@${parts[1]}` : id;
+};
+
 const initialFormData = {
     nome_config: '',
     contexto_json: null,
-    arquivos_drive_json: null
+    arquivos_drive_json: null,
+    notification_active: false,
+    notification_destination: '',
+    available_hours: { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] },
+    is_calendar_connected: false,
+    is_calendar_active: false
 };
 
 function Configs() {
@@ -34,7 +53,16 @@ function Configs() {
     // Estados Drive (Novo)
     const [driveFolderId, setDriveFolderId] = useState('');
 
-    const [activeTab, setActiveTab] = useState('system'); // 'system', 'rag', 'drive'
+    // Estados Notificações (Novo)
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [destinations, setDestinations] = useState([]);
+    const [destSearchTerm, setDestSearchTerm] = useState('');
+
+    // Estados Agenda
+    const [schedule, setSchedule] = useState({});
+    const [activeTab, setActiveTab] = useState('system'); // 'system', 'rag', 'drive', 'notifications', 'agenda'
+
+    const dayLabels = { seg: 'Segunda', ter: 'Terça', qua: 'Quarta', qui: 'Quinta', sex: 'Sexta', sab: 'Sábado', dom: 'Domingo' };
 
     const fetchData = useCallback(async () => {
         setIsLoading(true);
@@ -56,13 +84,46 @@ function Configs() {
         fetchData();
     }, [fetchData]);
 
+    // Ref e Efeito para fechar dropdown ao clicar fora
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
     const handleSelectConfig = (config) => {
         setSelectedConfig(config);
         setFormData({
             nome_config: config.nome_config,
             contexto_json: config.contexto_json || null,
-            arquivos_drive_json: config.arquivos_drive_json || null
+            arquivos_drive_json: config.arquivos_drive_json || null,
+            notification_active: config.notification_active || false,
+            notification_destination: config.notification_destination || '',
+            is_calendar_connected: !!config.google_calendar_credentials,
+            is_calendar_active: config.is_calendar_active || false
         });
+
+        // Parse Schedule
+        const parsedSchedule = {};
+        ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'].forEach(day => {
+            const dayHours = config.available_hours?.[day] || [];
+            parsedSchedule[day] = {
+                active: dayHours.length > 0,
+                blocks: dayHours.length > 0
+                    ? dayHours.map(h => {
+                        const [start, end] = h.split('-');
+                        return { start: start?.trim(), end: end?.trim() };
+                    })
+                    : [{ start: '09:00', end: '18:00' }]
+            };
+        });
+        setSchedule(parsedSchedule);
 
         // Sheets
         setSpreadsheetId(config.spreadsheet_id || '');
@@ -70,6 +131,11 @@ function Configs() {
 
         // Drive
         setDriveFolderId(config.drive_id || '');
+
+        // Verifica se o destino salvo está na lista (se não estiver e tiver valor, ativa modo manual)
+        // Isso será feito após carregar os destinos, ou assumimos manual se não for vazio
+
+        setDestSearchTerm(config.notification_destination || '');
 
         setActiveTab('system');
         setError('');
@@ -81,26 +147,73 @@ function Configs() {
         setSpreadsheetId('');
         setSpreadsheetRagId('');
         setDriveFolderId('');
+        setDestSearchTerm('');
+        const defaultSchedule = {};
+        ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'].forEach(day => {
+            defaultSchedule[day] = { active: false, blocks: [{ start: '09:00', end: '18:00' }] };
+        });
+        setSchedule(defaultSchedule);
         setActiveTab('system');
         setError('');
     };
 
     const handleFormChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        const { name, value, type, checked } = e.target;
+        const val = type === 'checkbox' ? checked : value;
+        setFormData(prev => ({ ...prev, [name]: val }));
+    };
+
+    // Handlers Agenda
+    const toggleDay = (day) => setSchedule(prev => ({ ...prev, [day]: { ...prev[day], active: !prev[day].active } }));
+    const addTimeBlock = (day) => setSchedule(prev => ({ ...prev, [day]: { ...prev[day], blocks: [...prev[day].blocks, { start: '09:00', end: '18:00' }] } }));
+    const removeTimeBlock = (day, index) => setSchedule(prev => {
+        const newBlocks = [...prev[day].blocks];
+        newBlocks.splice(index, 1);
+        return { ...prev, [day]: { ...prev[day], blocks: newBlocks } };
+    });
+    const updateTimeBlock = (day, index, field, value) => setSchedule(prev => {
+        const newBlocks = [...prev[day].blocks];
+        newBlocks[index] = { ...newBlocks[index], [field]: value };
+        return { ...prev, [day]: { ...prev[day], blocks: newBlocks } };
+    });
+
+    const handleConnectCalendar = async () => {
+        if (!selectedConfig?.id) return toast.error("Salve a configuração antes de conectar.");
+        try {
+            localStorage.setItem('pendingCalendarConfigId', selectedConfig.id);
+            const redirectUri = window.location.origin + window.location.pathname;
+            const response = await api.get(`/configs/google-calendar/auth-url?redirect_uri=${encodeURIComponent(redirectUri)}`);
+            if (response.data.authorization_url) window.location.href = response.data.authorization_url;
+        } catch (err) { toast.error("Erro ao iniciar conexão."); }
     };
 
     const handleSave = async (e) => {
         e.preventDefault();
         setIsSaving(true);
         setError('');
+
+        const serializedHours = {};
+        Object.keys(schedule).forEach(day => {
+            if (schedule[day]?.active) {
+                serializedHours[day] = schedule[day].blocks
+                    .filter(b => b.start && b.end)
+                    .map(b => `${b.start}-${b.end}`);
+            } else {
+                serializedHours[day] = [];
+            }
+        });
+
         const payload = {
             nome_config: formData.nome_config,
             contexto_json: formData.contexto_json,
             arquivos_drive_json: formData.arquivos_drive_json,
             spreadsheet_id: spreadsheetId,
             spreadsheet_rag_id: spreadsheetRagId,
-            drive_id: driveFolderId
+            drive_id: driveFolderId,
+            notification_active: formData.notification_active,
+            notification_destination: formData.notification_destination,
+            available_hours: serializedHours,
+            is_calendar_active: formData.is_calendar_active
         };
         try {
             let updatedConfig;
@@ -113,12 +226,38 @@ function Configs() {
             }
             await fetchData();
             handleSelectConfig(updatedConfig);
+            toast.success('Configuração salva com sucesso!');
         } catch (err) {
-            setError('Erro ao salvar. Verifique os campos.');
+            toast.error('Erro ao salvar. Verifique os campos.');
         } finally {
             setIsSaving(false);
         }
     };
+
+    // Efeito para capturar o retorno do OAuth
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        const pendingId = localStorage.getItem('pendingCalendarConfigId');
+        if (code && pendingId) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+            const handleCallback = async () => {
+                setIsLoading(true);
+                try {
+                    await api.post('/configs/google-calendar/callback', {
+                        code,
+                        config_id: pendingId,
+                        redirect_uri: window.location.origin + window.location.pathname
+                    });
+                    toast.success('Google Agenda conectado!');
+                    localStorage.removeItem('pendingCalendarConfigId');
+                    fetchData();
+                } catch (err) { toast.error('Falha na conexão.'); }
+                finally { setIsLoading(false); }
+            };
+            handleCallback();
+        }
+    }, [fetchData]);
 
     const handleDelete = async (id) => {
         if (window.confirm('Tem certeza que deseja excluir esta configuração?')) {
@@ -126,8 +265,9 @@ function Configs() {
                 await api.delete(`/configs/${id}`);
                 await fetchData();
                 handleNewConfig();
+                toast.success('Configuração excluída com sucesso!');
             } catch (err) {
-                setError('Erro ao excluir. Esta configuração pode estar em uso como padrão.');
+                toast.error('Erro ao excluir. Esta configuração pode estar em uso como padrão.');
             }
         }
     };
@@ -144,6 +284,7 @@ function Configs() {
 
     const handleCopyEmail = () => {
         navigator.clipboard.writeText(BOT_EMAIL);
+        toast.success("Email copiado para a área de transferência!");
     };
 
     // --- Sync Sheets (Genérico) ---
@@ -207,6 +348,73 @@ function Configs() {
         }
     };
 
+    // --- Fetch Destinations (ProspectAI) ---
+    const fetchDestinations = async () => {
+        try {
+            const response = await api.get('/configs/destinations');
+            const data = response.data.destinations || response.data;
+            setDestinations(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error("Erro ao buscar destinos:", err);
+            toast.error("Não foi possível carregar a lista de contatos do ProspectAI.");
+        }
+    };
+
+    const manualJid = useMemo(() => {
+        let digits = destSearchTerm.replace(/\D/g, '');
+        if (digits.length >= 10) {
+            if (!digits.startsWith('55')) digits = `55${digits}`;
+            // Normaliza para remover o nono dígito se necessário
+            const normalized = normalizeJid(`${digits}@s.whatsapp.net`);
+            return normalized;
+        }
+        return null;
+    }, [destSearchTerm]);
+
+    const filteredDestinations = useMemo(() => {
+        const term = destSearchTerm.toLowerCase().trim();
+        const termDigits = term.replace(/\D/g, '');
+        
+        // 1. Remove duplicados por remoteJid e ordena alfabeticamente
+        const uniqueMap = new Map();
+        destinations.forEach(d => {
+            if (d.remoteJid && !uniqueMap.has(d.remoteJid)) {
+                uniqueMap.set(d.remoteJid, d);
+            }
+        });
+        
+        const uniqueList = Array.from(uniqueMap.values()).sort((a, b) => {
+            const nameA = (a.name || a.subject || 'Sem nome').toLowerCase();
+            const nameB = (b.name || b.subject || 'Sem nome').toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+
+        if (!term) return uniqueList;
+
+        return uniqueList.filter(dest => {
+            const name = (dest.name || dest.subject || '').toLowerCase();
+            const fullJid = (dest.remoteJid || '').toLowerCase();
+            
+            if (name.includes(term)) return true;
+
+            const jidPrefix = fullJid.split('@')[0];
+            
+            // Se o termo de busca parece um número, tenta busca normalizada (sem nono dígito)
+            if (termDigits.length >= 8) {
+                const normalizedJid = normalizeJid(jidPrefix);
+                // Se o termo tem 10 ou 11 dígitos, assumimos que é DD + número e adicionamos 55 para normalizar
+                let searchVal = termDigits;
+                if (termDigits.length === 10 || termDigits.length === 11) {
+                    searchVal = termDigits.startsWith('55') ? termDigits : `55${termDigits}`;
+                }
+                const normalizedTerm = normalizeJid(searchVal);
+                return normalizedJid.includes(normalizedTerm);
+            }
+
+            return term.includes('@') ? fullJid.includes(term) : jidPrefix.includes(term);
+        });
+    }, [destinations, destSearchTerm]);
+
     const extractId = (value) => {
         if (!value) return "";
         const sheetMatch = value.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
@@ -223,6 +431,13 @@ function Configs() {
             : 'https://docs.google.com/spreadsheets/d/';
         window.open(`${baseUrl}${id}`, '_blank');
     };
+
+    // Carrega destinos quando a aba de notificações é aberta
+    useEffect(() => {
+        if (activeTab === 'notifications') {
+            fetchDestinations();
+        }
+    }, [activeTab]);
 
     const labelClass = "block text-sm font-semibold text-gray-700 mb-1";
     const inputClass = "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue resize-none";
@@ -265,19 +480,25 @@ function Configs() {
                             {/* Título */}
                             <div className="flex items-center gap-4 mb-6">
                                 <FileText className="text-brand-blue" size={32} />
-                                <input type="text" placeholder="Dê um nome para esta Configuração..." name="nome_config" value={formData.nome_config} onChange={handleFormChange} required className="w-full text-2xl font-bold text-gray-800 border-b-2 border-gray-200 focus:border-brand-blue focus:outline-none py-2 bg-transparent" />
+                                <input type="text" placeholder="Dê um nome para esta Configuração..." name="nome_config" value={formData.nome_config} onChange={handleFormChange} required className="w-full text-2xl font-bold text-gray-800 border-b-2 border-gray-200 focus:border-brand-green focus:outline-none py-2 bg-transparent" />
                             </div>
 
                             {/* Abas */}
                             <div className="flex border-b border-gray-200 mb-6">
-                                <button type="button" onClick={() => setActiveTab('system')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'system' ? 'border-b-2 border-brand-blue text-brand-blue' : 'text-gray-500 hover:text-gray-800'}`}>
+                                <button type="button" onClick={() => setActiveTab('system')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'system' ? 'border-b-2 border-brand-green text-brand-blue' : 'text-gray-500 hover:text-gray-800'}`}>
                                     <LinkIcon size={18} /> Instruções (System)
                                 </button>
-                                <button type="button" onClick={() => setActiveTab('rag')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'rag' ? 'border-b-2 border-brand-blue text-brand-blue' : 'text-gray-500 hover:text-gray-800'}`}>
+                                <button type="button" onClick={() => setActiveTab('rag')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'rag' ? 'border-b-2 border-brand-green text-brand-blue' : 'text-gray-500 hover:text-gray-800'}`}>
                                     <Database size={18} /> Conhecimento (RAG)
                                 </button>
-                                <button type="button" onClick={() => setActiveTab('drive')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'drive' ? 'border-b-2 border-brand-blue text-brand-blue' : 'text-gray-500 hover:text-gray-800'}`}>
+                                <button type="button" onClick={() => setActiveTab('drive')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'drive' ? 'border-b-2 border-brand-green text-brand-blue' : 'text-gray-500 hover:text-gray-800'}`}>
                                     <Folder size={18} /> Arquivos (Drive)
+                                </button>
+                                <button type="button" onClick={() => setActiveTab('notifications')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'notifications' ? 'border-b-2 border-brand-green text-brand-blue' : 'text-gray-500 hover:text-gray-800'}`}>
+                                    <Bell size={18} /> Notificações
+                                </button>
+                                <button type="button" onClick={() => setActiveTab('agenda')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'agenda' ? 'border-b-2 border-brand-green text-brand-blue' : 'text-gray-500 hover:text-gray-800'}`}>
+                                    <Calendar size={18} /> Agenda
                                 </button>
                             </div>
 
@@ -406,6 +627,183 @@ function Configs() {
                                             <li> Ex: https://drive.google.com/drive/folders/<strong>1BxiMVs0XRA5nFMdKVBdBNj...</strong> </li>
                                             <li> Cole o link copiado no campo acima. </li>
                                         </ol>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* CONTEÚDO ABA: NOTIFICAÇÕES (PROSPECT AI) */}
+                            {activeTab === 'notifications' && (
+                                <div className="animate-fade-in space-y-6">
+                                    <div className="relative">
+                                        <label className={labelClass}>Destino das Notificações (WhatsApp)</label>
+                                        <div className="flex items-center gap-4">
+                                            <div className="relative flex-grow" ref={dropdownRef}>
+                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Pesquisar contato ou grupo..."
+                                                    value={destSearchTerm}
+                                                    onChange={(e) => {
+                                                        setDestSearchTerm(e.target.value);
+                                                        setIsDropdownOpen(true);
+                                                    }}
+                                                    onFocus={() => setIsDropdownOpen(true)}
+                                                    className={`${inputClass} pl-10 pr-16`}
+                                                />
+                                                <div className="absolute inset-y-0 right-0 flex items-center pr-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData(prev => ({ ...prev, notification_active: !prev.notification_active }))}
+                                                        title={formData.notification_active ? "Desativar Notificações" : "Ativar Notificações"}
+                                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-green focus:ring-offset-2 ${formData.notification_active ? 'bg-brand-blue' : 'bg-gray-200'}`}
+                                                    >
+                                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.notification_active ? 'translate-x-6' : 'translate-x-1'}`} />
+                                                    </button>
+                                                </div>
+
+                                                {/* Dropdown de Destinos */}
+                                                {isDropdownOpen && (
+                                                    <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto custom-scrollbar divide-y divide-gray-100">
+                                                        {filteredDestinations.map(dest => {
+                                                            const isGroup = dest.remoteJid?.endsWith('@g.us');
+                                                            const isSelected = formData.notification_destination === dest.remoteJid;
+                                                            return (
+                                                                <button
+                                                                    key={dest.id}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const normalized = normalizeJid(dest.remoteJid);
+                                                                        setFormData(prev => ({ ...prev, notification_destination: normalized }));
+                                                                        setDestSearchTerm(normalized);
+                                                                        setIsDropdownOpen(false);
+                                                                    }}
+                                                                    className={`w-full flex items-center gap-3 p-3 text-left transition-colors hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}
+                                                                >
+                                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isGroup ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                                        {isGroup ? <Users size={20} /> : <User size={20} />}
+                                                                    </div>
+                                                                    <div className="flex-grow min-w-0">
+                                                                        <p className={`text-sm font-semibold truncate ${isSelected ? 'text-blue-700' : 'text-gray-800'}`}>
+                                                                            {dest.name || dest.subject || (isGroup ? "Grupo sem nome" : "Contato sem nome")}
+                                                                        </p>
+                                                                        <p className="text-xs text-gray-500 truncate">{dest.remoteJid}</p>
+                                                                    </div>
+                                                                    {isSelected && <CheckCircle size={18} className="text-blue-600 flex-shrink-0" />}
+                                                                </button>
+                                                            );
+                                                        })}
+
+                                                        {/* Opção Manual */}
+                                                        {manualJid && !filteredDestinations.some(d => normalizeJid(d.remoteJid) === manualJid) && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setFormData(prev => ({ ...prev, notification_destination: manualJid }));
+                                                                    setDestSearchTerm(manualJid);
+                                                                    setIsDropdownOpen(false);
+                                                                }}
+                                                                className={`w-full flex items-center gap-3 p-3 text-left transition-colors hover:bg-blue-50 ${formData.notification_destination === manualJid ? 'bg-blue-50' : ''}`}
+                                                            >
+                                                                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-green-100 text-green-600">
+                                                                    <Plus size={20} />
+                                                                </div>
+                                                                <div className="flex-grow min-w-0">
+                                                                    <p className="text-sm font-semibold text-gray-800">Adicionar número manualmente</p>
+                                                                    <p className="text-xs text-gray-500 truncate">{manualJid}</p>
+                                                                </div>
+                                                                {formData.notification_destination === manualJid && <CheckCircle size={18} className="text-blue-600 flex-shrink-0" />}
+                                                            </button>
+                                                        )}
+
+                                                        {destinations.length === 0 && !manualJid && (
+                                                            <div className="p-8 text-center text-gray-500 italic text-sm">Nenhum contato carregado. Clique em atualizar.</div>
+                                                        )}
+                                                        {destSearchTerm && filteredDestinations.length === 0 && !manualJid && (
+                                                            <div className="p-8 text-center text-gray-500 italic text-sm">Nenhum contato encontrado.</div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Instruções */}
+                                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 text-sm text-gray-700 space-y-4">
+                                        <div className="flex items-center gap-2 font-semibold text-blue-800">
+                                            <Bell size={18} />
+                                            <h4>Como funciona a Integração</h4>
+                                        </div>
+                                        <p className="text-gray-600">
+                                            Ao habilitar esta opção, o sistema enviará alertas automáticos para o número ou grupo selecionado acima.
+                                        </p>
+                                        <ol className="list-decimal list-inside space-y-2 text-gray-600">
+                                            <li>Ative a chave "Habilitar" acima.</li>
+                                            <li>Escolha um destino na lista ou insira o ID manualmente.</li>
+                                            <li>Clique em <strong>Guardar Configuração</strong> no final da página para aplicar.</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* CONTEÚDO ABA: AGENDA */}
+                            {activeTab === 'agenda' && (
+                                <div className="animate-fade-in space-y-6">
+                                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        <div className="flex items-center gap-4">
+                                            <Calendar className={formData.is_calendar_connected ? "text-green-600" : "text-gray-400"} size={24} />
+                                            <div>
+                                                <p className="text-sm font-bold text-gray-800">{formData.is_calendar_connected ? "Google Agenda Conectado" : "Google Agenda não conectado"}</p>
+                                                <p className="text-xs text-gray-500">Sincronize eventos para evitar conflitos.</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-xs font-semibold text-gray-600">Ativar na IA</span>
+                                            <button type="button" onClick={() => setFormData(p => ({...p, is_calendar_active: !p.is_calendar_active}))} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.is_calendar_active ? 'bg-brand-blue' : 'bg-gray-200'}`}>
+                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.is_calendar_active ? 'translate-x-6' : 'translate-x-1'}`} />
+                                            </button>
+                                            {!formData.is_calendar_connected ? (
+                                                <button type="button" onClick={handleConnectCalendar} className="px-4 py-2 bg-brand-blue text-white text-xs font-bold rounded-md hover:bg-brand-blue-dark transition">Conectar</button>
+                                            ) : (
+                                                <button type="button" onClick={() => api.post(`/configs/google-calendar/${selectedConfig.id}/disconnect`).then(() => fetchData())} className="px-4 py-2 bg-red-100 text-red-700 text-xs font-bold rounded-md hover:bg-red-200 transition">Desconectar</button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                                        <div className="p-4 bg-gray-50 border-b border-gray-200">
+                                            <h3 className="font-bold text-gray-700 flex items-center gap-2"><Clock size={18} className="text-brand-blue" /> Horários de Atendimento</h3>
+                                        </div>
+                                        <div className="p-4 space-y-2">
+                                            {['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'].map(day => (
+                                                <div key={day} className="flex items-start gap-3 py-2 border-b border-gray-100 last:border-0">
+                                                    <div className="w-24 pt-1.5 flex-shrink-0">
+                                                        <label className="flex items-center cursor-pointer">
+                                                            <div className="relative">
+                                                                <input type="checkbox" className="sr-only" checked={schedule[day]?.active || false} onChange={() => toggleDay(day)} />
+                                                                <div className={`block w-8 h-5 rounded-full transition-colors ${schedule[day]?.active ? 'bg-brand-blue' : 'bg-gray-300'}`}></div>
+                                                                <div className={`dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform ${schedule[day]?.active ? 'transform translate-x-3' : ''}`}></div>
+                                                            </div>
+                                                            <span className="ml-2 text-sm font-medium text-gray-700">{dayLabels[day]}</span>
+                                                        </label>
+                                                    </div>
+                                                    <div className="flex-1 flex flex-wrap gap-2 items-center">
+                                                        {schedule[day]?.active && (
+                                                            <>
+                                                                {schedule[day].blocks.map((block, idx) => (
+                                                                    <div key={idx} className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded border border-gray-200">
+                                                                        <input type="time" value={block.start} onChange={(e) => updateTimeBlock(day, idx, 'start', e.target.value)} className="bg-transparent text-sm outline-none w-20 text-center" />
+                                                                        <span className="text-gray-400 text-xs">-</span>
+                                                                        <input type="time" value={block.end} onChange={(e) => updateTimeBlock(day, idx, 'end', e.target.value)} className="bg-transparent text-sm outline-none w-20 text-center" />
+                                                                        <button type="button" onClick={() => removeTimeBlock(day, idx)} className="text-gray-400 hover:text-red-500 ml-1"><X size={14} /></button>
+                                                                    </div>
+                                                                ))}
+                                                                <button type="button" onClick={() => addTimeBlock(day)} className="p-1 text-brand-blue hover:bg-blue-50 rounded transition-colors"><Plus size={18} /></button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             )}

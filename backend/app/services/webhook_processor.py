@@ -11,6 +11,7 @@ from app.crud import crud_user, crud_atendimento, crud_config
 from app.db import models, schemas
 from app.services.whatsapp_service import get_whatsapp_service
 from app.services.gemini_service import get_gemini_service
+from app.services.prospect_service import get_prospect_service
 from app.services.security import decrypt_token
 
 logger = logging.getLogger(__name__)
@@ -213,6 +214,28 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
                             if deve_mudar_status: atend.status = "Mensagem Recebida"
                             atend.updated_at = datetime.now(timezone.utc)
                             logger.info(f"WBP Webhook: Msg {msg_id_wamid} salva.")
+
+            # --- NOTIFICAÇÃO PROSPECT AI (Fora da transação de salvamento) ---
+            # Se o atendimento está em 'Atendente Chamado', notifica nova mensagem
+            if atendimento_id:
+                logger.info(f"WBP Webhook: Verificando se deve notificar ProspectAI para Atendimento {atendimento_id}")
+                async with SessionLocal() as db_notify:
+                    at_notify = await db_notify.get(models.Atendimento, atendimento_id, options=[joinedload(models.Atendimento.active_persona)])
+                    if at_notify and at_notify.status and at_notify.status.strip() == "Atendente Chamado":
+                        logger.info(f"WBP Webhook: Detectada nova mensagem em atendimento pendente ({atendimento_id}). Status atual: {at_notify.status}. Disparando...")
+                        try:
+                            user_notify = await db_notify.get(models.User, user.id)
+                            persona_notify = at_notify.active_persona
+                            if not persona_notify and user_notify.default_persona_id:
+                                persona_notify = await db_notify.get(models.Config, user_notify.default_persona_id)
+                            
+                            if persona_notify:
+                                prospect_service = get_prospect_service()
+                                await prospect_service.notify_atendente_if_needed(
+                                    db_notify, user_notify, at_notify, persona_notify, is_new_status=False
+                                )
+                        except Exception as notify_err:
+                            logger.error(f"WBP Webhook: Erro ao disparar notificação ProspectAI: {notify_err}")
 
     except Exception as e:
         logger.error(f"WBP Webhook: Erro processamento single msg {msg_id_wamid}: {e}", exc_info=True)

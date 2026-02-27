@@ -2,29 +2,9 @@ import logging
 import logging.config # <<< NOVO IMPORT
 import sys # <<< NOVO IMPORT (para direcionar handler)
 from dotenv import load_dotenv
+import os
 
 load_dotenv() # Carrega variáveis do arquivo .env para o ambiente
-
-from fastapi import FastAPI, BackgroundTasks, Request
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select, text
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.db.database import engine, SessionLocal
-from app.db import models
-from app.core.config import settings
-
-# Importação de todos os routers
-from app.api.auth import router as auth_router
-from app.api.configs import router as configs_router
-from app.api.webhook import router as webhook_router
-from app.api.dashboard import router as dashboard_router
-from app.api.atendimentos import router as atendimentos_router
-from app.api.agent import router as agent_router
-from app.api.users import router as users_router
-from app.api.admin import router as admin_router
-from app.api.landingpage import router as landingpage_router
 
 # --- CONFIGURAÇÃO DETALHADA DE LOGGING ---
 LOGGING_CONFIG = {
@@ -126,6 +106,28 @@ LOGGING_CONFIG = {
 logging.config.dictConfig(LOGGING_CONFIG)
 # ----------------------------------------
 
+from fastapi import FastAPI, BackgroundTasks, Request
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.database import engine, SessionLocal
+from app.db import models
+from app.core.config import settings
+
+# Importação de todos os routers (AGORA APÓS O LOGGING)
+from app.api.auth import router as auth_router
+from app.api.configs import router as configs_router
+from app.api.webhook import router as webhook_router
+from app.api.dashboard import router as dashboard_router
+from app.api.atendimentos import router as atendimentos_router
+from app.api.agent import router as agent_router
+from app.api.users import router as users_router
+from app.api.admin import router as admin_router
+from app.api.landingpage import router as landingpage_router
+from app.api.integracao_prospectai import router as prospect_router
+
 # Obtém o logger para ESTE arquivo (main.py) APÓS a configuração
 logger = logging.getLogger(__name__)
 
@@ -189,6 +191,7 @@ app.include_router(agent_router, prefix=f"{API_PREFIX}/agent", tags=["Agente"])
 app.include_router(admin_router, prefix=f"{API_PREFIX}/admin", tags=["Admin"])
 app.include_router(users_router, prefix=f"{API_PREFIX}/users", tags=["Utilizadores"])
 app.include_router(landingpage_router, prefix=f"{API_PREFIX}/landingpage", tags=["Landing Page"])
+app.include_router(prospect_router, prefix=f"{API_PREFIX}/prospect", tags=["Integração ProspectAI"])
 
 
 @app.get("/", tags=["Root"])

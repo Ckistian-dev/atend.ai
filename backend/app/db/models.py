@@ -23,6 +23,7 @@ class User(Base):
     atendente_online: Mapped[bool] = mapped_column(default=False, nullable=False, server_default="false", comment="Status de disponibilidade do atendente humano")
     tokens: Mapped[int] = mapped_column(Integer, default=0)
     default_persona_id: Mapped[Optional[int]] = mapped_column(ForeignKey("configs.id"), nullable=True)
+    prospect_token: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="Token de autenticação para API do ProspectAI")
 
     followup_active: Mapped[bool] = mapped_column(default=False, nullable=False, server_default="false", comment="Define se o sistema de followup está ativo para este usuário")
     followup_config: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Configurações de followup (intervalos, horários, mensagens)")
@@ -39,7 +40,13 @@ class Config(Base):
     spreadsheet_rag_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="ID da Planilha de Conhecimento (RAG)")
     drive_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="ID da pasta do Google Drive contendo mídias")
     prompt: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="Contexto fixo gerado a partir das abas de sistema")
+    notification_active: Mapped[bool] = mapped_column(default=False, nullable=False, server_default="false", comment="Ativar notificações via ProspectAI")
+    notification_destination: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="ID/JID do contato ou grupo para receber notificações")
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    
+    available_hours: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Horários de disponibilidade semanal")
+    google_calendar_credentials: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Tokens de acesso ao Google Calendar")
+    is_calendar_active: Mapped[bool] = mapped_column(default=False, nullable=False, server_default="false")
 
     owner: Mapped["User"] = relationship(back_populates="configs", foreign_keys=[user_id])
     vectors: Mapped[List["KnowledgeVector"]] = relationship(back_populates="config", cascade="all, delete-orphan")

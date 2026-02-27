@@ -9,6 +9,10 @@ class ConfigBase(BaseModel):
     spreadsheet_rag_id: Optional[str] = None
     drive_id: Optional[str] = None
     prompt: Optional[str] = None
+    notification_active: Optional[bool] = False
+    notification_destination: Optional[str] = None
+    available_hours: Optional[Dict[str, Any]] = None
+    is_calendar_active: Optional[bool] = False
 
 class ConfigCreate(ConfigBase):
     pass
@@ -19,6 +23,10 @@ class ConfigUpdate(BaseModel):
     spreadsheet_rag_id: Optional[str] = None
     drive_id: Optional[str] = None
     prompt: Optional[str] = None
+    notification_active: Optional[bool] = None
+    notification_destination: Optional[str] = None
+    available_hours: Optional[Dict[str, Any]] = None
+    is_calendar_active: Optional[bool] = None
 
 class Config(ConfigBase):
     id: int

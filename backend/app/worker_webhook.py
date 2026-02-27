@@ -3,15 +3,17 @@ import json
 import logging
 import asyncio
 import time  # <--- IMPORT NOVO PARA O CONTROLE DE TEMPO
+import sys
+
+# Configuração de logging DEVE vir antes dos imports da app
+logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(levelname)s - %(message)s',
+                    stream=sys.stdout)
 
 # Importa as configurações centralizadas
 from app.core.config import settings
 # Importa as funções de processamento que contêm a lógica de negócio
 from app.services.webhook_processor import process_official_message_task, process_official_status_task
-
-# Configuração básica de logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
 logger = logging.getLogger(__name__)
 
 async def process_message(body: bytes) -> bool:
