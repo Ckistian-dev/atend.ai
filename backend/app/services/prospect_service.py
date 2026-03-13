@@ -33,6 +33,14 @@ class ProspectService:
                     data={"username": self.email, "password": self.password},
                     timeout=10.0
                 )
+                
+                if response.status_code != 200:
+                    try:
+                        error_detail = response.json()
+                        logger.error(f"ProspectService: Falha no login (Status {response.status_code}). Resposta: {error_detail}")
+                    except Exception:
+                        logger.error(f"ProspectService: Falha no login (Status {response.status_code}). Corpo: {response.text}")
+                
                 response.raise_for_status()
                 data = response.json()
                 return data.get("access_token")
@@ -72,9 +80,22 @@ class ProspectService:
             try:
                 response = await client.request(method, url, headers=headers, json=json_data, timeout=15.0)
                 
-                # Se der erro de autenticação, tenta renovar o token uma vez
-                if response.status_code == 401:
-                    logger.warning("ProspectService: Token expirado (401). Renovando...")
+                # Verifica se o erro é 401 ou 404 "Usuário não encontrado"
+                should_retry = response.status_code == 401
+                if response.status_code == 404:
+                    try:
+                        error_data = response.json()
+                        if error_data.get("detail") == "Usuário não encontrado":
+                            should_retry = True
+                            logger.warning("ProspectService: Usuário não encontrado no ProspectAI (404). Forçando novo login...")
+                    except Exception:
+                        pass
+
+                # Se der erro de autenticação ou usuário não encontrado, tenta renovar o token uma vez
+                if should_retry:
+                    if response.status_code == 401:
+                        logger.warning("ProspectService: Token expirado (401). Renovando...")
+                    
                     new_token = await self._login()
                     if new_token:
                         # Atualiza no banco
@@ -100,7 +121,11 @@ class ProspectService:
         """Lista contatos e grupos disponíveis no ProspectAI."""
         try:
             data = await self._make_request("GET", "/api/v1/integracao-atendai/destinations", db, user)
-            return data.get("destinations", [])
+            if isinstance(data, list):
+                return data
+            if isinstance(data, dict):
+                return data.get("destinations", [])
+            return []
         except Exception:
             return [] # Retorna lista vazia em caso de erro para não quebrar o front
 

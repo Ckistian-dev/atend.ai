@@ -1,6 +1,7 @@
 import logging
 import os
-from typing import Optional, Dict, Any
+from datetime import datetime, timezone
+from typing import Optional, Dict, Any, List
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
@@ -32,7 +33,11 @@ class GoogleCalendarService:
 
     def get_authorization_url(self, redirect_uri: str) -> str:
         self.flow = self._create_flow(redirect_uri_override=redirect_uri)
-        authorization_url, _ = self.flow.authorization_url(
+        # Usamos o oauth2session diretamente para evitar que a biblioteca Flow 
+        # adicione automaticamente os parâmetros de PKCE (code_challenge), 
+        # que causam erro em fluxos stateless.
+        authorization_url, _ = self.flow.oauth2session.authorization_url(
+            self.flow.client_config["auth_uri"],
             access_type='offline',
             prompt='consent',
             include_granted_scopes='true'
@@ -63,6 +68,19 @@ class GoogleCalendarService:
         if not credentials:
             raise Exception("Configuração não autenticada com o Google Calendar.")
         return build('calendar', 'v3', credentials=credentials)
+
+    def get_upcoming_events(self, max_results: int = 50) -> List[Dict[str, Any]]:
+        """Busca os próximos eventos agendados no calendário principal."""
+        service = self.get_service()
+        now = datetime.now(timezone.utc).isoformat()
+        events_result = service.events().list(
+            calendarId='primary',
+            timeMin=now,
+            maxResults=max_results,
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+        return events_result.get('items', [])
 
 def get_google_calendar_service(config: models.Config) -> GoogleCalendarService:
     return GoogleCalendarService(config=config)

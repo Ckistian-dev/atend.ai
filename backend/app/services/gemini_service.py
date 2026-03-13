@@ -17,6 +17,7 @@ from sqlalchemy import select
 from app.core.config import settings
 from app.db import models
 from app.crud import crud_user, crud_atendimento
+from app.services.google_calendar_service import get_google_calendar_service
 
 logger = logging.getLogger(__name__)
 
@@ -518,8 +519,24 @@ class GeminiService:
                 # --- Contexto de Agenda ---
                 calendar_context = ""
                 if persona.is_calendar_active and persona.available_hours:
-                    calendar_context = f"\n# DISPONIBILIDADE DE AGENDA\nOs horários disponíveis para agendamento são: {json.dumps(persona.available_hours, ensure_ascii=False)}.\n"
-                    calendar_context += "Se o cliente demonstrar interesse em agendar, verifique a disponibilidade e proponha um horário. Se confirmado, use a ação 'agendar_reuniao' no JSON.\n"
+                    booked_events_str = ""
+                    if persona.google_calendar_credentials:
+                        try:
+                            cal_service = get_google_calendar_service(persona)
+                            # Busca eventos reais para evitar conflitos (em thread para não bloquear o loop async)
+                            events = await asyncio.to_thread(cal_service.get_upcoming_events)
+                            if events:
+                                booked_list = []
+                                for event in events:
+                                    start = event['start'].get('dateTime', event['start'].get('date'))
+                                    booked_list.append(f"- {start}")
+                                booked_events_str = "\n# HORÁRIOS JÁ OCUPADOS (NÃO AGENDAR NESTES)\n" + "\n".join(booked_list) + "\n"
+                        except Exception as cal_err:
+                            logger.error(f"Erro ao buscar agenda para prompt (User {user.id}): {cal_err}")
+
+                    calendar_context = f"\n# DISPONIBILIDADE DE AGENDA (CONFIGURAÇÃO)\nOs horários de trabalho são: {json.dumps(persona.available_hours, ensure_ascii=False)}.\n"
+                    calendar_context += booked_events_str
+                    calendar_context += "Se o cliente demonstrar interesse em agendar, verifique a disponibilidade real (horários de trabalho vs ocupados) e proponha um horário livre. Se confirmado, use a ação 'agendar_reuniao' no JSON.\n"
 
                 # 2. Montagem do Prompt (Texto Estruturado)
                 prompt_text = (
@@ -556,13 +573,14 @@ class GeminiService:
                     f"6. **Tags:** Analise a conversa e veja se alguma tag disponível se aplica. Retorne apenas o nome das tags em `tags_sugeridas` para adicionar (ou null).\n"
                     f"7. **Capacidade de Visão:** Você TEM a capacidade de ver e analisar imagens, vídeos, áudios e documentos (PDFs) enviados pelo usuário. Se o histórico mostrar '[Imagem/Doc Transcrito]', trate como se tivesse visto o arquivo original.\n"
                     f"8. **Solicitar Nome:** Se o nome do cliente estiver 'Não identificado', pergunte o nome dele logo no início da interação.\n\n"
-                    f"9. **Agendamento:** Se o cliente confirmar um horário, retorne 'agendar_reuniao' em `acao_agenda` e a data/hora ISO em `data_agendamento`.\n\n"
+                    f"9. **Agendamento:** Se o cliente confirmar um horário, VOCÊ DEVE PEDIR O E-MAIL DELE para enviar o convite. Somente quando tiver o horário E o e-mail, retorne 'agendar_reuniao' em `acao_agenda`, a data/hora ISO em `data_agendamento` e o e-mail em `email_cliente`.\n\n"
                     f"# FORMATO DE RESPOSTA (JSON OBRIGATÓRIO)\n"
                     f"Retorne APENAS um JSON válido, sem blocos de código (```json).\n"
                     f"{{\n"
                     f'  "mensagem_para_enviar": "Texto da resposta aqui (ou null)",\n'
                     f'  "nova_situacao": "Aguardando Resposta" | "Atendente Chamado" | "Concluído",\n'
                     f'  "nome_contato": "Nome extraído ou null",\n'
+                    f'  "email_cliente": "Email extraído ou null",\n'
                     f'  "tags_sugeridas": ["Tag1", "Tag2"] | null,\n'
                     f'  "acao_agenda": "agendar_reuniao" | null,\n'
                     f'  "data_agendamento": "YYYY-MM-DDTHH:MM:SS" | null,\n'
@@ -815,24 +833,40 @@ class GeminiService:
         self,
         company_description: str,
         db: AsyncSession,
-        user: models.User
+        user: models.User,
+        base_instruction: Optional[str] = None,
+        fixed_instruction: Optional[str] = None
     ) -> str:
         """Gera um prompt de sistema (persona) com base na descrição da empresa e instruções."""
-        prompt_text = (
-            f"Atue como um Especialista em Engenharia de Prompt e Estrategista de Vendas.\n"
-            f"Seu objetivo é escrever um 'System Prompt' (Persona) para um assistente de WhatsApp que deve parecer 100% humano.\n\n"
-            f"DIRETRIZES PARA O PROMPT GERADO:\n"
-            f"1. TOM E ESTILO: A linguagem deve ser natural, amigável e típica de WhatsApp (mensagens curtas, uso de emojis, sem formalismo excessivo). Proibido usar frases como 'em que posso ajudar hoje?' ou termos robóticos. Proibido admitir que é uma IA.\n"
-            f"2. ABERTURA OBRIGATÓRIA: O assistente deve sempre iniciar a primeira interação dizendo: 'Olá! Sou o [Nome] da [Nome da Empresa]. Com quem eu falo?' para obter o nome do cliente.\n"
-            f"3. CRIATIVIDADE EM PRODUTOS/PREÇOS: Se a descrição da empresa não fornecer uma lista detalhada, a IA deve inventar produtos, serviços e preços condizentes com o nicho, apresentando-os com total naturalidade e autoridade, como se fizessem parte do catálogo oficial.\n"
-            f"4. FLUXO DE CONVERSA: O atendimento deve ser focado em entender a necessidade do cliente, oferecer as opções geradas e conduzir para o fechamento ou agendamento, dependendo do nicho.\n"
-            f"5. REGRAS: Nunca quebrar o personagem. Se o cliente perguntar algo muito fora do escopo, o assistente deve contornar de forma humana (ex: 'vou confirmar essa informação com o financeiro').\n\n"
-            f"Informações para basear a criação:\n{company_description}\n\n"
-            f"Retorne APENAS o texto do system prompt gerado, sem introduções, sem formatação markdown (```) e pronto para uso."
-        )
+        
+        if base_instruction:
+            prompt_text = (
+                f"{base_instruction}\n\n"
+                f"--- DADOS DA EMPRESA ---\n"
+                f"{company_description}\n\n"
+                f"--- INSTRUÇÃO FINAL ---\n"
+                f"Com base nas instruções acima e nos dados da empresa, escreva o System Prompt (Persona) final.\n"
+                f"Retorne APENAS o texto do system prompt gerado, sem introduções, sem formatação markdown (```) e pronto para uso."
+            )
+        else:
+            prompt_text = (
+                f"Atue como um Especialista em Engenharia de Prompt e Estrategista de Vendas.\n"
+                f"Seu objetivo é escrever um 'System Prompt' (Persona) para um assistente de WhatsApp que deve parecer 100% humano.\n\n"
+                f"DIRETRIZES PARA O PROMPT GERADO:\n"
+                f"1. TOM E ESTILO: A linguagem deve ser natural, amigável e típica de WhatsApp (mensagens curtas, uso de emojis, sem formalismo excessivo). Proibido usar frases como 'em que posso ajudar hoje?' ou termos robóticos. Proibido admitir que é uma IA.\n"
+                f"2. ABERTURA OBRIGATÓRIA: O assistente deve sempre iniciar a primeira interação dizendo: 'Olá! Sou o [Nome] da [Nome da Empresa]. Com quem eu falo?' para obter o nome do cliente.\n"
+                f"3. CRIATIVIDADE EM PRODUTOS/PREÇOS: Se a descrição da empresa não fornecer uma lista detalhada, a IA deve inventar produtos, serviços e preços condizentes com o nicho, apresentando-os com total naturalidade e autoridade, como se fizessem parte do catálogo oficial.\n"
+                f"4. FLUXO DE CONVERSA: O atendimento deve ser focado em entender a necessidade do cliente, oferecer as opções geradas e conduzir para o fechamento ou agendamento, dependendo do nicho.\n"
+                f"5. REGRAS: Nunca quebrar o personagem. Se o cliente perguntar algo muito fora do escopo, o assistente deve contornar de forma humana (ex: 'vou confirmar essa informação com o financeiro').\n\n"
+                f"Informações para basear a criação:\n{company_description}\n\n"
+                f"Retorne APENAS o texto do system prompt gerado, sem introduções, sem formatação markdown (```) e pronto para uso."
+            )
         
         response = await self._generate_with_retry(prompt_text, db, user)
         
+        if fixed_instruction:
+            return response.text.strip() + "\n\n" + fixed_instruction
+
         # Lógica fixa de Teste Gratuito (Adicionada conforme solicitação)
         fixed_trial_prompt = (
             "\n\n"

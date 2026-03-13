@@ -139,6 +139,30 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  worker-bulk-sender:
+    build: .
+    container_name: atendai_worker_bulk_sender
+    command: ["python", "-m", "app.worker_bulk_sender"]
+    volumes:
+      - .:/app
+    networks:
+      - atendai_network
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - WBP_ACCESS_TOKEN=${WBP_ACCESS_TOKEN}
+      - WBP_VERIFY_TOKEN=${WBP_VERIFY_TOKEN}
+      - WBP_WEBHOOK_URL=${WBP_WEBHOOK_URL}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   tunnel:
     image: alpine:latest
     container_name: serveo_tunnel

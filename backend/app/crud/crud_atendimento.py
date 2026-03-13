@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone # Import timezone
 from typing import List, Tuple, Optional, Dict, Any
 import json # Import json
 from app.crud import crud_user
+from app.services.whatsapp_service import format_whatsapp_number
 
 logger = logging.getLogger(__name__)
 
@@ -150,11 +151,13 @@ async def add_message_to_conversa(
 
 async def get_or_create_atendimento_by_number(db: AsyncSession, number: str, user: models.User) -> Optional[Tuple[models.Atendimento, bool]]:
     """Busca ou cria um atendimento. Faz commit internamente."""
+    formatted_number = format_whatsapp_number(number)
+
     # 1. Buscar Atendimento Ativo
     atendimento_query = await db.execute(
         select(models.Atendimento)
         .where(
-            models.Atendimento.whatsapp == number,
+            models.Atendimento.whatsapp == formatted_number,
             models.Atendimento.user_id == user.id,
         )
         .order_by(models.Atendimento.created_at.desc())
@@ -163,24 +166,24 @@ async def get_or_create_atendimento_by_number(db: AsyncSession, number: str, use
     existing_atendimento = atendimento_query.scalars().first()
 
     if existing_atendimento:
-        logger.debug(f"Atendimento ativo (ID: {existing_atendimento.id}, Status: {existing_atendimento.status}) encontrado para {number}.")
+        logger.debug(f"Atendimento ativo (ID: {existing_atendimento.id}, Status: {existing_atendimento.status}) encontrado para {formatted_number}.")
         return existing_atendimento, False # Retorna o existente e False (não foi criado)
 
     # 3. Criar Novo Atendimento (se nenhum ativo foi encontrado)
     if not user.default_persona_id:
-        logger.error(f"Usuário {user.id} não tem persona padrão configurada. Não é possível criar novo atendimento para {number}.")
+        logger.error(f"Usuário {user.id} não tem persona padrão configurada. Não é possível criar novo atendimento para {formatted_number}.")
         return None # Retorna None se não puder criar
 
-    logger.info(f"Nenhum atendimento ativo encontrado para {number}. Criando novo atendimento...")
+    logger.info(f"Nenhum atendimento ativo encontrado para {formatted_number}. Criando novo atendimento...")
     new_atendimento = models.Atendimento(
-        whatsapp=number, user_id=user.id,
+        whatsapp=formatted_number, user_id=user.id,
         active_persona_id=user.default_persona_id, status="Mensagem Recebida" # Status inicial
     )
     db.add(new_atendimento)
     try:
         await db.commit()
         await db.refresh(new_atendimento)
-        logger.info(f"Novo atendimento criado (ID: {new_atendimento.id}) para o contato ({number}).")
+        logger.info(f"Novo atendimento criado (ID: {new_atendimento.id}) para o contato ({formatted_number}).")
         # Recarrega com relacionamentos após criar
         return await get_atendimento(db, new_atendimento.id, user.id), True # Retorna o novo e True (foi criado)
     except Exception as e:

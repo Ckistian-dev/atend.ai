@@ -9,7 +9,7 @@ from app.core.config import settings
 from app.db.database import SessionLocal
 from app.crud import crud_user, crud_atendimento, crud_config
 from app.db import models, schemas
-from app.services.whatsapp_service import get_whatsapp_service
+from app.services.whatsapp_service import get_whatsapp_service, format_whatsapp_number
 from app.services.gemini_service import get_gemini_service
 from app.services.prospect_service import get_prospect_service
 from app.services.security import decrypt_token
@@ -37,7 +37,7 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
         if not sender_number or not msg_id_wamid:
             return
 
-        cleaned_sender_number = "".join(filter(str.isdigit, sender_number))
+        cleaned_sender_number = format_whatsapp_number(sender_number)
 
         # --- Etapa 1: Obter ou Criar Atendimento (Mantido igual) ---
         async with SessionLocal() as db_session:
@@ -85,6 +85,21 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
                     at = await db_delete.get(models.Atendimento, atendimento_id)
                     if at: await db_delete.delete(at); await db_delete.commit()
                 return 
+
+        elif msg_type == 'interactive':
+            # Trata respostas de botões e listas da API oficial (clique do usuário)
+            interactive_data = message_data.get('interactive', {})
+            interactive_type = interactive_data.get('type')
+            if interactive_type == 'button_reply':
+                formatted_msg_content = interactive_data.get('button_reply', {}).get('title', '')
+            elif interactive_type == 'list_reply':
+                formatted_msg_content = interactive_data.get('list_reply', {}).get('title', '')
+            else:
+                formatted_msg_content = "[Interação via botão]"
+
+        elif msg_type == 'button':
+            # Trata botões simples (quick replies)
+            formatted_msg_content = message_data.get('button', {}).get('text', '')
 
         # --- ALTERAÇÃO PRINCIPAL AQUI: Tratamento de Mídia ---
         elif msg_type in ['image', 'audio', 'video', 'document', 'sticker']:

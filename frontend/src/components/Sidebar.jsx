@@ -8,6 +8,7 @@ import {
     LogOut,
     History, // --- NOVO: Ícone para Follow-up ---
     Archive,
+    Send,    // --- ADICIONADO: Import do ícone de disparos ---
 } from 'lucide-react';
 
 // --- ALTERADO: Aceita a prop 'currentUserApiType' ---
@@ -27,6 +28,7 @@ const Sidebar = ({ currentUserApiType, isSuperUser }) => {
         { icon: MessageSquareText, name: 'Atendimentos', path: '/atendimentos' },
         { icon: Archive, name: 'Mensagens', path: '/mensagens' },
         { icon: Bot, name: 'Persona & Contexto', path: '/configs' },
+        { icon: Send, name: 'Disparos', path: '/disparos' },
         { icon: History, name: 'Follow-up', path: '/followup' },
     ];
 

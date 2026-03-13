@@ -75,6 +75,8 @@ class Atendimento(Base):
     conversa: Mapped[Optional[str]] = mapped_column(Text, default="[]")
     resumo: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="")
     observacoes: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="")
+    bulk_template_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    bulk_template_params: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     tags: Mapped[Optional[List[Dict[str, str]]]] = mapped_column(JSONB, nullable=True, default=list)
     token_usage: Mapped[int] = mapped_column(Integer, default=0, comment="Total de tokens consumidos neste atendimento")
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), index=True)

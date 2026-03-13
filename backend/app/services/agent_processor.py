@@ -3,11 +3,12 @@ import json
 import logging
 import random
 import uuid
+import re
 from typing import Dict, List, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.future import select
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from app.db.database import SessionLocal
 from app.crud import crud_atendimento, crud_config, crud_user
@@ -153,6 +154,7 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
         intended_status_after_send = ia_response.get("nova_situacao", "Aguardando Resposta")
         intended_resumo = ia_response.get("resumo", "")
         contact_name_from_ia = ia_response.get("nome_contato")
+        email_cliente = ia_response.get("email_cliente")
         tags_sugeridas = ia_response.get("tags_sugeridas")
         acao_agenda = ia_response.get("acao_agenda")
         data_agendamento = ia_response.get("data_agendamento")
@@ -255,25 +257,72 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                             intended_resumo += f" | Falha permanente no download do arquivo {nome_arquivo} (ID: {file_id})."
 
         # --- LÓGICA DE AGENDAMENTO NO GOOGLE CALENDAR ---
+        meeting_link = None
         if acao_agenda == "agendar_reuniao" and data_agendamento:
             try:
                 if persona_config and persona_config.google_calendar_credentials:
                     calendar_service = get_google_calendar_service(persona_config)
                     service = calendar_service.get_service()
                     
+                    # --- Cancelar agendamentos anteriores deste contato ---
+                    try:
+                        now_iso = datetime.now(timezone.utc).isoformat()
+                        # Busca eventos futuros que contenham o número do WhatsApp na descrição ou título
+                        existing_events = service.events().list(
+                            calendarId='primary',
+                            timeMin=now_iso,
+                            q=atendimento_context.whatsapp,
+                            singleEvents=True,
+                            orderBy='startTime'
+                        ).execute().get('items', [])
+
+                        for old_event in existing_events:
+                            if old_event.get('description') and f"WhatsApp: {atendimento_context.whatsapp}" in old_event.get('description'):
+                                logger.info(f"Agente: Cancelando evento anterior {old_event.get('id')} para reagendamento.")
+                                service.events().delete(calendarId='primary', eventId=old_event.get('id'), sendUpdates='all').execute()
+                    except Exception as cancel_err:
+                        logger.warning(f"Agente: Erro ao cancelar agendamentos anteriores: {cancel_err}")
+
                     dt_start = datetime.fromisoformat(data_agendamento)
                     dt_end = dt_start + timedelta(hours=1) # Duração padrão de 1h
                     
                     event_body = {
-                        'summary': f'Atendimento: {atendimento_context.nome_contato or atendimento_context.whatsapp}',
-                        'description': f'Agendado automaticamente pela IA AtendAI.\nWhatsApp: {atendimento_context.whatsapp}',
+                        'summary': f'Reunião: {atendimento_context.nome_contato or atendimento_context.whatsapp}',
+                        'description': f'Agendado automaticamente pela IA AtendAI.\nWhatsApp: {atendimento_context.whatsapp}\nObservações: {atendimento_context.resumo or "Nenhuma"}',
                         'start': {'dateTime': dt_start.isoformat(), 'timeZone': 'America/Sao_Paulo'},
                         'end': {'dateTime': dt_end.isoformat(), 'timeZone': 'America/Sao_Paulo'},
+                        'conferenceData': {
+                            'createRequest': {
+                                'requestId': f"{uuid.uuid4()}",
+                                # 'conferenceSolutionKey': {'type': 'hangoutMeet'} # Removido para usar o padrão (Meet) e evitar erro 400
+                            }
+                        }
                     }
                     
-                    event = service.events().insert(calendarId='primary', body=event_body).execute()
-                    logger.info(f"Agente: Reunião agendada com sucesso! Link: {event.get('htmlLink')}")
-                    intended_resumo += f" | Reunião agendada para {data_agendamento}."
+                    # Validação de e-mail antes de adicionar
+                    if email_cliente and isinstance(email_cliente, str):
+                        clean_email = email_cliente.strip()
+                        if re.match(r"[^@]+@[^@]+\.[^@]+", clean_email):
+                            event_body['attendees'] = [{'email': clean_email}]
+                        else:
+                            logger.warning(f"Agente: Email do cliente inválido para convite: '{email_cliente}'. Agendando sem convite.")
+
+                    try:
+                        event = service.events().insert(calendarId='primary', body=event_body, conferenceDataVersion=1, sendUpdates='all').execute()
+                        meeting_link = event.get('hangoutLink')
+                        logger.info(f"Agente: Reunião agendada com sucesso! Link: {meeting_link}")
+                        intended_resumo += f" | Reunião agendada para {data_agendamento}."
+                    except Exception as req_err:
+                        logger.error(f"Agente: Erro na requisição do Calendar com ConferenceData. Tentando sem conferência. Erro: {req_err}")
+                        # Fallback: Tenta criar sem conferência se falhar (evita perder o agendamento)
+                        if 'conferenceData' in event_body:
+                            del event_body['conferenceData']
+                        try:
+                            event = service.events().insert(calendarId='primary', body=event_body, sendUpdates='all').execute()
+                            logger.info(f"Agente: Reunião agendada (sem link Meet) com sucesso!")
+                            intended_resumo += f" | Reunião agendada para {data_agendamento} (Sem link Meet)."
+                        except Exception as fallback_err:
+                            logger.error(f"Agente: Falha total no agendamento. Erro: {fallback_err}")
                 else:
                     logger.warning("Agente: IA solicitou agendamento mas Google Calendar não está configurado.")
             except Exception as cal_err:
@@ -317,6 +366,11 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                         # Atualiza o nome do contato se a IA retornou um novo nome e o campo atual está vazio.
                         if contact_name_from_ia and not at_final.nome_contato:
                             at_final.nome_contato = contact_name_from_ia
+                        
+                        # Salva o link da reunião nas observações
+                        if meeting_link:
+                            current_obs = at_final.observacoes or ""
+                            at_final.observacoes = f"{current_obs}\nLink Reunião: {meeting_link}".strip()
 
                         # Atualiza tags se houver sugestão da IA
                         if tags_sugeridas and isinstance(tags_sugeridas, list):

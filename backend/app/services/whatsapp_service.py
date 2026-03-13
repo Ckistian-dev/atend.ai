@@ -18,6 +18,25 @@ class MessageSendError(Exception):
     """Exceção customizada para falhas no envio de mensagens."""
     pass
 
+def format_whatsapp_number(number: str) -> str:
+    """
+    Limpa o número, adiciona o prefixo 55 se necessário e remove o nono dígito de números brasileiros.
+    """
+    if not number:
+        return ""
+    # Remove tudo que não for dígito
+    clean_number = "".join(filter(str.isdigit, str(number)))
+    
+    # Adiciona 55 se o número tiver 10 ou 11 dígitos (DDD + número)
+    if not clean_number.startswith("55") and len(clean_number) in [10, 11]:
+        clean_number = "55" + clean_number
+        
+    # Remove o nono dígito (55 + DD + 9 + 8 dígitos)
+    if len(clean_number) == 13 and clean_number.startswith("55") and clean_number[4] == '9':
+        clean_number = clean_number[:4] + clean_number[5:]
+        
+    return clean_number
+
 class WhatsAppService:
     
     def __init__(self):
@@ -26,15 +45,8 @@ class WhatsAppService:
         self.wbp_api_version = "v24.0" # Manter versão consistente
 
     def _normalize_number(self, number: str) -> str:
-        """Limpa número (remove não dígitos) e remove o 9º dígito de números BR móveis (lógica do exemplo)."""
-        clean_number = "".join(filter(str.isdigit, str(number)))
-        if len(clean_number) == 13 and clean_number.startswith("55"):
-            subscriber_part = clean_number[4:]
-            if subscriber_part.startswith('9') and len(subscriber_part) == 9:
-                normalized = clean_number[:4] + subscriber_part[1:]
-                logger.info(f"Normalizando número BR: {clean_number} -> {normalized}")
-                return normalized
-        return clean_number
+        """Usa a função global de formatação."""
+        return format_whatsapp_number(number)
 
     def _run_ffmpeg_sync(self, input_path: str, output_path: str):
         """
@@ -239,9 +251,9 @@ class WhatsAppService:
                     with open(input_path, "wb") as f:
                         f.write(file_bytes)
                     
-                    # Comando ffmpeg para converter para JPEG, preservando a orientação (autorotate)
+                    # Processamento de imagem: preserva orientação e converte para JPEG
                     command = ["ffmpeg", "-y", "-autorotate", "-i", input_path, "-pix_fmt", "yuvj420p", "-q:v", "2", output_path]
-                    result = subprocess.run(command, capture_output=True, check=True, text=True, encoding='utf-8')
+                    await asyncio.to_thread(subprocess.run, command, capture_output=True, check=True, text=True, encoding='utf-8')
                     
                     with open(output_path, "rb") as f:
                         converted_bytes = f.read()
@@ -269,7 +281,7 @@ class WhatsAppService:
         files = {
             'file': (final_filename, final_file_bytes, final_mimetype),
             'messaging_product': (None, 'whatsapp'),
-            'type': (None, final_mimetype)
+            'type': (None, media_type)
         }
         
         logger.info(f"WBP: Iniciando upload de mídia ({final_filename}, {final_mimetype}, {len(final_file_bytes)} bytes)...")

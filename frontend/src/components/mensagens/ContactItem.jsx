@@ -122,6 +122,8 @@ const ContactItem = ({
                 return { text: 'Aguardando Resposta', colorClass: 'bg-yellow-100', colorHex: null };
             case 'Mensagem Recebida':
                 return { text: 'Mensagem Recebida', colorClass: 'bg-blue-100', colorHex: null };
+            case 'Aguardando Envio':
+                return { text: 'Aguardando Envio', colorClass: 'bg-purple-100', colorHex: null };
             default:
                 return { text: status || 'Novo', colorClass: 'bg-gray-400', colorHex: null };
         }

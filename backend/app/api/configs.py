@@ -137,12 +137,13 @@ async def sync_google_sheet(
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(get_current_active_user)
 ):
-    config_id = payload.get("config_id")
+    try:
+        config_id = int(payload.get("config_id"))
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="config_id é obrigatório e deve ser um número inteiro.")
+
     spreadsheet_id = payload.get("spreadsheet_id") # Opcional
     sync_type = payload.get("type", "system") # 'system' ou 'rag'
-
-    if not config_id:
-        raise HTTPException(status_code=400, detail="config_id é obrigatório.")
 
     db_config = await crud_config.get_config(db=db, config_id=config_id, user_id=current_user.id)
     if not db_config:
@@ -237,11 +238,12 @@ async def sync_google_drive(
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(get_current_active_user)
 ):
-    config_id = payload.get("config_id")
-    folder_id = payload.get("drive_id")
+    try:
+        config_id = int(payload.get("config_id"))
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="config_id é obrigatório e deve ser um número inteiro.")
 
-    if not config_id:
-        raise HTTPException(status_code=400, detail="config_id é obrigatório.")
+    folder_id = payload.get("drive_id")
 
     db_config = await crud_config.get_config(db=db, config_id=config_id, user_id=current_user.id)
     if not db_config:
@@ -341,11 +343,16 @@ async def calendar_callback(
 ):
     code = payload.get("code")
     redirect_uri = payload.get("redirect_uri")
-    config_id = payload.get("config_id")
+    config_id_raw = payload.get("config_id")
     
-    if not all([code, redirect_uri, config_id]):
+    if not all([code, redirect_uri, config_id_raw]):
         raise HTTPException(status_code=400, detail="Parâmetros ausentes.")
-        
+
+    try:
+        config_id = int(config_id_raw)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="config_id deve ser um número inteiro.")
+
     db_config = await crud_config.get_config(db=db, config_id=config_id, user_id=current_user.id)
     if not db_config:
         raise HTTPException(status_code=404, detail="Configuração não encontrada.")

@@ -423,7 +423,13 @@ function Atendimentos() {
             setAllTags(tagsRes.data);
             setPersonas(personasRes.data);
             setUserData(userRes.data);
-            setStatusOptions(situationsRes.data); // <-- ADICIONADO: Define o estado com os dados da API
+
+            // Garante que 'Aguardando Envio' esteja nas opções para permitir alteração manual no modal
+            let sOptions = situationsRes.data || [];
+            if (!sOptions.some(opt => opt.nome === 'Aguardando Envio')) {
+                sOptions = [...sOptions, { nome: 'Aguardando Envio', cor: '#9333ea' }];
+            }
+            setStatusOptions(sOptions);
 
             // CORREÇÃO: Só atualiza a URL se o componente ainda estiver montado.
             // Isso evita que uma busca de dados antiga, de uma página que já foi "deixada para trás",

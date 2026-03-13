@@ -130,6 +130,26 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  # --- Worker Bulk Sender ---
+  worker-bulk-sender:
+    image: ckistian/atendai-backend:latest
+    container_name: atendai_worker_bulk_sender
+    restart: always
+    command: ["python", "-m", "app.worker_bulk_sender"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - SECRET_KEY=${SECRET_KEY}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - WBP_ACCESS_TOKEN=${WBP_ACCESS_TOKEN}
+      - WBP_VERIFY_TOKEN=${WBP_VERIFY_TOKEN}
+      - WBP_WEBHOOK_URL=${WBP_WEBHOOK_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   rabbitmq_data:
   postgres_data:

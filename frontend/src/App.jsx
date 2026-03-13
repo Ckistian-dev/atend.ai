@@ -11,6 +11,7 @@ import Admin from './pages/Admin';
 import Followup from './pages/Followup';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
+import BulkSender from './pages/BulkSender';
 
 // Importação dos componentes de layout
 import MainLayout from './components/MainLayout';
@@ -36,6 +37,7 @@ function App() {
         <Route path="configs" element={<Configs />} />
         <Route path="admin" element={<Admin />} />
         <Route path="followup" element={<Followup />} />
+        <Route path="disparos" element={<BulkSender />} />
         
         {/* Redireciona a rota raiz para o dashboard */}
         <Route index element={<Navigate to="/dashboard" />} />

@@ -378,8 +378,9 @@ function Configs() {
         // 1. Remove duplicados por remoteJid e ordena alfabeticamente
         const uniqueMap = new Map();
         destinations.forEach(d => {
-            if (d.remoteJid && !uniqueMap.has(d.remoteJid)) {
-                uniqueMap.set(d.remoteJid, d);
+            const jid = d.remoteJid || d.id;
+            if (jid && !uniqueMap.has(jid)) {
+                uniqueMap.set(jid, { ...d, remoteJid: jid });
             }
         });
         
@@ -408,7 +409,7 @@ function Configs() {
                     searchVal = termDigits.startsWith('55') ? termDigits : `55${termDigits}`;
                 }
                 const normalizedTerm = normalizeJid(searchVal);
-                return normalizedJid.includes(normalizedTerm);
+                if (normalizedJid.includes(normalizedTerm)) return true;
             }
 
             return term.includes('@') ? fullJid.includes(term) : jidPrefix.includes(term);
@@ -666,7 +667,7 @@ function Configs() {
                                                     <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto custom-scrollbar divide-y divide-gray-100">
                                                         {filteredDestinations.map(dest => {
                                                             const isGroup = dest.remoteJid?.endsWith('@g.us');
-                                                            const isSelected = formData.notification_destination === dest.remoteJid;
+                                                            const isSelected = normalizeJid(formData.notification_destination) === normalizeJid(dest.remoteJid);
                                                             return (
                                                                 <button
                                                                     key={dest.id}

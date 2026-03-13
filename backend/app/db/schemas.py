@@ -13,6 +13,8 @@ class ConfigBase(BaseModel):
     notification_destination: Optional[str] = None
     available_hours: Optional[Dict[str, Any]] = None
     is_calendar_active: Optional[bool] = False
+    google_calendar_credentials: Optional[Dict[str, Any]] = None
+
 
 class ConfigCreate(ConfigBase):
     pass
@@ -69,6 +71,8 @@ class Atendimento(BaseModel):
     observacoes: Optional[str] = None
     conversa: Optional[str] = "[]"
     created_at: datetime
+    bulk_template_name: Optional[str] = None
+    bulk_template_params: Optional[Dict[str, Any]] = None
     updated_at: datetime
     whatsapp: str
     nome_contato: Optional[str] = None

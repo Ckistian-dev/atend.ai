@@ -155,7 +155,13 @@ function Mensagens() {
             ]);
             setCurrentUser(userRes.data);
             setPersonas(personasRes.data);
-            setStatusOptions(situationsRes.data);
+
+            // Garante que 'Aguardando Envio' esteja nas opções para alteração manual
+            let sOptions = situationsRes.data || [];
+            if (!sOptions.some(opt => opt.nome === 'Aguardando Envio')) {
+                sOptions = [...sOptions, { nome: 'Aguardando Envio', cor: '#9333ea' }];
+            }
+            setStatusOptions(sOptions);
             setAllTags(tagsRes.data);
 
             const serverData = atendimentosRes.data;
@@ -784,9 +790,11 @@ function Mensagens() {
         // e retorna o atendimento atualizado.
         // A chamada `updateAtendimentoState` irá atualizar a UI com a resposta.
         try {
+            const config = templatePayload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
             const response = await api.post(
                 `/atendimentos/${atendimentoId}/send_template`,
-                templatePayload
+                templatePayload,
+                config
             );
             updateAtendimentoState(atendimentoId, response.data);
         } catch (err) {
@@ -807,7 +815,7 @@ function Mensagens() {
     const toggleFilter = (groupName) => {
         const filterGroups = {
             atendimentos: ['Atendente Chamado'],
-            bot_ia: ['Mensagem Recebida', 'Aguardando Resposta', 'Gerando Resposta'],
+            bot_ia: ['Mensagem Recebida', 'Aguardando Resposta', 'Gerando Resposta', 'Aguardando Envio'],
         };
 
         // Se o botão clicado já está ativo, desativa tudo

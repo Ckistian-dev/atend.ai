@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Send, Loader2, AlertTriangle, Search } from 'lucide-react';
+import { X, Send, Loader2, AlertTriangle, Search, Upload, FileImage, FileVideo, File as FileIcon } from 'lucide-react';
 import api from '../../api/axiosConfig'; // Importa a configuração do Axios
 
 // --- NOVO: Componente da Barra Lateral ---
@@ -49,12 +49,12 @@ const TemplateSidebar = ({ templates, selectedTemplate, onSelect, searchTerm, se
 };
 
 // --- NOVO: Componente de Preview da Mensagem ---
-const TemplatePreview = ({ template, variables }) => {
+const TemplatePreview = ({ template, variables, headerFile }) => {
     const previewText = useMemo(() => {
         if (!template) return '';
 
         // Combina header e body para o preview
-        const header = template.components.find(c => c.type === 'HEADER')?.text || '';
+        const header = template.components.find(c => c.type === 'HEADER' && c.format === 'TEXT')?.text || '';
         const body = template.components.find(c => c.type === 'BODY')?.text || '';
         let combinedText = `${header}\n${body}`.trim();
 
@@ -66,6 +66,18 @@ const TemplatePreview = ({ template, variables }) => {
         });
     }, [template, variables]);
 
+    const headerMedia = useMemo(() => {
+        if (!template) return null;
+        const header = template.components.find(c => c.type === 'HEADER');
+        if (!header || header.format === 'TEXT') return null;
+        return header.format; // IMAGE, VIDEO, DOCUMENT
+    }, [template]);
+
+    const buttons = useMemo(() => {
+        if (!template) return [];
+        return template.components.find(c => c.type === 'BUTTONS')?.buttons || [];
+    }, [template]);
+
     if (!template) {
         return (
             <div className="flex-1 flex items-center justify-center p-6">
@@ -76,9 +88,40 @@ const TemplatePreview = ({ template, variables }) => {
 
     return (
         <div className="flex justify-end">
-            {/* --- ALTERAÇÃO AQUI: Removido o container cinza e o título "Preview da Mensagem" foi movido para o balão --- */}
-            <div className="relative max-w-md py-2 px-3 rounded-lg shadow-sm break-words bg-[#d9fdd3] text-gray-800 message-out">
+            <div className="relative max-w-md py-2 px-3 rounded-lg shadow-sm break-words bg-[#d9fdd3] text-gray-800 message-out min-w-[200px]">
+                {headerMedia && (
+                    <div className="mb-2 bg-black/5 rounded-md aspect-video flex flex-col items-center justify-center border border-dashed border-black/10 text-gray-500 overflow-hidden">
+                        {headerFile ? (
+                            headerFile.type.startsWith('image/') ? (
+                                <img src={URL.createObjectURL(headerFile)} alt="Header preview" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="flex flex-col items-center gap-1 p-4">
+                                    <FileIcon size={32} />
+                                    <span className="text-[10px] text-center truncate w-full">{headerFile.name}</span>
+                                </div>
+                            )
+                        ) : (
+                            <div className="flex flex-col items-center gap-1">
+                                {headerMedia === 'IMAGE' && <FileImage size={24} />}
+                                {headerMedia === 'VIDEO' && <FileVideo size={24} />}
+                                {headerMedia === 'DOCUMENT' && <FileIcon size={24} />}
+                                <span className="text-[10px] uppercase font-bold tracking-wider">{headerMedia}</span>
+                            </div>
+                        )}
+                    </div>
+                )}
                 <p className="whitespace-pre-wrap text-sm" dangerouslySetInnerHTML={{ __html: previewText.replace(/\n/g, '<br />') }} />
+                
+                {buttons.length > 0 && (
+                    <div className="mt-3 pt-2 border-t border-black/5 space-y-1">
+                        {buttons.map((btn, idx) => (
+                            <div key={idx} className="bg-white/80 py-1.5 text-center text-blue-600 text-xs font-semibold rounded-md border border-black/5 shadow-sm">
+                                {btn.text}
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 <span className="text-xs text-gray-400 float-right ml-2 mt-1">
                     {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
@@ -92,6 +135,7 @@ const TemplateModal = ({ isOpen, onClose, onSend }) => {
     const [templates, setTemplates] = useState([]);
     const [selectedTemplate, setSelectedTemplate] = useState(null);
     const [variables, setVariables] = useState({}); // Estado unificado para todas as variáveis
+    const [headerFile, setHeaderFile] = useState(null); // Arquivo para o header de mídia
     const [searchTerm, setSearchTerm] = useState(''); // Estado para a busca
     const [isLoading, setIsLoading] = useState(false);
     const [isSending, setIsSending] = useState(false);
@@ -119,6 +163,7 @@ const TemplateModal = ({ isOpen, onClose, onSend }) => {
             // Limpa o estado quando o modal fecha
             setSelectedTemplate(null);
             setVariables({});
+            setHeaderFile(null);
         }
     }, [isOpen]);
 
@@ -127,9 +172,14 @@ const TemplateModal = ({ isOpen, onClose, onSend }) => {
     const variableNames = useMemo(() => {
         if (!selectedTemplate) return [];
 
-        const headerText = selectedTemplate.components.find(c => c.type === 'HEADER')?.text || '';
+        const headerText = selectedTemplate.components.find(c => c.type === 'HEADER' && c.format === 'TEXT')?.text || '';
         const bodyText = selectedTemplate.components.find(c => c.type === 'BODY')?.text || '';
-        const combinedText = `${headerText} ${bodyText}`;
+        
+        // Também busca variáveis em botões de URL dinâmicos
+        const buttons = selectedTemplate.components.find(c => c.type === 'BUTTONS')?.buttons || [];
+        const buttonsText = buttons.map(b => b.url || '').join(' ');
+
+        const combinedText = `${headerText} ${bodyText} ${buttonsText}`;
 
         const matches = combinedText.match(/{{\s*(\w+)\s*}}/g) || [];
         // Remove duplicados e extrai apenas o nome da variável
@@ -147,6 +197,13 @@ const TemplateModal = ({ isOpen, onClose, onSend }) => {
     }, [variableNames]);
     // --- FIM DA LÓGICA DE VARIÁVEIS ---
 
+    const headerMediaType = useMemo(() => {
+        if (!selectedTemplate) return null;
+        const header = selectedTemplate.components.find(c => c.type === 'HEADER');
+        if (!header || header.format === 'TEXT') return null;
+        return header.format;
+    }, [selectedTemplate]);
+
     const handleSend = async () => {
         if (!selectedTemplate) return;
 
@@ -157,6 +214,13 @@ const TemplateModal = ({ isOpen, onClose, onSend }) => {
         const allVarsFilled = Object.values(variables).every(v => v.trim() !== '');
         if (!allVarsFilled) {
             setError('Todas as variáveis devem ser preenchidas.');
+            setIsSending(false);
+            return;
+        }
+
+        // Validação de mídia no cabeçalho
+        if (headerMediaType && !headerFile) {
+            setError(`O template requer um arquivo de ${headerMediaType.toLowerCase()} no cabeçalho.`);
             setIsSending(false);
             return;
         }
@@ -196,7 +260,14 @@ const TemplateModal = ({ isOpen, onClose, onSend }) => {
             if (variableNames.length === 0) {
                 delete payload.components;
             }
-            await onSend(payload);
+            
+            const formData = new FormData();
+            formData.append('payload_json', JSON.stringify(payload));
+            if (headerFile) {
+                formData.append('file', headerFile);
+            }
+
+            await onSend(formData);
             onClose(); // Fecha o modal em caso de sucesso
         } catch (err) {
             console.error("Erro ao enviar template:", err);
@@ -268,7 +339,22 @@ const TemplateModal = ({ isOpen, onClose, onSend }) => {
                             </div>
                         ) : (
                             <>
-                                <TemplatePreview template={selectedTemplate} variables={variables} />
+                                <TemplatePreview template={selectedTemplate} variables={variables} headerFile={headerFile} />
+
+                                {headerMediaType && (
+                                    <div className="p-4 bg-white rounded-lg shadow-sm space-y-2">
+                                        <h4 className="text-md font-semibold text-gray-800 flex items-center gap-2">
+                                            <Upload size={18} className="text-blue-500" /> Cabeçalho: {headerMediaType}
+                                        </h4>
+                                        <input
+                                            type="file"
+                                            onChange={e => setHeaderFile(e.target.files[0])}
+                                            accept={headerMediaType === 'IMAGE' ? 'image/*' : headerMediaType === 'VIDEO' ? 'video/*' : '*/*'}
+                                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                        />
+                                        {headerFile && <p className="text-xs text-green-600 font-medium">Arquivo selecionado: {headerFile.name}</p>}
+                                    </div>
+                                )}
 
                                 {variableNames.length > 0 && (
                                     // --- ALTERAÇÃO AQUI: Adicionado fundo branco e padding para os inputs ---

@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     
     GOOGLE_SERVICE_ACCOUNT_JSON: str
 
+    GOOGLE_CLIENT_ID: str
+
+    GOOGLE_CLIENT_SECRET: str
+
     MAX_MESSAGE_AGE_SECONDS: int = 300 # Tempo (s) para ignorar webhooks antigos na fila. Padrão: 5 minutos.
     
     ADMIN_EMAIL: str

@@ -28,7 +28,7 @@ from app.core.config import settings
 from app.db.database import get_db
 from app.db import models, schemas
 from app.crud import crud_atendimento, crud_user
-from app.services.whatsapp_service import WhatsAppService, get_whatsapp_service, MessageSendError
+from app.services.whatsapp_service import WhatsAppService, get_whatsapp_service, MessageSendError, format_whatsapp_number
 from app.services.security import decrypt_token
 from app.services.gemini_service import GeminiService, get_gemini_service
 
@@ -296,6 +296,9 @@ async def create_atendimento(
     """
     Cria um novo atendimento manualmente.
     """
+    # Formata o número antes de qualquer verificação ou salvamento
+    atendimento_in.whatsapp = format_whatsapp_number(atendimento_in.whatsapp)
+
     # Verifica se já existe um atendimento para este número
     existing_query = await db.execute(select(models.Atendimento).where(
         models.Atendimento.whatsapp == atendimento_in.whatsapp,
@@ -674,15 +677,22 @@ async def download_media_directly(
 @router.post("/{atendimento_id}/send_template", response_model=schemas.Atendimento)
 async def send_template_message(
     atendimento_id: int,
-    payload: SendTemplatePayload = Body(...),
+    payload_json: str = Form(...),
+    file: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(dependencies.get_current_active_user),
     whatsapp_service: WhatsAppService = Depends(get_whatsapp_service)
 ):
     """
     Envia uma mensagem baseada em um template pré-aprovado da Meta.
-    Usado para iniciar conversas ou enviar notificações.
+    Suporta envio de variáveis e mídia no cabeçalho.
     """
+    try:
+        payload_dict = json.loads(payload_json)
+        payload = schemas.SendTemplatePayload(**payload_dict)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Payload JSON inválido: {e}")
+
     db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, user_id=current_user.id)
     if not db_atendimento or not db_atendimento.whatsapp:
         raise HTTPException(status_code=404, detail="Atendimento ou contato não encontrado")
@@ -690,6 +700,39 @@ async def send_template_message(
     whatsapp_number = db_atendimento.whatsapp
 
     try:
+        # Se houver arquivo, faz o upload para a Meta antes de enviar o template
+        if file and current_user.wbp_phone_number_id:
+            file_bytes = await file.read()
+            mimetype = file.content_type or mimetypes.guess_type(file.filename)[0] or 'application/octet-stream'
+            
+            media_type = 'document'
+            if mimetype.startswith('image/'): media_type = 'image'
+            elif mimetype.startswith('video/'): media_type = 'video'
+            
+            media_id = await whatsapp_service._upload_media_official(
+                phone_number_id=current_user.wbp_phone_number_id,
+                access_token=settings.WBP_ACCESS_TOKEN,
+                file_bytes=file_bytes,
+                mimetype=mimetype,
+                filename=file.filename,
+                media_type=media_type
+            )
+            
+            if media_id:
+                if not payload.components: payload.components = []
+                header_comp = next((c for c in payload.components if c['type'] == 'header'), None)
+                if not header_comp:
+                    header_comp = {"type": "header", "parameters": []}
+                    payload.components.insert(0, header_comp)
+                
+                header_comp['parameters'].append({
+                    "type": media_type,
+                    media_type: {"id": media_id}
+                })
+            else:
+                logger.error(f"Falha no upload de mídia para template: {file.filename}")
+                raise HTTPException(status_code=502, detail="Falha ao carregar a mídia do template para os servidores da Meta.")
+
         send_result = await whatsapp_service.send_template_message(
             user=current_user,
             number=whatsapp_number,
@@ -699,6 +742,10 @@ async def send_template_message(
         )
 
         logger.info(f"Template '{payload.template_name}' enviado para {whatsapp_number}. API Msg ID: {send_result.get('id')}")
+
+        # Identifica se foi enviada mídia para salvar corretamente no histórico
+        msg_type = 'text'
+        final_media_id = None
 
         # --- INÍCIO DA LÓGICA ATUALIZADA ---
         # Monta a mensagem completa para o histórico, em vez de um resumo.
@@ -721,6 +768,16 @@ async def send_template_message(
                 sent_components = payload.components or [] # Garante que é uma lista, mesmo se for None
                 header_params = next((c.get('parameters', []) for c in sent_components if c['type'] == 'header'), [])
                 body_params = next((c.get('parameters', []) for c in sent_components if c['type'] == 'body'), [])
+
+                # Captura o media_id do header para que o chat possa exibir a imagem no histórico
+                for hp in header_params:
+                    if 'image' in hp:
+                        msg_type = 'image'; final_media_id = hp['image'].get('id')
+                    elif 'video' in hp:
+                        msg_type = 'video'; final_media_id = hp['video'].get('id')
+                    elif 'document' in hp:
+                        msg_type = 'document'; final_media_id = hp['document'].get('id')
+                    if final_media_id: break
 
                 # 4. Substitui as variáveis no texto
                 for i, param in enumerate(header_params):
@@ -749,7 +806,9 @@ async def send_template_message(
             role='assistant',
             content=content_for_history,
             timestamp=int(datetime.now(timezone.utc).timestamp()),
-            type='text' # Salva como texto simples no histórico
+            type=msg_type,
+            media_id=final_media_id,
+            filename=file.filename if file else None
         )
 
         atendimento_atualizado = await crud_atendimento.add_message_to_conversa(
@@ -763,3 +822,91 @@ async def send_template_message(
     except (MessageSendError, ValueError) as e:
         logger.error(f"Erro ao ENVIAR template para {whatsapp_number}: {e}", exc_info=True)
         raise HTTPException(status_code=502, detail=f"Falha ao enviar template pela API: {e}")
+
+@router.post("/bulk", summary="Importar contatos para disparo em massa")
+async def create_bulk_disparos(
+    file: UploadFile = File(...),
+    media_file: Optional[UploadFile] = File(None),
+    template_name: str = Form(...),
+    persona_id: int = Form(...),
+    observacoes: Optional[str] = Form(None),
+    template_params: Optional[str] = Form(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(dependencies.get_current_active_user),
+    whatsapp_service: WhatsAppService = Depends(get_whatsapp_service)
+):
+    """
+    Recebe um CSV com 'whatsapp' e opcionalmente 'nome', criando atendimentos para disparo.
+    """
+    content = await file.read()
+    decoded = content.decode('utf-8')
+    reader = csv.DictReader(io.StringIO(decoded))
+    
+    # Parse dos parâmetros do template
+    params_dict = {"components": []}
+    if template_params:
+        try:
+            params_dict = json.loads(template_params)
+        except:
+            logger.warning(f"Falha ao parsear template_params no bulk: {template_params}")
+
+    # Se houver arquivo de mídia, faz o upload para a Meta uma única vez para todos os disparos
+    if media_file and current_user.wbp_phone_number_id:
+        file_bytes = await media_file.read()
+        mimetype = media_file.content_type or mimetypes.guess_type(media_file.filename)[0] or 'application/octet-stream'
+        
+        media_type = 'document'
+        if mimetype.startswith('image/'): media_type = 'image'
+        elif mimetype.startswith('video/'): media_type = 'video'
+        
+        media_id = await whatsapp_service._upload_media_official(
+            phone_number_id=current_user.wbp_phone_number_id,
+            access_token=settings.WBP_ACCESS_TOKEN,
+            file_bytes=file_bytes,
+            mimetype=mimetype,
+            filename=media_file.filename,
+            media_type=media_type
+        )
+        
+        if media_id:
+            components = params_dict.get("components", [])
+            header_comp = next((c for c in components if c['type'] == 'header'), None)
+            if not header_comp:
+                header_comp = {"type": "header", "parameters": []}
+                components.insert(0, header_comp)
+            
+            header_comp['parameters'].append({
+                "type": media_type,
+                media_type: {"id": media_id}
+            })
+            params_dict["components"] = components
+
+    count = 0
+    for row in reader:
+        number = format_whatsapp_number(row.get('whatsapp', ''))
+        if not number: continue
+        
+        # Verifica duplicidade simples para este usuário
+        existing = await db.execute(select(models.Atendimento).where(
+            models.Atendimento.whatsapp == number,
+            models.Atendimento.user_id == current_user.id
+        ))
+        
+        if existing.scalars().first():
+            continue
+
+        new_at = models.Atendimento(
+            whatsapp=number,
+            nome_contato=row.get('nome'),
+            user_id=current_user.id,
+            status="Aguardando Envio",
+            active_persona_id=persona_id,
+            bulk_template_name=template_name,
+            observacoes=observacoes,
+            bulk_template_params=params_dict
+        )
+        db.add(new_at)
+        count += 1
+    
+    await db.commit()
+    return {"message": f"{count} atendimentos criados na fila de envio."}
