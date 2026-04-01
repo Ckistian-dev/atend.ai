@@ -267,9 +267,9 @@ async def provision_google_resource(
         logger.error(f"Falha ao provisionar recurso: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Erro ao criar/partilhar o recurso no Google: {str(e)}")
 
-async def background_sync_sheet(config_id: int, user_id: int, spreadsheet_id: str, sync_type: str):
-    """Tarefa agendada em segundo plano para ler planilhas e gerar contexto/vetores."""
-    logger.info(f"Iniciando sincronização de Planilha em background (Config: {config_id}, User: {user_id}, Tipo: {sync_type})")
+async def run_sync_sheet(config_id: int, user_id: int, spreadsheet_id: str, sync_type: str) -> int:
+    """Função síncrona para ler planilhas e gerar contexto/vetores, aguardando o término."""
+    logger.info(f"Iniciando sincronização de Planilha (Config: {config_id}, User: {user_id}, Tipo: {sync_type})")
     
     async with SessionLocal() as db:
         try:
@@ -291,7 +291,7 @@ async def background_sync_sheet(config_id: int, user_id: int, spreadsheet_id: st
                 for sheet_name, rows in sheet_data_json.items():
                     csv_section = format_sheet_to_csv_system(sheet_name, rows)
                     if csv_section:
-                        prompt_buffer.append(csv_section) # Corrected logic based on the user provided code.
+                        prompt_buffer.append(csv_section)
                         itens_processados += 1
                 db_config.prompt = "\n\n".join(prompt_buffer)
 
@@ -306,6 +306,7 @@ async def background_sync_sheet(config_id: int, user_id: int, spreadsheet_id: st
                 
                 if rag_items:
                     lines_to_embed = [item["content"] for item in rag_items]
+                    # Gera os embeddings chamando a API do Gemini
                     embeddings = await gemini_service.generate_embeddings_batch(lines_to_embed)
                     
                     for item, embedding in zip(rag_items, embeddings):
@@ -327,7 +328,7 @@ async def background_sync_sheet(config_id: int, user_id: int, spreadsheet_id: st
                 if contextos_buffer:
                     db.add_all(contextos_buffer)
             
-            db.add(db_config) # Corrected logic based on the user provided code.
+            db.add(db_config)
             await db.commit()
             logger.info(f"Sincronização de Planilha ({sync_type}) finalizada com sucesso! Itens: {itens_processados}")
             return itens_processados
@@ -336,6 +337,7 @@ async def background_sync_sheet(config_id: int, user_id: int, spreadsheet_id: st
             logger.error(f"Erro na sincronização da Planilha: {e}", exc_info=True)
             await db.rollback()
             raise e
+
 
 @router.post("/sync_sheet", summary="Sincronizar planilha do Google Sheets com uma Configuração")
 async def sync_google_sheet(
@@ -381,22 +383,22 @@ async def sync_google_sheet(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Falha ao processar a planilha: {str(e)}")
 
-async def background_sync_drive(config_id: int, user_id: int, folder_id: str):
-    """Tarefa agendada em segundo plano para varrer o Drive, extrair conteúdo e calcular vetores."""
-    logger.info(f"Iniciando sincronização de Drive em background (Config: {config_id}, User: {user_id})")
+async def run_sync_drive(config_id: int, user_id: int, folder_id: str) -> int:
+    """Função síncrona para varrer o Drive, extrair conteúdo e calcular vetores, aguardando o término."""
+    logger.info(f"Iniciando sincronização de Drive (Config: {config_id}, User: {user_id})")
     
     # Criamos uma sessão de banco de dados independente e limpa para evitar colisões
     async with SessionLocal() as db:
         try:
             db_config = await crud_config.get_config(db=db, config_id=config_id, user_id=user_id)
             if not db_config:
-                logger.error("Configuração não encontrada para o sync em background.")
-                return
+                logger.error("Configuração não encontrada para o sync do Drive.")
+                raise Exception("Configuração não encontrada.")
 
             user = await db.get(models.User, user_id)
             if not user:
-                logger.error("Usuário não encontrado para o sync em background.")
-                return
+                logger.error("Usuário não encontrado para o sync do Drive.")
+                raise Exception("Usuário não encontrado.")
 
             drive_service = get_drive_service()
             gemini_service = get_gemini_service()
@@ -471,19 +473,20 @@ async def background_sync_drive(config_id: int, user_id: int, folder_id: str):
             ))
             
             if contextos_buffer:
-                db.add_all(contextos_buffer) # Ensure these are added to the session
+                db.add_all(contextos_buffer)
 
             await db.commit()
-            logger.info(f"Sincronização de Drive finalizada com sucesso! {len(contextos_buffer)} vetores criados.") # Changed log message
-            return len(contextos_buffer) # Return the count
+            logger.info(f"Sincronização de Drive finalizada com sucesso! {len(contextos_buffer)} vetores criados.")
+            return len(contextos_buffer)
+
         except Exception as e:
-            logger.error(f"Erro na sincronização do Drive: {e}", exc_info=True) # Changed log message
+            logger.error(f"Erro na sincronização do Drive: {e}", exc_info=True)
             await db.rollback()
-            raise e # Re-raise the exception
+            raise e
+
 
 @router.post("/sync_drive", summary="Sincronizar pasta do Google Drive")
 async def sync_google_drive(
-    # Removed background_tasks from the signature
     payload: Dict[str, Any] = Body(...), 
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(get_current_active_user)
@@ -509,16 +512,16 @@ async def sync_google_drive(
     if not final_folder_id:
         raise HTTPException(status_code=400, detail="Nenhum ID de pasta associado. Insira o ID da pasta do Google Drive.")
 
-    try: # Added try-except block
+    try:
         # Executa de forma síncrona aguardando a finalização
-        itens_processados = await run_sync_drive(config_id, current_user.id, final_folder_id) # Call the synchronous function
+        itens_processados = await run_sync_drive(config_id, current_user.id, final_folder_id)
 
         return {
             "message": "Sincronização do Google Drive concluída com sucesso!",
-            "files_found": itens_processados, # Return the actual count
+            "files_found": itens_processados,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Falha ao processar o Drive: {str(e)}") # Catch and re-raise exceptions
+        raise HTTPException(status_code=500, detail=f"Falha ao processar o Drive: {str(e)}")
 
 @router.get("/situations", response_model=List[Dict[str, str]], summary="Listar situações padrão")
 async def get_situations():

@@ -396,7 +396,7 @@ function Configs() {
                 setFormData(prev => ({ ...prev, contexto_json: null }));
             }
 
-            toast.success(`Sucesso! ${response.data.sheets_found} itens sincronizados (${type.toUpperCase()}).`);
+            toast.success(`Sucesso! ${response.data.sheets_found} bases sincronizadas (${type.toUpperCase()}).`);
         } catch (err) {
             setError(err.response?.data?.detail || 'Falha ao sincronizar. Verifique se compartilhou a planilha com o e-mail do robô.');
         } finally {
@@ -422,7 +422,7 @@ function Configs() {
             // Atualiza o form data localmente
             setFormData(prev => ({ ...prev, arquivos_drive_json: null }));
 
-            toast.success(`Sucesso! ${filesCount} arquivos encontrados.`);
+            toast.success(`Sucesso! ${filesCount} dados encontrados.`);
         } catch (err) {
             setError(err.response?.data?.detail || 'Falha ao sincronizar Drive. Verifique o ID e o compartilhamento.');
         } finally {
