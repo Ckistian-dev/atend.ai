@@ -1,0 +1,1243 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom'; // Importado useSearchParams
+import api from '../api/axiosConfig'; 
+import toast from 'react-hot-toast';
+import {
+    Loader2, MoreVertical, Download, Wand2, Check, X as XIcon, Sparkles
+} from 'lucide-react';
+import { format } from 'date-fns';
+import MediaModal from '../components/mensagens/MediaModal';
+import ProfileSidebar from '../components/mensagens/ProfileSidebar';
+import SearchAndFilter from '../components/mensagens/SearchAndFilter';
+import ContactItem from '../components/mensagens/ContactItem';
+import ChatBody from '../components/mensagens/ChatBody';
+import ChatFooter from '../components/mensagens/ChatFooter';
+import ChatPlaceholder from '../components/mensagens/ChatPlaceholder';
+import FilterPopover from '../components/mensagens/FilterPopover';
+import TemplateModal from '../components/mensagens/TemplateModal';
+import FeedbackModal from '../components/mensagens/FeedbackModal';
+
+const getTextColorForBackground = (hexColor) => {
+    // Força o texto a ser branco, conforme solicitado
+    return '#FFFFFF';
+};
+
+const getLastMessageTimestamp = (at) => {
+    try {
+        const conversa = JSON.parse(at.conversa || '[]');
+        if (conversa.length === 0) {
+            return new Date(at.updated_at).getTime(); // Fallback se conversa vazia
+        }
+        const lastMsg = conversa[conversa.length - 1];
+        const ts = lastMsg.timestamp;
+
+        if (!ts) {
+            return new Date(at.updated_at).getTime(); // Fallback se msg não tiver timestamp
+        }
+
+        // Converte timestamp (seja unix/segundos ou ISO string) para ms
+        return (typeof ts === 'number') ? (ts * 1000) : new Date(ts).getTime();
+    } catch (e) {
+        // Fallback em caso de JSON inválido ou erro
+        return new Date(at.updated_at).getTime();
+    }
+};
+
+// --- COMPONENTE PRINCIPAL DA PÁGINA ---
+function Mensagens() {
+    // NOVO: Estado para ler o ID do atendimento da URL
+    const [searchParams] = useSearchParams();
+    const initialAtendimentoId = searchParams.get('atendimentoId');
+
+    const [mensagens, setAtendimentos] = useState([]);
+    const [filteredAtendimentos, setFilteredAtendimentos] = useState([]);
+    const [currentUser, setCurrentUser] = useState(null);
+
+    const [personas, setPersonas] = useState([]);
+    const [statusOptions, setStatusOptions] = useState([]);
+
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    const [searchTerm, setSearchTerm] = useState('');
+    // --- ALTERADO: inicializa sem filtros se vier de um ID específico da URL ---
+    const [activeFilters, setActiveFilters] = useState(() => initialAtendimentoId ? [] : ['Atendente Chamado']);
+    const [activeButtonGroup, setActiveButtonGroup] = useState(() => initialAtendimentoId ? null : 'atendimentos');
+
+    // --- NOVO: Estado para o termo de busca com debounce ---
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+
+    // --- NOVOS ESTADOS PARA FILTRO DETALHADO ---
+    const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+    const [statusFilters, setStatusFilters] = useState(null); // ALTERADO: Agora é string ou null
+    const [tagFilters, setTagFilters] = useState(null); // ALTERADO: Agora é string ou null
+    // --- NOVO: Estados para filtro de horário ---
+    const [timeStart, setTimeStart] = useState(null);
+    const [timeEnd, setTimeEnd] = useState(null);
+
+
+
+    const [selectedAtendimento, setSelectedAtendimento] = useState(null);
+    const [totalAtendimentos, setTotalAtendimentos] = useState(0);
+    
+    // --- ALTERADO: O limite agora é lido e salvo no localStorage ---
+    const [limit, setLimit] = useState(() => {
+        const savedLimit = localStorage.getItem('atendimentosPageLimit');
+        return savedLimit ? parseInt(savedLimit, 10) : 20;
+    });
+
+    // --- NOVO: Estado para o loading do botão "Carregar Mais" ---
+    const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+    const [modalMedia, setModalMedia] = useState(null); // { url: blobUrl, type: 'image'|'audio', filename: string }
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isDownloadingMedia, setIsDownloadingMedia] = useState(false); // Para feedback no botão
+    const currentBlobUrl = useRef(null); // Para limpar a URL do blob anterior
+
+    // --- NOVO: Estado para o modal de template ---
+    const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+
+    // --- NOVO: Estado para a sidebar de perfil ---
+    const [isProfileSidebarOpen, setIsProfileSidebarOpen] = useState(false);
+    const sidebarRef = useRef(null);
+    
+    // --- NOVO: Estados para o Feedback da IA ---
+    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+
+    // --- ALTERADO: Controla qual editor de tag está aberto pelo ID do atendimento ---
+    const [openTagEditorId, setOpenTagEditorId] = useState(null);
+    const [allTags, setAllTags] = useState([]);
+
+    const intervalRef = useRef(null);
+
+    // Armazena as filas de envio por atendimentoId
+    // Ex: { 1: [item1, item2], 2: [item3] }
+    const [sendingQueue, setSendingQueue] = useState({});
+
+    // Controla qual fila está ativamente processando um item
+    // Ex: { 1: true, 2: false }
+    const [isProcessing, setIsProcessing] = useState({});
+
+    // --- REFS PARA O POLLING ESPECÍFICO DO CHAT ---
+    const sendingQueueRef = useRef(sendingQueue);
+    const isProcessingRef = useRef(isProcessing);
+
+    useEffect(() => { sendingQueueRef.current = sendingQueue; }, [sendingQueue]);
+    useEffect(() => { isProcessingRef.current = isProcessing; }, [isProcessing]);
+
+    // --- Fetch (User e Mensagens) ---
+    const fetchData = useCallback(async (isInitialLoad = false) => {
+        if (isInitialLoad) setIsLoading(true);
+
+        // Se não for uma carga inicial, significa que pode ser um "carregar mais" ou polling.
+        // Ativamos o estado de carregamento se o limite for maior que o inicial.
+        if (!isInitialLoad && limit > 20) {
+            setIsFetchingMore(true);
+        } 
+
+        try {
+            const params = new URLSearchParams({
+                search: debouncedSearchTerm || '',
+                limit: limit,
+            });
+
+            // --- ALTERADO: Adiciona filtros do popover (status e tags) à requisição ---
+            // Usa os filtros do popover se existirem, senão, usa os filtros dos botões principais.
+            if (statusFilters) {
+                params.append('status', statusFilters);
+            } else if (activeFilters.length > 0) {
+                activeFilters.forEach(s => params.append('status', s));
+            }
+
+            if (tagFilters) {
+                params.append('tags', tagFilters);
+            }
+
+            // --- NOVO: Adiciona filtros de horário à requisição ---
+            if (timeStart) {
+                params.append('time_start', timeStart);
+            }
+
+            if (timeEnd) {
+                params.append('time_end', timeEnd);
+            }
+
+            const [userRes, atendimentosRes, personasRes, situationsRes, tagsRes] = await Promise.all([
+                api.get('/auth/me'),
+                api.get('/atendimentos/', { params }), // Envia os parâmetros formatados
+                api.get('/configs/'),
+                api.get('/configs/situations'),
+                api.get('/atendimentos/tags') // Busca todas as tags
+            ]);
+            setCurrentUser(userRes.data);
+            setPersonas(personasRes.data);
+
+            // Garante que 'Aguardando Envio' esteja nas opções para alteração manual
+            let sOptions = situationsRes.data || [];
+            if (!sOptions.some(opt => opt.nome === 'Aguardando Envio')) {
+                sOptions = [...sOptions, { nome: 'Aguardando Envio', cor: '#9333ea' }];
+            }
+            setStatusOptions(sOptions);
+            setAllTags(tagsRes.data);
+
+            const serverData = atendimentosRes.data;
+            if (serverData && Array.isArray(serverData.items)) {
+                setAtendimentos(prevAtendimentos => {
+                    // Se for uma carga inicial, troca de filtro ou busca, substitui a lista.
+                    // Consideramos uma "carga nova" se o limite for o padrão (20).
+                    const isNewLoad = limit === 20;
+
+                    const newItems = serverData.items;
+
+                    let combinedItems;
+
+                    if (isNewLoad) {
+                        combinedItems = newItems;
+                    } else {
+                        // Se não for carga nova (é um "carregar mais"), combina os resultados.
+                        const prevItemsMap = new Map(prevAtendimentos.map(item => [item.id, item]));
+                        newItems.forEach(item => {
+                            prevItemsMap.set(item.id, item); // Adiciona ou atualiza
+                        });
+                        combinedItems = Array.from(prevItemsMap.values());
+                    }
+
+                    // Lógica para manter mensagens otimistas (em envio)
+                    const busyAtendimentoIds = new Set(
+                        Object.keys(sendingQueue)
+                            .filter(id => sendingQueue[id]?.length > 0)
+                            .map(id => parseInt(id, 10))
+                    );
+
+                    return combinedItems.map(at => {
+                        if (busyAtendimentoIds.has(at.id)) {
+                            const localVersion = prevAtendimentos.find(local => local.id === at.id);
+                            if (localVersion) {
+                                // Se existe uma versão local com mensagens em envio, usa ela.
+                                return localVersion;
+                            }
+                        }
+                        return at;
+                    });
+                });
+                setTotalAtendimentos(serverData.total);
+            } else {
+                setAtendimentos(Array.isArray(serverData) ? serverData : []);
+                setTotalAtendimentos(0);
+            }
+            setError('');
+        } catch (err) {
+            console.error("Erro ao carregar dados:", err);
+            if (isInitialLoad) setError('Não foi possível carregar os dados. Verifique a sua conexão.');
+        } finally {
+            if (isInitialLoad) setIsLoading(false);
+            setIsFetchingMore(false);
+        }
+    }, [debouncedSearchTerm, limit, activeFilters, statusFilters, tagFilters, timeStart, timeEnd]);
+
+    // --- Efeito: Polling Seguro (COM PAUSA EM SEGUNDO PLANO) ---
+    useEffect(() => {
+        let isMounted = true;
+        let timeoutId;
+
+        const poll = async () => {
+            if (!document.hidden) {
+                await fetchData(false);
+            }
+            if (isMounted) {
+                timeoutId = setTimeout(poll, 5000);
+            }
+        };
+
+        fetchData(true).then(() => {
+             if (isMounted) timeoutId = setTimeout(poll, 5000);
+        });
+
+        const handleVisibilityChange = () => {
+            if (!document.hidden && isMounted) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(poll, 5000); // Apenas agenda o próximo poll
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            isMounted = false;
+            clearTimeout(timeoutId);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [fetchData]);
+
+    // --- NOVO: Polling de Background para Notificações e Título ---
+    useEffect(() => {
+        const isMountedRef = { current: true };
+        let timeoutId;
+
+        const backgroundPoll = async () => {
+            // Executa apenas se estiver em segundo plano para manter notificações e título atualizados
+            // O polling principal (acima) já cuida quando está visível
+            if (document.hidden) {
+                await fetchData(false, isMountedRef);
+            }
+
+            if (isMountedRef.current) {
+                timeoutId = setTimeout(backgroundPoll, 5000);
+            }
+        };
+
+        timeoutId = setTimeout(backgroundPoll, 5000);
+
+        return () => {
+            isMountedRef.current = false;
+            clearTimeout(timeoutId);
+        };
+    }, [fetchData]);
+
+    // --- NOVO: Polling focado (rápido) para o chat atualmente selecionado ---
+    useEffect(() => {
+        let isMounted = true;
+        let timeoutId;
+        const currentAtendimentoId = selectedAtendimento?.id;
+
+        const pollSelectedChat = async () => {
+            const currentQueue = sendingQueueRef.current[currentAtendimentoId] || [];
+            const isBusy = isProcessingRef.current[currentAtendimentoId];
+
+            // Só faz polling se a aba estiver visível e não houver mensagens locais sendo enviadas
+            if (!document.hidden && currentAtendimentoId && currentQueue.length === 0 && !isBusy) {
+                try {
+                    const res = await api.get(`/atendimentos/${currentAtendimentoId}`);
+                    if (isMounted && res.data) {
+                        const serverData = res.data;
+                        
+                        setAtendimentos(prevAtendimentos => {
+                            const localAtendimento = prevAtendimentos.find(at => at.id === currentAtendimentoId);
+                            if (!localAtendimento) return prevAtendimentos;
+
+                            const localDate = new Date(localAtendimento.updated_at).getTime();
+                            const serverDate = new Date(serverData.updated_at).getTime();
+
+                            // Atualiza se houver qualquer mudança (data, conversa ou status)
+                            if (serverDate > localDate || localAtendimento.conversa !== serverData.conversa || localAtendimento.status !== serverData.status) {
+                                
+                                setSelectedAtendimento(prevSelected => {
+                                    if (prevSelected?.id === currentAtendimentoId) return serverData;
+                                    return prevSelected;
+                                });
+                                
+                                return prevAtendimentos.map(at => at.id === currentAtendimentoId ? serverData : at);
+                            }
+                            return prevAtendimentos;
+                        });
+                    }
+                } catch (error) {
+                    if (error.response?.status !== 404) console.error("Erro no polling do chat individual:", error);
+                }
+            }
+
+            if (isMounted && currentAtendimentoId) {
+                timeoutId = setTimeout(pollSelectedChat, 3000); // Poll a cada 3s para o chat ativo
+            }
+        };
+
+        if (currentAtendimentoId) timeoutId = setTimeout(pollSelectedChat, 3000);
+
+        return () => { isMounted = false; clearTimeout(timeoutId); };
+    }, [selectedAtendimento?.id]);
+
+    // --- NOVO: Efeito para aplicar debounce na busca ---
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 500); // 500ms de delay
+
+        // Limpa o timeout se o usuário continuar digitando
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [searchTerm]); // Roda toda vez que o searchTerm "real" muda
+
+    // --- NOVO: Efeito para salvar o limite no localStorage ---
+    useEffect(() => {
+        localStorage.setItem('atendimentosPageLimit', limit);
+    }, [limit]);
+
+    // --- NOVO: Efeito para resetar o limite ao mudar o filtro ou a busca ---
+    useEffect(() => {
+        // Toda vez que o filtro ou o termo de busca mudar,
+        // reseta o limite.
+        // Se os filtros do popover estiverem ativos, o limite é 20. Senão, 20.
+        const hasPopoverFilters = !!statusFilters || !!tagFilters || !!timeStart || !!timeEnd;
+        setLimit(hasPopoverFilters ? 20 : 20);
+    }, [activeButtonGroup, debouncedSearchTerm, statusFilters, tagFilters, timeStart, timeEnd]);
+
+    useEffect(() => {
+        if (!Array.isArray(mensagens)) {
+            setFilteredAtendimentos([]);
+            return;
+        }
+        
+        // --- LÓGICA DE FILTRAGEM REMOVIDA ---
+        // A filtragem agora é feita 100% no backend. O frontend apenas ordena os resultados recebidos.
+        // A variável 'mensagens' já contém a lista filtrada vinda da API.
+        let filtered = mensagens; 
+
+        // Ordena a lista filtrada (b - a para decrescente, mais novo primeiro)
+        const sortedFiltered = [...filtered].sort((a, b) => {
+            // Usa a função helper definida fora do componente
+            const timeA = getLastMessageTimestamp(a);
+            const timeB = getLastMessageTimestamp(b);
+            return timeB - timeA;
+        });
+
+        // Usa a lista ORDENADA
+        setFilteredAtendimentos(sortedFiltered);
+
+        // NOVO: Lógica de seleção inicial
+        if (sortedFiltered.length > 0) {
+            if (!selectedAtendimento) {
+                if (initialAtendimentoId) {
+                    // Tenta selecionar o atendimento do URL
+                    const found = sortedFiltered.find(at => at.id === parseInt(initialAtendimentoId, 10));
+                    setSelectedAtendimento(found || sortedFiltered[0]); // Fallback se o ID não for encontrado
+                } else {
+                    setSelectedAtendimento(sortedFiltered[0]); // Seleciona o primeiro se não houver ID no URL e nada selecionado
+                }
+            }
+        }
+        // --- FIM DA MODIFICAÇÃO (SELEÇÃO) ---
+
+        // Lógica para atualizar a seleção (se ainda estiver na lista filtrada)
+        // (Modificado para usar sortedFiltered)
+        else if (selectedAtendimento) {
+            const updatedSelected = sortedFiltered.find(at => at.id === selectedAtendimento.id);
+            if (updatedSelected) {
+                // Compara timestamps para evitar sobrescrever a UI com dados antigos
+                const localDate = new Date(selectedAtendimento.updated_at).getTime();
+                const serverDate = new Date(updatedSelected.updated_at).getTime();
+                if (serverDate >= localDate) {
+                    setSelectedAtendimento(updatedSelected);
+                }
+            } else {
+                // O item selecionado não está mais no filtro, des-seleciona (ou se o filtro mudou e ele sumiu)
+                setSelectedAtendimento(null);
+            }
+        }
+    }, [mensagens, selectedAtendimento]); // Remove dependências de filtro, pois a filtragem é via API
+
+    // --- FUNÇÃO CORRIGIDA PARA USAR AXIOS (api) ---
+    const handleViewMedia = async (mediaId, type, filename) => {
+        if (!selectedAtendimento || isDownloadingMedia) {
+            return;
+        }
+
+        // Limpa URL de blob antiga
+        if (currentBlobUrl.current) {
+            URL.revokeObjectURL(currentBlobUrl.current);
+            currentBlobUrl.current = null;
+        }
+
+        setIsDownloadingMedia(true);
+        const backendMediaUrl = `/atendimentos/${selectedAtendimento.id}/media/${mediaId}`; // URL relativa para Axios
+
+        try {
+            // --- USA api.get com responseType: 'blob' ---
+            const response = await api.get(backendMediaUrl, {
+                responseType: 'blob', // <<<--- ESSENCIAL PARA BAIXAR ARQUIVO
+                timeout: 60000 // Aumenta timeout para downloads (60s)
+            });
+
+            // Axios trata erros HTTP > 2xx no catch por padrão
+
+            // O 'data' da resposta do Axios já será o Blob
+            const blob = response.data;
+            // Pega o content-type dos headers da resposta
+            const actualContentType = response.headers['content-type'];
+
+            if (blob.size === 0) {
+                throw new Error("Download resultou em um arquivo vazio.");
+            }
+            // --- VERIFICA SE O TIPO É HTML (AINDA INDICA ERRO NO BACKEND/TOKEN) ---
+            if (blob.type && blob.type.includes('text/html')) {
+                console.error("[handleViewMedia] Recebido HTML em vez de mídia. Provável erro de token no backend.");
+                // Tenta ler o HTML para dar uma dica
+                try {
+                    const htmlText = await blob.text();
+                    console.error("[handleViewMedia] Conteúdo HTML recebido:", htmlText.substring(0, 500));
+                } catch { /* Ignora se não conseguir ler */ }
+                throw new Error("Falha ao baixar mídia: O servidor retornou uma página HTML inesperada. Verifique o token de acesso no backend.");
+            }
+            // ---------------------------------------------------------------------
+
+            // --- Criar Blob URL e Abrir Modal ---
+            const blobUrl = URL.createObjectURL(blob);
+            currentBlobUrl.current = blobUrl;
+
+            setModalMedia({ url: blobUrl, type: type, filename: filename });
+
+            setTimeout(() => {
+                setIsModalOpen(true);
+            }, 0);
+
+        } catch (error) {
+            // Axios coloca erros de rede e status >= 300 aqui
+            console.error("[handleViewMedia] Erro durante a requisição Axios:", error);
+            let alertMessage = "Não foi possível carregar a mídia.";
+            if (error.response) {
+                // Tenta pegar o 'detail' do erro do FastAPI
+                console.error("[handleViewMedia] Axios error response data:", error.response.data);
+                console.error("[handleViewMedia] Axios error response status:", error.response.status);
+                // Se a resposta for um Blob (mesmo com erro), tenta ler como texto
+                if (error.response.data instanceof Blob) {
+                    try {
+                        const errorBlobText = await error.response.data.text();
+                        console.error("[handleViewMedia] Axios error Blob content:", errorBlobText.substring(0, 500));
+                        // Tenta parsear como JSON se for texto
+                        try {
+                            const errorJson = JSON.parse(errorBlobText);
+                            alertMessage = `Erro ${error.response.status}: ${errorJson.detail || 'Erro ao carregar mídia.'}`;
+                        } catch {
+                            alertMessage = `Erro ${error.response.status}: Resposta inesperada do servidor.`;
+                        }
+                    } catch {
+                        alertMessage = `Erro ${error.response.status}: Falha ao ler detalhes do erro.`;
+                    }
+                } else if (error.response.data?.detail) {
+                    alertMessage = `Erro ${error.response.status}: ${error.response.data.detail}`;
+                } else {
+                    alertMessage = `Erro ${error.response.status}: Falha ao carregar mídia.`;
+                }
+
+            } else if (error.request) {
+                console.error("[handleViewMedia] Axios error: No response received.");
+                alertMessage = "Não foi possível conectar ao servidor para carregar a mídia.";
+            } else {
+                console.error("[handleViewMedia] Axios error:", error.message);
+                alertMessage = `Erro ao preparar a requisição: ${error.message}`;
+            }
+            alert(alertMessage);
+
+            // Garante limpeza do blobUrl em caso de erro
+            if (currentBlobUrl.current) {
+                URL.revokeObjectURL(currentBlobUrl.current);
+                currentBlobUrl.current = null;
+            }
+        } finally {
+            setIsDownloadingMedia(false);
+        }
+    };
+
+    // --- FUNÇÃO PARA FECHAR O MODAL E LIMPAR URL (Sem alterações, mas essencial) ---
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setModalMedia(null);
+        // Revoga a URL do Blob para liberar memória quando o modal fecha
+        if (currentBlobUrl.current) {
+            URL.revokeObjectURL(currentBlobUrl.current);
+            currentBlobUrl.current = null;
+        }
+    };
+
+    // --- NOVA FUNÇÃO (Adicione esta função) ---
+    const handleDownloadDocument = async (mediaId, filename) => {
+        if (!selectedAtendimento || isDownloadingMedia) {
+            console.log("handleDownloadDocument blocked: No selection or already downloading.");
+            return;
+        }
+
+        setIsDownloadingMedia(true);
+        console.log(`[handleDownloadDocument] Iniciando download para mediaId: ${mediaId}`);
+
+        // URL relativa ao baseURL do Axios (sem /api/v1)
+        const backendMediaUrl = `/atendimentos/${selectedAtendimento.id}/media/${mediaId}`;
+
+        try {
+            // AQUI ESTÁ A MÁGICA:
+            // Usamos 'api.get', que o seu interceptor vai adicionar o Token.
+            const response = await api.get(backendMediaUrl, {
+                responseType: 'blob', // Essencial para baixar o arquivo
+                timeout: 60000
+            });
+
+            const blob = response.data;
+            const blobUrl = URL.createObjectURL(blob);
+
+            // Cria um link temporário em memória para forçar o download
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename || 'documento'; // Usa o nome do arquivo
+            document.body.appendChild(link);
+            link.click();
+
+            // Limpa o link e o blobUrl da memória
+            document.body.removeChild(link);
+            URL.revokeObjectURL(blobUrl);
+
+        } catch (error) {
+            console.error("[handleDownloadDocument] Erro durante a requisição Axios:", error);
+            // Verifica se o erro foi "Not authenticated" (embora o interceptor deva redirecionar)
+            if (error.response && error.response.status === 401) {
+                alert("Sua sessão expirou. Você será redirecionado para o login.");
+                // O interceptor já deve ter iniciado o redirect, mas garantimos
+                window.location.href = '/login';
+            } else {
+                toast.error("Não foi possível baixar o documento.");
+            }
+        } finally {
+            setIsDownloadingMedia(false);
+        }
+    };
+
+    // --- USEEFFECT DE LIMPEZA (Sem alterações, mas essencial) ---
+    // Limpa a URL do blob se o componente for desmontado com o modal aberto
+    useEffect(() => {
+        return () => {
+            if (currentBlobUrl.current) {
+                URL.revokeObjectURL(currentBlobUrl.current);
+            }
+        };
+    }, []); // Array vazio garante que rode só na montagem/desmontagem
+
+
+
+    const addOptimisticMessage = (atendimentoId, msg) => {
+        // Atualiza apenas o atendimento selecionado, sem alterar a lista da sidebar.
+        if (selectedAtendimento?.id === atendimentoId) {
+            setSelectedAtendimento(prevAtendimento => {
+                const conversa = JSON.parse(prevAtendimento.conversa || '[]');
+                conversa.push(msg);
+                // Não atualizamos 'updated_at' aqui para não causar reordenação na próxima busca.
+                // A atualização real virá do servidor.
+                return {
+                    ...prevAtendimento,
+                    conversa: JSON.stringify(conversa),
+                };
+            });
+        }
+    };
+
+    const updateAtendimentoState = (atendimentoId, updatedAtendimento) => {
+        // Atualiza a lista completa para refletir o estado final vindo do servidor.
+        setAtendimentos(prev => prev.map(at => (at.id === atendimentoId ? updatedAtendimento : at)));
+        
+        // Se o atendimento atualizado for o que está selecionado, atualiza a janela de chat.
+        if (selectedAtendimento?.id === atendimentoId) {
+            setSelectedAtendimento(updatedAtendimento);
+        }
+    }
+
+    const setMessageToError = (atendimentoId, optimisticId, errorMessage) => {
+        setAtendimentos(prev =>
+            prev.map(at => {
+                if (at.id === atendimentoId) {
+                    const conversa = JSON.parse(at.conversa || '[]');
+                    const updatedConversa = conversa.map(msg =>
+                        msg.id === optimisticId
+                            ? { ...msg, type: 'error', status: 'error', content: errorMessage } // Atualiza a mensagem 'sending' para 'error'
+                            : msg
+                    );
+                    const revertedAt = { ...at, conversa: JSON.stringify(updatedConversa) };
+
+                    if (selectedAtendimento?.id === atendimentoId) {
+                        setSelectedAtendimento(revertedAt);
+                    }
+                    return revertedAt;
+                }
+                return at;
+            })
+        );
+    }
+
+
+    // --- ADICIONE ESTE NOVO useEffect (PROCESSADOR DA FILA) ---
+    useEffect(() => {
+        // Itera sobre todas as filas de mensagem
+        Object.keys(sendingQueue).forEach(atendimentoId_str => {
+            const atendimentoId = parseInt(atendimentoId_str, 10);
+            const queue = sendingQueue[atendimentoId] || [];
+            const isQueueBusy = isProcessing[atendimentoId];
+
+            // Se esta fila tem itens e NÃO está ocupada processando
+            if (queue.length > 0 && !isQueueBusy) {
+
+                // 1. Marca a fila como "ocupada"
+                setIsProcessing(prev => ({ ...prev, [atendimentoId]: true }));
+
+                // 2. Pega o primeiro item da fila
+                const itemToProcess = queue[0];
+
+                // 3. Define a função de processamento assíncrona
+                const processItem = async () => {
+                    let localUrlToRevoke = null; // Guarda a URL do blob para limpar no final
+
+                    try {
+                        let responseAtendimento;
+
+                        if (itemToProcess.type === 'text') {
+                            // --- Lógica de envio de TEXTO (movida para cá) ---
+                            responseAtendimento = await api.post(
+                                `/atendimentos/${atendimentoId}/send_message`,
+                                itemToProcess.payload // payload é { text: '...' }
+                            );
+
+                        } else if (itemToProcess.type === 'media') {
+                            // --- Lógica de envio de MÍDIA (movida para cá) ---
+                            const { file, mediaType, filename, localUrl } = itemToProcess.payload;
+                            localUrlToRevoke = localUrl; // Marca para revogar
+
+                            const formData = new FormData();
+                            formData.append('file', file, filename);
+                            formData.append('type', mediaType);
+
+                            responseAtendimento = await api.post(
+                                `/atendimentos/${atendimentoId}/send_media`,
+                                formData
+                            );
+                        }
+
+                        // 4. SUCESSO: Atualiza o estado com a resposta final da API
+                        // (A API retorna o 'mensagem' completo e atualizado)
+                        updateAtendimentoState(atendimentoId, responseAtendimento.data);
+
+                    } catch (error) {
+                        // 5. FALHA: Atualiza a mensagem otimista para um estado de erro
+                        console.error(`Falha ao enviar item da fila (ID: ${itemToProcess.id}):`, error);
+                        const errorMsg = error.response?.data?.detail || `Falha ao enviar ${itemToProcess.type}.`;
+                        setMessageToError(atendimentoId, itemToProcess.id, errorMsg);
+
+                    } finally {
+                        // 6. LIMPEZA: Independentemente de sucesso ou falha
+
+                        // Revoga a URL do Blob da mídia (se houver)
+                        if (localUrlToRevoke) {
+                            URL.revokeObjectURL(localUrlToRevoke);
+                        }
+
+                        // Remove o item processado da fila
+                        setSendingQueue(prev => {
+                            const newQueue = (prev[atendimentoId] || []).slice(1);
+                            return { ...prev, [atendimentoId]: newQueue };
+                        });
+
+                        // Marca a fila como "livre"
+                        setIsProcessing(prev => ({ ...prev, [atendimentoId]: false }));
+                    }
+                };
+
+                // 7. Executa o processamento
+                processItem();
+            }
+        });
+    }, [sendingQueue, isProcessing]); // Dependências do processador
+
+
+    // --- SUBSTITUA A FUNÇÃO 'handleSendMessage' ---
+    /**
+     * Ação: Enfileirar Mensagem de TEXTO.
+     * (Chamada pelo ChatFooter)
+     */
+    const handleSendMessage = (text) => {
+        if (!selectedAtendimento) return;
+        const atendimentoId = selectedAtendimento.id;
+        const optimisticId = `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+        // 1. Cria a mensagem otimista (agora com tipo 'sending')
+        const optimisticMessage = {
+            id: optimisticId,
+            role: 'assistant',
+            type: 'sending', // <-- MODIFICADO
+            content: text, // O texto é usado como 'content'
+            timestamp: Math.floor(Date.now() / 1000)
+        };
+
+        // 2. Adiciona a mensagem otimista à UI
+        addOptimisticMessage(atendimentoId, optimisticMessage);
+
+        // 3. Adiciona o item à fila de envio
+        const queueItem = {
+            id: optimisticId,
+            type: 'text',
+            payload: { text } // Payload que a API espera
+        };
+
+        setSendingQueue(prev => ({
+            ...prev,
+            [atendimentoId]: [...(prev[atendimentoId] || []), queueItem]
+        }));
+    };
+
+
+    // --- SUBSTITUA A FUNÇÃO 'handleSendMedia' ---
+    // Ação: Enfileirar Mensagem de MÍDIA. (Chamada pelo ChatFooter)
+    const handleSendMedia = (file, type, filename) => {
+        if (!selectedAtendimento) return;
+        const atendimentoId = selectedAtendimento.id;
+
+        const optimisticId = `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        const localUrl = URL.createObjectURL(file); // URL local para preview
+
+        // 1. Cria a mensagem otimista (tipo 'sending')
+        const optimisticMessage = {
+            id: optimisticId,
+            role: 'assistant',
+            type: 'sending',
+            content: `Enviando ${type}...`,
+            localUrl: localUrl,
+            filename: filename,
+            timestamp: Math.floor(Date.now() / 1000)
+        };
+
+        // 2. Adiciona a mensagem otimista à UI
+        addOptimisticMessage(atendimentoId, optimisticMessage);
+
+        // 3. Adiciona o item à fila de envio
+        const queueItem = {
+            id: optimisticId,
+            type: 'media',
+            payload: { file, mediaType: type, filename, localUrl } // Payload completo
+        };
+
+        setSendingQueue(prev => ({
+            ...prev,
+            [atendimentoId]: [...(prev[atendimentoId] || []), queueItem]
+        }));
+
+        // NOTA: A revogação do localUrl (URL.revokeObjectURL) agora é feita
+        // pelo processador da fila (useEffect) no 'finally' block.
+    };
+
+
+    // SUBSTITUA a função 'handleUpdateStatus' por esta:
+    const handleUpdateAtendimento = async (atendimentoId, updatePayload) => {
+        // updatePayload é um objeto, ex: { status: 'Concluído' } 
+        // ou { conversa: '[...]' }
+
+        const originalAtendimentos = [...mensagens];
+
+        // Atualização Otimista
+        const updateState = (prev) => prev.map(at => {
+            if (at.id === atendimentoId) {
+                // Mescla o estado antigo com o payload de atualização
+                const updatedAt = {
+                    ...at,
+                    ...updatePayload,
+                    updated_at: new Date().toISOString()
+                };
+
+                if (selectedAtendimento?.id === atendimentoId) {
+                    setSelectedAtendimento(updatedAt);
+                }
+                return updatedAt;
+            }
+            return at;
+        });
+
+        setAtendimentos(updateState);
+        // Não é necessário chamar setFilteredAtendimentos aqui, 
+        // o useEffect[mensagens] cuidará disso.
+
+        try {
+            // Chama a API com o payload genérico
+            const response = await api.put(`/atendimentos/${atendimentoId}`, updatePayload);
+
+            // Atualiza com dados do servidor (garante consistência)
+            const updateWithServerData = (prev) => prev.map(at => (at.id === atendimentoId ? response.data : at));
+            setAtendimentos(updateWithServerData);
+
+            if (selectedAtendimento?.id === atendimentoId) {
+                setSelectedAtendimento(response.data);
+            }
+        } catch (err) {
+            console.error("Erro ao salvar edição:", err);
+            toast.error('Erro ao guardar as alterações. A interface será revertida.');
+            setAtendimentos(originalAtendimentos); // Reverte
+        }
+    };
+
+    // --- NOVA FUNÇÃO: Enviar mensagem de template ---
+    const handleSendTemplate = async (templatePayload) => {
+        if (!selectedAtendimento) {
+            throw new Error("Nenhum atendimento selecionado.");
+        }
+        const atendimentoId = selectedAtendimento.id;
+
+        // A API de template já adiciona a mensagem ao histórico no backend
+        // e retorna o atendimento atualizado.
+        // A chamada `updateAtendimentoState` irá atualizar a UI com a resposta.
+        try {
+            const response = await api.post(
+                `/atendimentos/${atendimentoId}/send_template`,
+                templatePayload
+            );
+            updateAtendimentoState(atendimentoId, response.data);
+        } catch (err) {
+            console.error("Erro no handleSendTemplate:", err);
+            throw err; // Re-lança o erro para o modal poder exibi-lo
+        }
+    };
+
+    // --- NOVA FUNÇÃO: Exportar Conversa ---
+    const handleExportConversation = () => {
+        if (!selectedAtendimento) return;
+
+        try {
+            const conversa = JSON.parse(selectedAtendimento.conversa || '[]');
+            if (conversa.length === 0) {
+                toast.error("Não há mensagens para exportar.");
+                return;
+            }
+
+            const clientName = selectedAtendimento.nome_contato || selectedAtendimento.whatsapp || "Cliente";
+
+            let exportText = `Histórico de Conversa - ${clientName}\n`;
+            exportText += `Data de Exportação: ${new Date().toLocaleString('pt-BR')}\n`;
+            exportText += `=================================================\n\n`;
+
+            conversa.forEach(msg => {
+                let dateStr = 'Data desconhecida';
+                if (msg.timestamp) {
+                    const dateObj = (typeof msg.timestamp === 'number') ? new Date(msg.timestamp * 1000) : new Date(msg.timestamp);
+                    dateStr = dateObj.toLocaleString('pt-BR');
+                }
+
+                const sender = msg.role === 'assistant' ? 'Atendente / IA' : clientName;
+
+                let content = msg.content || '';
+                if (msg.type && msg.type !== 'text' && msg.type !== 'sending') {
+                     content += ` [Anexo: ${msg.type}${msg.filename ? ` - ${msg.filename}` : ''}]`;
+                }
+
+                exportText += `[${dateStr}] ${sender}:\n${content}\n\n`;
+            });
+
+            const blob = new Blob([exportText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `conversa_${selectedAtendimento.whatsapp}_${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            toast.success("Conversa exportada com sucesso!");
+        } catch (error) {
+            console.error("Erro ao exportar conversa:", error);
+            toast.error("Erro ao tentar exportar o histórico.");
+        }
+    };
+
+    // --- NOVO: Função para carregar mais atendimentos ---
+    const handleLoadMore = () => {
+        // Ativa o estado de loading imediatamente
+        setIsFetchingMore(true);
+        // Aumenta o limite e o useEffect de fetchData/polling vai pegar a mudança
+        setLimit(prevLimit => prevLimit + limit);
+    };
+
+    // --- NOVA FUNÇÃO: Alterna um filtro na lista de filtros ativos ---
+    const toggleFilter = (groupName) => {
+        const filterGroups = {
+            atendimentos: ['Atendente Chamado'],
+            bot_ia: ['Mensagem Recebida', 'Aguardando Resposta', 'Gerando Resposta', 'Aguardando Envio'],
+        };
+
+        // Se o botão clicado já está ativo, desativa tudo
+        if (activeButtonGroup === groupName) {
+            setActiveButtonGroup(null);
+            setActiveFilters([]);
+        } else {
+            // Se outro botão está ativo ou nenhum está, ativa o novo
+            setActiveButtonGroup(groupName);
+            setActiveFilters(filterGroups[groupName]);
+        }
+    };
+
+    // --- NOVAS FUNÇÕES PARA O POPOVER DE FILTRO ---
+    const handleStatusFilterChange = (statusName) => {
+        // Se o status clicado já for o ativo, desativa. Senão, ativa.
+        setStatusFilters(prev => (prev === statusName ? null : statusName));
+        // Limpa o filtro de tag para garantir exclusividade
+        setTagFilters(null);
+        // Desativa o grupo de botões principal para evitar conflito
+        setActiveButtonGroup(null);
+        setActiveFilters([]);
+    };
+
+    const handleTagFilterChange = (tagName) => {
+        // Se a tag clicada já for a ativa, desativa. Senão, ativa.
+        setTagFilters(prev => (prev === tagName ? null : tagName));
+        // Limpa o filtro de status para garantir exclusividade
+        setStatusFilters(null);
+        // Desativa o grupo de botões principal para evitar conflito
+        setActiveButtonGroup(null);
+        setActiveFilters([]);
+    };
+
+    const handleClearAllFilters = () => {
+        setStatusFilters(null);
+        setTagFilters(null);
+        // --- ALTERAÇÃO AQUI ---
+        setTimeStart(null);
+        setTimeEnd(null);
+    };
+
+    const handleSwitchToAtendimentos = () => {
+        setActiveButtonGroup('atendimentos');
+        setActiveFilters(['Atendente Chamado']);
+        setStatusFilters(null);
+        setTagFilters(null);
+    };
+
+    // --- NOVAS FUNÇÕES PARA O EDITOR DE TAGS ---
+    const handleToggleTagEditor = (atendimentoId) => {
+        setOpenTagEditorId(prevId => (prevId === atendimentoId ? null : atendimentoId));
+    };
+
+    const handleAddNewTag = (newTag) => {
+        // Adiciona otimisticamente à lista global de tags
+        if (!allTags.some(t => t.name.toLowerCase() === newTag.name.toLowerCase())) {
+            const updatedAllTags = [...allTags, newTag];
+            setAllTags(updatedAllTags);
+            // A persistência no backend ocorreria na próxima chamada de `handleUpdateAtendimento`
+            // que salva o atendimento com a nova tag. O backend pode criar a tag se não existir.
+        }
+    };
+
+    // --- Efeito para fechar a sidebar ao clicar fora (Desktop) ---
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (isProfileSidebarOpen && sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+                setIsProfileSidebarOpen(false);
+            }
+        }
+
+        if (isProfileSidebarOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isProfileSidebarOpen]);
+
+    if (isLoading && !currentUser) {
+        return <div className="flex h-screen items-center justify-center text-gray-600">A carregar interface de mensagens...</div>;
+    }
+
+    if (error) {
+        return <div className="flex h-screen items-center justify-center text-red-600 p-10">{error}</div>;
+    }
+
+    return (
+        <div className="flex h-[93vh] bg-white">
+            <aside className="w-full md:w-[30%] lg:w-[25%] flex flex-col border-r border-gray-200 min-h-0 relative">
+                <div className="relative">
+                    <SearchAndFilter
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        activeButtonGroup={activeButtonGroup}
+                        toggleFilter={toggleFilter}
+                        onFilterIconClick={() => setIsFilterPopoverOpen(prev => !prev)} // ALTERADO: Verifica se os filtros não são nulos
+                        hasActiveFilters={!!statusFilters || !!tagFilters}
+                    />
+                    <FilterPopover
+                        isOpen={isFilterPopoverOpen}
+                        onClose={() => setIsFilterPopoverOpen(false)}
+                        statusOptions={statusOptions}
+                        allTags={allTags}
+                        selectedStatus={statusFilters}
+                        onStatusChange={handleStatusFilterChange}
+                        selectedTags={tagFilters}
+                        onTagChange={handleTagFilterChange}
+                        onClearFilters={handleClearAllFilters}
+                        limit={limit}
+                        onLimitChange={setLimit}
+                        timeStart={timeStart}
+                        onTimeStartChange={setTimeStart}
+                        timeEnd={timeEnd}
+                        onTimeEndChange={setTimeEnd}
+                    />
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                            <Loader2 size={32} className="animate-spin mb-4" />
+                            <p className="text-sm">Carregando atendimentos...</p>
+                        </div>
+                    ) : (
+                        <>
+                            {filteredAtendimentos.length > 0 ? (
+                                filteredAtendimentos.map((at) => (
+                                    <ContactItem
+                                        key={at.id}
+                                        mensagem={at}
+                                        isSelected={selectedAtendimento?.id === at.id}
+                                        onSelect={setSelectedAtendimento}
+                                        statusOptions={statusOptions}
+                                        onUpdateStatus={handleUpdateAtendimento}
+                                        getTextColorForBackground={getTextColorForBackground}
+                                        // As props de controle de tag foram removidas do ContactItem na etapa anterior, então aqui está correto.
+                                        allTags={allTags}
+                                        onUpdateTags={handleUpdateAtendimento} // Reutilizado para tags
+                                        onAddNewTag={handleAddNewTag}
+                                        onSwitchToAtendimentos={handleSwitchToAtendimentos}
+                                    />
+                                ))
+                            ) : (
+                                <p className="text-center text-gray-500 p-6">
+                                    Nenhum atendimento encontrado para este filtro.
+                                </p>
+                            )}
+                            {/* --- Lógica do botão "Carregar Mais" --- */}
+                            {filteredAtendimentos.length > 0 && filteredAtendimentos.length < totalAtendimentos && (
+                                <div className="p-3 text-center border-t border-gray-200">
+                                    <button
+                                        onClick={handleLoadMore}
+                                        className="w-full px-4 py-2 text-sm font-medium text-brand-primary bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-wait flex items-center justify-center gap-2"
+                                        disabled={isFetchingMore}
+                                    >
+                                        {isFetchingMore ? (
+                                            <>
+                                                <Loader2 size={16} className="animate-spin" />
+                                                A carregar...
+                                            </>
+                                        ) : `Carregar Mais (${filteredAtendimentos.length}/${totalAtendimentos})`
+                                        }
+                                    </button>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            </aside>
+
+            {/* --- MODIFICADO: Layout principal agora é flex horizontal --- */}
+            <main className="flex-1 flex min-h-0">
+                {selectedAtendimento ? (
+                    <>
+                        {/* Coluna da Conversa (ocupa o espaço restante) */}
+                        <div className="flex-1 flex flex-col min-h-0">
+                            <header className="flex-shrink-0 flex items-center p-3 bg-white border-b border-gray-200">
+                                <div className="w-10 h-10 rounded-full mr-3 flex-shrink-0 bg-gray-300 flex items-center justify-center">
+                                    <span className="text-lg font-bold text-white">
+                                        {selectedAtendimento.nome_contato
+                                            ? (selectedAtendimento.nome_contato || '??').substring(0, 2).toUpperCase()
+                                            : (selectedAtendimento.whatsapp || '??').slice(-2)}
+                                    </span>
+                                </div>
+                                <div className="flex-1">
+                                    <h2 className="text-md font-semibold text-gray-800">{selectedAtendimento.nome_contato || selectedAtendimento.whatsapp}</h2>
+                                </div>
+                                <div className="ml-auto flex items-center gap-1">
+                                    {/* --- NOVO: Botão de Feedback Treinamento --- */}
+                                    <button
+                                        onClick={() => setIsFeedbackModalOpen(true)}
+                                        className={`p-2 rounded-full text-brand-text-muted hover:text-brand-primary-active hover:bg-gray-100 transition-opacity ${isProfileSidebarOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                                        title="Sugerir melhoria no Treinamento da IA"
+                                    >
+                                        <Wand2 size={20} />
+                                    </button>
+                                    {/* --- NOVO: Botão de Exportar --- */}
+                                    <button
+                                        onClick={handleExportConversation}
+                                        className={`p-2 rounded-full text-brand-text-muted hover:text-brand-primary-active hover:bg-gray-100 transition-opacity ${isProfileSidebarOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                                        title="Exportar conversa"
+                                    >
+                                        <Download size={20} />
+                                    </button>
+                                    {/* --- ALTERADO: O botão agora some quando a sidebar está aberta --- */}
+                                    <button
+                                        onClick={() => setIsProfileSidebarOpen(prev => !prev)}
+                                        className={`p-2 rounded-full text-brand-text-muted hover:text-brand-primary-active hover:bg-gray-100 transition-opacity ${isProfileSidebarOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                                        title="Ver dados do contato"
+                                    >
+                                        <MoreVertical size={20} />
+                                    </button>
+                                </div>
+                            </header>
+                            <ChatBody
+                                mensagem={selectedAtendimento}
+                                onViewMedia={handleViewMedia}
+                                onDownloadDocument={handleDownloadDocument}
+                                isDownloadingMedia={isDownloadingMedia}
+                                isLoading={isLoading} // --- ADICIONADO: Passa o estado de loading
+                            />
+                            <ChatFooter
+                                onSendMessage={handleSendMessage}
+                                onSendMedia={handleSendMedia}
+                                onOpenTemplateModal={() => setIsTemplateModalOpen(true)}
+                            />
+                        </div>
+                        {/* --- MODIFICADO: Animação do Perfil --- */}
+                        {/* A sidebar agora é posicionada de forma absoluta em telas menores para deslizar sobre o conteúdo */}
+                        {/* Em telas maiores (md), a largura é animada para um efeito de "encolher". A largura máxima é definida no contêiner pai para evitar que ele "salte" durante a animação. */}
+                        <div 
+                            ref={sidebarRef}
+                            className={`
+                            absolute md:relative top-0 right-0 h-full md:max-w-sm flex-shrink-0
+                            transition-all duration-300 ease-in-out
+                            ${isProfileSidebarOpen
+                                ? 'w-full translate-x-0' // Aberto: largura total no mobile, largura do max-w-sm no desktop
+                                : 'w-0 translate-x-full md:translate-x-0' // Fechado: largura 0 e fora da tela no mobile/desktop
+                            }
+                        `}>
+                            {/* O conteúdo só é renderizado se o atendimento existir, e é ocultado quando a sidebar está fechada */}
+                            {/* O contêiner interno sempre tem a largura total do pai, garantindo que o conteúdo não quebre o layout. */}
+                            <div className={`h-full w-full bg-gray-50 ${!isProfileSidebarOpen && 'overflow-hidden'}`}>
+                                <ProfileSidebar
+                                    atendimento={selectedAtendimento}
+                                    onClose={() => setIsProfileSidebarOpen(false)}
+                                    statusOptions={statusOptions}
+                                    getTextColorForBackground={getTextColorForBackground}
+                                    isOpen={isProfileSidebarOpen}
+                                    isTagEditorOpen={openTagEditorId === selectedAtendimento.id}
+                                    onToggleTagEditor={handleToggleTagEditor}
+                                    allTags={allTags}
+                                    onUpdateTags={handleUpdateAtendimento}
+                                    onAddNewTag={handleAddNewTag}
+                                    onUpdateStatus={handleUpdateAtendimento}
+                                />
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    // --- MODIFICADO: Mostra placeholder de carregamento se a lista principal estiver carregando ---
+                    isLoading ? (
+                        <div className="flex flex-col items-center justify-center w-full h-full bg-gray-50 text-gray-500">
+                            <Loader2 size={32} className="animate-spin mb-4" />
+                            <p className="text-sm">A carregar...</p>
+                        </div>
+                    ) : (
+                        <ChatPlaceholder />
+                    )
+                )}
+            </main>
+
+            {/* Renderiza o Modal */}
+            <MediaModal
+                isOpen={isModalOpen}
+                onClose={closeModal} // Usa a função de fechar que limpa a URL
+                mediaUrl={modalMedia?.url}
+                mediaType={modalMedia?.type}
+                filename={modalMedia?.filename}
+            />
+
+            {/* --- NOVO: Renderiza o Modal de Template --- */}
+            <TemplateModal
+                isOpen={isTemplateModalOpen}
+                onClose={() => setIsTemplateModalOpen(false)}
+                onSend={handleSendTemplate}
+                atendimento={selectedAtendimento}
+            />
+            
+            {/* --- MODAL DE FEEDBACK E TREINAMENTO --- */}
+            <FeedbackModal 
+                isOpen={isFeedbackModalOpen} 
+                onClose={() => setIsFeedbackModalOpen(false)} 
+                atendimentoId={selectedAtendimento?.id} 
+            />
+
+        </div>
+    );
+}
+
+export default Mensagens;

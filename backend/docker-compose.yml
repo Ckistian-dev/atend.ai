@@ -1,0 +1,198 @@
+services:
+  # --- Banco de Dados ---
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: atendai_db
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - atendai_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- RabbitMQ ---
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: atendai_rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/
+    networks:
+      - atendai_network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # --- API ---
+  api:
+    build: . 
+    container_name: atendai_api
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    networks:
+      - atendai_network
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - WBP_VERIFY_TOKEN=${WBP_VERIFY_TOKEN}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - PROSPECT_API_URL=${PROSPECT_API_URL}
+      - PROSPECT_EMAIL=${PROSPECT_EMAIL}
+      - PROSPECT_PASSWORD=${PROSPECT_PASSWORD}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # --- Workers ---
+  worker-webhook:
+    build: . 
+    container_name: atendai_worker_webhook
+    command: ["python", "-m", "app.worker_webhook"]
+    volumes:
+      - .:/app
+    networks:
+      - atendai_network
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - MAX_MESSAGE_AGE_SECONDS=${MAX_MESSAGE_AGE_SECONDS}
+      - PROSPECT_API_URL=${PROSPECT_API_URL}
+      - PROSPECT_EMAIL=${PROSPECT_EMAIL}
+      - PROSPECT_PASSWORD=${PROSPECT_PASSWORD}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  worker-agent:
+    build: . 
+    container_name: atendai_worker_agent
+    command: ["python", "-m", "app.worker_agent"]
+    volumes:
+      - .:/app
+    networks:
+      - atendai_network
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - SECRET_KEY=${SECRET_KEY}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
+      - WBP_VERIFY_TOKEN=${WBP_VERIFY_TOKEN}
+      - WBP_WEBHOOK_URL=${WBP_WEBHOOK_URL}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - GOOGLE_SERVICE_ACCOUNT_JSON=${GOOGLE_SERVICE_ACCOUNT_JSON}
+      - PROSPECT_API_URL=${PROSPECT_API_URL}
+      - PROSPECT_EMAIL=${PROSPECT_EMAIL}
+      - PROSPECT_PASSWORD=${PROSPECT_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  worker-followup:
+    build: .
+    container_name: atendai_worker_followup
+    command: ["python", "-m", "app.worker_followup"]
+    volumes:
+      - .:/app
+    networks:
+      - atendai_network
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  worker-bulk-sender:
+    build: .
+    container_name: atendai_worker_bulk_sender
+    command: ["python", "-m", "app.worker_bulk_sender"]
+    volumes:
+      - .:/app
+    networks:
+      - atendai_network
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - WBP_ACCESS_TOKEN=${WBP_ACCESS_TOKEN}
+      - WBP_VERIFY_TOKEN=${WBP_VERIFY_TOKEN}
+      - WBP_WEBHOOK_URL=${WBP_WEBHOOK_URL}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  tunnel:
+    image: alpine:latest
+    container_name: serveo_tunnel
+    restart: always
+    volumes:
+      - ./data/ssh:/root/.ssh
+    networks:
+      - atendai_network
+    environment:
+      - AUTOSSH_GATETIME=0
+    command: >
+      /bin/sh -c "apk add --no-cache openssh-client autossh &&
+      if [ ! -f /root/.ssh/id_rsa ]; then ssh-keygen -t rsa -b 4096 -f /root/.ssh/id_rsa -N '' -q; fi &&
+      autossh -M 0 
+      -o 'ServerAliveInterval 30' 
+      -o 'ServerAliveCountMax 3' 
+      -o 'ConnectTimeout 10' 
+      -o 'ExitOnForwardFailure yes' 
+      -o 'StrictHostKeyChecking=no' 
+      -p 22
+      -R ${SERVEO_SUBDOMAIN}:80:api:8000 serveo.net"
+    depends_on:
+      api:
+        condition: service_started
+
+# --- Definição das Redes e Volumes ---
+networks:
+  atendai_network:
+    driver: bridge
+
+volumes:
+  rabbitmq_data:
+  postgres_data:

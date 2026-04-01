@@ -1,0 +1,155 @@
+services:
+  # --- Banco de Dados ---
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: atendai_db
+    restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      # Liberado APENAS para localhost (Túnel SSH funciona, Hackers da internet não)
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d atendai_local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- RabbitMQ ---
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: atendai_rabbitmq
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # --- API (FastAPI) ---
+  api:
+    # MUDANÇA AQUI: Agora aponta para o Docker Hub
+    image: ckistian/atendai-backend:latest
+    container_name: atendai_api
+    restart: always
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
+      - WBP_VERIFY_TOKEN=${WBP_VERIFY_TOKEN}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - PROSPECT_API_URL=${PROSPECT_API_URL}
+      - PROSPECT_EMAIL=${PROSPECT_EMAIL}
+      - PROSPECT_PASSWORD=${PROSPECT_PASSWORD}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # --- Worker Webhook ---
+  worker-webhook:
+    image: ckistian/atendai-backend:latest
+    container_name: atendai_worker_webhook
+    restart: always
+    command: ["python", "-m", "app.worker_webhook"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - MAX_MESSAGE_AGE_SECONDS=${MAX_MESSAGE_AGE_SECONDS}
+      - PROSPECT_API_URL=${PROSPECT_API_URL}
+      - PROSPECT_EMAIL=${PROSPECT_EMAIL}
+      - PROSPECT_PASSWORD=${PROSPECT_PASSWORD}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # --- Worker Agent ---
+  worker-agent:
+    image: ckistian/atendai-backend:latest
+    container_name: atendai_worker_agent
+    restart: always
+    command: ["python", "-m", "app.worker_agent"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - SECRET_KEY=${SECRET_KEY}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
+      - WBP_VERIFY_TOKEN=${WBP_VERIFY_TOKEN}
+      - WBP_WEBHOOK_URL=${WBP_WEBHOOK_URL}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - GOOGLE_SERVICE_ACCOUNT_JSON=${GOOGLE_SERVICE_ACCOUNT_JSON}
+      - PROSPECT_API_URL=${PROSPECT_API_URL}
+      - PROSPECT_EMAIL=${PROSPECT_EMAIL}
+      - PROSPECT_PASSWORD=${PROSPECT_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+  
+  # --- Worker Followup ---
+  worker-followup:
+    image: ckistian/atendai-backend:latest
+    container_name: atendai_worker_followup
+    restart: always
+    command: ["python", "-m", "app.worker_followup"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # --- Worker Bulk Sender ---
+  worker-bulk-sender:
+    image: ckistian/atendai-backend:latest
+    container_name: atendai_worker_bulk_sender
+    restart: always
+    command: ["python", "-m", "app.worker_bulk_sender"]
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - SECRET_KEY=${SECRET_KEY}
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      - RABBITMQ_WEBHOOK_QUEUE=${RABBITMQ_WEBHOOK_QUEUE}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - WBP_ACCESS_TOKEN=${WBP_ACCESS_TOKEN}
+      - WBP_VERIFY_TOKEN=${WBP_VERIFY_TOKEN}
+      - WBP_WEBHOOK_URL=${WBP_WEBHOOK_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  rabbitmq_data:
+  postgres_data:
