@@ -786,7 +786,7 @@ const Dashboard = () => {
                 question, model,
                 start_date_str: format(dateRange.startDate, "yyyy-MM-dd'T'HH:mm:ssXXX"),
                 end_date_str: format(dateRange.endDate, "yyyy-MM-dd'T'HH:mm:ssXXX"),
-            });
+            }, { timeout: 300000 });
             setAnalysisResult(response.data.analysis);
         } catch (err) {
             setAnalysisError(err.response?.data?.detail || 'Falha ao comunicar com o serviço de análise.');

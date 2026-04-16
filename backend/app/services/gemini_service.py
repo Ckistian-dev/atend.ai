@@ -76,7 +76,7 @@ class GeminiService:
             current_key = self.api_keys[self.current_key_index]
             
             # Instanciação limpa: o SDK gerencia v1/v1beta automaticamente
-            self.client = genai.Client(api_key=current_key)
+            self.client = genai.Client(api_key=current_key, http_config={'timeout': 300})
             
             logger.info(f"✅ Cliente Gemini inicializado (chave índice {self.current_key_index}).")
         except Exception as e:
