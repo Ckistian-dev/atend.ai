@@ -5256,3 +5256,39 @@ Analise a mídia fornecida (imagem, documento ou vídeo) e descreva seu conteúd
 *   Ela enviou esta planta baixa para fornecer as medidas e o layout do projeto da sala que está sendo construída ou reformada.
 *   A intenção é que o destinatário utilize estas informações detalhadas (dimensões, áreas, tipo de piso, layout das áreas) para elaborar um orçamento para a obra ou para a instalação de equipamentos/acabamentos na sala, conforme solicitado por ela no histórico da conversa. Ela menciona que a sala já está "pronta para colocar" a parte especial, indicando que o projeto está em uma fase avançada de execução.
 ============================================================
+
+==================== PROMPT ENVIADO PARA IA [2026-04-16 18:10:06] ====================
+--- SYSTEM INSTRUCTION ---
+Você é um especialista em análise visual e interpretação de conteúdo.
+------------------------------
+[TEXTO]: ## HISTÓRICO RECENTE
+User [2026-04-16 18:07:10 UTC]: boa tarde
+User [2026-04-16 18:08:15 UTC]: Me chamo Liana Tessler, sou arquiteta
+User [2026-04-16 18:08:28 UTC]: Queria alternativas de revestimento ripado cinza para projeto de lojas
+User [2026-04-16 18:08:32 UTC]: Vcs tem?
+
+## INSTRUÇÃO DE ANÁLISE
+Analise a mídia fornecida (imagem, documento ou vídeo) e descreva seu conteúdo de forma abrangente e detalhada. O objetivo é fornecer um resumo completo que capture todos os aspectos importantes para que a IA de conversação possa entender o contexto sem precisar 'ver' a mídia.
+
+1. *Descrição Geral:* Comece com uma descrição geral do que a mídia mostra (ex: 'Foto de uma piscina em um jardim', 'Documento de orçamento', 'Vídeo curto mostrando o funcionamento de um produto').
+2. *Detalhes Visuais (para imagens/vídeos):* Descreva os elementos principais, cores, ambiente, pessoas, objetos, texto visível, e qualquer detalhe que pareça relevante para a conversa.
+3. *Extração de Dados (se aplicável):* Se a mídia contiver dados estruturados (como tabelas, listas, preços, nomes, endereços, datas, valores em um comprovante), extraia-os de forma clara.
+4. *Contexto e Intenção:* Com base no histórico da conversa, tente inferir a intenção do usuário ao enviar a mídia. O que ele quer mostrar ou perguntar?
+5. *Formato da Resposta:* Retorne um texto claro e bem estruturado. Use bullet points (*) para listas, se ajudar na clareza. Não converse, apenas forneça a análise.
+[MÍDIA/OBJETO]: <class 'google.genai.types.Part'>
+============================================================
+
+==================== RESPOSTA DA IA [2026-04-16 18:10:16] ====================
+*   **Descrição Geral:** A imagem mostra uma composição de cinco amostras de materiais, sendo duas placas retangulares lisas e três peças alongadas com perfil ripado, todas em tons de cinza, dispostas sobre uma superfície clara que se assemelha a um terrazzo ou granilite.
+
+*   **Detalhes Visuais:**
+    *   **Fundo:** A superfície de fundo é predominantemente branca ou cinza muito claro, com agregados irregulares de tamanhos variados em tons de cinza, marrom-claro e alguns pontos esverdeados escuros, criando uma textura pontilhada.
+    *   **Amostras Lisas:** No lado esquerdo da imagem, há duas amostras retangulares planas, de cor cinza médio opaco, com cantos levemente arredondados. Elas estão alinhadas verticalmente, uma acima da outra, com um pequeno espaço entre elas.
+    *   **Amostras Ripadas:** No lado direito, há três amostras alongadas com um perfil ondulado ou estriado, característico de um revestimento ripado. Estas peças também estão alinhadas verticalmente, uma acima da outra. A cor é um cinza prateado, com um acabamento que reflete a luz, acentuando o efeito tridimensional das "ripas" horizontais.
+    *   **Cores:** A paleta de cores é dominada por diferentes tons de cinza (do claro ao médio, com acabamento opaco e metálico/brilhante), complementada pelo branco do fundo e pequenos detalhes em marrom e verde.
+    *   **Textura:** As amostras lisas apresentam uma textura uniforme e fosca, enquanto as amostras ripadas exibem uma textura linear e um brilho que sugere um material metálico ou com acabamento similar.
+
+*   **Extração de Dados:** Não há dados textuais ou numéricos visíveis para extração.
+
+*   **Contexto e Intenção:** Com base no histórico da conversa, onde a usuária Liana Tessler, arquiteta, solicitou "alternativas de revestimento ripado cinza para projeto de lojas" e perguntou "Vcs tem?", a intenção ao enviar esta imagem é fornecer uma referência visual clara do tipo de material e acabamento que ela está procurando. Ela está mostrando exemplos do "revestimento ripado cinza" que ela tem em mente, possivelmente para que a IA de conversação possa identificar produtos similares ou confirmar se a empresa oferece opções correspondentes a essas amostras.
+============================================================
