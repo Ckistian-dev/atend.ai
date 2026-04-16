@@ -38,7 +38,8 @@ async def analyze_data_with_ia(
     gemini_service = Depends(get_gemini_service)
 ):
     question = payload.get("question")
-    contexts = payload.get("contexts", [])
+    # contexts = payload.get("contexts", [])  <- Removido conforme solicitação de simplificação
+    model_name = payload.get("model")
     start_date_str = payload.get("start_date_str")
     end_date_str = payload.get("end_date_str")
 
@@ -49,19 +50,15 @@ async def analyze_data_with_ia(
     end_date = datetime.fromisoformat(end_date_str) if end_date_str else None
 
     atendimentos_data = []
-    if 'atendimentos' in contexts and start_date and end_date:
+    if start_date and end_date:
         atendimentos_data = await crud_atendimento.get_atendimentos_no_periodo(db, user_id=current_user.id, start_date=start_date, end_date=end_date)
-
-    persona_data = None
-    if 'persona' in contexts and current_user.default_persona_id:
-        persona_data = await crud_config.get_config(db, config_id=current_user.default_persona_id, user_id=current_user.id)
 
     analysis = await gemini_service.analyze_data(
         question=question,
         user=current_user,
         atendimentos=atendimentos_data,
-        persona=persona_data,
-        db=db
+        db=db,
+        model_name=model_name
     )
 
     return {"analysis": analysis}

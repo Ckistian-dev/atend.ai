@@ -4,34 +4,60 @@ import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import { Edit, Trash2, Loader2, UserPlus, Save, CheckCircle, XCircle, Settings, MessageSquare, Phone, Clock, Plus, X, Shield, ShieldAlert, Search } from 'lucide-react';
 
+// ─── DESIGN SYSTEM ──────────────────────────────────────────────────────────
+const DS_STYLE = `
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
+.admin-page { font-family: 'Inter', sans-serif; }
+.admin-page h1, .admin-page h2, .admin-page h3 { font-family: 'Plus Jakarta Sans', sans-serif; }
+.admin-modal-overlay { animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.admin-form-input {
+    width: 100%;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 0.75rem;
+    background: #f8faff;
+    border: 1px solid rgba(203,213,225,0.6);
+    color: #0f172a;
+    outline: none;
+    transition: all 0.15s;
+    font-family: 'Inter', sans-serif;
+}
+.admin-form-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); background: #fff; }
+.admin-form-select { appearance: none; }
+.ds-surface { background: #ffffff; box-shadow: 0 2px 16px rgba(15,23,42,0.06); border-radius: 1.25rem; }
+.ds-card { background: #f8faff; border-radius: 1rem; border: 1px solid rgba(203,213,225,0.4); padding: 1rem; }
+`;
+
 // Modal Genérico
 const Modal = ({ onClose, children }) => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all duration-200 ease-in-out" onClick={onClose}>
-        <div className="bg-brand-surface border border-slate-200 rounded-xl shadow-md w-full max-w-2xl mx-4 animate-fade-in-up flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center admin-modal-overlay" style={{ background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(8px)' }} onClick={onClose}>
+        <div className="bg-white w-full max-w-2xl mx-4 flex flex-col max-h-[90vh] overflow-hidden" style={{ borderRadius: '1.5rem', boxShadow: '0 24px 80px rgba(15,23,42,0.2)' }} onClick={e => e.stopPropagation()}>
             {children}
         </div>
     </div>
 );
 
-// Tab de Navegação (Modularizado)
+// Tab de Navegação
 const TabButton = ({ isActive, label, icon: Icon, onClick }) => (
     <button
         type="button"
         onClick={onClick}
-        className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-200 ease-in-out flex-1 justify-center ${
+        className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold border-b-2 transition-all duration-200 flex-1 justify-center ${
             isActive
-                ? 'border-brand-primary text-brand-primary bg-brand-primary/5'
-                : 'border-transparent text-slate-500 hover:text-brand-foreground hover:bg-slate-50'
+                ? 'border-blue-500 text-blue-600 bg-blue-50/60'
+                : 'border-transparent text-slate-400 hover:text-slate-700 hover:bg-slate-50'
         }`}
+        style={{ fontFamily: 'Inter, sans-serif' }}
     >
-        <Icon size={16} />
+        <Icon size={15} />
         <span className="hidden sm:inline">{label}</span>
     </button>
 );
 
 // Modal de Edição/Criação de Usuário
 const UserModal = ({ user, onSave, onClose, isCreating = false }) => {
-    const [activeTab, setActiveTab] = useState('general'); // general, status, wbp, followup
+    const [activeTab, setActiveTab] = useState('general');
     const [formData, setFormData] = useState({
         email: user?.email || '',
         password: '',
@@ -44,7 +70,6 @@ const UserModal = ({ user, onSave, onClose, isCreating = false }) => {
         wbp_business_account_id: user?.wbp_business_account_id || '',
     });
     
-    // Estado estruturado para Follow-up
     const [followupConfig, setFollowupConfig] = useState(() => {
         const config = user?.followup_config ? JSON.parse(JSON.stringify(user.followup_config)) : {
             business_hours: { start: "08:00", end: "18:00", days: [1, 2, 3, 4, 5] },
@@ -85,35 +110,24 @@ const UserModal = ({ user, onSave, onClose, isCreating = false }) => {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+        setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     };
 
-    // Handlers para Follow-up
     const handleDayToggle = (dayId) => {
         const currentDays = followupConfig.business_hours?.days || [];
         const newDays = currentDays.includes(dayId)
             ? currentDays.filter(d => d !== dayId)
             : [...currentDays, dayId];
-        setFollowupConfig(prev => ({
-            ...prev,
-            business_hours: { ...prev.business_hours, days: newDays.sort() }
-        }));
+        setFollowupConfig(prev => ({ ...prev, business_hours: { ...prev.business_hours, days: newDays.sort() } }));
     };
 
     const handleTimeChange = (field, value) => {
-        setFollowupConfig(prev => ({
-            ...prev,
-            business_hours: { ...prev.business_hours, [field]: value }
-        }));
+        setFollowupConfig(prev => ({ ...prev, business_hours: { ...prev.business_hours, [field]: value } }));
     };
 
     const handleIntervalChange = (index, field, value) => {
         const newIntervals = [...(followupConfig.intervals || [])];
         const updatedInterval = { ...newIntervals[index] };
-
         if (field === 'value') {
             let numValue = parseInt(value, 10);
             if (isNaN(numValue) || numValue < 1) numValue = 1;
@@ -124,7 +138,6 @@ const UserModal = ({ user, onSave, onClose, isCreating = false }) => {
             updatedInterval.unit = value;
             updatedInterval.value = value === 'minutes' ? 30 : 1;
         }
-
         newIntervals[index] = updatedInterval;
         setFollowupConfig(prev => ({ ...prev, intervals: newIntervals }));
     };
@@ -136,11 +149,7 @@ const UserModal = ({ user, onSave, onClose, isCreating = false }) => {
         setIsSaving(true);
         try {
             const payload = { ...formData, tokens: parseInt(formData.tokens, 10) || 0 };
-
-            // Trata campos que podem ser nulos
             payload.default_persona_id = formData.default_persona_id ? parseInt(formData.default_persona_id, 10) : null;
-            
-            // Anexa a configuração de follow-up estruturada
             const configToSave = {
                 ...followupConfig,
                 intervals: (followupConfig.intervals || []).map(interval => {
@@ -150,29 +159,32 @@ const UserModal = ({ user, onSave, onClose, isCreating = false }) => {
                 })
             };
             payload.followup_config = configToSave;
-
-            if (!isCreating && !payload.password) {
-                delete payload.password; // Não envia senha em branco na atualização
-            }
+            if (!isCreating && !payload.password) { delete payload.password; }
             await onSave(user?.id, payload);
             onClose();
         } catch (error) {
-            // O erro já é tratado na função onSave, que mantém o modal aberto
+            // erro tratado no onSave
         } finally {
             setIsSaving(false);
         }
     };
 
+    const toggleStyle = (checked) => ({
+        background: checked ? 'linear-gradient(135deg, #3b82f6, #6366f1)' : '#e2e8f0',
+    });
+
     return (
         <Modal onClose={onClose}>
-            <div className="flex flex-col h-full">
-                <div className="px-6 py-4 border-b border-slate-200 bg-brand-background">
-                    <h3 className="text-lg font-semibold tracking-tight text-brand-foreground">{isCreating ? 'Criar Novo Usuário' : 'Editar Usuário'}</h3>
-                    {!isCreating && <p className="text-xs text-slate-500 mt-0.5">{user.email}</p>}
+            <div className="flex flex-col h-full admin-page">
+                <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg, #0b1c30, #1d4ed8)', borderRadius: '1.5rem 1.5rem 0 0' }}>
+                    <h3 className="text-lg font-bold text-white" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                        {isCreating ? 'Criar Novo Usuário' : 'Editar Usuário'}
+                    </h3>
+                    {!isCreating && <p className="text-blue-200 text-xs mt-0.5">{user.email}</p>}
                 </div>
                 
                 {/* Tabs */}
-                <div className="flex border-b border-slate-200 bg-brand-background">
+                <div className="flex border-b border-slate-100">
                     <TabButton isActive={activeTab === 'general'} onClick={() => setActiveTab('general')} label="Geral" icon={Settings} />
                     <TabButton isActive={activeTab === 'status'} onClick={() => setActiveTab('status')} label="Status" icon={CheckCircle} />
                     <TabButton isActive={activeTab === 'wbp'} onClick={() => setActiveTab('wbp')} label="WhatsApp API" icon={Phone} />
@@ -184,33 +196,27 @@ const UserModal = ({ user, onSave, onClose, isCreating = false }) => {
                     {activeTab === 'general' && (
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Email*</label>
-                                <input type="email" name="email" value={formData.email} onChange={handleChange} required className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-brand-primary focus:ring-brand-primary" />
+                                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Email *</label>
+                                <input type="email" name="email" value={formData.email} onChange={handleChange} required className="admin-form-input" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    {isCreating ? 'Senha*' : 'Nova Senha (opcional)'}
+                                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                                    {isCreating ? 'Senha *' : 'Nova Senha (opcional)'}
                                 </label>
-                                <input type="password" name="password" value={formData.password} onChange={handleChange} required={isCreating} placeholder={isCreating ? "Defina uma senha" : "Deixe em branco para manter a atual"} className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-brand-primary focus:ring-brand-primary" />
+                                <input type="password" name="password" value={formData.password} onChange={handleChange} required={isCreating} placeholder={isCreating ? "Defina uma senha" : "Deixe em branco para manter a atual"} className="admin-form-input" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Tokens</label>
-                                    <input type="number" name="tokens" value={formData.tokens} onChange={handleChange} className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-brand-primary focus:ring-brand-primary" />
+                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Tokens</label>
+                                    <input type="number" name="tokens" value={formData.tokens} onChange={handleChange} className="admin-form-input" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Persona Padrão</label>
-                                    <select
-                                        name="default_persona_id"
-                                        value={formData.default_persona_id}
-                                        onChange={handleChange}
-                                        className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-brand-primary focus:ring-brand-primary"
-                                        disabled={isCreating}
-                                    >
+                                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Persona Padrão</label>
+                                    <select name="default_persona_id" value={formData.default_persona_id} onChange={handleChange} className="admin-form-input admin-form-select" disabled={isCreating}>
                                         <option value="">-- Nenhuma --</option>
                                         {userPersonas.map(p => <option key={p.id} value={p.id}>{p.nome_config}</option>)}
                                     </select>
-                                    {isCreating && <p className="text-xs text-gray-500 mt-1">Salve o usuário antes de definir uma persona.</p>}
+                                    {isCreating && <p className="text-xs text-slate-400 mt-1">Salve o usuário antes de definir uma persona.</p>}
                                 </div>
                             </div>
                         </div>
@@ -218,120 +224,114 @@ const UserModal = ({ user, onSave, onClose, isCreating = false }) => {
 
                     {/* TAB: STATUS */}
                     {activeTab === 'status' && (
-                        <div className="space-y-6">
-                            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <input type="checkbox" name="agent_running" checked={formData.agent_running} onChange={handleChange} className="h-5 w-5 rounded border-gray-300 text-brand-primary focus:ring-brand-primary" />
+                        <div className="space-y-3">
+                            {[
+                                { name: 'agent_running', label: 'Agente de IA Ativo', desc: 'Se desmarcado, a IA não responderá automaticamente.' },
+                                { name: 'atendente_online', label: 'Atendente Online', desc: 'Indica se há um humano disponível para transbordo.' },
+                                { name: 'followup_active', label: 'Follow-up Ativo', desc: 'Habilita o envio de mensagens de reengajamento.' },
+                            ].map(({ name, label, desc }) => (
+                                <div key={name} className="ds-card flex items-center justify-between">
                                     <div>
-                                        <span className="block text-sm font-bold text-gray-800">Agente de IA Ativo</span>
-                                        <span className="text-xs text-gray-500">Se desmarcado, a IA não responderá automaticamente.</span>
+                                        <p className="text-sm font-semibold text-slate-700" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{label}</p>
+                                        <p className="text-xs text-slate-400 mt-0.5">{desc}</p>
                                     </div>
-                                </label>
-                            </div>
-                            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <input type="checkbox" name="atendente_online" checked={formData.atendente_online} onChange={handleChange} className="h-5 w-5 rounded border-gray-300 text-brand-primary focus:ring-brand-primary" />
-                                    <div>
-                                        <span className="block text-sm font-bold text-gray-800">Atendente Online</span>
-                                        <span className="text-xs text-gray-500">Indica se há um humano disponível para transbordo.</span>
-                                    </div>
-                                </label>
-                            </div>
-                            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                <label className="flex items-center gap-3 cursor-pointer">
-                                    <input type="checkbox" name="followup_active" checked={formData.followup_active} onChange={handleChange} className="h-5 w-5 rounded border-gray-300 text-brand-primary focus:ring-brand-primary" />
-                                    <div>
-                                        <span className="block text-sm font-bold text-gray-800">Follow-up Ativo</span>
-                                        <span className="text-xs text-gray-500">Habilita o envio de mensagens de reengajamento.</span>
-                                    </div>
-                                </label>
-                            </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, [name]: !prev[name] }))}
+                                        className="relative w-11 h-6 rounded-full transition-all flex-shrink-0"
+                                        style={toggleStyle(formData[name])}
+                                    >
+                                        <span className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform" style={{ transform: formData[name] ? 'translateX(20px)' : 'translateX(0)' }} />
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     )}
 
                     {/* TAB: WBP */}
                     {activeTab === 'wbp' && (
                         <div className="space-y-4">
-                            <div className="bg-blue-50 p-4 rounded-lg text-sm text-blue-800 mb-4">
-                                <p>Credenciais da API do WhatsApp Business (Meta).</p>
+                            <div className="p-4 rounded-xl text-sm text-blue-700" style={{ background: 'rgba(219,234,254,0.5)', border: '1px solid rgba(147,197,253,0.4)' }}>
+                                Credenciais da API do WhatsApp Business (Meta). Configure os IDs corretos para que o agente funcione corretamente.
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">ID do Número de Telefone (WBP)</label>
-                                <input type="text" name="wbp_phone_number_id" value={formData.wbp_phone_number_id} onChange={handleChange} className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-brand-primary focus:ring-brand-primary" />
+                                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">ID do Número de Telefone (WBP)</label>
+                                <input type="text" name="wbp_phone_number_id" value={formData.wbp_phone_number_id} onChange={handleChange} className="admin-form-input" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">ID da Conta Business (WBP)</label>
-                                <input type="text" name="wbp_business_account_id" value={formData.wbp_business_account_id} onChange={handleChange} className="block w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 shadow-sm focus:border-brand-primary focus:ring-brand-primary" />
+                                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">ID da Conta Business (WBP)</label>
+                                <input type="text" name="wbp_business_account_id" value={formData.wbp_business_account_id} onChange={handleChange} className="admin-form-input" />
                             </div>
                         </div>
                     )}
 
                     {/* TAB: FOLLOW-UP */}
                     {activeTab === 'followup' && (
-                        <div className="space-y-6">
-                            {/* Horário */}
-                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                <h4 className="text-sm font-bold text-gray-800 mb-3">Horário de Envio</h4>
+                        <div className="space-y-4">
+                            <div className="ds-card">
+                                <h4 className="text-sm font-bold text-slate-700 mb-3" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Horário de Envio</h4>
                                 <div className="flex flex-wrap gap-2 mb-4">
                                     {weekDays.map(day => (
-                                        <button
-                                            key={day.id}
-                                            type="button"
-                                            onClick={() => handleDayToggle(day.id)}
-                                            className={`px-2 py-1 text-xs font-medium rounded border transition-colors ${
+                                        <button key={day.id} type="button" onClick={() => handleDayToggle(day.id)}
+                                            className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all ${
                                                 followupConfig.business_hours?.days?.includes(day.id)
-                                                    ? 'bg-brand-primary text-white border-brand-primary'
-                                                    : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-100'
+                                                    ? 'text-white shadow-md shadow-blue-500/20'
+                                                    : 'bg-white text-slate-500 hover:bg-slate-100'
                                             }`}
+                                            style={followupConfig.business_hours?.days?.includes(day.id) ? { background: 'linear-gradient(135deg, #3b82f6, #6366f1)', border: 'none' } : { border: '1px solid rgba(203,213,225,0.5)' }}
                                         >
                                             {day.label}
                                         </button>
                                     ))}
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <input type="time" value={followupConfig.business_hours?.start || "08:00"} onChange={e => handleTimeChange('start', e.target.value)} className="p-2 border border-gray-300 rounded text-sm" />
-                                    <span className="text-gray-500 text-sm">até</span>
-                                    <input type="time" value={followupConfig.business_hours?.end || "18:00"} onChange={e => handleTimeChange('end', e.target.value)} className="p-2 border border-gray-300 rounded text-sm" />
+                                <div className="flex items-center gap-3">
+                                    <input type="time" value={followupConfig.business_hours?.start || "08:00"} onChange={e => handleTimeChange('start', e.target.value)} className="admin-form-input" style={{ width: 'auto' }} />
+                                    <span className="text-slate-400 text-sm">até</span>
+                                    <input type="time" value={followupConfig.business_hours?.end || "18:00"} onChange={e => handleTimeChange('end', e.target.value)} className="admin-form-input" style={{ width: 'auto' }} />
                                 </div>
                             </div>
 
-                            {/* Intervalos */}
-                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <div className="ds-card">
                                 <div className="flex justify-between items-center mb-3">
-                                    <h4 className="text-sm font-bold text-gray-800">Intervalos (Horas)</h4>
-                                    <button type="button" onClick={addInterval} className="text-xs flex items-center gap-1 text-brand-primary hover:text-blue-800 font-medium"><Plus size={14} /> Adicionar</button>
+                                    <h4 className="text-sm font-bold text-slate-700" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Intervalos</h4>
+                                    <button type="button" onClick={addInterval} className="text-xs flex items-center gap-1 text-blue-600 hover:text-blue-800 font-semibold">
+                                        <Plus size={13} /> Adicionar
+                                    </button>
                                 </div>
                                 <div className="space-y-2">
                                     {(followupConfig.intervals || []).map((interval, index) => (
                                         <div key={index} className="flex items-center gap-2">
-                                            <span className="text-sm text-gray-600 w-16">Após</span>
-                                            <input 
-                                                type="number" 
-                                                min="1" 
-                                                max={interval.unit === 'hours' ? 168 : 1440}
-                                                value={interval.value} 
-                                                onChange={e => handleIntervalChange(index, 'value', e.target.value)} 
-                                                className="w-20 p-1.5 border border-gray-300 rounded text-sm" 
-                                            />
-                                            <select value={interval.unit} onChange={e => handleIntervalChange(index, 'unit', e.target.value)} className="p-1.5 border border-gray-300 rounded text-sm bg-white">
+                                            <span className="text-sm text-slate-500 w-12">Após</span>
+                                            <input type="number" min="1" max={interval.unit === 'hours' ? 168 : 1440} value={interval.value}
+                                                onChange={e => handleIntervalChange(index, 'value', e.target.value)}
+                                                className="admin-form-input w-20" />
+                                            <select value={interval.unit} onChange={e => handleIntervalChange(index, 'unit', e.target.value)} className="admin-form-input admin-form-select" style={{ width: 'auto' }}>
                                                 <option value="minutes">minuto(s)</option>
                                                 <option value="hours">hora(s)</option>
                                             </select>
-                                            <button type="button" onClick={() => removeInterval(index)} className="ml-auto text-red-500 hover:text-red-700 p-1"><Trash2 size={14} /></button>
+                                            <button type="button" onClick={() => removeInterval(index)} className="ml-auto text-red-400 hover:text-red-600 p-1 transition-colors">
+                                                <X size={14} />
+                                            </button>
                                         </div>
                                     ))}
-                                    {(!followupConfig.intervals || followupConfig.intervals.length === 0) && <p className="text-xs text-gray-400 italic">Nenhum intervalo definido.</p>}
+                                    {(!followupConfig.intervals || followupConfig.intervals.length === 0) && (
+                                        <p className="text-xs text-slate-400 italic">Nenhum intervalo definido.</p>
+                                    )}
                                 </div>
                             </div>
                         </div>
                     )}
                 </div>
 
-                <div className="p-6 border-t border-gray-200 flex justify-end gap-4 bg-gray-50 rounded-b-xl">
-                    <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition">Cancelar</button>
-                    <button type="button" onClick={handleSave} disabled={isSaving} className="px-4 py-2 bg-brand-primary text-white rounded-md hover:bg-brand-primary-active transition flex items-center gap-2 disabled:bg-gray-400">
-                        {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                        {isSaving ? 'Salvando...' : 'Salvar'}
+                <div className="p-5 flex justify-end gap-3" style={{ borderTop: '1px solid rgba(203,213,225,0.4)' }}>
+                    <button type="button" onClick={onClose} className="px-5 py-2.5 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-100 transition-all">
+                        Cancelar
+                    </button>
+                    <button type="button" onClick={handleSave} disabled={isSaving}
+                        className="px-5 py-2.5 text-white text-sm font-semibold rounded-xl flex items-center gap-2 disabled:opacity-60 transition-all shadow-lg shadow-blue-500/25"
+                        style={{ background: isSaving ? '#94a3b8' : 'linear-gradient(135deg, #3b82f6, #6366f1)' }}>
+                        {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                        {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                     </button>
                 </div>
             </div>
@@ -347,12 +347,6 @@ function Admin() {
     const [modalState, setModalState] = useState({ type: null, data: null });
     const [searchTerm, setSearchTerm] = useState('');
     const navigate = useNavigate();
-
-    const handleLogout = () => {
-        localStorage.removeItem('accessToken');
-        toast.success('Logout realizado com sucesso!');
-        navigate('/login');
-    };
 
     const fetchUsers = useCallback(async () => {
         setIsLoading(true);
@@ -373,16 +367,13 @@ function Admin() {
         }
     }, []);
 
-    useEffect(() => {
-        fetchUsers();
-    }, [fetchUsers]);
+    useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
     const handleSaveUser = async (userId, userData) => {
         const isCreating = !userId;
         const apiCall = isCreating ? api.post('/admin/users', userData) : api.put(`/admin/users/${userId}`, userData);
         const successMsg = isCreating ? 'Usuário criado com sucesso!' : 'Usuário atualizado com sucesso!';
         const errorMsg = isCreating ? 'Falha ao criar usuário.' : 'Falha ao atualizar usuário.';
-
         try {
             const response = await apiCall;
             if (isCreating) {
@@ -394,7 +385,7 @@ function Admin() {
         } catch (err) {
             const detail = err.response?.data?.detail || 'Verifique os campos e tente novamente.';
             toast.error(`${errorMsg} ${detail}`);
-            throw err; // Re-lança para manter o modal aberto
+            throw err;
         }
     };
 
@@ -412,44 +403,63 @@ function Admin() {
     };
 
     const getPersonaName = (personaId) => {
-        if (!personaId) return '-';
+        if (!personaId) return '—';
         const persona = allPersonas.find(p => p.id === personaId);
         return persona ? persona.nome_config : `ID: ${personaId}`;
     };
 
-    const filteredUsers = users.filter(user => 
+    const filteredUsers = users.filter(user =>
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (isLoading) {
-        return <div className="flex h-full items-center justify-center"><Loader2 className="animate-spin text-brand-primary" size={32} /></div>;
+        return (
+            <div className="flex h-full items-center justify-center" style={{ background: '#f0f4ff' }}>
+                <div className="flex flex-col items-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0b1c30, #1d4ed8)', boxShadow: '0 8px 24px rgba(29,78,216,0.3)' }}>
+                        <Loader2 size={28} className="text-white animate-spin" />
+                    </div>
+                    <p className="text-slate-400 text-sm">Carregando painel...</p>
+                </div>
+            </div>
+        );
     }
 
     if (error) {
-        return <div className="p-10 text-center text-red-600 bg-red-50 rounded-lg m-10">{error}</div>;
+        return (
+            <div className="p-10 m-10 text-center rounded-2xl" style={{ background: 'rgba(254,226,226,0.5)', border: '1px solid rgba(252,165,165,0.4)' }}>
+                <p className="text-red-700 font-semibold">{error}</p>
+            </div>
+        );
     }
 
     return (
-        <div className="p-6 md:p-10 bg-gray-50 min-h-screen">
-            <div className="flex justify-between items-center mb-8">
+        <div className="admin-page p-6 md:p-8 min-h-full" style={{ background: '#f0f4ff' }}>
+            <style>{DS_STYLE}</style>
+            
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-800">Painel do Administrador</h1>
-                    <p className="text-gray-500 mt-1">Gerenciamento de usuários do sistema.</p>
+                    <h1 className="text-2xl font-black text-slate-800 tracking-tight">Painel do Administrador</h1>
+                    <p className="text-slate-400 mt-0.5 text-sm">Gerenciamento de usuários do sistema</p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
+                    {/* Search */}
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                         <input
                             type="text"
                             placeholder="Pesquisar por email..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                            className="admin-form-input pl-9"
+                            style={{ width: '240px', borderRadius: '0.875rem' }}
                         />
                     </div>
                     <button
                         onClick={() => setModalState({ type: 'create', data: null })}
-                        className="flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg shadow-md text-sm font-medium hover:bg-brand-primary-active transition-colors"
+                        className="flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/25 hover:opacity-90 transition-all"
+                        style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)' }}
                     >
                         <UserPlus size={16} />
                         Novo Usuário
@@ -457,59 +467,84 @@ function Admin() {
                 </div>
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
-                <div className="overflow-x-auto custom-scrollbar pb-2">
+            {/* Table */}
+            <div className="ds-surface overflow-hidden">
+                <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left min-w-[1000px]">
-                        <thead className="border-b-2 border-gray-200">
-                            <tr>
-                                <th className="p-4 text-sm font-semibold text-gray-600">Email</th>
-                                <th className="p-4 text-sm font-semibold text-gray-600">Tokens</th>
-                                <th className="p-4 text-sm font-semibold text-gray-600 text-center">Persona Padrão</th>
-                                <th className="p-4 text-sm font-semibold text-gray-600 text-center">Status</th>
-                                <th className="p-4 text-sm font-semibold text-gray-600">WBP (Phone / Biz)</th>
-                                <th className="p-4 text-sm font-semibold text-gray-600 text-center">Ações</th>
+                        <thead>
+                            <tr style={{ borderBottom: '1px solid rgba(203,213,225,0.4)' }}>
+                                {['Email', 'Tokens', 'Persona Padrão', 'Status', 'WBP (Phone / Biz)', 'Ações'].map((h, i) => (
+                                    <th key={i} className="px-5 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                        {h}
+                                    </th>
+                                ))}
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredUsers.map(user => (
-                                <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                    <td className="p-4 font-semibold text-gray-800">
-                                        {user.email}
-                                        {user.is_superuser && (
-                                            <Shield size={14} className="inline-block ml-1 text-purple-600" title="Superusuário" />
-                                        )}
-                                    </td>
-                                    <td className="p-4 text-gray-600">{user.tokens.toLocaleString('pt-BR')}</td>
-                                    <td className="p-4 text-sm text-center text-gray-600">{getPersonaName(user.default_persona_id)}</td>
-                                    <td className="p-4 text-sm">
-                                        <div className="flex items-center justify-center gap-3">
-                                            <span title={`Agente ${user.agent_running ? 'Ativo' : 'Inativo'}`}>{user.agent_running ? <CheckCircle size={18} className="text-green-500" /> : <XCircle size={18} className="text-gray-400" />}</span>
-                                            <span title={`Atendente ${user.atendente_online ? 'Online' : 'Offline'}`}>{user.atendente_online ? <CheckCircle size={18} className="text-green-500" /> : <XCircle size={18} className="text-gray-400" />}</span>
-                                            <span title={`Follow-up ${user.followup_active ? 'Ativo' : 'Inativo'}`}>{user.followup_active ? <CheckCircle size={18} className="text-green-500" /> : <XCircle size={18} className="text-gray-400" />}</span>
+                            {filteredUsers.map((user, rowIdx) => (
+                                <tr key={user.id} className="transition-colors hover:bg-blue-50/30" style={rowIdx < filteredUsers.length - 1 ? { borderBottom: '1px solid rgba(203,213,225,0.3)' } : {}}>
+                                    <td className="px-5 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)' }}>
+                                                {user.email[0].toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-800 flex items-center gap-1">
+                                                    {user.email}
+                                                    {user.is_superuser && <Shield size={12} className="text-violet-500" title="Superusuário" />}
+                                                </p>
+                                            </div>
                                         </div>
                                     </td>
-                                    <td className="p-4 text-sm text-gray-600">
-                                        <div className="flex flex-col max-w-[150px]">
-                                            <span className="truncate text-xs" title={`Phone ID: ${user.wbp_phone_number_id}`}>P: {user.wbp_phone_number_id || '-'}</span>
-                                            <span className="truncate text-xs text-gray-400" title={`Biz ID: ${user.wbp_business_account_id}`}>B: {user.wbp_business_account_id || '-'}</span>
+                                    <td className="px-5 py-4">
+                                        <span className="text-sm font-semibold text-slate-700">{user.tokens.toLocaleString('pt-BR')}</span>
+                                    </td>
+                                    <td className="px-5 py-4">
+                                        <span className="text-sm text-slate-500">{getPersonaName(user.default_persona_id)}</span>
+                                    </td>
+                                    <td className="px-5 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <StatusPill active={user.agent_running} label="IA" />
+                                            <StatusPill active={user.atendente_online} label="Aten." />
+                                            <StatusPill active={user.followup_active} label="FU" />
                                         </div>
                                     </td>
-                                    <td className="p-4">
-                                        <div className="flex justify-center items-center gap-2">
-                                            <button onClick={() => setModalState({ type: 'edit', data: user })} className="p-2 text-gray-500 hover:text-brand-primary hover:bg-gray-100 rounded-full transition-colors" title="Editar Usuário"><Edit size={18} /></button>
-                                            <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded-full transition-colors" title="Apagar Usuário"><Trash2 size={18} /></button>
+                                    <td className="px-5 py-4 text-sm">
+                                        <div className="flex flex-col gap-0.5 max-w-[160px]">
+                                            <span className="truncate text-xs text-slate-500" title={`Phone ID: ${user.wbp_phone_number_id}`}>P: {user.wbp_phone_number_id || '—'}</span>
+                                            <span className="truncate text-xs text-slate-400" title={`Biz ID: ${user.wbp_business_account_id}`}>B: {user.wbp_business_account_id || '—'}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-5 py-4">
+                                        <div className="flex items-center gap-1">
+                                            <button onClick={() => setModalState({ type: 'edit', data: user })}
+                                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Editar">
+                                                <Edit size={16} />
+                                            </button>
+                                            <button onClick={() => handleDeleteUser(user.id)}
+                                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Apagar">
+                                                <Trash2 size={16} />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
                             ))}
+                            {filteredUsers.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="text-center py-16 text-slate-400 text-sm">
+                                        {searchTerm ? 'Nenhum usuário encontrado para essa busca.' : 'Nenhum usuário cadastrado.'}
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
             </div>
+
             {(modalState.type === 'edit' || modalState.type === 'create') && (
-                <UserModal 
-                    user={modalState.data} 
-                    onSave={handleSaveUser} 
+                <UserModal
+                    user={modalState.data}
+                    onSave={handleSaveUser}
                     onClose={() => setModalState({ type: null, data: null })}
                     isCreating={modalState.type === 'create'}
                 />
@@ -517,5 +552,15 @@ function Admin() {
         </div>
     );
 }
+
+// Status pill sub-component
+const StatusPill = ({ active, label }) => (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+        active ? 'text-emerald-700' : 'text-slate-400'
+    }`} style={{ background: active ? 'rgba(16,185,129,0.1)' : 'rgba(148,163,184,0.1)' }}>
+        <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+        {label}
+    </span>
+);
 
 export default Admin;

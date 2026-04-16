@@ -344,6 +344,88 @@ async def get_dashboard_data(
     # Calcula a média por atendimento
     consumo_medio_tokens = (total_tokens_periodo / total_atendimentos) if total_atendimentos > 0 else 0
 
+    # --- 5. Métricas de Tempo (Atendimento e Resposta) ---
+    atendimentos_com_tempo_query = await db.execute(
+        select(models.Atendimento.created_at, models.Atendimento.updated_at, models.Atendimento.conversa)
+        .where(
+            models.Atendimento.user_id == user_id,
+            models.Atendimento.created_at.between(start_date, end_date),
+            models.Atendimento.status != 'Ignorar Contato'
+        )
+    )
+    atendimentos_lista = atendimentos_com_tempo_query.all()
+    
+    tempos_atendimento_segundos = []
+    tempos_resposta_segundos = []
+    
+    for row in atendimentos_lista:
+        created_at, updated_at, conversa_json = row
+        # Tempo de atendimento
+        if updated_at and created_at:
+            delta = (updated_at - created_at).total_seconds()
+            if delta > 0:
+                tempos_atendimento_segundos.append(delta)
+        
+        # Tempo de resposta
+        if conversa_json:
+            try:
+                conversa = json.loads(conversa_json)
+                last_user_time = None
+                for msg in conversa:
+                    if msg.get('role') == 'user':
+                        if not last_user_time:
+                            last_user_time = msg.get('timestamp')
+                    elif msg.get('role') == 'assistant':
+                        if msg.get('is_ai') is True:
+                            last_user_time = None
+                            continue
+                        else:
+                            if last_user_time:
+                                current_time = msg.get('timestamp')
+                                if current_time and last_user_time:
+                                    try:
+                                        diff = float(current_time) - float(last_user_time)
+                                        if diff >= 0:
+                                            tempos_resposta_segundos.append(diff)
+                                    except (ValueError, TypeError):
+                                        pass
+                                last_user_time = None
+            except (json.JSONDecodeError, TypeError):
+                pass
+                
+    tempo_medio_atendimento = sum(tempos_atendimento_segundos) / len(tempos_atendimento_segundos) if tempos_atendimento_segundos else 0
+    tempo_medio_resposta = sum(tempos_resposta_segundos) / len(tempos_resposta_segundos) if tempos_resposta_segundos else 0
+
+    def formatar_tempo(segundos):
+        if segundos == 0:
+            return "—"
+        
+        if segundos < 60:
+            return f"{int(segundos)}s"
+        
+        minutos_total = int(segundos // 60)
+        segundos_rest = int(segundos % 60)
+        
+        if minutos_total < 60:
+            if segundos_rest > 0:
+                return f"{minutos_total}m {segundos_rest}s"
+            return f"{minutos_total}m"
+            
+        horas_total = int(minutos_total // 60)
+        minutos_rest = int(minutos_total % 60)
+        
+        if horas_total < 24:
+            if minutos_rest > 0:
+                return f"{horas_total}h {minutos_rest}m"
+            return f"{horas_total}h"
+            
+        dias_total = int(horas_total // 24)
+        horas_rest = int(horas_total % 24)
+        
+        if horas_rest > 0:
+            return f"{dias_total}d {horas_rest}h"
+        return f"{dias_total}d"
+
     # --- NOVO: Lógica para Atividade Recente ---
     # Busca o último atendimento atualizado no período para exibir no header.
     recent_activity_query = await db.execute(
@@ -370,6 +452,14 @@ async def get_dashboard_data(
             "taxaConversao": {
                 "value": f"{taxa_conversao:.1f}%",
                 "label": "Taxa de Conversão"
+            },
+            "tempoMedioAtendimento": {
+                "value": formatar_tempo(tempo_medio_atendimento),
+                "label": "T. Médio de Atendimento"
+            },
+            "tempoMedioResposta": {
+                "value": formatar_tempo(tempo_medio_resposta),
+                "label": "Resposta Humana (Média)"
             },
             "consumoMedioTokens": {
                 "value": f"{consumo_medio_tokens:.2f}",

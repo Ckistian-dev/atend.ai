@@ -1,31 +1,39 @@
-import React, { useState, useRef } from 'react';
-import { X, Plus, Trash2, Save, Loader2, Info, FileImage, FileVideo, File as FileIcon, ExternalLink, Reply, Upload } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { X, Plus, Trash2, Save, Loader2, Info, FileImage, FileVideo, File as FileIcon, ExternalLink, Reply, Upload, MessageSquarePlus, Sparkles } from 'lucide-react';
 import api from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
 
 const CreateTemplateModal = ({ isOpen, onClose, onCreated }) => {
     const [isSaving, setIsSaving] = useState(false);
-    
+
     // Estado do formulário base
     const [name, setName] = useState('');
     const [category, setCategory] = useState('MARKETING');
     const [language, setLanguage] = useState('pt_BR');
-    
-    // Componentes
-    const [headerType, setHeaderType] = useState('NONE'); // NONE, TEXT, IMAGE, VIDEO, DOCUMENT
+
+    const [headerType, setHeaderType] = useState('NONE');
     const [headerText, setHeaderText] = useState('');
     const [bodyText, setBodyText] = useState('');
     const [footerText, setFooterText] = useState('');
     const [headerFile, setHeaderFile] = useState(null);
-    
-    // Botões
-    const [buttons, setButtons] = useState([]);
+    const [headerPreviewUrl, setHeaderPreviewUrl] = useState(null);
 
-    // Variáveis (Exemplos)
+    useEffect(() => {
+        if (!headerFile) {
+            setHeaderPreviewUrl(null);
+            return;
+        }
+        const url = URL.createObjectURL(headerFile);
+        setHeaderPreviewUrl(url);
+        return () => URL.revokeObjectURL(url);
+    }, [headerFile]);
+
+    const [buttons, setButtons] = useState([]);
     const [variables, setVariables] = useState({});
-    const handleVariableChange = (num, value) => {
+
+    const handleVariableChange = useCallback((num, value) => {
         setVariables(prev => ({ ...prev, [num]: value }));
-    };
+    }, []);
 
     const fileInputRef = useRef(null);
 
@@ -35,10 +43,7 @@ const CreateTemplateModal = ({ isOpen, onClose, onCreated }) => {
         }
     };
 
-    if (!isOpen) return null;
-
     const handleNameChange = (e) => {
-        // O nome do template só pode ter letras minúsculas, números e sublinhados
         const formatted = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_');
         setName(formatted);
     };
@@ -67,7 +72,7 @@ const CreateTemplateModal = ({ isOpen, onClose, onCreated }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!name || !bodyText) {
             toast.error("Nome e Corpo da mensagem são obrigatórios.");
             return;
@@ -78,7 +83,6 @@ const CreateTemplateModal = ({ isOpen, onClose, onCreated }) => {
             return;
         }
 
-        // Extrator de variáveis
         const extractVars = (text) => {
             if (!text) return [];
             const matches = text.match(/{{\d+}}/g) || [];
@@ -101,7 +105,6 @@ const CreateTemplateModal = ({ isOpen, onClose, onCreated }) => {
         try {
             const components = [];
 
-            // HEADER
             if (headerType !== 'NONE') {
                 if (headerType === 'TEXT' && headerText) {
                     const headerComp = { type: 'HEADER', format: 'TEXT', text: headerText };
@@ -119,7 +122,6 @@ const CreateTemplateModal = ({ isOpen, onClose, onCreated }) => {
                 }
             }
 
-            // BODY
             const bodyComp = { type: 'BODY', text: bodyText };
             if (bodyVars.length > 0) {
                 const maxBodyVar = Math.max(...bodyVars.map(Number));
@@ -131,12 +133,10 @@ const CreateTemplateModal = ({ isOpen, onClose, onCreated }) => {
             }
             components.push(bodyComp);
 
-            // FOOTER
             if (footerText) {
                 components.push({ type: 'FOOTER', text: footerText });
             }
 
-            // BUTTONS
             if (buttons.length > 0) {
                 const processedButtons = buttons.map(btn => {
                     if (btn.type === 'URL' && btn.url.includes('{{1}}')) {
@@ -147,13 +147,7 @@ const CreateTemplateModal = ({ isOpen, onClose, onCreated }) => {
                 components.push({ type: 'BUTTONS', buttons: processedButtons });
             }
 
-            const payload = {
-                name,
-                category,
-                language,
-                components
-            };
-
+            const payload = { name, category, language, components };
             const formData = new FormData();
             formData.append('payload_json', JSON.stringify(payload));
             if (headerFile && ['IMAGE', 'VIDEO', 'DOCUMENT'].includes(headerType)) {
@@ -161,11 +155,11 @@ const CreateTemplateModal = ({ isOpen, onClose, onCreated }) => {
             }
 
             await api.post('/atendimentos/whatsapp/templates', formData);
-            
+
             toast.success("Template enviado para aprovação da Meta!");
-            onCreated(); // Recarrega a lista
-            onClose(); // Fecha o modal
-            
+            onCreated();
+            onClose();
+
             // Reseta form
             setName('');
             setBodyText('');
@@ -175,7 +169,7 @@ const CreateTemplateModal = ({ isOpen, onClose, onCreated }) => {
             setHeaderType('NONE');
             setHeaderFile(null);
             setVariables({});
-            
+
         } catch (err) {
             console.error(err);
             const msg = err.response?.data?.detail || "Erro ao criar template. Verifique os dados.";
@@ -185,12 +179,11 @@ const CreateTemplateModal = ({ isOpen, onClose, onCreated }) => {
         }
     };
 
-    // Renderizador interativo para o Preview
-    const renderTextWithVariables = (text, isHeader = false) => {
+    const renderTextWithVariables = useCallback((text, isHeader = false) => {
         if (!text) return null;
         const parts = text.split(/({{\d+}})/g);
         return (
-            <div className={`${isHeader ? 'font-bold text-sm' : 'whitespace-pre-wrap text-sm leading-relaxed'}`}>
+            <div className={`${isHeader ? 'font-black text-[14px] text-slate-800' : 'whitespace-pre-wrap text-[14px] leading-relaxed text-slate-700 font-medium'}`}>
                 {parts.map((part, index) => {
                     const match = part.match(/{{(\d+)}}/);
                     if (match) {
@@ -201,11 +194,10 @@ const CreateTemplateModal = ({ isOpen, onClose, onCreated }) => {
                                 type="text"
                                 value={variables[varNum] || ''}
                                 onChange={(e) => handleVariableChange(varNum, e.target.value)}
-                                className={`bg-white/60 border-gray-400 text-gray-900 focus:bg-white focus:outline-none focus:border-brand-primary transition-all rounded-sm inline-block text-center ${isHeader ? 'font-bold' : ''}`}
-                                style={{ 
-                                    width: `${Math.max(((variables[varNum] || part).length) * 6, 30)}px`,
+                                className="bg-blue-50/50 border border-blue-100 text-blue-700 focus:bg-white focus:outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100/50 font-black transition-all rounded-lg px-2 py-0.5 inline-block mx-0.5 shadow-inner text-center"
+                                style={{
+                                    width: `${((variables[varNum] || part).length * 9) + 10}px`,
                                     minWidth: '30px',
-                                    height: '1.2rem',
                                     verticalAlign: 'baseline'
                                 }}
                             />
@@ -215,211 +207,290 @@ const CreateTemplateModal = ({ isOpen, onClose, onCreated }) => {
                 })}
             </div>
         );
-    };
+    }, [variables, handleVariableChange]);
+
+    if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4 animate-fade-in-up-fast" onClick={onClose}>
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-xl">
-                    <h3 className="text-lg font-bold text-gray-800">Criar Novo Template</h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-fade-in" onClick={onClose}>
+            <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] shadow-[0_30px_80px_rgba(0,0,0,0.2)] w-full max-w-6xl flex flex-col max-h-[95vh] border border-white animate-fade-in-up-fast overflow-hidden" onClick={e => e.stopPropagation()}>
+
+                {/* Header */}
+                <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <div>
+                        <div className="flex items-center gap-3 mb-1">
+                            <div className="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-600">
+                                <MessageSquarePlus size={24} />
+                            </div>
+                            <h3 className="text-2xl font-black tracking-tight text-slate-800 executive-title">Novo Template</h3>
+                        </div>
+                        <p className="text-[13px] font-medium text-slate-400">Desenvolva mensagens automáticas aprovadas pela Meta.</p>
+                    </div>
+                    <button onClick={onClose} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-100 text-slate-400 hover:bg-white hover:text-slate-900 shadow-sm transition-all"><X size={24} /></button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    <div className="grid grid-cols-1 lg:grid-cols-2">
                         {/* Coluna Esquerda: Formulário */}
-                        <form id="create-template-form" onSubmit={handleSubmit} className="space-y-6">
-                            
-                            {/* Configuração Básica e Cabeçalho */}
-                            <div className="grid grid-cols-1 gap-4">
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-1">Nome do Template<span className="text-red-500 ml-0.5">*</span></label>
-                                    <input type="text" value={name} onChange={handleNameChange} placeholder="ex: promocao_natal" required className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-primary text-sm" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-1">Categoria<span className="text-red-500 ml-0.5">*</span></label>
-                                    <select value={category} onChange={e => setCategory(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-primary text-sm">
-                                        <option value="MARKETING">Marketing (Ofertas, Avisos)</option>
-                                        <option value="UTILITY">Utilidade (Atualizações de Pedido)</option>
-                                        <option value="AUTHENTICATION">Autenticação (Senhas/OTP)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-1">Cabeçalho (Opcional)</label>
-                                    <select value={headerType} onChange={e => setHeaderType(e.target.value)} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-primary text-sm">
-                                        <option value="NONE">Nenhum</option>
-                                        <option value="TEXT">Texto</option>
-                                        <option value="IMAGE">Imagem</option>
-                                        <option value="VIDEO">Vídeo</option>
-                                        <option value="DOCUMENT">Documento (PDF)</option>
-                                    </select>
-                                    {headerType === 'TEXT' && (
-                                        <input type="text" value={headerText} onChange={e => setHeaderText(e.target.value)} placeholder="Texto (máx 60 carac.)" maxLength={60} className="w-full p-2 mt-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-primary text-sm" />
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Corpo */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Corpo da Mensagem<span className="text-red-500 ml-0.5">*</span></label>
-                                <textarea value={bodyText} onChange={e => setBodyText(e.target.value)} rows={5} placeholder="Digite a mensagem aqui. Use {{1}}, {{2}} para variáveis dinâmicas." required className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary text-sm resize-y" />
-                                <p className="text-xs text-gray-500 mt-1 flex items-start gap-1"><Info size={14} className="flex-shrink-0 mt-0.5" /> <span>Para criar variáveis dinâmicas, use chaves duplas numeradas sequencialmente. Ex: <strong>Olá {'{{1}}'}, seu pedido {'{{2}}'} foi confirmado.</strong></span></p>
-                            </div>
-
-                            {/* Rodapé */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Rodapé (Opcional)</label>
-                                <input type="text" value={footerText} onChange={e => setFooterText(e.target.value)} placeholder="Texto cinza claro no final (ex: Responda SAIR para cancelar)" maxLength={60} className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-primary text-sm" />
-                            </div>
-
-                            {/* Botões */}
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Botões de Ação (Opcional)</label>
-                                <div className="border border-gray-300 rounded-lg overflow-hidden">
-                                    <div className="bg-gray-50 p-3 flex justify-between items-center border-b border-gray-300">
-                                        <span className="text-sm font-medium text-gray-600">Adicionar botões interativos</span>
-                                        <div className="flex gap-2">
-                                            <button type="button" onClick={() => handleAddButton('QUICK_REPLY')} className="text-xs bg-white border border-gray-300 hover:bg-gray-100 px-2 py-1.5 rounded flex items-center gap-1 font-semibold text-gray-700 shadow-sm transition-colors"><Reply size={14}/> Resposta Rápida</button>
-                                            <button type="button" onClick={() => handleAddButton('URL')} className="text-xs bg-white border border-gray-300 hover:bg-gray-100 px-2 py-1.5 rounded flex items-center gap-1 font-semibold text-gray-700 shadow-sm transition-colors"><ExternalLink size={14}/> Link (URL)</button>
-                                        </div>
+                        <div className="p-8 lg:border-r border-slate-100 space-y-8">
+                            <section className="space-y-6">
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Configurações Básicas</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="col-span-1 md:col-span-2">
+                                        <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Identificador do Template</label>
+                                        <input
+                                            type="text"
+                                            value={name}
+                                            onChange={handleNameChange}
+                                            placeholder="ex: promocao_exclusiva_v1"
+                                            className="w-full px-5 py-4 bg-slate-100 rounded-2xl border border-slate-100 focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all font-bold text-slate-700 placeholder:text-slate-300 shadow-inner"
+                                        />
                                     </div>
+                                    <div>
+                                        <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Categoria Meta</label>
+                                        <select
+                                            value={category}
+                                            onChange={e => setCategory(e.target.value)}
+                                            className="w-full px-5 py-4 bg-slate-100 rounded-2xl border border-slate-100 focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all font-bold text-slate-700 appearance-none shadow-inner"
+                                        >
+                                            <option value="MARKETING">Marketing</option>
+                                            <option value="UTILITY">Utilidade</option>
+                                            <option value="AUTHENTICATION">Autenticação</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Cabeçalho Interativo</label>
+                                        <select
+                                            value={headerType}
+                                            onChange={e => setHeaderType(e.target.value)}
+                                            className="w-full px-5 py-4 bg-slate-100 rounded-2xl border border-slate-100 focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all font-bold text-slate-700 appearance-none shadow-inner"
+                                        >
+                                            <option value="NONE">Sem Cabeçalho</option>
+                                            <option value="TEXT">Texto Estático</option>
+                                            <option value="IMAGE">Imagem Estilizada</option>
+                                            <option value="VIDEO">Vídeo Demonstrativo</option>
+                                            <option value="DOCUMENT">Documento PDF</option>
+                                        </select>
+                                    </div>
+                                </div>
 
-                                    <div className="p-3 space-y-3 bg-white">
+                                {headerType === 'TEXT' && (
+                                    <div className="animate-fade-in">
+                                        <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Conteúdo do Cabeçalho</label>
+                                        <input
+                                            type="text"
+                                            value={headerText}
+                                            onChange={e => setHeaderText(e.target.value)}
+                                            placeholder="Olá {{1}}, bem-vindo!"
+                                            maxLength={60}
+                                            className="w-full px-5 py-4 bg-blue-50 rounded-2xl border border-blue-100 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all font-black text-slate-800 shadow-inner"
+                                        />
+                                    </div>
+                                )}
+                            </section>
+
+                            <section className="space-y-4">
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Conteúdo Principal</h4>
+                                <div>
+                                    <div className="flex justify-between items-center mb-2 px-1">
+                                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Corpo da Mensagem</label>
+                                        <span className="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-1 rounded-lg flex items-center gap-1"><Info size={10} /> Use {'{{n}}'} para variáveis</span>
+                                    </div>
+                                    <textarea
+                                        value={bodyText}
+                                        onChange={e => setBodyText(e.target.value)}
+                                        rows={5}
+                                        placeholder="Olá {{1}}, sua encomenda número {{2}} saiu para entrega!"
+                                        className="w-full p-6 bg-slate-100 rounded-[2rem] border border-slate-200/20 focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all font-medium text-slate-700 resize-none shadow-inner"
+                                    />
+                                </div>
+                                <div className="pt-2">
+                                    <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Rodapé de Apoio (Opcional)</label>
+                                    <input
+                                        type="text"
+                                        value={footerText}
+                                        onChange={e => setFooterText(e.target.value)}
+                                        placeholder="Ex: Responda SAIR para não receber mais mensagens."
+                                        maxLength={60}
+                                        className="w-full px-5 py-4 bg-slate-100 rounded-2xl border border-slate-200/20 focus:bg-white focus:border-blue-200 outline-none transition-all text-sm font-medium text-slate-500 shadow-inner"
+                                    />
+                                </div>
+                            </section>
+
+                            <section className="space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Botões de Chamada (Action Icons)</h4>
+                                    <div className="flex gap-2">
+                                        <button type="button" onClick={() => handleAddButton('QUICK_REPLY')} className="px-3 py-2 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm">Rápida</button>
+                                        <button type="button" onClick={() => handleAddButton('URL')} className="px-3 py-2 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm">Link</button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
                                     {buttons.map((btn, idx) => (
-                                        <div key={idx} className="flex flex-col sm:flex-row gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200 relative group">
-                                            <div className="flex-1">
-                                                <label className="text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1">
-                                                    {btn.type === 'QUICK_REPLY' ? <><Reply size={12}/> Resposta Rápida</> : <><ExternalLink size={12}/> Link (URL)</>}
-                                                </label>
-                                                <input 
-                                                    type="text" 
-                                                    value={btn.text} 
-                                                    onChange={e => handleButtonChange(idx, 'text', e.target.value)} 
-                                                    placeholder={btn.type === 'QUICK_REPLY' ? 'Ex: Quero saber mais' : 'Ex: Acessar Site'} 
-                                                    className="w-full p-2.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-brand-primary outline-none transition-all" 
-                                                    maxLength={25}
-                                                    required
-                                                />
-                                            </div>
-                                            {btn.type === 'URL' && (
-                                                <div className="flex-[2]">
-                                                    <label className="text-xs font-semibold text-gray-500 mb-1 block">URL de Destino</label>
-                                                    <input 
-                                                        type="url" 
-                                                        value={btn.url} 
-                                                        onChange={e => handleButtonChange(idx, 'url', e.target.value)} 
-                                                        placeholder="https://..." 
-                                                        className="w-full p-2.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-brand-primary outline-none transition-all" 
+                                        <div key={idx} className="group relative p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all animate-fade-in-up-fast">
+                                            <div className="flex flex-col sm:flex-row gap-4 items-end">
+                                                <div className="flex-1 w-full">
+                                                    <div className="flex items-center gap-2 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                                        {btn.type === 'QUICK_REPLY' ? <Reply size={12} /> : <ExternalLink size={12} />}
+                                                        {btn.type === 'QUICK_REPLY' ? 'Resposta Rápida' : 'Link Externo'}
+                                                    </div>
+                                                    <input
+                                                        type="text"
+                                                        value={btn.text}
+                                                        onChange={e => handleButtonChange(idx, 'text', e.target.value)}
+                                                        placeholder="Texto do Botão"
+                                                        className="w-full px-4 py-3 bg-slate-100 rounded-xl border border-slate-100 focus:bg-white focus:border-blue-100 transition-all font-bold text-slate-700 outline-none shadow-inner"
+                                                        maxLength={25}
                                                         required
                                                     />
                                                 </div>
-                                            )}
-                                            <button type="button" onClick={() => handleRemoveButton(idx)} className="absolute top-2 right-2 sm:relative sm:top-0 sm:right-0 text-red-400 hover:text-red-600 hover:bg-red-50 p-2.5 rounded-md self-end sm:self-end transition-colors" title="Remover botão">
-                                                <Trash2 size={18}/>
-                                            </button>
-                                        </div>
-                                    ))}
-                                    {buttons.length === 0 && <p className="text-sm text-center text-gray-400 italic py-4">Nenhum botão adicionado. Sua mensagem será enviada apenas com o texto.</p>}
-                                </div>
-                                </div>
-                            </div>
-                        </form>
-
-                        {/* Coluna Direita: Preview */}
-                        <div className="space-y-4 flex flex-col h-full animate-fade-in">
-                            <h4 className="text-sm font-bold text-gray-800 border-b pb-2 uppercase tracking-wide">
-                                Visualização em Tempo Real
-                            </h4>
-                            <div className="flex-1 p-4 md:p-6 overflow-y-auto rounded-xl border border-gray-200 shadow-inner min-h-[400px]" style={{ backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('https://static.vecteezy.com/system/resources/previews/021/736/713/non_2x/doodle-lines-arrows-circles-and-curves-hand-drawn-design-elements-isolated-on-white-background-for-infographic-illustration-vector.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                                <div className="flex justify-start w-full">
-                                    <div className="relative max-w-[90%] py-2 px-3 rounded-lg shadow-sm break-words bg-[#d9fdd3] text-gray-800 message-out min-w-[200px]">
-                                        
-                                        {headerType !== 'NONE' && (
-                                            <div className="mb-2">
-                                                {headerType === 'TEXT' && headerText && (
-                                                    renderTextWithVariables(headerText, true)
-                                                )}
-                                                {['IMAGE', 'VIDEO', 'DOCUMENT'].includes(headerType) && (
-                                                    <div 
-                                                        className="group relative bg-black/5 rounded-md aspect-video flex flex-col items-center justify-center border border-dashed border-black/10 text-gray-500 overflow-hidden cursor-pointer hover:bg-black/10 transition-all"
-                                                        title="Clique para carregar mídia de exemplo"
-                                                        onClick={() => fileInputRef.current?.click()}
-                                                    >
-                                                        <input 
-                                                            type="file" 
-                                                            ref={fileInputRef} 
-                                                            className="hidden" 
-                                                            onChange={handleFileChange}
-                                                            accept={headerType === 'IMAGE' ? 'image/*' : headerType === 'VIDEO' ? 'video/*' : '*/*'}
+                                                {btn.type === 'URL' && (
+                                                    <div className="flex-[2] w-full">
+                                                        <div className="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">URL de Destino</div>
+                                                        <input
+                                                            type="url"
+                                                            value={btn.url}
+                                                            onChange={e => handleButtonChange(idx, 'url', e.target.value)}
+                                                            placeholder="https://sua-empresa.com"
+                                                            className="w-full px-4 py-3 bg-slate-100 rounded-xl border border-slate-100 focus:bg-white focus:border-blue-100 transition-all font-black text-blue-600 outline-none shadow-inner"
+                                                            required
                                                         />
-                                                        {headerFile ? (
-                                                            headerType === 'IMAGE' && headerFile.type.startsWith('image/') ? (
-                                                                <img src={URL.createObjectURL(headerFile)} alt="Header preview" className="w-full h-full object-cover" />
-                                                            ) : (
-                                                                <div className="flex flex-col items-center gap-1 p-4">
-                                                                    <FileIcon size={32} />
-                                                                    <span className="text-[10px] text-center truncate w-full px-2">{headerFile.name}</span>
-                                                                </div>
-                                                            )
-                                                        ) : (
-                                                            <div className="flex flex-col items-center gap-1">
-                                                                {headerType === 'IMAGE' && <FileImage size={24} />}
-                                                                {headerType === 'VIDEO' && <FileVideo size={24} />}
-                                                                {headerType === 'DOCUMENT' && <FileIcon size={24} />}
-                                                                <span className="text-[10px] uppercase font-bold tracking-wider mt-1">{headerType}</span>
-                                                                <span className="text-[8px] opacity-0 group-hover:opacity-100 transition-opacity">Clique para carregar exemplo</span>
-                                                            </div>
-                                                        )}
-                                                        {headerFile && (
-                                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <Upload size={24} className="text-white" />
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 )}
+                                                <button type="button" onClick={() => handleRemoveButton(idx)} className="w-12 h-12 flex items-center justify-center rounded-xl bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition-all">
+                                                    <Trash2 size={20} />
+                                                </button>
                                             </div>
-                                        )}
-                                        
-                                        {bodyText ? renderTextWithVariables(bodyText, false) : (
-                                            <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                                                <span className="text-gray-400 italic">Corpo da mensagem aparecerá aqui...</span>
+                                        </div>
+                                    ))}
+                                    {buttons.length === 0 && (
+                                        <div className="py-10 border-2 border-dashed border-slate-100 rounded-[2rem] flex flex-col items-center justify-center text-slate-300 group hover:border-blue-100 transition-all">
+                                            <Reply size={32} className="mb-3 opacity-20 group-hover:scale-110 transition-transform" />
+                                            <p className="text-[12px] font-bold italic">Nenhum botão configurado.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+                        </div>
+
+                        {/* Coluna Direita: Preview Visual */}
+                        <div
+                            className="p-8 flex flex-col items-center min-h-[600px] border-l border-slate-100"
+                            style={{
+                                backgroundImage: `
+                                linear-gradient(rgba(248, 250, 252, 0.96), rgba(248, 250, 252, 0.96)),
+                                url('https://static.vecteezy.com/system/resources/previews/021/736/713/non_2x/doodle-lines-arrows-circles-and-curves-hand-drawn-design-elements-isolated-on-white-background-for-infographic-illustration-vector.jpg')
+                                `,
+                                backgroundSize: '400px',
+                                backgroundPosition: 'center',
+                            }}
+                        >
+                            <div className="w-full max-w-[420px] animate-fade-in">
+                                <div className="mb-8 text-center">
+                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[11px] font-black uppercase tracking-widest mb-3 shadow-sm border border-blue-100/50">
+                                        <Sparkles size={14} /> Visualização em Tempo Real
+                                    </div>
+                                    <p className="text-[12px] font-bold text-slate-400 italic">Preencha os campos azuis para testar variáveis</p>
+                                </div>
+
+                                <div className="relative w-full py-6 px-6 rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.08)] break-words bg-white text-slate-800 border border-slate-100 animate-fade-in-up">
+                                    {/* Meta Header Preview */}
+                                    {headerType !== 'NONE' && (
+                                        <div className="mb-4 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100">
+                                            {headerType === 'TEXT' && headerText && (
+                                                <div className="p-4 text-[15px] font-black text-slate-800 bg-slate-50/50">
+                                                    {renderTextWithVariables(headerText, true)}
+                                                </div>
+                                            )}
+                                            {['IMAGE', 'VIDEO', 'DOCUMENT'].includes(headerType) && (
+                                                <div
+                                                    className="relative aspect-video flex flex-col items-center justify-center bg-slate-100 text-slate-400 group cursor-pointer hover:bg-slate-200 transition-all"
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                >
+                                                    {headerFile ? (
+                                                        headerFile.type.startsWith('image/') ? (
+                                                            <img src={headerPreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <div className="flex flex-col items-center gap-2 p-4">
+                                                                <FileIcon size={32} />
+                                                                <span className="text-[10px] font-black uppercase text-center px-4 truncate w-full">{headerFile.name}</span>
+                                                            </div>
+                                                        )
+                                                    ) : (
+                                                        <div className="flex flex-col items-center gap-2">
+                                                            {headerType === 'IMAGE' && <FileImage size={28} />}
+                                                            {headerType === 'VIDEO' && <FileVideo size={28} />}
+                                                            {headerType === 'DOCUMENT' && <FileIcon size={28} />}
+                                                            <span className="text-[10px] font-black uppercase tracking-widest">{headerType}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="absolute inset-0 bg-blue-600/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Upload size={24} className="text-white" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Body Preview */}
+                                    <div className="space-y-3">
+                                        {bodyText ? (
+                                            <div className="text-[14px] leading-relaxed text-slate-700">
+                                                {renderTextWithVariables(bodyText, false)}
+                                            </div>
+                                        ) : (
+                                            <div className="text-[14px] italic text-slate-300 font-medium">
+                                                O corpo da sua mensagem aparecerá aqui...
                                             </div>
                                         )}
 
                                         {footerText && (
-                                            <div className="mt-1 text-[11px] text-gray-500">
+                                            <div className="mt-3 pt-3 border-t border-slate-50 text-[12px] font-medium text-slate-400 italic">
                                                 {footerText}
                                             </div>
                                         )}
 
-                                        <div className="text-[10px] text-gray-400 text-right mt-1">
-                                            {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        <div className="text-[10px] font-black text-slate-300 text-right mt-4 uppercase tracking-tighter">
+                                            {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                                         </div>
-
-                                        {buttons.length > 0 && (
-                                            <div className="mt-2 -mx-3 -mb-2 flex flex-col border-t border-black/10">
-                                                {buttons.map((btn, idx) => (
-                                                    <div key={idx} className="py-2.5 px-2 text-center text-[#00a884] text-sm font-medium border-b border-black/10 last:border-b-0 hover:bg-black/5 transition-colors cursor-pointer flex items-center justify-center gap-2">
-                                                        {btn.type === 'QUICK_REPLY' && <Reply size={16} className="opacity-80" />}
-                                                        {btn.type === 'URL' && <ExternalLink size={16} className="opacity-80" />}
-                                                        <span className="truncate">{btn.text || <span className="text-gray-400 italic font-normal">Texto do botão</span>}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
                                     </div>
+
+                                    {/* Buttons Preview */}
+                                    {buttons.length > 0 && (
+                                        <div className="mt-6 flex flex-col border-t border-slate-100 -mx-6 -mb-6 bg-slate-50/30 rounded-b-[2.5rem] overflow-hidden">
+                                            {buttons.map((btn, idx) => (
+                                                <div key={idx} className="py-4 px-4 text-center text-[#00a884] text-[14px] font-black border-b border-slate-100 last:border-b-0 hover:bg-white transition-colors flex items-center justify-center gap-2 cursor-default">
+                                                    {btn.type === 'QUICK_REPLY' && <Reply size={16} className="opacity-60" />}
+                                                    {btn.type === 'URL' && <ExternalLink size={16} className="opacity-60" />}
+                                                    <span className="truncate">{btn.text || "Botão"}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-                    <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-md font-medium text-sm transition-colors">Cancelar</button>
-                    <button type="button" onClick={handleSubmit} disabled={isSaving} className="px-5 py-2 bg-brand-primary text-white rounded-md font-medium text-sm hover:bg-brand-primary-active transition-colors flex items-center gap-2 disabled:opacity-50">
-                        {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                        Enviar para Meta
-                    </button>
+                {/* Sticky Footer Actions */}
+                <div className="p-8 border-t border-slate-100 bg-white flex justify-between items-center">
+                    <p className="hidden lg:block text-[11px] font-black uppercase tracking-widest text-slate-400 italic max-w-sm">
+                        Ao enviar, seu template passará pela revisão automatizada da Meta (Facebook).
+                    </p>
+                    <div className="flex gap-4">
+                        <button type="button" onClick={onClose} className="px-8 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all">Cancelar</button>
+                        <button
+                            type="button"
+                            onClick={handleSubmit}
+                            disabled={isSaving}
+                            className="flex items-center gap-4 bg-brand-primary text-white px-10 py-5 rounded-3xl font-black uppercase tracking-widest text-[11px] hover:bg-brand-primary-active hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-brand-primary/20 disabled:opacity-50"
+                        >
+                            {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                            Submeter para Meta
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

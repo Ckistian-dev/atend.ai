@@ -1,4 +1,3 @@
-import { backgroundClip } from 'html2canvas/dist/types/css/property-descriptors/background-clip'
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -9,33 +8,38 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Paleta Confiança e Profissionalismo (Clássica SaaS) do Painel 1
+        // Novo Design System: "The Intelligent Stratum"
+        is: {
+          primary: '#0037b0',
+          'primary-container': '#1d4ed8',
+          'on-surface': '#0b1c30',
+          'on-surface-variant': '#434655',
+          surface: '#f8f9ff',
+          'surface-container-low': '#eff4ff',
+          'surface-container-lowest': '#ffffff',
+          'surface-container-highest': '#d3e4fe',
+          'outline-variant': '#c4c5d7',
+          error: '#ba1a1a',
+          'primary-fixed': '#dce1ff',
+        },
+        // MANTENDO BRAND PARA COMPATIBILIDADE (LEGACY)
         brand: {
-          // --- Suas Cores Originais ---
-          primary: '#0942b3',      // Azul Royal Intenso - Ação/Primária
-          accent: '#E6EEFF',       // Azul Claro Suave - Acerto Secundário
-          surface: '#E6EEFF',      // Superfícies de destaque
-          foreground: '#0A0A0A',   // Preto Suave / Chumbo - Texto Principal
-          background: '#FFFFFF',   // Branco Puro - Fundo Principal
-          'foreground-secondary': '#1E1E1E', // Cinza Escuro - Texto Secundário (Títulos menores)
-          border: '#1E1E1E',       // Cinza Escuro - Bordas com alto contraste
-
-          // --- Adições: Estados de Interação ---
-          'primary-hover': '#0046CC',  // Azul mais escuro - Para passar o mouse em botões
-          'primary-active': '#003599', // Azul profundo - Para o momento do clique (active)
-
-          // --- Adições: Neutros de Apoio ---
-          'text-muted': '#6B7280',     // Cinza Médio Verdadeiro - Para placeholders, datas e texto desabilitado
-          'border-light': '#E5E7EB',   // Cinza Muito Claro - Para divisórias sutis, tabelas e bordas de cards
-          'surface-alt': '#F9FAFB',    // Fundo alternativo quase branco - Para diferenciar seções sem usar o azul
-
-          // --- Adições: Cores Semânticas (Status) ---
-          success: '#10B981',      // Verde Esmeralda - Sucesso, confirmações, concluído
-          warning: '#F59E0B',      // Laranja Amarelado - Alertas, atenção, pendente
-          error: '#EF4444',        // Vermelho Suave - Erros, falhas, botões de exclusão
-          info: '#3B82F6',         // Azul Claro Vibrante - Dicas e informações gerais
-
-          // --- Adições: Fundo whatsapp (Status) ---
+          primary: '#0942b3',
+          accent: '#E6EEFF',
+          surface: '#E6EEFF',
+          foreground: '#0A0A0A',
+          background: '#FFFFFF',
+          'foreground-secondary': '#1E1E1E',
+          border: '#1E1E1E',
+          'primary-hover': '#0046CC',
+          'primary-active': '#003599',
+          'text-muted': '#6B7280',
+          'border-light': '#E5E7EB',
+          'surface-alt': '#F9FAFB',
+          success: '#10B981',
+          warning: '#F59E0B',
+          error: '#EF4444',
+          info: '#3B82F6',
           'whatsapp-background': '#ede9e1',
         },
       },

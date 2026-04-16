@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, Play, AlertCircle } from 'lucide-react';
+import { Loader2, Play, AlertCircle, X } from 'lucide-react';
 import api from '../../api/axiosConfig';
+import { formatWhatsAppText } from '../../utils/formatters';
 
 const VideoDisplayer = ({ atendimentoId, mediaId, caption }) => {
     const [videoSrc, setVideoSrc] = useState(null);
@@ -9,7 +10,6 @@ const VideoDisplayer = ({ atendimentoId, mediaId, caption }) => {
     const videoBlobUrlRef = useRef(null);
     const displayerRef = useRef(null);
 
-    // Limpa a URL do blob para evitar vazamentos de memória
     useEffect(() => {
         return () => {
             if (videoBlobUrlRef.current) {
@@ -18,7 +18,6 @@ const VideoDisplayer = ({ atendimentoId, mediaId, caption }) => {
         };
     }, []);
 
-    // Efeito com IntersectionObserver para carregar o vídeo quando visível
     useEffect(() => {
         const observer = new IntersectionObserver(
             (entries) => {
@@ -30,7 +29,7 @@ const VideoDisplayer = ({ atendimentoId, mediaId, caption }) => {
                     }
                 }
             },
-            { rootMargin: '200px' } // Começa a carregar 200px antes de entrar na tela
+            { rootMargin: '400px' }
         );
 
         if (displayerRef.current) {
@@ -44,10 +43,8 @@ const VideoDisplayer = ({ atendimentoId, mediaId, caption }) => {
         };
     }, [loadState]);
 
-    // Função para carregar o blob do vídeo
     const loadVideo = async () => {
         if (loadState !== 'idle') return;
-
         setLoadState('loading');
         try {
             const response = await api.get(`/atendimentos/${atendimentoId}/media/${mediaId}`, {
@@ -59,7 +56,6 @@ const VideoDisplayer = ({ atendimentoId, mediaId, caption }) => {
             setVideoSrc(blobUrl);
             setLoadState('loaded');
         } catch (error) {
-            console.error("Erro ao carregar vídeo:", error);
             setLoadState('error');
         }
     };
@@ -68,35 +64,43 @@ const VideoDisplayer = ({ atendimentoId, mediaId, caption }) => {
     const closeModal = () => setIsModalOpen(false);
 
     return (
-        <div ref={displayerRef} className="space-y-2 w-64">
-            {/* Área da Miniatura */}
-            <div className="relative w-64 h-48 bg-gray-200 rounded-lg overflow-hidden cursor-pointer group" onClick={openModal}>
+        <div ref={displayerRef} className="space-y-3 w-full max-w-[320px]">
+            <div className="relative aspect-[4/3] bg-slate-100 rounded-[2rem] overflow-hidden shadow-2xl shadow-blue-900/5 cursor-pointer group border border-black/5" onClick={openModal}>
                 {(loadState === 'loading' || loadState === 'idle') && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-50 animate-pulse">
-                        <Loader2 className="animate-spin text-gray-500" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-50 animate-pulse">
+                        <Loader2 className="animate-spin text-blue-600/30" size={24} />
                     </div>
                 )}
-                {loadState === 'error' && <div className="absolute inset-0 flex items-center justify-center"><AlertCircle className="text-red-500" title="Erro ao carregar vídeo" /></div>}
+                {loadState === 'error' && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-red-300">
+                        <AlertCircle size={24} />
+                        <span className="text-[10px] font-black uppercase mt-2">Falha Vídeo</span>
+                    </div>
+                )}
                 {loadState === 'loaded' && videoSrc && (
                     <>
-                        {/* O vídeo da miniatura: sem som, sem controles, para mostrar o 1º frame */}
                         <video src={videoSrc} muted playsInline className="w-full h-full object-cover" />
-                        {/* Overlay com ícone de Play */}
-                        <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center transition-opacity group-hover:bg-opacity-40">
-                            <div className="bg-white/30 backdrop-blur-sm p-3 rounded-full">
-                                <Play className="text-white fill-white" size={32} />
+                        <div className="absolute inset-0 bg-blue-900/20 flex items-center justify-center transition-all group-hover:bg-blue-900/40">
+                            <div className="w-16 h-16 bg-white/30 backdrop-blur-xl rounded-full flex items-center justify-center shadow-2xl scale-90 group-hover:scale-100 transition-transform duration-500">
+                                <Play className="text-white fill-white ml-1" size={28} />
                             </div>
                         </div>
                     </>
                 )}
             </div>
 
-            {caption && <p className="whitespace-pre-wrap text-sm border-t border-gray-200 pt-2">{caption}</p>}
+            {caption && (
+                <div className="px-2">
+                    <p className="text-[13px] leading-relaxed text-slate-600 font-bold italic opacity-80">{formatWhatsAppText(caption)}</p>
+                </div>
+            )}
 
-            {/* Modal para reprodução */}
             {isModalOpen && videoSrc && (
-                <div className="fixed inset-[-10px] bg-black bg-opacity-70 flex items-center justify-center z-50" onClick={closeModal}>
-                    <video src={videoSrc} controls autoPlay className="max-w-[80vw] max-h-[80vh] object-contain" onClick={(e) => e.stopPropagation()} />
+                <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-2xl flex items-center justify-center z-[9999] p-4 md:p-10" onClick={closeModal}>
+                    <button onClick={closeModal} className="absolute top-10 right-10 w-12 h-12 flex items-center justify-center rounded-3xl bg-white/10 text-white hover:bg-white/20 transition-all">
+                        <X size={24} />
+                    </button>
+                    <video src={videoSrc} controls autoPlay className="max-w-full max-h-full rounded-3xl shadow-2xl shadow-black/50" onClick={(e) => e.stopPropagation()} />
                 </div>
             )}
         </div>

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { Check, CheckCheck, AlertCircle, Clock, MessageSquare } from 'lucide-react';
+import { Check, CheckCheck, AlertCircle, Clock, MessageSquare, Wand2, Loader2, Sparkles } from 'lucide-react';
 import MessageContent from './MessageContent';
 
 // --- Componente: Corpo da Conversa (Mensagens) ---
@@ -79,53 +79,62 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
     return (
         <div
             ref={chatContainerRef}
-            className="flex-1 p-4 md:p-6 overflow-y-auto space-y-3 bg-brand-whatsapp-background"
+            className="flex-1 p-4 md:p-6 overflow-y-auto space-y-6 custom-scrollbar bg-slate-50/20"
         >
-            {messages.map((msg) => {
+            {messages.map((msg, index) => {
                 const isAssistant = msg.role === 'assistant';
+                const nextMsg = messages[index + 1];
+                const isLastInGroup = !nextMsg || nextMsg.role !== msg.role;
+
                 return (
-                    <div key={msg.id} className={`flex ${isAssistant ? 'justify-end' : 'justify-start'}`}>
+                    <div key={msg.id} className={`flex flex-col ${isAssistant ? 'items-end' : 'items-start'} ${isLastInGroup ? 'mb-4' : 'mb-1'}`}>
                         <div
-                            className={`relative max-w-xs md:max-w-md py-2 px-3 rounded-lg shadow-sm break-words flex flex-col ${isAssistant
-                                ? (msg.is_template ? 'bg-[#d1f4cc] text-gray-800 border border-green-300' : 'bg-[#d9fdd3] text-gray-800') // Verde WhatsApp
-                                : 'bg-white text-gray-800'
-                                }`}
+                            className={`relative max-w-[85%] md:max-w-[70%] transition-all duration-300 ${
+                                isAssistant ? 'chat-bubble-user' : 'chat-bubble-ia shadow-sm border border-white/40'
+                            }`}
                         >
                             {msg.is_template && (
-                                <div className="text-[10px] font-bold text-green-700 uppercase mb-1 flex items-center gap-1 border-b border-green-300/50 pb-1">
-                                    <MessageSquare size={12} />
-                                    Template de Mensagem
+                                <div className={`text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2 pb-2 border-b ${isAssistant ? 'border-white/20 text-white/80' : 'border-slate-100 text-blue-600'}`}>
+                                    <Sparkles size={12} /> Template Inteligente
                                 </div>
                             )}
+
                             <MessageContent
                                 msg={msg}
                                 atendimentoId={mensagem.id}
                                 onViewMedia={onViewMedia}
                                 onDownloadDocument={onDownloadDocument}
-                                isDownloading={isDownloadingMedia} // Passa o estado de loading
+                                isDownloading={isDownloadingMedia}
                             />
 
-                            <div className="text-xs text-gray-400 self-end mt-2 flex items-center gap-1">
-                                <span>{formatTimestamp(msg.timestamp)}</span>
-                                {isAssistant && (
-                                    <span className="flex items-center">
-                                        {msg.type === 'sending' && <Clock size={14} className="text-gray-400" />}
-                                        {msg.status === 'sent' && <Check size={14} className="text-gray-400" />}
-                                        {msg.status === 'delivered' && <CheckCheck size={14} className="text-gray-400" />}
-                                        {msg.status === 'read' && <CheckCheck size={14} className="text-brand-primary" />}
-                                        {msg.status === 'failed' && <AlertCircle size={14} className="text-red-500" title={msg.error_title || "Falha no envio"} />}
+                            <div className={`flex items-center gap-2 mt-3 ${isAssistant ? 'justify-end text-white/60' : 'justify-start text-slate-400'}`}>
+                                {msg.is_ai && (
+                                    <span className={`text-[9px] font-black uppercase flex items-center gap-1 ${isAssistant ? 'text-white/80' : 'text-blue-500'}`}>
+                                        <Wand2 size={10} /> IA
                                     </span>
                                 )}
+                                <span className="text-[10px] font-bold uppercase tracking-tight">{formatTimestamp(msg.timestamp)}</span>
+                                {isAssistant && (
+                                    <div className="flex items-center">
+                                        {msg.type === 'sending' && <Loader2 size={12} className="animate-spin" />}
+                                        {msg.status === 'sent' && <Check size={14} />}
+                                        {msg.status === 'delivered' && <CheckCheck size={14} />}
+                                        {msg.status === 'read' && <CheckCheck size={16} className="text-cyan-300 drop-shadow-[0_0_2px_rgba(0,0,0,0.5)]" />}
+                                        {msg.status === 'failed' && <AlertCircle size={14} className="text-red-300" title={msg.error_title || "Falha no envio"} />}
+                                    </div>
+                                )}
                             </div>
-                            <div className="clear-both"></div>
                         </div>
                     </div>
                 );
             })}
             {messages.length === 0 && (
-                <div className="flex items-center justify-center h-full">
-                    <p className="text-center text-gray-600 bg-white/70 backdrop-blur-sm p-3 rounded-lg italic">
-                        Nenhuma mensagem neste mensagem.
+                <div className="flex flex-col items-center justify-center h-full opacity-40">
+                    <div className="w-20 h-20 rounded-[2rem] bg-slate-100 flex items-center justify-center mb-4">
+                        <MessageSquare size={32} className="text-slate-300" />
+                    </div>
+                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                        Início da Transmissão
                     </p>
                 </div>
             )}

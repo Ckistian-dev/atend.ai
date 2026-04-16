@@ -2,9 +2,32 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Send, FileText, Users, Upload, Loader2, Info, CheckCircle, Search, FileImage, FileVideo, File as FileIcon, LayoutGrid, Plus, ExternalLink, Reply } from 'lucide-react';
+import { Send, FileText, Users, Upload, Loader2, Info, CheckCircle, Search, FileImage, FileVideo, File as FileIcon, LayoutGrid, Plus, ExternalLink, Reply, Zap } from 'lucide-react';
 import TemplateModal from '../components/mensagens/TemplateModal';
 import CreateTemplateModal from '../components/mensagens/CreateTemplateModal';
+
+// --- DESIGN SYSTEM & COMPONENTE DE PREVIEW ---
+const DS_STYLE = `
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&family=Inter:wght@400;500;600&display=swap');
+.bulk-page { font-family: 'Inter', sans-serif; }
+.bulk-page h1, .bulk-page h2, .bulk-page h3, .bulk-page h4 { font-family: 'Plus Jakarta Sans', sans-serif; }
+.bulk-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 1rem;
+    background: #f8faff;
+    border: 1px solid rgba(203,213,225,0.6);
+    color: #0f172a;
+    outline: none;
+    transition: all 0.2s;
+}
+.bulk-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.1); background: #fff; }
+.premium-tile {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.premium-tile:hover { transform: translateY(-2px); }
+`;
 
 // --- COMPONENTE DE PREVIEW ---
 const TemplatePreview = ({ template, variables, headerFile, onVariableChange, onFileChange }) => {
@@ -18,11 +41,10 @@ const TemplatePreview = ({ template, variables, headerFile, onVariableChange, on
 
         if (!combinedText) return null;
 
-        // Divide o texto pelas variáveis {{nome}} para torná-las editáveis
         const parts = combinedText.split(/({{\s*\w+\s*}})/g);
-        
+
         return (
-            <div className="whitespace-pre-wrap text-sm leading-relaxed">
+            <div className="whitespace-pre-wrap text-[13px] leading-relaxed text-slate-700">
                 {parts.map((part, index) => {
                     const match = part.match(/{{\s*(\w+)\s*}}/);
                     if (match) {
@@ -33,12 +55,13 @@ const TemplatePreview = ({ template, variables, headerFile, onVariableChange, on
                                 type="text"
                                 value={variables[varName] || ''}
                                 onChange={(e) => onVariableChange(varName, e.target.value)}
-                                className="bg-white/40 border-gray-400 text-gray-900 focus:bg-white focus:outline-none focus:border-gray-600 font-semibold transition-all rounded-sm inline-block"
-                                style={{ 
+                                className="bg-white/60 border-indigo-200 text-blue-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-bold transition-all rounded-md px-1"
+                                style={{
                                     width: `${Math.max(((variables[varName] || match[0]).length) * 8, 40)}px`,
                                     minWidth: '40px',
                                     height: '1.2rem',
-                                    verticalAlign: 'baseline'
+                                    verticalAlign: 'baseline',
+                                    border: '1px solid rgba(191,219,254,0.8)'
                                 }}
                             />
                         );
@@ -53,7 +76,7 @@ const TemplatePreview = ({ template, variables, headerFile, onVariableChange, on
         if (!template) return null;
         const header = template.components.find(c => c.type === 'HEADER');
         if (!header || header.format === 'TEXT') return null;
-        return header.format; 
+        return header.format;
     }, [template]);
 
     const buttons = useMemo(() => {
@@ -64,63 +87,65 @@ const TemplatePreview = ({ template, variables, headerFile, onVariableChange, on
     if (!template) return null;
 
     return (
-        <div className="flex flex-col w-full gap-4">
-            <div className="flex justify-start w-full">
-                <div className="relative max-w-[90%] py-2 px-3 rounded-lg shadow-sm break-words bg-[#d9fdd3] text-gray-800 message-out min-w-[200px]">
-                    {headerMedia && (
-                        <div 
-                            className="group relative mb-2 bg-black/5 rounded-md aspect-video flex flex-col items-center justify-center border border-dashed border-black/10 text-gray-500 overflow-hidden cursor-pointer hover:bg-black/10 transition-all"
-                            title="Clique para carregar mídia"
-                            onClick={() => fileInputRef.current?.click()}
-                        >
-                            <input 
-                                type="file" 
-                                ref={fileInputRef} 
-                                className="hidden" 
-                                onChange={(e) => onFileChange(e.target.files[0])}
-                                accept={headerMedia === 'IMAGE' ? 'image/*' : headerMedia === 'VIDEO' ? 'video/*' : '*/*'}
-                            />
-                            {headerFile ? (
-                                headerFile.type.startsWith('image/') ? (
-                                    <img src={URL.createObjectURL(headerFile)} alt="Header preview" className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="flex flex-col items-center gap-1 p-4">
-                                        <FileIcon size={32} />
-                                        <span className="text-[10px] text-center truncate w-full">{headerFile.name}</span>
-                                    </div>
-                                )
+        <div className="flex flex-col w-full items-center">
+            <div className="relative w-full p-2.5 rounded-2xl shadow-xl shadow-slate-200/50 break-words bg-white text-slate-800" style={{ border: '1px solid rgba(226,232,240,0.8)' }}>
+                {headerMedia && (
+                    <div
+                        className="group relative mb-3 bg-slate-50 rounded-xl aspect-video flex flex-col items-center justify-center border border-dashed border-slate-200 text-slate-400 overflow-hidden cursor-pointer hover:bg-slate-100 transition-all shadow-inner"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            onChange={(e) => onFileChange(e.target.files[0])}
+                            accept={headerMedia === 'IMAGE' ? 'image/*' : headerMedia === 'VIDEO' ? 'video/*' : '*/*'}
+                        />
+                        {headerFile ? (
+                            headerFile.type.startsWith('image/') ? (
+                                <img src={URL.createObjectURL(headerFile)} alt="Header preview" className="w-full h-full object-cover" />
                             ) : (
-                                <div className="flex flex-col items-center gap-1">
-                                    {headerMedia === 'IMAGE' && <FileImage size={24} />}
-                                    {headerMedia === 'VIDEO' && <FileVideo size={24} />}
-                                    {headerMedia === 'DOCUMENT' && <FileIcon size={24} />}
-                                    <span className="text-[10px] uppercase font-bold tracking-wider">{headerMedia}</span>
-                                    <span className="text-[8px] opacity-0 group-hover:opacity-100 transition-opacity">Clique para carregar</span>
+                                <div className="flex flex-col items-center gap-1 p-4">
+                                    <FileIcon size={32} className="text-blue-500" />
+                                    <span className="text-[10px] font-bold text-slate-500 truncate w-full text-center">{headerFile.name}</span>
                                 </div>
-                            )}
-                            {headerFile && (
-                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Upload size={24} className="text-white" />
+                            )
+                        ) : (
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
+                                    {headerMedia === 'IMAGE' && <FileImage size={20} className="text-blue-500" />}
+                                    {headerMedia === 'VIDEO' && <FileVideo size={20} className="text-blue-500" />}
+                                    {headerMedia === 'DOCUMENT' && <FileIcon size={20} className="text-blue-500" />}
                                 </div>
-                            )}
-                        </div>
-                    )}
-                    
-                    {renderBody()}
-                    
-                    {buttons.length > 0 && (
-                        <div className="mt-2 -mx-3 -mb-2 flex flex-col border-t border-black/10">
-                            {buttons.map((btn, idx) => (
-                                <div key={idx} className="py-2.5 px-2 text-center text-[#00a884] text-sm font-medium border-b border-black/10 last:border-b-0 flex items-center justify-center gap-2">
-                                    {btn.type === 'QUICK_REPLY' && <Reply size={16} className="opacity-80" />}
-                                    {btn.type === 'URL' && <ExternalLink size={16} className="opacity-80" />}
-                                    <span className="truncate">{btn.text}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                                <span className="text-[9px] uppercase font-black tracking-widest text-slate-400">Anexar {headerMedia}</span>
+                            </div>
+                        )}
+                        {headerFile && (
+                            <div className="absolute inset-0 bg-blue-600/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Upload size={24} className="text-white" />
+                            </div>
+                        )}
+                    </div>
+                )}
 
-                    <span className="text-[10px] text-gray-400 float-right ml-2 mt-1">
+                <div className="px-2">
+                    {renderBody()}
+                </div>
+
+                {buttons.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-slate-50 space-y-2">
+                        {buttons.map((btn, idx) => (
+                            <div key={idx} className="bg-slate-50/50 py-2.5 text-center text-blue-600 text-[11px] font-bold rounded-xl border border-slate-100 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+                                {btn.type === 'QUICK_REPLY' && <Reply size={14} />}
+                                {btn.type === 'URL' && <ExternalLink size={14} />}
+                                <span>{btn.text}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <div className="flex justify-end mt-2 px-2">
+                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-tighter">
                         {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                 </div>
@@ -198,7 +223,7 @@ function BulkSender() {
         setVariables(prev => {
             const newVars = { ...prev };
             let hasChanges = false;
-            
+
             variableNames.forEach(name => {
                 if (newVars[name] === undefined) {
                     newVars[name] = '';
@@ -247,7 +272,7 @@ function BulkSender() {
 
             // 1. Define o template selecionado
             setSelectedTemplate(payload.template_name);
-            
+
             // 2. Define o arquivo de mídia se houver
             if (mediaFile) setHeaderFile(mediaFile);
 
@@ -269,7 +294,7 @@ function BulkSender() {
                 const combinedText = `${headerText} ${bodyText} ${buttonsText}`;
                 const matches = combinedText.match(/{{\s*(\w+)\s*}}/g) || [];
                 const names = [...new Set(matches.map(v => v.replace(/[{}]/g, '').trim()))];
-                
+
                 const updatedVars = {};
                 names.forEach((name, index) => { if (allParams[index] !== undefined) updatedVars[name] = allParams[index]; });
                 setVariables(updatedVars);
@@ -281,7 +306,7 @@ function BulkSender() {
     const handleCsvFileChange = (e) => {
         const selectedFile = e.target.files[0];
         setFile(selectedFile);
-        
+
         if (selectedFile) {
             const reader = new FileReader();
             reader.onload = (event) => {
@@ -301,7 +326,7 @@ function BulkSender() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const allVarsFilled = Object.values(variables).every(v => v.trim() !== '');
-        
+
         if ((!file && selectedIds.length === 0) || !selectedTemplate || !selectedPersona || !allVarsFilled) {
             toast.error("Forneça um arquivo CSV ou selecione os atendimentos e preencha todos os campos do template.");
             return;
@@ -353,7 +378,7 @@ function BulkSender() {
         try {
             const response = await api.post('/atendimentos/bulk', formData);
             toast.success(response.data.message || "Disparos enfileirados com sucesso!");
-            
+
             const hadSelectedIds = selectedIds.length > 0;
 
             setFile(null);
@@ -364,7 +389,7 @@ function BulkSender() {
             setSelectedTemplate('');
             setVariables({});
             sessionStorage.removeItem('bulkSenderState');
-            
+
             if (hadSelectedIds) {
                 // Retorna à página de atendimentos após o sucesso se veio de lá
                 setTimeout(() => {
@@ -386,188 +411,226 @@ function BulkSender() {
     if (isLoading) return <div className="flex h-full items-center justify-center"><Loader2 className="animate-spin" size={32} /></div>;
 
     return (
-        <div className="p-6 md:p-10 bg-gray-50 min-h-full">
-            <div className="max-w-5xl mx-auto">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
-                        <Send className="text-brand-primary" /> Disparos em Massa
-                    </h1>
-                    <p className="text-gray-500 mt-1">Envie templates para uma lista de contatos via CSV.</p>
+        <div className="p-4 md:p-10 bg-[#f0f4ff] h-full overflow-y-auto custom-scrollbar bulk-page">
+            <style>{DS_STYLE}</style>
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(203, 213, 225, 1); border-radius: 20px; border: 2px solid transparent; background-clip: padding-box; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3b82f6; background-clip: padding-box; }
+            `}</style>
+            <div className="mx-auto">
+                <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-200">
+                                <Zap size={22} className="text-white" />
+                            </div>
+                            <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+                                Disparos <span className="text-blue-600 font-black">Inteligentes</span>
+                            </h1>
+                        </div>
+                        <p className="text-slate-500 font-medium text-sm flex items-center gap-2">
+                            <Info size={14} className="text-blue-400" /> Orchestre campanhas em massa com precisão executiva.
+                        </p>
+                    </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div className="lg:col-span-1 bg-white p-8 rounded-xl shadow-lg border border-gray-200 space-y-6">
-                        {/* Seleção de Template */}
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
-                                    <FileText size={16} /> Template da Meta (Oficial)
-                                </label>
-                                <button type="button" onClick={() => setIsCreateModalOpen(true)} className="text-xs text-brand-primary hover:text-blue-800 font-semibold flex items-center gap-1">
-                                    <Plus size={12} /> Criar Novo
-                                </button>
-                            </div>
-                            <div className="flex gap-2">
-                                <select 
-                                    value={selectedTemplate}
-                                    onChange={e => setSelectedTemplate(e.target.value)}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent"
-                                    required
-                                >
-                                    <option value="">Selecione um template aprovado...</option>
-                                    {templates.map(t => (
-                                        <option key={t.name} value={t.name}>{t.name} ({t.language})</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    {/* Painel de Configuração */}
+                    <div className="lg:col-span-7 space-y-8">
+                        {/* Seção 1: O Que Enviar */}
+                        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100/50 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full -mr-16 -mt-16 blur-3xl opacity-50"></div>
 
-                        {/* Seleção de Persona */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                                <Users size={16} /> Persona de Atendimento
-                            </label>
-                            <select 
-                                value={selectedPersona}
-                                onChange={e => setSelectedPersona(e.target.value)}
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary focus:border-transparent"
-                                required
-                            >
-                                {personas.map(p => (
-                                    <option key={p.id} value={p.id}>{p.nome_config}</option>
-                                ))}
-                            </select>
-                        </div>
+                            <div className="relative z-10 space-y-8">
+                                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">01. Configurações de Envio</h4>
 
-                        {/* Upload CSV ou Seleção */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                                <Users size={16} /> Destinatários
-                            </label>
-                            
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {/* Opção 1: Selecionar Atendimentos */}
-                                <div className={`flex flex-col items-center justify-center p-5 border-2 rounded-xl transition-all ${selectedIds.length > 0 ? 'border-brand-primary bg-blue-50/50' : 'border-gray-200 bg-gray-50 hover:border-brand-primary/50'}`}>
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors ${selectedIds.length > 0 ? 'bg-brand-primary text-white shadow-md' : 'bg-gray-200 text-gray-500'}`}>
-                                        <Search size={20} />
-                                    </div>
-                                    <h4 className="text-sm font-bold text-gray-800 mb-1">Buscar Existentes</h4>
-                                    <p className="text-xs text-gray-500 text-center mb-4">Selecione contatos na plataforma</p>
-                                    
-                                    {selectedIds.length > 0 ? (
-                                        <div className="flex flex-col w-full gap-3 animate-fade-in">
-                                            <div className="flex items-center justify-center gap-2 text-sm font-bold text-brand-primary">
-                                                <CheckCircle size={18} /> {selectedIds.length} selecionado(s)
-                                            </div>
-                                            <div className="flex gap-2 w-full">
-                                                <button type="button" onClick={() => navigate('/atendimentos', { state: { isSelectingForBulk: true, selectedIds } })} className="flex-1 py-2 px-2 bg-white border border-gray-300 text-gray-700 rounded-md text-xs font-semibold hover:bg-gray-50 transition-colors shadow-sm">
-                                                    Alterar
-                                                </button>
-                                                <button type="button" onClick={() => setSelectedIds([])} className="flex-1 py-2 px-2 bg-red-50 text-red-600 border border-red-100 rounded-md text-xs font-semibold hover:bg-red-100 transition-colors shadow-sm">
-                                                    Limpar
-                                                </button>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <div className="col-span-1 sm:col-span-2">
+                                        <div className="flex items-center justify-between mb-3 px-1">
+                                            <label className="text-[13px] font-bold text-slate-700 flex items-center gap-2">
+                                                <FileText size={16} className="text-blue-500" /> Template da Meta
+                                            </label>
+                                            <button type="button" onClick={() => setIsCreateModalOpen(true)} className="text-[11px] text-blue-600 font-black uppercase tracking-tight hover:text-blue-800 transition-colors flex items-center gap-1.5">
+                                                <Plus size={14} /> Novo Template
+                                            </button>
+                                        </div>
+                                        <div className="relative">
+                                            <select
+                                                value={selectedTemplate}
+                                                onChange={e => setSelectedTemplate(e.target.value)}
+                                                className="bulk-input appearance-none pr-10"
+                                                required
+                                            >
+                                                <option value="">Selecione um template aprovado...</option>
+                                                {templates.map(t => (
+                                                    <option key={t.name} value={t.name}>{t.name} ({t.language})</option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
+                                                <LayoutGrid size={16} />
                                             </div>
                                         </div>
-                                    ) : (
-                                        <button type="button" onClick={() => navigate('/atendimentos', { state: { isSelectingForBulk: true } })} className="w-full py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:border-brand-primary hover:text-brand-primary transition-colors shadow-sm">
-                                            Selecionar Contatos
-                                        </button>
-                                    )}
-                                </div>
-
-                                {/* Opção 2: Carregar CSV */}
-                                <div className={`flex flex-col items-center justify-center p-5 border-2 border-dashed rounded-xl transition-all ${file ? 'border-green-500 bg-green-50/50' : 'border-gray-300 bg-white hover:border-brand-primary/50'}`}>
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors ${file ? 'bg-green-500 text-white shadow-md' : 'bg-gray-100 text-gray-400'}`}>
-                                        <Upload size={20} />
                                     </div>
-                                    <h4 className="text-sm font-bold text-gray-800 mb-1">Importar Planilha</h4>
-                                    <p className="text-xs text-gray-500 text-center mb-4">Arquivo .csv ('whatsapp', 'nome')</p>
 
-                                    {file ? (
-                                        <div className="flex flex-col w-full gap-3 animate-fade-in">
-                                            <div className="flex items-center justify-center gap-2 text-sm font-bold text-brand-primary truncate px-2" title={file.name}>
-                                                <CheckCircle size={18} className="flex-shrink-0" /> <span className="truncate">{file.name}</span>
-                                            </div>
-                                            <div className="flex gap-2 w-full">
-                                                <label htmlFor="csv-upload-change" className="flex-1 py-2 px-2 bg-white border border-gray-300 text-gray-700 rounded-md text-xs font-semibold hover:bg-gray-50 transition-colors text-center cursor-pointer shadow-sm">
-                                                    Trocar
-                                                    <input id="csv-upload-change" type="file" accept=".csv" className="sr-only" onChange={handleCsvFileChange} />
-                                                </label>
-                                                <button type="button" onClick={() => { setFile(null); setContactCount(0); if(document.getElementById('csv-upload')) document.getElementById('csv-upload').value = ''; if(document.getElementById('csv-upload-change')) document.getElementById('csv-upload-change').value = ''; }} className="flex-1 py-2 px-2 bg-red-50 text-red-600 border border-red-100 rounded-md text-xs font-semibold hover:bg-red-100 transition-colors shadow-sm">
-                                                    Remover
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <label htmlFor="csv-upload" className="w-full py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:border-brand-primary hover:text-brand-primary transition-colors text-center cursor-pointer block shadow-sm">
-                                            Carregar Arquivo
-                                            <input id="csv-upload" type="file" accept=".csv" className="sr-only" onChange={handleCsvFileChange} />
+                                    <div>
+                                        <label className="block text-[13px] font-bold text-slate-700 mb-3 px-1 flex items-center gap-2">
+                                            <Users size={16} className="text-blue-500" /> Persona Ativa
                                         </label>
-                                    )}
-                                </div>
-                            </div>
+                                        <select
+                                            value={selectedPersona}
+                                            onChange={e => setSelectedPersona(e.target.value)}
+                                            className="bulk-input"
+                                            required
+                                        >
+                                            {personas.map(p => (
+                                                <option key={p.id} value={p.id}>{p.nome_config}</option>
+                                            ))}
+                                        </select>
+                                    </div>
 
-                            {/* Somatório Total - Simplificado */}
-                            <div className="mt-3 flex justify-between items-center text-xs text-gray-500 px-1">
-                                <span>Total de destinatários: <strong className="text-gray-700">{selectedIds.length + contactCount}</strong></span>
-                                <span>Custo estimado: <strong className="text-gray-700">R$ {((selectedIds.length + contactCount) * 0.50).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+                                    <div>
+                                        <label className="block text-[13px] font-bold text-slate-700 mb-3 px-1 flex items-center gap-2">
+                                            <CheckCircle size={16} className="text-blue-500" /> Status do Atendimento
+                                        </label>
+                                        <div className="bulk-input bg-slate-50/50 flex items-center gap-2 text-slate-400">
+                                            Auto-inicializado
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Observações */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Observações Internas</label>
-                            <textarea 
-                                value={observacoes}
-                                onChange={e => setObservacoes(e.target.value)}
-                                placeholder="Anotações que aparecerão nos atendimentos criados..."
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-primary h-16"
-                            />
+                        {/* Seção 2: Para Quem Enviar */}
+                        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100/50">
+                            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8">02. Seleção de Destinatários</h4>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                {/* Opção: Buscar na Base */}
+                                <div onClick={() => navigate('/atendimentos', { state: { isSelectingForBulk: true, selectedIds } })}
+                                    className={`premium-tile cursor-pointer p-6 rounded-3xl border-2 transition-all flex flex-col items-center text-center ${selectedIds.length > 0 ? 'border-blue-500 bg-blue-50/30' : 'border-slate-100 bg-slate-50/50'}`}>
+                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all ${selectedIds.length > 0 ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-slate-400 shadow-sm'}`}>
+                                        <Search size={22} />
+                                    </div>
+                                    <h5 className="font-black text-slate-800 text-sm mb-1">Base Interna</h5>
+                                    <p className="text-[11px] text-slate-500 font-medium">Contatos da plataforma</p>
+
+                                    {selectedIds.length > 0 && (
+                                        <div className="mt-4 px-4 py-1.5 bg-blue-600 text-white text-[10px] font-black rounded-full shadow-md animate-fade-in uppercase tracking-wider">
+                                            {selectedIds.length} selecionados
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Opção: Planilha Externa */}
+                                <label className={`premium-tile cursor-pointer p-6 rounded-3xl border-2 transition-all flex flex-col items-center text-center ${file ? 'border-indigo-500 bg-indigo-50/30' : 'border-slate-100 bg-slate-50/50'}`}>
+                                    <input type="file" accept=".csv" className="sr-only" onChange={handleCsvFileChange} />
+                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all ${file ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-slate-400 shadow-sm'}`}>
+                                        <Upload size={22} />
+                                    </div>
+                                    <h5 className="font-black text-slate-800 text-sm mb-1">Planilha CSV</h5>
+                                    <p className="text-[11px] text-slate-500 font-medium">Importação externa</p>
+
+                                    {file && (
+                                        <div className="mt-4 px-4 py-1.5 bg-indigo-600 text-white text-[10px] font-black rounded-full shadow-md animate-fade-in uppercase tracking-wider truncate max-w-full">
+                                            {file.name}
+                                        </div>
+                                    )}
+                                </label>
+                            </div>
+
+                            <div className="mt-6 p-4 bg-slate-50/50 rounded-2xl flex items-center justify-between border border-slate-100">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-blue-600 shadow-sm">
+                                        <Users size={16} />
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-600">Total de Destinatários</span>
+                                </div>
+                                <span className="text-xl font-black text-slate-900 tracking-tighter">
+                                    {selectedIds.length + contactCount}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Coluna de Preview */}
-                    <div className="space-y-6">
-                        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex flex-col h-fit">
-                            <h3 className="text-sm font-bold text-gray-800 p-4 border-b uppercase tracking-widest text-center bg-gray-50">Visualização e Configuração</h3>
-                            {activeTemplate ? (
-                                <div className="p-4 md:p-6 overflow-y-auto max-h-[550px] min-h-[550px] space-y-6 bg-brand-whatsapp-background">
-                                    <TemplatePreview 
-                                        template={activeTemplate} 
-                                        variables={variables} 
-                                        headerFile={headerFile} 
-                                        onVariableChange={(name, value) => setVariables(prev => ({ ...prev, [name]: value }))}
-                                        onFileChange={setHeaderFile}
-                                    />
+                    {/* Coluna de Visualização */}
+                    <div className="lg:col-span-5 space-y-6">
+                        <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100/50 overflow-hidden flex flex-col h-full min-h-[600px]">
+                            <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-white">
+                                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Visualização</h4>
+                                <div className="flex gap-1">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-slate-100"></div>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-slate-100"></div>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-slate-100"></div>
                                 </div>
-                            ) : (
-                                <div className="max-h-[550px] min-h-[550px] flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-100 rounded-xl gap-2">
-                                    <FileText size={48} className="opacity-20" />
-                                    <p className="text-xs text-center px-4">Selecione um template para ver como a mensagem será enviada.</p>
-                                </div>
-                            )}
-                        </div>
+                            </div>
 
-                        <button
-                            type="submit"
-                            disabled={issubmitting}
-                            className="w-full flex items-center justify-center gap-3 bg-brand-primary text-white p-4 rounded-xl font-bold text-lg hover:bg-brand-primary-dark transition-all shadow-lg disabled:bg-gray-400"
-                        >
-                            {issubmitting ? <Loader2 className="animate-spin" /> : <Send />}
-                            {issubmitting ? 'Processando...' : 'Iniciar Disparos'}
-                        </button>
+                            <div className="flex-1 p-8 bg-[#fdfdfd] flex flex-col items-center justify-center overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(rgba(248, 250, 252, 0.95), rgba(248, 250, 252, 0.95)), url("https://static.vecteezy.com/system/resources/previews/021/736/713/non_2x/doodle-lines-arrows-circles-and-curves-hand-drawn-design-elements-isolated-on-white-background-for-infographic-illustration-vector.jpg")', backgroundSize: 'cover' }}>
+                                {activeTemplate ? (
+                                    <div className="w-full max-w-sm animate-fade-in">
+                                        <TemplatePreview
+                                            template={activeTemplate}
+                                            variables={variables}
+                                            headerFile={headerFile}
+                                            onVariableChange={(name, value) => setVariables(prev => ({ ...prev, [name]: value }))}
+                                            onFileChange={setHeaderFile}
+                                        />
+
+                                        <div className="mt-8 space-y-4">
+                                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center px-4">Configuração das Variáveis</h5>
+                                            {variableNames.length > 0 ? (
+                                                <div className="grid grid-cols-1 gap-3 px-2">
+                                                    {variableNames.map(name => (
+                                                        <div key={name} className="flex flex-col gap-1">
+                                                            <span className="text-[10px] font-bold text-slate-400 ml-3">{name}</span>
+                                                            <input
+                                                                type="text"
+                                                                value={variables[name] || ''}
+                                                                onChange={e => setVariables(prev => ({ ...prev, [name]: e.target.value }))}
+                                                                placeholder={`Filtro ${name}...`}
+                                                                className="bulk-input bg-white !rounded-xl !py-2 text-xs"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p className="text-[11px] text-slate-400 text-center font-medium italic">Template sem variáveis customizáveis.</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center text-center max-w-[200px] gap-4">
+                                        <div className="w-20 h-20 rounded-3xl bg-white flex items-center justify-center shadow-xl shadow-slate-200/50">
+                                            <FileText size={40} className="text-slate-100" strokeWidth={1} />
+                                        </div>
+                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest leading-loose">Selecione um template para configurar</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-8 border-t border-slate-50">
+                                <button
+                                    type="submit"
+                                    disabled={issubmitting}
+                                    className="w-full h-16 flex items-center justify-center gap-4 text-white rounded-3xl font-black text-lg transition-all shadow-xl shadow-blue-500/20 active:scale-[0.98] disabled:opacity-50 disabled:grayscale hover:shadow-2xl hover:-translate-y-1"
+                                    style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)' }}
+                                >
+                                    {issubmitting ? <Loader2 className="animate-spin" /> : <Send size={20} />}
+                                    {issubmitting ? 'Preseguindo...' : 'Iniciar Sequência de Disparos'}
+                                </button>
+                                <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest text-center mt-4">
+                                    Custo estimado: R$ {((selectedIds.length + contactCount) * 0.50).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
 
-            {/* Modal de Template Reutilizado */}
-            <TemplateModal
-                isOpen={isTemplateModalOpen}
-                onClose={() => setIsTemplateModalOpen(false)}
-                onSend={handleTemplateFromModal}
-            />
-            
+            <TemplateModal isOpen={isTemplateModalOpen} onClose={() => setIsTemplateModalOpen(false)} onSend={handleTemplateFromModal} />
             <CreateTemplateModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onCreated={fetchInitialData} />
+            <div className="py-10"></div>
         </div>
     );
 }

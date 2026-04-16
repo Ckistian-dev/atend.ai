@@ -271,129 +271,90 @@ const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
     };
 
     return (
-        <footer className="flex-shrink-0 p-3 bg-[#f0f2f5] border-t border-gray-200">
-            {/* Inputs de arquivo ocultos */}
-            <input
-                type="file"
-                ref={imageInputRef}
-                accept="image/png, image/jpeg, image/webp"
-                className="hidden"
-                onChange={(e) => handleFileChange(e, 'image')}
-                disabled={isRecording}
-                multiple
-            />
-            <input
-                type="file"
-                ref={docInputRef}
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
-                className="hidden"
-                onChange={(e) => handleFileChange(e, 'document')}
-                disabled={isRecording}
-                multiple
-            />
+        <footer className="footer-loft bg-transparent">
+            <input type="file" ref={imageInputRef} accept="image/png, image/jpeg, image/webp" className="hidden" onChange={(e) => handleFileChange(e, 'image')} multiple />
+            <input type="file" ref={docInputRef} accept=".pdf,.doc,.docx,.xls,.xlsx,.txt" className="hidden" onChange={(e) => handleFileChange(e, 'document')} multiple />
+            <input type="file" ref={videoInputRef} accept="video/mp4,video/3gpp" className="hidden" onChange={(e) => handleFileChange(e, 'video')} multiple />
 
-            {/* --- INÍCIO DA ADIÇÃO --- */}
-            <input
-                type="file"
-                ref={videoInputRef}
-                accept="video/mp4,video/3gpp"
-                className="hidden"
-                onChange={(e) => handleFileChange(e, 'video')}
-                disabled={isRecording}
-                multiple
-            />
-            {/* --- FIM DA ADIÇÃO --- */}
+            <div className={`relative flex items-center gap-3 p-1.5 bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-blue-900/5 border border-white transition-all duration-500 ${isRecording ? 'ring-2 ring-red-500/20' : 'hover:shadow-blue-900/10'}`}>
 
-            {/* Se estiver gravando, mostra a UI de gravação */}
-            {isRecording ? (
-                <div className="flex items-center gap-3">
-                    <button
-                        type="button"
-                        onClick={cancelRecording} // Botão de lixeira para cancelar
-                        title="Cancelar Gravação"
-                        className="p-2 text-gray-500 hover:text-red-600 transition-colors rounded-full hover:bg-gray-200"
-                    >
-                        <Trash2 size={22} />
-                    </button>
-
-                    <div className="flex-1 flex items-center justify-center gap-2 text-red-600">
-                        <StopCircle size={16} className="animate-pulse" />
-                        <span className="font-mono">{formatRecordingTime(recordingTime)}</span>
-                    </div>
-
-                    <button
-                        type="button"
-                        className="p-2 text-white bg-brand-primary rounded-full hover:bg-brand-primary-active transition-colors"
-                        title="Parar e Enviar"
-                        onClick={stopRecording} // O ícone de 'mic' agora é 'enviar'
-                    >
-                        <Send size={22} />
-                    </button>
-                </div>
-            ) : (
-                // UI Padrão (texto ou mic)
-                <form onSubmit={handleSubmitText} className="flex items-center gap-3">
-                    {/* Botão Anexar */}
-                    <div className="relative" ref={attachMenuRef}>
-                        {/* --- NOVO: Botão para abrir modal de template --- */}
-                        <button type="button" onClick={onOpenTemplateModal} className="p-2 text-gray-500 hover:text-brand-primary transition-colors rounded-full hover:bg-gray-200" title="Enviar template">
-                            <MessageSquarePlus size={22} />
+                {isRecording ? (
+                    <div className="flex-1 flex items-center justify-between px-3 h-12">
+                        <button type="button" onClick={cancelRecording} className="w-9 h-9 flex items-center justify-center rounded-2xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all">
+                            <Trash2 size={18} />
                         </button>
 
-                        {showAttachMenu && (
-                            <div className="absolute bottom-12 left-0 bg-white rounded-lg shadow-lg overflow-hidden w-48 animate-fade-in-up-fast">
-                                <button type="button" onClick={() => imageInputRef.current?.click()} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
-                                    <ImageIcon size={20} className="text-purple-500" />
-                                    Imagem
-                                </button>
-                                <button type="button" onClick={() => videoInputRef.current?.click()} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
-                                    <FileVideo size={20} className="text-red-500" />
-                                    Vídeo
-                                </button>
-                                <button type="button" onClick={() => docInputRef.current?.click()} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
-                                    <FileText size={20} className="text-brand-primary" />
-                                    Documento
-                                </button>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 rounded-2xl border border-red-100">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                                <span className="text-[11px] font-black font-mono text-red-600 tracking-wider">
+                                    {formatRecordingTime(recordingTime)}
+                                </span>
                             </div>
-                        )}
-                        <button type="button" onClick={() => setShowAttachMenu(!showAttachMenu)} className="p-2 text-gray-500 hover:text-brand-primary transition-colors rounded-full hover:bg-gray-200">
-                            <Paperclip size={22} />
+                        </div>
+
+                        <button type="button" onClick={stopRecording} className="w-10 h-10 flex items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-200 hover:scale-105 transition-all">
+                            <Send size={18} />
                         </button>
                     </div>
+                ) : (
+                    <>
+                        {/* UTILITY ACTIONS */}
+                        <div className="flex items-center gap-1 pl-1">
+                            <div className="relative" ref={attachMenuRef}>
+                                <button type="button" onClick={() => setShowAttachMenu(!showAttachMenu)} className={`w-10 h-10 flex items-center justify-center rounded-2xl transition-all ${showAttachMenu ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-400 hover:bg-slate-50 hover:text-blue-600'}`}>
+                                    <Paperclip size={20} className={showAttachMenu ? 'rotate-45 transition-all' : ''} />
+                                </button>
 
-                    {/* Input de Texto */}
-                    <textarea
-                        ref={textInputRef}
-                        rows={1} // Começa com uma linha
-                        placeholder="Digite uma mensagem"
-                        className="flex-1 px-4 py-2 border border-gray-300 bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none overflow-y-hidden" // Adicionado resize-none e overflow-y-hidden
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                    />
+                                {showAttachMenu && (
+                                    <div className="absolute bottom-14 left-0 bg-white border border-slate-100 rounded-[2rem] shadow-2xl w-52 p-1.5 z-50 animate-fade-in">
+                                        <button onClick={() => imageInputRef.current?.click()} className="w-full flex items-center gap-3 p-3 text-[11px] font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-2xl transition-all">
+                                            <div className="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center"><ImageIcon size={16} /></div> Imagem
+                                        </button>
+                                        <button onClick={() => videoInputRef.current?.click()} className="w-full flex items-center gap-3 p-3 text-[11px] font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-2xl transition-all">
+                                            <div className="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center"><FileVideo size={16} /></div> Vídeo
+                                        </button>
+                                        <button onClick={() => docInputRef.current?.click()} className="w-full flex items-center gap-3 p-3 text-[11px] font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-2xl transition-all">
+                                            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><FileText size={16} /></div> Documento
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
 
-                    {/* Botão Enviar ou Mic */}
-                    {text.trim() ? (
-                        <button
-                            type="submit"
-                            className="p-2 text-white bg-brand-primary rounded-full hover:bg-brand-primary-active transition-colors disabled:bg-gray-400"
-                            title="Enviar"
-                        >
-                            <Send size={22} />
-                        </button>
-                    ) : (
-                        <button
-                            type="button"
-                            className="p-2 text-gray-500 hover:text-brand-primary transition-colors rounded-full hover:bg-gray-200"
-                            title="Gravar áudio"
-                            onClick={handleMicClick}
-                        >
-                            <Mic size={22} />
-                        </button>
-                    )}
-                </form>
-            )}
-        </footer >
+                            <button type="button" onClick={onOpenTemplateModal} className="w-10 h-10 flex items-center justify-center rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-blue-600 transition-all">
+                                <MessageSquarePlus size={20} />
+                            </button>
+                        </div>
+
+                        {/* TEXT INPUT CAPSULE */}
+                        <div className="flex-1 min-w-0">
+                            <textarea
+                                ref={textInputRef}
+                                rows={1}
+                                placeholder="Responda aqui..."
+                                className="w-full px-2 py-auto pt-1 bg-transparent text-[14px] font-bold text-slate-800 focus:outline-none resize-none no-scrollbar placeholder:text-slate-300"
+                                value={text}
+                                onChange={(e) => setText(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                            />
+                        </div>
+
+                        {/* SEND / MIC BUTTON */}
+                        <div className="pr-1">
+                            {text.trim() ? (
+                                <button type="submit" disabled={isSendingMedia} onClick={handleSubmitText} className="w-11 h-11 flex items-center justify-center rounded-[1.2rem] bg-blue-600 text-white shadow-xl shadow-blue-200 hover:scale-105 active:scale-95 transition-all">
+                                    <Send size={20} />
+                                </button>
+                            ) : (
+                                <button type="button" onClick={handleMicClick} className="w-11 h-11 flex items-center justify-center rounded-[1.2rem] bg-slate-100 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all group">
+                                    <Mic size={20} className="group-hover:scale-110 transition-all" />
+                                </button>
+                            )}
+                        </div>
+                    </>
+                )}
+            </div>
+        </footer>
     );
 };
 

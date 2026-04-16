@@ -83,12 +83,11 @@ async def process_followups_for_user(user: models.User, db: AsyncSession):
                     ticket.status = "Concluído"
                     # Atualiza timestamp para refletir a conclusão
                     ticket.updated_at = datetime.now(timezone.utc)
-                    db.add(ticket)
-                
                 await db.commit()
                 logger.info(f"Follow-up: {len(old_tickets)} atendimentos 'Atendente Chamado' auto-concluídos para user {user.id} (Inatividade > {auto_conclude_days} dias).")
         except Exception as e:
             logger.error(f"Erro na auto-conclusão para user {user.id}: {e}", exc_info=True)
+            await db.rollback()
 
     # Se não houver intervalos configurados, encerra aqui (após ter tentado a auto-conclusão)
     if not intervals:
@@ -206,13 +205,23 @@ async def process_followups_for_user(user: models.User, db: AsyncSession):
                 }
                 conversa.append(new_message)
                 at.conversa = json.dumps(conversa, ensure_ascii=False)
-                db.add(at)
                 await db.commit()
                 logger.info(f"Follow-up (At. {at.id}): Mensagem enviada.")
 
         except Exception as e:
             logger.error(f"Follow-up: Erro ao processar atendimento {at.id}: {e}", exc_info=True)
             await db.rollback()
+
+async def process_user_followup_task(user_id: int):
+    """Encapsula o processamento de um usuário em uma sessão própria."""
+    async with SessionLocal() as db:
+        try:
+            # Busca o usuário novamente dentro desta sessão para evitar problemas de detach
+            user = await crud_user.get_user(db, user_id)
+            if user:
+                await process_followups_for_user(user, db)
+        except Exception as e:
+            logger.error(f"Worker-Followup: Erro processando user {user_id}: {e}", exc_info=True)
 
 async def followup_poller():
     """Loop que verifica e dispara follow-ups."""
@@ -222,10 +231,12 @@ async def followup_poller():
             logger.info(f"Verificando atendimentos para follow-up...")
             async with SessionLocal() as db:
                 users_with_followup = await crud_user.get_users_with_followup_active(db)
-                
-                if users_with_followup:
-                    tasks = [process_followups_for_user(user, db) for user in users_with_followup]
-                    await asyncio.gather(*tasks)
+                user_ids = [u.id for u in users_with_followup]
+            
+            if user_ids:
+                # Dispara o processamento de cada usuário em paralelo com sessões isoladas
+                tasks = [process_user_followup_task(uid) for uid in user_ids]
+                await asyncio.gather(*tasks)
 
             await asyncio.sleep(300)
             

@@ -3,6 +3,7 @@ import { MoreVertical, Tag, CheckCircle2, MailWarning, Edit, Headset } from 'luc
 import { format } from 'date-fns';
 import TagEditor from './TagEditor';
 import NameEditor from './NameEditor'; // Importa o novo componente
+import { stripWhatsAppFormatting } from '../../utils/formatters';
 
 // --- Componente: Item de Contato na Lista (MODIFICADO) ---
 const ContactItem = ({
@@ -81,7 +82,7 @@ const ContactItem = ({
             } else if (msgType === 'document') {
                 lastMessage = `[Documento] ${lastMsgObj.filename || 'arquivo'}`;
             } else {
-                lastMessage = lastMsgObj.content || '[Mídia]';
+                lastMessage = stripWhatsAppFormatting(lastMsgObj.content) || '[Mídia]';
             }
 
             if (lastMsgObj.role === 'assistant') {
@@ -190,10 +191,10 @@ const ContactItem = ({
 
         // Atualiza a situação para 'Atendente Chamado'
         onUpdateStatus(mensagem.id, { status: 'Atendente Chamado' });
-        
+
         // Seleciona o contato atualizado
         onSelect({ ...mensagem, status: 'Atendente Chamado' });
-        
+
         // Troca para a aba de Atendimentos, se a função existir
         if (onSwitchToAtendimentos) {
             onSwitchToAtendimentos();
@@ -224,206 +225,170 @@ const ContactItem = ({
 
     return (
         <div
-            className={`flex items-center p-3 cursor-pointer transition-colors ${isSelected ? 'bg-gray-200' : 'bg-white hover:bg-gray-50'
+            className={`group relative flex items-center p-3 cursor-pointer transition-all duration-300 rounded-2xl mx-1 mb-0.5 border border-transparent ${(isSelected || isMainMenuOpen || activeSubMenu)
+                ? 'bg-white shadow-lg shadow-blue-100/50 border-white/60 scale-[1.01] z-[100]'
+                : 'hover:bg-white/40 hover:translate-x-0.5 z-0'
                 }`}
             onClick={() => {
-                // Fecha qualquer menu que possa estar aberto
                 setIsMainMenuOpen(false);
-
-                // --- Lógica de "Marcar como Lido" ---
-                // Se houver mensagens não lidas, marca todas como lidas ao clicar.
                 if (hasUnreadMessages) {
-                    // 3. Monta a nova conversa com status 'read'
                     const updatedConversa = conversa.map(msg =>
                         (msg.role === 'user' && msg.status === 'unread')
-                            ? { ...msg, status: 'read' } // Atualiza o status
+                            ? { ...msg, status: 'read' }
                             : msg
                     );
-
-                    // 4. Chama a função de update genérica do pai
-                    // O pai (Mensagens) fará a atualização otimista e a chamada de API
-                    onUpdateStatus(mensagem.id, {
-                        conversa: JSON.stringify(updatedConversa)
-                    });
+                    onUpdateStatus(mensagem.id, { conversa: JSON.stringify(updatedConversa) });
                 }
-
-                // Seleciona a conversa para exibição.
-                // Isso é feito por último para que a UI reaja à mudança de estado.
                 onSelect(mensagem);
             }}
         >
-            {/* --- AVATAR COM INICIAIS --- */}
-            <div className="w-12 h-12 rounded-full mr-3 flex-shrink-0 bg-gray-300 flex items-center justify-center">
-                <span className="text-xl font-bold text-white">
+            {/* AVATAR: PREMIUM INITIALS */}
+            <div className={`w-11 h-11 rounded-xl mr-3 flex-shrink-0 flex items-center justify-center transition-all shadow-inner ${isSelected ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'bg-slate-100 text-slate-400'
+                }`}>
+                <span className="text-base font-black executive-title">
                     {mensagem.nome_contato
                         ? (mensagem.nome_contato || '??').substring(0, 2).toUpperCase()
                         : (mensagem.whatsapp || '??').slice(-2)}
                 </span>
             </div>
-            {/* <img
-                 className="w-12 h-12 rounded-full mr-3 flex-shrink-0"
-                 src={`https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSTip18a5vyLJJXYZgGE44WTFaislpkAcvQURSqLik0tsv8DuPggkyib-NrlShXqM2mO9k&usqp=CAU`}
-                 alt="Avatar" /> */}
-            <div className="flex-1 min-w-0 border-gray-100"> {/* Removido pt-3 */}
-                <div className="flex justify-between items-center mb-1">
-                    <div className="truncate">
-                        <h3 className="text-md font-semibold text-gray-800 truncate items-baseline">
+
+            <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-center mb-0.5">
+                    <div className="truncate pr-2 flex-1">
+                        <h3 className={`text-[13px] font-black executive-title truncate ${isSelected ? 'text-slate-900' : 'text-slate-600'}`}>
                             {mensagem.nome_contato || mensagem.whatsapp}
-                            {mensagem.nome_contato && (
-                                <span className="text-xs text-brand-text-muted ml-2 font-normal">{mensagem.whatsapp}</span>
-                            )}
                         </h3>
                     </div>
-                    <span className="text-xs text-brand-primary font-medium ml-2 flex-shrink-0">
-                        {formatTimestamp(lastMessageTime)}
+                    {/* STATUS PILL (NOW AT TOP) */}
+                    <span
+                        className="flex-shrink-0 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm"
+                        style={statusInfo.colorHex ? {
+                            backgroundColor: isSelected ? 'rgba(0,0,0,0.05)' : `${statusInfo.colorHex}15`,
+                            color: statusInfo.colorHex,
+                            border: isSelected ? `1px solid ${statusInfo.colorHex}30` : 'none'
+                        } : {}}
+                    >
+                        {statusInfo.text}
                     </span>
                 </div>
 
-                {/* --- LINHA MODIFICADA: Mensagem e Status --- */}
+
+
                 <div className="flex justify-between items-center">
-                    <p className="text-sm text-brand-text-muted truncate">{lastMessage}</p>
-                    {/* --- NOVO: Wrapper para os badges --- */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                        {/* --- INÍCIO: Bolinha de Contagem (Unread) --- */}
+                    <p className={`text-[11.5px] truncate pr-3 flex-1 transition-colors ${hasUnreadMessages
+                        ? 'text-slate-800 font-bold'
+                        : (isSelected ? 'text-slate-600 font-semibold' : 'text-slate-500 font-medium')
+                        }`}>
+                        {lastMessage}
+                    </p>
+
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {/* TAG DOTS */}
+                        {mensagem.tags && mensagem.tags.length > 0 && (
+                            <div className="flex items-center mr-1.5">
+                                {mensagem.tags.map((tag, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`w-2.5 h-2.5 rounded-full border border-white shadow-sm ${idx > 0 ? '-ml-1.5' : ''}`}
+                                        style={{ backgroundColor: tag.color || '#cbd5e1', zIndex: 10 - idx }}
+                                        title={tag.name}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {/* UNREAD COUNTER */}
                         {hasUnreadMessages && (
-                            <span
-                                className="flex-shrink-0 flex items-center justify-center h-5 min-w-[1.25rem] px-1 bg-brand-primary text-white text-xs font-bold rounded-full"
-                                title={`${unreadCount} novas mensagens`}
-                            >
+                            <span className="flex-shrink-0 flex items-center justify-center h-4 min-w-[1rem] px-1 bg-blue-600 text-white text-[9px] font-black rounded-full shadow-md shadow-blue-100">
                                 {unreadCount}
                             </span>
                         )}
 
-                        {/* --- INÍCIO: Marcadores de Tag --- */}
-                        {(mensagem.tags && mensagem.tags.length > 0) && (
-                            <div className="flex items-center gap-0.5">
-                                {mensagem.tags.slice(0, 3).map(tag => ( // Mostra no máximo 3
-                                    <span key={tag.name} title={tag.name} className="block h-2 w-2 rounded-full" style={{ backgroundColor: tag.color }}></span>
-                                ))}
-                            </div>
-                        )}
-                        {/* --- FIM: Marcadores de Tag --- */}
-
-                        {/* --- Badge de Status (Lógica Original) --- */}
-                        <span
-                            className={`flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full ${statusInfo.colorClass}`}
-                            style={statusInfo.colorHex ? {
-                                backgroundColor: statusInfo.colorHex,
-                                color: getTextColorForBackground(statusInfo.colorHex) // Usa a helper
-                            } : {}}
-                        >
-                            {statusInfo.text}
+                        {/* TIMESTAMP (NOW AT BOTTOM) */}
+                        <span className={`text-[9px] font-black uppercase tracking-widest flex-shrink-0 ${isSelected ? 'text-blue-600' : 'text-slate-400'}`}>
+                            {formatTimestamp(lastMessageTime)}
                         </span>
                     </div>
                 </div>
             </div>
 
-            {/* --- NOVO: Botão de 3 pontos (Menu) --- */}
-            {/* --- NOVO: ADICIONADO A REF AQUI --- */}
-            <div className="relative ml-2 flex-shrink-0" ref={menuRef}>
+            {/* ACTION MENU (FLOATING) */}
+            <div className="relative flex-shrink-0 ml-2" ref={menuRef}>
                 <button
                     type="button"
                     onClick={handleMenuClick}
-                    className="p-1 rounded-full text-brand-text-muted hover:text-gray-800 hover:bg-gray-100"
-                    title="Alterar status"
+                    className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${isSelected ? 'text-slate-400 hover:bg-slate-50 hover:text-blue-600' : 'text-slate-300 opacity-0 group-hover:opacity-100 hover:text-slate-600'
+                        }`}
                 >
-                    <MoreVertical size={18} />
+                    <MoreVertical size={16} />
                 </button>
-                
-                {/* --- MENU PRINCIPAL (NOVO) --- */}
+
+                {/* MENU PRINCIPAL (Tonal Style) */}
                 {isMainMenuOpen && (
-                    <div
-                        className="absolute right-0 top-8 mt-1 w-48 bg-white hover:text-brand-primary rounded-md shadow-lg z-20 overflow-hidden animate-fade-in-up-fast"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <button
-                            type="button"
-                            onClick={handlePuxarAtendimento}
-                            className="w-full text-left px-4 py-2 text-sm text-brand-text-muted hover:text-brand-primary hover:bg-gray-100 flex items-center gap-2"
-                        >
-                            <Headset size={16}/>
-                            Puxar Atendimento
+                    <div className="absolute right-0 top-10 mt-1 w-56 bg-white border border-slate-100 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2),0_0_0_1px_rgba(0,0,0,0.05)] z-[200] overflow-hidden animate-fade-in custom-scrollbar p-2">
+                        <button onClick={handlePuxarAtendimento} className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-2xl flex items-center gap-3 transition-all">
+                            <Headset size={16} className="text-blue-500" /> Puxar Atendimento
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => { setActiveSubMenu('status'); setIsMainMenuOpen(false); }}
-                            className="w-full text-left px-4 py-2 text-sm text-brand-text-muted hover:text-brand-primary hover:bg-gray-100 flex items-center gap-2"
-                        >
-                            <CheckCircle2 size={16}/>
-                            Alterar Situação
+                        <button onClick={() => { setActiveSubMenu('status'); setIsMainMenuOpen(false); }} className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-2xl flex items-center gap-3 transition-all">
+                            <CheckCircle2 size={16} className="text-green-500" /> Alterar Situação
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => { setActiveSubMenu('name'); setIsMainMenuOpen(false); }}
-                            className="w-full text-left px-4 py-2 text-sm text-brand-text-muted hover:text-brand-primary hover:bg-gray-100 flex items-center gap-2"
-                        >
-                            <Edit size={16} />
-                            Alterar Nome
+                        <button onClick={() => { setActiveSubMenu('name'); setIsMainMenuOpen(false); }} className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-2xl flex items-center gap-3 transition-all">
+                            <Edit size={16} className="text-amber-500" /> Alterar Nome
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => { setActiveSubMenu('tags'); setIsMainMenuOpen(false); }}
-                            className="w-full text-left px-4 py-2 text-sm text-brand-text-muted hover:text-brand-primary hover:bg-gray-100 flex items-center gap-2"
-                        >
-                            <Tag size={16}/>
-                            Editar Tags
+                        <button onClick={() => { setActiveSubMenu('tags'); setIsMainMenuOpen(false); }} className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-2xl flex items-center gap-3 transition-all">
+                            <Tag size={16} className="text-indigo-500" /> Editar Tags
                         </button>
-                        <button
-                            type="button"
-                            onClick={handleMarkAsUnread}
-                            className="w-full text-left px-4 py-2 text-sm text-brand-text-muted hover:text-brand-primary hover:bg-gray-100 flex items-center gap-2"
-                        >
-                            <MailWarning size={16}/>
-                            Marcar como não lida
+                        <div className="my-1 border-t border-slate-50"></div>
+                        <button onClick={handleMarkAsUnread} className="w-full text-left p-3 text-[12px] font-bold text-red-500 hover:bg-red-50 rounded-2xl flex items-center gap-3 transition-all">
+                            <MailWarning size={16} /> Não lido
                         </button>
                     </div>
                 )}
 
-                {/* --- SUBMENU DE STATUS (MODIFICADO) --- */}
+                {/* SUBMENU DE STATUS (Tonal) */}
                 {activeSubMenu === 'status' && (
-                    <div
-                        className="absolute right-0 top-8 mt-1 w-56 bg-white rounded-md shadow-lg z-20 overflow-hidden animate-fade-in-up-fast"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <span className="block px-4 py-2 text-sm text-brand-text-muted border-b">Alterar situação:</span>
-                        {(statusOptions || []).map(opt => {
-                            const isStatusActive = mensagem.status === opt.nome;
-                            return (
-                                <button
-                                    type="button"
-                                    key={opt.nome}
-                                    onClick={(e) => handleStatusChange(e, opt.nome)}
-                                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${isStatusActive ? 'font-semibold' : 'text-gray-700 hover:bg-gray-100'}`}
-                                    style={isStatusActive ? { color: opt.cor, backgroundColor: `${opt.cor}1A` } : {}}
-                                >
-                                    <span className="flex items-center gap-2">
-                                        <span className="h-3 w-3 rounded-full" style={{ backgroundColor: opt.cor }}></span>
+                    <div className="absolute right-0 top-10 mt-1 w-64 bg-white border border-slate-100 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2),0_0_0_1px_rgba(0,0,0,0.05)] z-[200] overflow-hidden p-2">
+                        <div className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 mb-1">Situação</div>
+                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                            {(statusOptions || []).map(opt => {
+                                const isStatusActive = mensagem.status === opt.nome;
+                                return (
+                                    <button
+                                        key={opt.nome}
+                                        onClick={(e) => handleStatusChange(e, opt.nome)}
+                                        className={`w-full text-left p-3 text-[12px] font-bold transition-all rounded-2xl flex items-center gap-3 ${isStatusActive ? 'bg-slate-50 text-slate-900 shadow-inner' : 'text-slate-600 hover:bg-slate-50'}`}
+                                    >
+                                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: opt.cor }}></span>
                                         {opt.nome}
-                                    </span>
-                                </button>
-                            );
-                        })}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
 
-                {/* --- SUBMENU DE NOME (NOVO) --- */}
+                {/* SUBMENU DE NOME */}
                 {activeSubMenu === 'name' && (
-                    <NameEditor
-                        currentName={mensagem.nome_contato || ''}
-                        onSave={handleSaveName}
-                        onClose={() => setActiveSubMenu(null)}
-                    />
+                    <div className="absolute right-0 top-10 z-[100] w-64 animate-fade-in-up-fast">
+                        <NameEditor
+                            currentName={mensagem.nome_contato || ''}
+                            onSave={handleSaveName}
+                            onClose={() => setActiveSubMenu(null)}
+                        />
+                    </div>
                 )}
 
-                {/* --- SUBMENU DE TAGS (MODIFICADO) --- */}
+                {/* SUBMENU DE TAGS */}
                 {activeSubMenu === 'tags' && (
-                    <TagEditor
-                        contactTags={mensagem.tags || []}
-                        allTags={allTags}
-                        onToggleTag={handleToggleTag}
-                        onSaveNewTag={handleSaveNewTag}
-                        onClose={() => setActiveSubMenu(null)} // Fecha o editor
-                    />
+                    <div className="absolute right-0 top-10 z-[100] animate-fade-in-up-fast">
+                        <TagEditor
+                            contactTags={mensagem.tags || []}
+                            allTags={allTags}
+                            onToggleTag={handleToggleTag}
+                            onSaveNewTag={handleSaveNewTag}
+                            onClose={() => setActiveSubMenu(null)}
+                        />
+                    </div>
                 )}
             </div>
         </div>

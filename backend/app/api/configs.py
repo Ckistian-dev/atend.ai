@@ -2,10 +2,11 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status, Body, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from typing import List, Dict, Any
 import logging
 import os
+import json
 import urllib.parse
 import httpx
 from pydantic import BaseModel, EmailStr
@@ -383,11 +384,47 @@ async def sync_google_sheet(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Falha ao processar a planilha: {str(e)}")
 
+def _extract_file_name_from_drive_content(content: str) -> str:
+    """Extrai o nome do arquivo de um conteúdo 'drive_content' (ex: '# CONTEÚDO DO ARQUIVO: nome.pdf\n...')."""
+    if content.startswith("# CONTEÚDO DO ARQUIVO:"):
+        first_line = content.split("\n", 1)[0]
+        return first_line.replace("# CONTEÚDO DO ARQUIVO:", "").strip()
+    return ""
+
+
+def _extract_file_name_from_drive_index(content: str) -> str:
+    """
+    Extrai o nome do arquivo de um vetor 'drive'.
+    Formato esperado:
+        # DRIVE
+        Categorias|Arquivo|Tipo|ID
+        Pasta A > Sub|nome.pdf|PDF|1abc...
+    """
+    lines = [l.strip() for l in content.strip().split("\n") if l.strip()]
+    # As linhas são: [0] '# DRIVE', [1] cabeçalhos, [2] valores
+    if len(lines) < 3:
+        return ""
+    try:
+        headers = lines[1].split("|")
+        values = lines[2].split("|")
+        if "Arquivo" in headers:
+            idx = headers.index("Arquivo")
+            if idx < len(values):
+                return values[idx].strip()
+    except Exception:
+        pass
+    return ""
+
+
 async def run_sync_drive(config_id: int, user_id: int, folder_id: str) -> int:
-    """Função síncrona para varrer o Drive, extrair conteúdo e calcular vetores, aguardando o término."""
-    logger.info(f"Iniciando sincronização de Drive (Config: {config_id}, User: {user_id})")
+    """
+    Sincronização incremental do Drive:
+    - Adiciona vetores apenas para arquivos NOVOS (não existentes no RAG)
+    - Remove vetores de arquivos que foram DELETADOS do Drive
+    - Compara por nome de arquivo
+    """
+    logger.info(f"Iniciando sincronização incremental de Drive (Config: {config_id}, User: {user_id})")
     
-    # Criamos uma sessão de banco de dados independente e limpa para evitar colisões
     async with SessionLocal() as db:
         try:
             db_config = await crud_config.get_config(db=db, config_id=config_id, user_id=user_id)
@@ -403,13 +440,10 @@ async def run_sync_drive(config_id: int, user_id: int, folder_id: str) -> int:
             drive_service = get_drive_service()
             gemini_service = get_gemini_service()
             
+            # ── 1. Lista arquivos atuais do Drive ──────────────────────────────
             drive_data = await drive_service.list_files_in_folder(folder_id)
             files_tree = drive_data.get("tree", {})
 
-            # 1. Achata a árvore
-            drive_lines = flatten_drive_tree(files_tree)
-            
-            # 1.5 Pega os arquivos brutos para varredura do conteúdo real
             def extract_files_flat(node: Dict[str, Any], current_path: str = "") -> List[Dict[str, Any]]:
                 files = []
                 node_name = node.get("nome", "Raiz")
@@ -425,59 +459,145 @@ async def run_sync_drive(config_id: int, user_id: int, folder_id: str) -> int:
                     files.extend(extract_files_flat(sub, path))
                 return files
 
-            files_to_process = extract_files_flat(files_tree)
-            contextos_buffer = []
+            drive_files = extract_files_flat(files_tree)
+            drive_file_names = {f["name"] for f in drive_files if f.get("name")}
 
-            # 2. Gera Embeddings se houver arquivos
-            if drive_lines:
-                embeddings = await gemini_service.generate_embeddings_batch(drive_lines)
-                for line, embedding in zip(drive_lines, embeddings):
-                    if embedding:
-                        contextos_buffer.append(models.KnowledgeVector(
-                            config_id=db_config.id, 
-                            content=line, 
-                            origin="drive", 
-                            embedding=embedding
-                        ))
-
-            # 2.5 Extrai conteúdo rico dos arquivos
-            supported_mimes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'text/plain', 'text/csv']
-            extracted_texts = []
-            
-            for file_info in files_to_process:
-                mime = file_info.get("mimeType", "")
-                if any(supported in mime for supported in supported_mimes):
-                    file_bytes = drive_service.download_file_bytes(file_info["id"])
-                    if file_bytes:
-                        # O user é injetado para realizar o desconto real de tokens da conta
-                        content_text = await gemini_service.extract_document_content(file_bytes, mime, db, user)
-                        if content_text:
-                            formatted_content = f"# CONTEÚDO DO ARQUIVO: {file_info['name']}\n{content_text}"
-                            extracted_texts.append(formatted_content)
-                            
-            if extracted_texts:
-                content_embeddings = await gemini_service.generate_embeddings_batch(extracted_texts)
-                for text, embedding in zip(extracted_texts, content_embeddings):
-                    if embedding:
-                        contextos_buffer.append(models.KnowledgeVector(
-                            config_id=db_config.id,
-                            content=text,
-                            origin="drive_content",
-                            embedding=embedding
-                        ))
-
-            # 3. Atualiza BD (Remove origens 'drive' e 'drive_content' da base limpa)
-            await db.execute(delete(models.KnowledgeVector).where(
+            # ── 2. Busca os vetores existentes no RAG para este Drive ───────────
+            stmt_existing = select(models.KnowledgeVector).where(
                 models.KnowledgeVector.config_id == db_config.id,
                 models.KnowledgeVector.origin.in_(["drive", "drive_content"])
-            ))
-            
+            )
+            result_existing = await db.execute(stmt_existing)
+            existing_vectors = result_existing.scalars().all()
+
+            # Mapeia nome de arquivo -> ids de vetores no RAG
+            rag_file_vectors: Dict[str, List[int]] = {}
+            for vec in existing_vectors:
+                file_name = ""
+                if vec.origin == "drive_content":
+                    file_name = _extract_file_name_from_drive_content(vec.content)
+                elif vec.origin == "drive":
+                    file_name = _extract_file_name_from_drive_index(vec.content)
+                if file_name:
+                    rag_file_vectors.setdefault(file_name, []).append(vec.id)
+
+            rag_file_names = set(rag_file_vectors.keys())
+
+            logger.info(
+                f"Drive sync incremental — Drive: {len(drive_file_names)} arquivos, "
+                f"RAG existente: {len(rag_file_names)} arquivos indexados."
+            )
+
+            # ── 3. Deletar vetores de arquivos removidos do Drive ──────────────
+            files_to_delete = rag_file_names - drive_file_names
+            deleted_count = 0
+            if files_to_delete:
+                ids_to_delete = []
+                for fname in files_to_delete:
+                    ids_to_delete.extend(rag_file_vectors[fname])
+                if ids_to_delete:
+                    await db.execute(
+                        delete(models.KnowledgeVector).where(
+                            models.KnowledgeVector.id.in_(ids_to_delete)
+                        )
+                    )
+                    deleted_count = len(ids_to_delete)
+                    logger.info(
+                        f"Drive sync — Removidos {deleted_count} vetores de {len(files_to_delete)} "
+                        f"arquivo(s) deletados do Drive: {files_to_delete}"
+                    )
+
+            # ── 4. Indexar apenas arquivos NOVOS ──────────────────────────────
+            files_to_add = drive_file_names - rag_file_names
+            new_drive_files = [f for f in drive_files if f.get("name") in files_to_add]
+
+            logger.info(f"Drive sync — {len(new_drive_files)} arquivo(s) novo(s) para indexar.")
+
+            contextos_buffer = []
+            added_count = 0
+
+            if new_drive_files:
+                # 4a. Gera embeddings de índice (localização/nome)
+                # Reconstrói a árvore achatada apenas para os arquivos novos
+                def build_index_lines_for_files(all_files: List[Dict[str, Any]], target_names: set) -> List[str]:
+                    lines = []
+                    for f in all_files:
+                        if f.get("name") not in target_names:
+                            continue
+                        row_data = {
+                            "Categorias": f.get("path", ""),
+                            "Arquivo": f.get("name"),
+                            "Tipo": "",
+                            "ID": f.get("id")
+                        }
+                        headers = []
+                        values = []
+                        for key, val in row_data.items():
+                            if val:
+                                val_str = str(val).strip().replace("\n", "\\n").replace("\r", "")
+                                headers.append(key)
+                                values.append(val_str)
+                        if headers:
+                            lines.append("# DRIVE\n" + "|".join(headers) + "\n" + "|".join(values))
+                    return lines
+
+                new_index_lines = build_index_lines_for_files(new_drive_files, files_to_add)
+
+                if new_index_lines:
+                    embeddings = await gemini_service.generate_embeddings_batch(new_index_lines)
+                    for line, embedding in zip(new_index_lines, embeddings):
+                        if embedding:
+                            contextos_buffer.append(models.KnowledgeVector(
+                                config_id=db_config.id,
+                                content=line,
+                                origin="drive",
+                                embedding=embedding
+                            ))
+
+                # 4b. Extrai e indexa conteúdo rico dos arquivos novos suportados
+                supported_mimes = [
+                    'application/pdf', 'image/jpeg', 'image/png',
+                    'image/webp', 'text/plain', 'text/csv'
+                ]
+                extracted_texts = []
+
+                for file_info in new_drive_files:
+                    mime = file_info.get("mimeType", "")
+                    if any(supported in mime for supported in supported_mimes):
+                        file_bytes = drive_service.download_file_bytes(file_info["id"])
+                        if file_bytes:
+                            content_text = await gemini_service.extract_document_content(
+                                file_bytes, mime, db, user
+                            )
+                            if content_text:
+                                formatted_content = (
+                                    f"# CONTEÚDO DO ARQUIVO: {file_info['name']}\n{content_text}"
+                                )
+                                extracted_texts.append(formatted_content)
+
+                if extracted_texts:
+                    content_embeddings = await gemini_service.generate_embeddings_batch(extracted_texts)
+                    for text, embedding in zip(extracted_texts, content_embeddings):
+                        if embedding:
+                            contextos_buffer.append(models.KnowledgeVector(
+                                config_id=db_config.id,
+                                content=text,
+                                origin="drive_content",
+                                embedding=embedding
+                            ))
+
+                added_count = len(contextos_buffer)
+
             if contextos_buffer:
                 db.add_all(contextos_buffer)
 
             await db.commit()
-            logger.info(f"Sincronização de Drive finalizada com sucesso! {len(contextos_buffer)} vetores criados.")
-            return len(contextos_buffer)
+            logger.info(
+                f"Sincronização incremental do Drive concluída! "
+                f"+{added_count} vetores adicionados, "
+                f"-{deleted_count} vetores removidos."
+            )
+            return added_count
 
         except Exception as e:
             logger.error(f"Erro na sincronização do Drive: {e}", exc_info=True)

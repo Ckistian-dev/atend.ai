@@ -16,8 +16,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         toastOptions={{
           duration: 5000,
           style: {
-            background: '#333',
-            color: '#fff',
+            background: '#ffffffff',
+            color: '#000000ff',
             zIndex: 9999,
           },
         }}

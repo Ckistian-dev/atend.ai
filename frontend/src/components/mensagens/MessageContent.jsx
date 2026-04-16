@@ -5,162 +5,187 @@ import { AlertTriangle, Download, Loader2, FileText } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
 import ImageDisplayer from './ImageDisplayer';
 import VideoDisplayer from './VideoDisplayer';
+import { formatWhatsAppText } from '../../utils/formatters';
 
 const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, isDownloading }) => {
-    // Props adicionadas: onViewMedia, isDownloading
+    const isAssistant = msg.role === 'assistant';
 
-    // --- NOVA VERIFICAÇÃO DE ERRO ---
-    // Verifica se a mensagem tem um status de 'failed'/'error' vindo do backend (via webhook)
-    // OU se o tipo local é 'error' (para falhas de envio imediatas no frontend)
     if (msg.status === 'failed' || msg.status === 'error' || msg.type === 'error') {
-
-        // Tenta montar uma mensagem de erro descritiva
-        let errorMessage = 'Falha no envio'; // Padrão
+        let errorMessage = 'Falha no envio';
         if (msg.error_title) {
-            errorMessage = msg.error_title; // Erro do WBP (ex: 'Re-engagement message')
+            errorMessage = msg.error_title;
         } else if (msg.content) {
-            errorMessage = msg.content; // Erro do frontend (ex: 'Falha ao enviar mensagem.')
+            errorMessage = msg.content;
         }
 
         const errorCode = msg.error_code ? ` (Cód: ${msg.error_code})` : '';
 
         return (
-            <div className="flex items-center gap-2 text-red-600">
-                <AlertTriangle size={16} />
-                <span className="text-sm">
-                    {errorMessage}{errorCode}
-
-                    {/* Se a falha foi em uma mensagem que *tinha* conteúdo, mostra abaixo */}
+            <div className={`flex items-start gap-3 p-4 rounded-2xl ${isAssistant ? 'bg-red-500/10 text-red-200' : 'bg-red-50 text-red-600'}`}>
+                <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+                <div className="flex flex-col">
+                    <span className="text-[13px] font-bold executive-title uppercase tracking-wider">
+                        {errorMessage}{errorCode}
+                    </span>
                     {msg.type !== 'error' && msg.content && (
-                        <p className="text-xs text-gray-500 italic mt-1">Mensagem original: "{msg.content}"</p>
+                        <p className={`text-[11px] mt-1 opacity-80 italic`}>"{msg.content}"</p>
                     )}
-                </span>
+                </div>
             </div>
         );
     }
-    // --- FIM DA NOVA VERIFICAÇÃO ---
 
-
-    // Se não for um erro, continua a renderização normal
     const type = msg.type || 'text';
-    const hasMedia = msg.media_id && ['image', 'audio', 'document', 'video'].includes(type); // <-- 1. ADICIONADO 'video'
-
-    // Texto a ser exibido (texto do template, transcrição, análise ou mensagem original)
+    const hasMedia = msg.media_id && ['image', 'audio', 'document', 'video'].includes(type);
     let displayText = msg.content;
 
     if (hasMedia && !msg.is_template) {
-        // Oculta textos gerados automaticamente (placeholders de envio manual)
         if (!displayText || (displayText.startsWith('[') && displayText.toLowerCase().includes('enviado'))) {
             displayText = null;
         }
     }
 
-    // --- CORREÇÃO: A sintaxe do 'if/else if' estava incorreta. ---
-    // Texto do botão (agora com a sintaxe correta)
-    let buttonText = type === 'image' ? 'Ver Imagem'
-                   : type === 'audio' ? 'Ouvir Áudio'
-                   : type === 'video' ? 'Ver Vídeo'
-                   : type === 'document' ? 'Baixar Documento'
-                   : '';
+    const renderQuotedMsg = () => {
+        let quoted = msg.quoted_msg;
+        let content = msg.content || '';
+
+        // SEMPRE tenta limpar o prefixo do displayText para evitar exibição duplicada
+        if (content.startsWith('[Mensagem Referenciada]:')) {
+            const regex = /\[Mensagem Referenciada\]: "(.*)"\n?([\s\S]*)/;
+            const match = content.match(regex);
+            if (match) {
+                // Se não tínhamos o objeto estruturado, usamos o que extraímos do texto
+                if (!quoted) {
+                    quoted = { content: match[1] };
+                }
+                // Atualiza o texto principal para remover o prefixo em qualquer caso
+                displayText = match[2].trim();
+            }
+        }
+
+        if (!quoted) return null;
+
+        const isQuotedAssistant = quoted.role === 'assistant';
+        const senderName = isQuotedAssistant ? 'Você' : 'Cliente';
+
+        return (
+            <div className={`mb-3 p-3 rounded-xl border-l-4 flex flex-col gap-1 overflow-hidden select-none transition-all ${isAssistant
+                ? 'bg-black/20 border-white/40'
+                : 'bg-slate-100/80 border-blue-500'
+                }`}>
+                <span className={`text-[11px] font-black uppercase tracking-wider ${isAssistant ? 'text-white/90' : 'text-blue-600'
+                    }`}>
+                    {senderName}
+                </span>
+                <p className={`text-[12px] line-clamp-2 leading-snug italic opacity-80 ${isAssistant ? 'text-white' : 'text-slate-600'
+                    }`}>
+                    {formatWhatsAppText(quoted.content)}
+                </p>
+            </div>
+        );
+    };
 
     const renderMediaOrText = () => {
+        // Renderizamos a citação no topo de qualquer tipo de mensagem
+        const quotedView = renderQuotedMsg();
+
         switch (type) {
-            // --- NOVO CASE EXCLUSIVO PARA ÁUDIO ---
             case 'audio':
                 return (
-                    <AudioPlayer
-                        atendimentoId={atendimentoId}
-                        mediaId={msg.media_id}
-                        transcription={displayText}
-                    />
+                    <div className="flex flex-col">
+                        {quotedView}
+                        <AudioPlayer
+                            atendimentoId={atendimentoId}
+                            mediaId={msg.media_id}
+                            transcription={displayText}
+                            isAssistant={isAssistant}
+                        />
+                    </div>
                 );
 
-            // --- NOVO CASE EXCLUSIVO PARA IMAGEM ---
             case 'image':
                 return (
-                    <ImageDisplayer
-                        atendimentoId={atendimentoId}
-                        mediaId={msg.media_id}
-                        caption={displayText}
-                    />
+                    <div className="flex flex-col">
+                        {quotedView}
+                        <ImageDisplayer
+                            atendimentoId={atendimentoId}
+                            mediaId={msg.media_id}
+                            caption={msg.caption || null}
+                        />
+                    </div>
                 );
 
-            // --- NOVO CASE EXCLUSIVO PARA VÍDEO ---
             case 'video':
                 return (
-                    <VideoDisplayer
-                        atendimentoId={atendimentoId}
-                        mediaId={msg.media_id}
-                        caption={displayText}
-                    />
+                    <div className="flex flex-col">
+                        {quotedView}
+                        <VideoDisplayer
+                            atendimentoId={atendimentoId}
+                            mediaId={msg.media_id}
+                            caption={msg.caption || null}
+                        />
+                    </div>
                 );
 
-            case 'document': // O case de vídeo foi separado
+            case 'document':
                 return (
-                    <div className="space-y-2">
-                        {/* Card do Documento */}
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg max-w-sm hover:bg-gray-100 transition-colors">
-                            <div className="bg-blue-100 p-2 rounded-full text-brand-primary flex-shrink-0">
-                                <FileText size={20} />
+                    <div className="flex flex-col space-y-3">
+                        {quotedView}
+                        <div className={`flex items-center gap-4 p-4 rounded-2xl transition-all border ${isAssistant
+                            ? 'bg-white/10 border-white/20 hover:bg-white/20'
+                            : 'bg-slate-50 border-slate-100 hover:bg-white hover:shadow-lg hover:shadow-slate-200/50'
+                            }`}>
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isAssistant ? 'bg-white/20 text-white' : 'bg-blue-600 text-white shadow-lg shadow-blue-100'
+                                }`}>
+                                <FileText size={24} />
                             </div>
-                            <div className="flex-1 min-w-0 overflow-hidden">
-                                <p className="text-sm font-medium text-gray-900 truncate" title={msg.filename}>
-                                    {msg.filename || 'Documento'}
+                            <div className="flex-1 min-w-0">
+                                <p className={`text-[13px] font-black executive-title truncate mb-0.5 ${isAssistant ? 'text-white' : 'text-slate-900'}`} title={msg.filename}>
+                                    {msg.filename || 'Documento Central'}
                                 </p>
-                                <p className="text-xs text-gray-500 uppercase">
+                                <p className={`text-[10px] font-bold uppercase tracking-widest ${isAssistant ? 'text-white/60' : 'text-slate-400'}`}>
                                     {msg.mime_type ? msg.mime_type.split('/')[1] : 'ARQUIVO'}
                                 </p>
                             </div>
-                            
+
                             {hasMedia && (
                                 <button
                                     type="button"
                                     onClick={() => onDownloadDocument(msg.media_id, msg.filename)}
                                     disabled={isDownloading}
-                                    className={`p-2 rounded-full text-gray-500 hover:text-brand-primary hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-brand-primary ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    title="Baixar Documento"
+                                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isAssistant
+                                        ? 'bg-white/20 text-white hover:bg-white'
+                                        : 'bg-white text-slate-400 hover:text-blue-600 shadow-sm border border-slate-100'
+                                        } ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
-                                    {isDownloading ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
+                                    {isDownloading ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
                                 </button>
                             )}
                         </div>
-                        {displayText && (
-                            <p className="whitespace-pre-wrap text-sm border-t border-gray-200 pt-2 mt-2">
-                                {displayText}
-                            </p>
-                        )}
                     </div>
                 );
 
             case 'sending':
                 return (
-                    <div className="flex items-center gap-2 italic text-gray-500">
-                        <Loader2 size={16} className="animate-spin" />
-                        {/* Mostra preview se for imagem */}
-                        {msg.localUrl && msg.filename?.match(/\.(jpeg|jpg|png|webp)$/i) && (
-                            <img src={msg.localUrl} alt="preview" className="w-10 h-10 object-cover rounded mr-1" />
-                        )}
-                        {/* Preview para audio local */}
-                        {msg.localUrl && type === 'audio' && (
-                            <audio src={msg.localUrl} controls className="h-8 w-40" />
-                        )}
-                        {/* --- INÍCIO DA ADIÇÃO (VÍDEO PREVIEW) --- */}
-                        {msg.localUrl && type === 'video' && (
-                            <video src={msg.localUrl} controls muted className="h-20 w-32 rounded" />
-                        )}
-                        {/* --- FIM DA ADIÇÃO --- */}
-                        <span>{msg.content || `Enviando ${msg.filename || 'mídia'}...`}</span>
+                    <div className="flex flex-col">
+                        {quotedView}
+                        <div className="flex items-center gap-3 py-2">
+                            <Loader2 size={16} className="animate-spin text-white/60" />
+                            <span className="text-[12px] font-bold uppercase tracking-widest text-white/50">Enviando...</span>
+                        </div>
                     </div>
                 );
 
-            // O 'case: error' foi removido daqui pois agora é tratado no início do componente
-
             case 'text':
-            default: // Inclui 'unknown' e outros tipos não tratados
-                // Se tiver 'content', mostra. Se não, indica tipo desconhecido se houver media_id
-                const defaultText = msg.content || (msg.media_id ? `[Mídia tipo '${type}' não suportada]` : '');
+            default:
+                const defaultText = displayText || (msg.media_id ? `[Mídia não suportada: ${type}]` : '');
                 return (
-                    <p className="whitespace-pre-wrap text-sm">{defaultText || '[Mensagem vazia]'}</p>
+                    <div className="flex flex-col">
+                        {quotedView}
+                        <p className={`text-[15px] leading-relaxed font-medium ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
+                            {formatWhatsAppText(defaultText) || '[Vazio]'}
+                        </p>
+                    </div>
                 );
         }
     };
@@ -168,13 +193,15 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
     return (
         <div className="flex flex-col w-full">
             {renderMediaOrText()}
-            
-            {/* Renderiza os botões dos templates, se existirem */}
+
             {msg.buttons && msg.buttons.length > 0 && (
-                <div className="mt-2 -mx-3 -mb-2 flex flex-col border-t border-black/10">
+                <div className={`mt-5 flex flex-col gap-2`}>
                     {msg.buttons.map((btnText, idx) => (
-                        <div key={idx} className="py-2.5 px-2 text-center text-[#00a884] text-sm font-medium border-b border-black/10 last:border-b-0 flex items-center justify-center gap-2 cursor-default">
-                            <span className="truncate">{btnText}</span>
+                        <div key={idx} className={`w-full p-4 text-[11px] font-black uppercase tracking-widest text-center rounded-2xl border transition-all cursor-pointer ${isAssistant
+                            ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                            : 'bg-slate-50 border-slate-100 text-slate-600 hover:bg-white hover:shadow-lg hover:text-blue-600'
+                            }`}>
+                            {btnText}
                         </div>
                     ))}
                 </div>

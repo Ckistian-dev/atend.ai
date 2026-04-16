@@ -49,6 +49,12 @@ class Config(Base):
     is_calendar_active: Mapped[bool] = mapped_column(default=False, nullable=False, server_default="false")
     workflow_json: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Configuração visual do fluxo de conversa")
 
+    # Novas configurações de IA
+    ai_model: Mapped[str] = mapped_column(String(100), default="gemini-2.5-flash", server_default="gemini-2.5-flash")
+    temperature: Mapped[float] = mapped_column(default=0.5, server_default="0.5")
+    top_p: Mapped[float] = mapped_column(default=0.95, server_default="0.95")
+    top_k: Mapped[int] = mapped_column(default=40, server_default="40")
+
     owner: Mapped["User"] = relationship(back_populates="configs", foreign_keys=[user_id])
     vectors: Mapped[List["KnowledgeVector"]] = relationship(back_populates="config", cascade="all, delete-orphan")
 

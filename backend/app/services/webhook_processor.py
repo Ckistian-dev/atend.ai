@@ -66,12 +66,21 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
         caption = ""
         media_id_from_payload = None
 
-        # --- Lógica de Resposta (Mantida igual) ---
+        # --- Lógica de Resposta ---
         context_data = message_data.get('context')
+        quoted_msg_structured = None
         if context_data and context_data.get('id'):
             replied_msg_id = context_data['id']
             original_msg = next((msg for msg in current_conversa_list_for_context if msg.get('id') == replied_msg_id), None)
             if original_msg:
+                # Agora salvamos de forma estruturada para o frontend
+                quoted_msg_structured = {
+                    "content": original_msg.get('content', ''),
+                    "role": original_msg.get('role', ''),
+                    "id": original_msg.get('id', '')
+                }
+                # Mantemos o prefixo por curtíssimo prazo ou fallback, 
+                # mas o ideal é que o frontend use o quoted_msg
                 quote = (original_msg.get('content', '')[:100] + '...')
                 reply_prefix = f"[Mensagem Referenciada]: \"{quote}\"\n"
 
@@ -211,10 +220,12 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
             # (O código original de salvamento estava correto, mantive a lógica resumida aqui)
             formatted_msg = schemas.FormattedMessage(
                 id=msg_id_wamid, role='user', content=formatted_msg_content,
+                caption=caption if caption else None,
                 timestamp=timestamp_s, status='unread',
                 type=msg_type if msg_type in ['image', 'audio', 'document', 'video', 'location'] else 'text',
                 media_id=media_id_from_payload, mime_type=mime_type_original,
-                filename=message_data.get('document', {}).get('filename')
+                filename=message_data.get('document', {}).get('filename'),
+                quoted_msg=quoted_msg_structured
             )
             
             async with SessionLocal() as db_save:

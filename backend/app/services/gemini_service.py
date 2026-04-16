@@ -38,16 +38,35 @@ class GeminiService:
             raise ValueError("A lista de GOOGLE_API_KEYS não pode estar vazia.")
             
         self.current_key_index = 0
-        self.generation_config = {
-            "temperature": 0.5,        # Aumentei: Deixa a fala menos "dura" e mais coloquial.
-            "top_p": 0.95,             # Ajuste fino: Mantém a coerência mas corta alucinações absurdas.
-            "top_k": 40,               # O PULO DO GATO: De 1 para 40. Permite variar o vocabulário.
-            "frequency_penalty": 0.6,  # CRÍTICO: Penaliza palavras que ele já falou muito (evita o "Ótimo!" repetido).
-            "presence_penalty": 0.4    # Ajuda a não ficar repetindo o que o usuário acabou de dizer.
+        # TABELA DE PREÇOS (NORMALIZADA PARA GEMINI 2.5 FLASH)
+        # Referência: Gemini 2.5 Flash (Input $0.30, Output $2.50 por 1M tokens)
+        # Os multiplicadores transformam tokens em "Unidades de Custo Flash (Input)"
+        self.model_pricing = {
+            "gemini-2.5-flash": {
+                "input": 1.0,
+                "output": 2.50 / 0.30  # ~8.33
+            },
+            "gemini-2.5-flash-lite": {
+                "input": 0.10 / 0.30,  # ~0.33
+                "output": 0.40 / 0.30   # ~1.33
+            },
+            "gemini-2.5-pro": {
+                "input": 1.25 / 0.30,  # ~4.17
+                "output": 10.00 / 0.30  # ~33.33
+            },
+            "gemini-3.1-pro-preview": {
+                "input": 2.00 / 0.30,  # ~6.67
+                "output": 12.00 / 0.30  # ~40.0
+            },
+            "gemini-3.1-flash-lite-preview": {
+                "input": 0.25 / 0.30,  # ~0.83
+                "output": 1.50 / 0.30   # ~5.0
+            },
+            "gemini-3-flash-preview": {
+                "input": 0.50 / 0.30,  # ~1.67
+                "output": 3.00 / 0.30   # ~10.0
+            }
         }
-        # NOVO: Multiplicador para o custo de tokens de output, para normalizar pelo custo de input.
-        # Baseado no custo informado: Input $0,30, Output $2,50 por milhão de tokens.
-        self.output_token_multiplier = 2.5 / 0.3
         
         self._initialize_model()
 
@@ -93,18 +112,23 @@ class GeminiService:
         user: models.User, 
         is_media: bool = False,
         system_instruction: Optional[str] = None,
-        atendimento_id: Optional[int] = None
-    ):  # Removido o tipo de retorno estrito para evitar erros de importação cruzada por enquanto
+        atendimento_id: Optional[int] = None,
+        persona: Optional[models.Config] = None
+    ):
         """
         Executa a chamada para a API Gemini (Novo SDK), deduz token e rotaciona chaves.
         """
         
-        # Configuração do novo SDK
-        # Adaptamos o dicionário antigo para o novo objeto de configuração
+        # Busca configurações da persona ou usa defaults
+        model_name = persona.ai_model if persona and persona.ai_model else "gemini-2.5-flash"
+        temp = persona.temperature if persona and persona.temperature is not None else 0.5
+        top_p = persona.top_p if persona and persona.top_p is not None else 0.95
+        top_k = persona.top_k if persona and persona.top_k is not None else 40
+
         config_args = {
-            "temperature": self.generation_config.get("temperature", 0.5),
-            "top_p": self.generation_config.get("top_p", 1),
-            "top_k": self.generation_config.get("top_k", 1),
+            "temperature": temp,
+            "top_p": top_p,
+            "top_k": top_k,
         }
 
         if not is_media and isinstance(prompt, str):
@@ -157,7 +181,7 @@ class GeminiService:
                     # --- MUDANÇA PRINCIPAL: Chamada Assíncrona Nativa (.aio) ---
                     # Não precisa mais de run_in_executor
                     response = await self.client.aio.models.generate_content(
-                        model='gemini-2.5-flash', # Modelo corrigido para versão estável e mais recente
+                        model=model_name,
                         contents=prompt,
                         config=gen_config
                     )
@@ -183,16 +207,19 @@ class GeminiService:
                         input_tokens = usage_metadata.prompt_token_count
                         output_tokens = usage_metadata.candidates_token_count
                         
-                        # Calcula o custo equivalente em "tokens de input"
-                        equivalent_total_tokens = input_tokens + (output_tokens * self.output_token_multiplier)
+                        # Recupera multiplicadores para o modelo usado
+                        pricing = self.model_pricing.get(model_name, self.model_pricing["gemini-2.5-flash"])
+                        
+                        # Calcula o custo equivalente em "tokens de input do Gemini 2.5 Flash"
+                        equivalent_total_tokens = (input_tokens * pricing["input"]) + (output_tokens * pricing["output"])
                         
                         # Arredonda para o inteiro mais próximo para dedução
                         tokens_to_deduct = round(equivalent_total_tokens)
 
                         logger.info(
-                            f"Uso de tokens (User {user.id}): "
+                            f"Uso de tokens (User {user.id}, Model {model_name}): "
                             f"Input={input_tokens}, Output={output_tokens}. "
-                            f"Custo Equivalente (x{self.output_token_multiplier:.2f}) = {tokens_to_deduct} tokens."
+                            f"Custo Equivalente = {tokens_to_deduct} tokens."
                         )
                     else:
                         logger.warning(f"Não foi possível obter metadados de uso de tokens para o user {user.id}.")
@@ -284,11 +311,11 @@ class GeminiService:
                 f"## HISTÓRICO RECENTE\n{history_str}\n\n"
                 "## INSTRUÇÃO DE ANÁLISE\n"
                 "Analise a mídia fornecida (imagem, documento ou vídeo) e descreva seu conteúdo de forma abrangente e detalhada. O objetivo é fornecer um resumo completo que capture todos os aspectos importantes para que a IA de conversação possa entender o contexto sem precisar 'ver' a mídia.\n\n"
-                "1. **Descrição Geral:** Comece com uma descrição geral do que a mídia mostra (ex: 'Foto de uma piscina em um jardim', 'Documento de orçamento', 'Vídeo curto mostrando o funcionamento de um produto').\n"
-                "2. **Detalhes Visuais (para imagens/vídeos):** Descreva os elementos principais, cores, ambiente, pessoas, objetos, texto visível, e qualquer detalhe que pareça relevante para a conversa.\n"
-                "3. **Extração de Dados (se aplicável):** Se a mídia contiver dados estruturados (como tabelas, listas, preços, nomes, endereços, datas, valores em um comprovante), extraia-os de forma clara.\n"
-                "4. **Contexto e Intenção:** Com base no histórico da conversa, tente inferir a intenção do usuário ao enviar a mídia. O que ele quer mostrar ou perguntar?\n"
-                "5. **Formato da Resposta:** Retorne um texto claro e bem estruturado. Use bullet points (*) para listas, se ajudar na clareza. Não converse, apenas forneça a análise."
+                "1. *Descrição Geral:* Comece com uma descrição geral do que a mídia mostra (ex: 'Foto de uma piscina em um jardim', 'Documento de orçamento', 'Vídeo curto mostrando o funcionamento de um produto').\n"
+                "2. *Detalhes Visuais (para imagens/vídeos):* Descreva os elementos principais, cores, ambiente, pessoas, objetos, texto visível, e qualquer detalhe que pareça relevante para a conversa.\n"
+                "3. *Extração de Dados (se aplicável):* Se a mídia contiver dados estruturados (como tabelas, listas, preços, nomes, endereços, datas, valores em um comprovante), extraia-os de forma clara.\n"
+                "4. *Contexto e Intenção:* Com base no histórico da conversa, tente inferir a intenção do usuário ao enviar a mídia. O que ele quer mostrar ou perguntar?\n"
+                "5. *Formato da Resposta:* Retorne um texto claro e bem estruturado. Use bullet points (*) para listas, se ajudar na clareza. Não converse, apenas forneça a análise."
             )
             
             # Ordem: Prompt de texto primeiro, Mídia depois (ou vice-versa, Gemini entende ambos)
@@ -298,7 +325,7 @@ class GeminiService:
         try:
             # Passamos a lista (texto + mídia) para o método que criamos anteriormente
             # O _generate_with_retry já está preparado para receber 'prompt' como string OU lista
-            response = await self._generate_with_retry(prompt_contents, db, user, is_media=True, system_instruction=system_instruction, atendimento_id=atendimento_id)
+            response = await self._generate_with_retry(prompt_contents, db, user, is_media=True, system_instruction=system_instruction, atendimento_id=atendimento_id, persona=persona)
             
             transcription = response.text.strip()
             logger.info(f"Transcrição/Análise gerada: '{transcription[:100]}...'")
@@ -618,14 +645,37 @@ class GeminiService:
                         except Exception as cal_err:
                             logger.error(f"Erro ao buscar agenda para prompt (User {user.id}): {cal_err}")
 
-                    calendar_context = f"\n# DISPONIBILIDADE DE AGENDA (CONFIGURAÇÃO)\nOs horários de trabalho são: {json.dumps(persona.available_hours, ensure_ascii=False)}.\n"
+                    # Formata horários de trabalho de forma simples
+                    hours_summary = []
+                    if persona.available_hours:
+                        for day, intervals in persona.available_hours.items():
+                            if intervals:
+                                intervals_str = ", ".join([f"{i.get('start')}-{i.get('end')}" for i in intervals])
+                                hours_summary.append(f"{day}: {intervals_str}")
+                    
+                    hours_text = " | ".join(hours_summary) if hours_summary else "Não configurado"
+
+                    calendar_context = f"\n# DISPONIBILIDADE DE AGENDA\nHorários de Trabalho|{hours_text}\n"
                     calendar_context += booked_events_str
-                    calendar_context += "Se o cliente demonstrar interesse em agendar, verifique a disponibilidade real (horários de trabalho vs ocupados) e proponha um horário livre. Se confirmado, use a ação 'agendar_reuniao' no JSON.\n"
+                    calendar_context += "Se o cliente demonstrar interesse em agendar, verifique a disponibilidade real (horários de trabalho vs ocupados) e proponha um horário livre. Se confirmado, use a ação 'agendar_reuniao' no JSON." + "\n"
 
                 # --- Contexto do Fluxo Visual ---
                 workflow_context = self._format_workflow_to_markdown(persona.workflow_json)
 
                 # 2. Montagem do Prompt (Texto Estruturado)
+                # --- Partes condicionais de agendamento ---
+                _sched_rule = (
+                    "9. *Agendamento:* Se o cliente confirmar um horário, VOCÊ DEVE PEDIR O E-MAIL DELE para enviar o convite. "
+                    "Somente quando tiver o horário E o e-mail, retorne 'agendar_reuniao' em `acao_agenda`, a data/hora ISO em `data_agendamento` e o e-mail em `email_cliente`.\n\n"
+                    if persona.is_calendar_active else ""
+                )
+                _sched_json = (
+                    '  "email_cliente": "Email extraído or null",\n'
+                    '  "acao_agenda": "agendar_reuniao" | null,\n'
+                    '  "data_agendamento": "YYYY-MM-DDTHH:MM:SS" | null,\n'
+                    if persona.is_calendar_active else ""
+                )
+
                 prompt_text = (
                     f"# CONTEXTO (RAG)\n{rag_context}\n\n"
                     f"# DATA E HORA ATUAL\n{datetime_context}\n"
@@ -634,52 +684,54 @@ class GeminiService:
                     f"# DADOS DO CLIENTE\n"
                     f"Nome: {whatsapp.nome_contato or 'Não identificado'}\n"
                     f"{calendar_context}"
-                    f"Tags Atuais: {json.dumps(current_tags_names, ensure_ascii=False)}\n"
-                    f"Status Atendente: {'online' if user.atendente_online else 'offline'}\n\n"
+                    f"Tags Atuais|{', '.join(current_tags_names) if current_tags_names else 'Nenhuma'}\n"
+                    f"Status Atendente|{'online' if user.atendente_online else 'offline'}\n\n"
                     f"# TAGS DISPONÍVEIS\n"
-                    f"{json.dumps(available_tags_names, ensure_ascii=False)}\n\n"
+                    f"{' | '.join(available_tags_names) if available_tags_names else 'Nenhuma'}\n\n"
                     f"# DIRETRIZES DE HUMANIZAÇÃO (CRÍTICO)\n"
-                    f"- **Zero 'Corporatiquês':** PROIBIDO começar frases com 'Ótimo', 'Excelente', 'Perfeito', 'Entendido', 'Compreendo'. Isso denuncia que você é um robô. Vá direto ao ponto.\n"
-                    f"- **NÃO SE REPITA (REGRA CRÍTICA):** Analise o histórico. É PROIBIDO repetir informações, perguntas, ações ou parafrasear o que o usuário disse. Se você já deu uma informação, não a dê novamente. Se o cliente aponta um erro seu, corrija o erro diretamente, sem reiniciar o fluxo de recomendação.\n"
-                    f"- **Continuidade Real:** Trate o histórico como uma conversa contínua de WhatsApp. Se já houver mensagens anteriores, JAMAIS use 'Olá' ou apresentações novamente. Aja como se tivesse respondido há 1 minuto.\n"
-                    f"- **Zero Saudações Repetidas:** Se já houve um cumprimento no histórico recente, NÃO inicie a resposta com 'Olá', 'Oi', 'Bom dia', etc. Continue a conversa diretamente.\n"
-                    f"- **Conexão Lógica:** Use conectivos de conversa real ('Então...', 'Nesse caso...', 'Ah, sobre isso...'). Evite listas com bullets se puder responder em uma frase corrida.\n"
-                    f"- **Espelhamento de Tom:** Se a mensagem do cliente for curta (ex: 'qual o preço?'), seja direto ('Custa R$ 50,00'). Se ele for detalhista, explique mais. Não escreva um 'textão' para quem perguntou 'sim ou não'.\n"
-                    f"- **Formatação de Chat:** Evite listas com marcadores (bullets) ou negrito excessivo a menos que seja estritamente necessário (como uma lista de itens). No WhatsApp, pessoas usam parágrafos curtos, não tópicos de Powerpoint.\n"
-                    f"- **Banalidade Controlada:** Em vez de 'Sinto muito pelo inconveniente causado', use algo mais leve como 'Poxa, entendo o problema' ou 'Que chato isso, vamos resolver'. Evite desculpas exageradas e submissas.\n"
-                    f"- **Proibido Repetir Nomes:** Use o nome do cliente APENAS na primeira saudação do dia. Nas mensagens seguintes, JAMAIS comece com 'Ah, {whatsapp.nome_contato}', 'Olá {whatsapp.nome_contato}' ou similares. Fale direto.\n"
-                    f"- **Zero Interjeições Artificiais:** Não comece frases com 'Ah, entendo!', 'Compreendo perfeitamente', 'Excelente pergunta'. Isso soa falso. Vá direto para a resposta técnica/comercial.\n"
-                    f"- **Parágrafos Únicos:** Tente responder tudo em UM ou TRES parágrafos no máximo. Evite quebrar a resposta em várias linhas curtas para não gerar spam de notificações.\n\n"
+                    f"- *Zero 'Corporatiquês':* PROIBIDO começar frases com 'Ótimo', 'Excelente', 'Perfeito', 'Entendido', 'Compreendo'. Isso denuncia que você é um robô. Vá direto ao ponto.\n"
+                    f"- *NÃO SE REPITA (REGRA CRÍTICA):* Analise o histórico. É PROIBIDO repetir informações, perguntas, ações ou parafrasear o que o usuário disse. Se você já deu uma informação, não a dê novamente.\n"
+                    f"- *Continuidade Real:* Trate o histórico como uma conversa contínua de WhatsApp. Se já houver mensagens anteriores, JAMAIS use 'Olá' ou apresentações novamente. Aja como se tivesse respondido há 1 minuto.\n"
+                    f"- *Zero Saudações Repetidas:* Se já houve um cumprimento no histórico recente, NÃO inicie a resposta com 'Olá', 'Oi', 'Bom dia', etc. Continue a conversa diretamente.\n"
+                    f"- *Conexão Lógica:* Use conectivos de conversa real ('Então...', 'Nesse caso...', 'Ah, sobre isso...', 'Olha...', 'Bom...').\n"
+                    f"- *Espelhamento de Estilo (Mirroring):* Se o cliente usa gírias ou abreviações (vc, tbm, blz), você pode usar TAMBÉM, de forma leve, para criar conexão. Se ele for formal, seja educado mas não robótico.\n"
+                    f"- *Variação de Resposta:* Evite que todas as frases comecem da mesma forma. Varie a estrutura das sentenças.\n"
+                    f"- *Empatia e Tom:* Se o cliente parecer frustrado, use palavras de acolhimento natural ('Poxa, que situação...', 'Vixi, vamos resolver isso agora').\n"
+                    f"- *Formatação WhatsApp (ESTRITO):* Use APENAS a syntax do WhatsApp: *negrito* para destaques importantes, _itálico_ para ênfase e ~tachado~ se necessário. JAMAIS use ** para negrito ou para qualquer outra finalidade.\n"
+                    f"- *Parágrafos Curtos:* No WhatsApp, pessoas usam parágrafos curtíssimos. No máximo 2-3 linhas por parágrafo. Evite listas com marcadores (bullets) ou negrito excessivo.\n"
+                    f"- *Banalidade Controlada:* Use uma linguagem que uma pessoa real usaria. Menos 'Sinto muito pelo transtorno' e mais 'Putz, que chato. Deixa eu ver o que consigo fazer'.\n"
+                    f"- *Proibido Repetir Nomes:* Use o nome do cliente APENAS se fizer sentido na frase. JAMAIS comece toda resposta com o nome dele.\n"
+                    f"- *Interação com Mídia:* Se o usuário mandar uma imagem ou áudio, comente algo sobre o conteúdo de forma casual, como uma pessoa faria ('Vi o arquivo aqui...', 'Pelo áudio que você mandou, entendi que...').\n"
+                    f"- *Parágrafos Únicos ou Duplos:* Tente responder tudo em UM ou DOIS parágrafos no máximo. Evite quebrar a resposta em várias mensagens curtas.\n\n"
                     f"# TAREFA\n"
                     f"Responda ao último 'User' agindo estritamente como a persona definida.\n\n"
                     f"# REGRAS DE EXECUÇÃO\n"
-                    f"1. **Fonte de Verdade:** Use prioritariamente o CONTEXTO (RAG). Se não encontrar, use conhecimento geral sensato, mas evite alucinar dados técnicos.\n"
-                    f"2. **Arquivos:** Se o cliente pedir mídia, VERIFIQUE a lista '# DRIVE'. Se o arquivo estiver lá, use o ID EXATO. Se NÃO estiver, NÃO invente um ID e NÃO envie o arquivo. **PROIBIDO** usar IDs fictícios ou placeholders.\n"
-                    f"3. **Encaminhamento:** Tente resolver ao máximo. Insista na resolução antes de sugerir um humano. Antes de encaminhar, SEMPRE pergunte se o cliente deseja falar com um atendente. Só mude `nova_situacao` para 'Atendente Chamado' após a confirmação explícita do cliente.\n"
-                    f"4. **Comunicação:** Seja direto e use *negrito* para destaques. A regra de NÃO REPETIR é a mais importante de todas.\n"
+                    f"1. *Fonte de Verdade:* Use prioritariamente o CONTEXTO (RAG). Se não encontrar, use conhecimento geral sensato, mas evite alucinar dados técnicos.\n"
+                    f"2. *Arquivos:* Se o cliente pedir mídia, VERIFIQUE a lista '# DRIVE'. Se o arquivo estiver lá, use o ID EXATO. Se NÃO estiver, NÃO invente um ID e NÃO envie o arquivo. *PROIBIDO* usar IDs fictícios ou placeholders.\n"
+                    f"3. *Encaminhamento:* Tente resolver ao máximo. Insista na resolução antes de sugerir um humano. Antes de encaminhar, SEMPRE pergunte se o cliente deseja falar com um atendente. Só mude `nova_situacao` para 'Atendente Chamado' após a confirmação explícita do cliente.\n"
+                    f"4. *Comunicação:* Seja direto e use *negrito* para destaques (syntax do WhatsApp). A regra de NÃO REPETIR é a mais importante de todas.\n"
                     f"5. **Fluxo:** O sistema envia o texto PRIMEIRO e os arquivos DEPOIS. Considere isso na sua resposta.\n"
                     f"6. **Tags:** Analise a conversa e veja se alguma tag disponível se aplica. Retorne apenas o nome das tags em `tags_sugeridas` para adicionar (ou null).\n"
-                    f"7. **Capacidade de Visão:** Você TEM a capacidade de ver e analisar imagens, vídeos, áudios e documentos (PDFs) enviados pelo usuário. Se o histórico mostrar '[Imagem/Doc Transcrito]', trate como se tivesse visto o arquivo original.\n"
-                    f"8. **Solicitar Nome:** Se o nome do cliente estiver 'Não identificado', pergunte o nome dele logo no início da interação.\n\n"
-                    f"9. **Agendamento:** Se o cliente confirmar um horário, VOCÊ DEVE PEDIR O E-MAIL DELE para enviar o convite. Somente quando tiver o horário E o e-mail, retorne 'agendar_reuniao' em `acao_agenda`, a data/hora ISO em `data_agendamento` e o e-mail em `email_cliente`.\n\n"
+                    f"7. *Capacidade de Visão:* Você TEM a capacidade de ver e analisar imagens, vídeos, áudios e documentos (PDFs) enviados pelo usuário. Se o histórico mostrar '[Imagem/Doc Transcrito]', trate como se tivesse visto o arquivo original.\n"
+                    f"8. *Solicitar Nome:* Se o nome do cliente estiver 'Não identificado', pergunte o nome dele logo no início da interação.\n\n"
+                    f"{_sched_rule}"
                     f"# FORMATO DE RESPOSTA (JSON OBRIGATÓRIO)\n"
                     f"Retorne APENAS um JSON válido, sem blocos de código (```json).\n"
+                    f"IMPORTANTE: Omita completamente qualquer campo cujo valor seria null. Não inclua a chave no JSON se o valor for nulo.\n"
                     f"{{\n"
-                    f'  "mensagem_para_enviar": "Texto da resposta aqui (ou null)",\n'
+                    f'  "mensagem_para_enviar": "Texto da resposta aqui",\n'
                     f'  "nova_situacao": "Aguardando Resposta" | "Atendente Chamado" | "Concluído",\n'
-                    f'  "nome_contato": "Nome extraído ou null",\n'
-                    f'  "email_cliente": "Email extraído ou null",\n'
-                    f'  "tags_sugeridas": ["Tag1", "Tag2"] | null,\n'
-                    f'  "acao_agenda": "agendar_reuniao" | null,\n'
-                    f'  "data_agendamento": "YYYY-MM-DDTHH:MM:SS" | null,\n'
+                    f'  "nome_contato": "Nome extraído (omitir se não identificado)",\n'
+                    f"{_sched_json}"
+                    f'  "tags_sugeridas": ["Tag1", "Tag2"] (omitir se nenhuma se aplicar),\n'
                     f'  "resumo": "Resumo curto da conversa inteira para CRM",\n'
                     f'  "arquivos_anexos": [\n'
                     f'    {{ "nome_exato": "nome.pdf", "id_arquivo": "COPIAR_ID_DA_TABELA_DRIVE", "tipo_midia": "image" }}\n'
-                    f'  ]\n'
+                    f'  ] (omitir se nenhum arquivo for enviado)\n'
                     f"}}"
                 )
                 
-                response = await self._generate_with_retry(prompt_text, db, user, system_instruction=system_instruction, atendimento_id=whatsapp.id)
+                response = await self._generate_with_retry(prompt_text, db, user, system_instruction=system_instruction, atendimento_id=whatsapp.id, persona=persona)
                 last_response = response
                 
                 return self._parse_json_response(response.text)
@@ -724,15 +776,15 @@ class GeminiService:
                 f"## DADOS\nNome Contato: {whatsapp.nome_contato}\n\n"
                 f"## HISTÓRICO RECENTE\n{history_str}\n\n"
                 f"## REGRAS\n"
-                f"1. DECISÃO DE ENVIO: A única condição para NÃO enviar mensagem é se o cliente pediu explicitamente para parar ou não ser mais contatado. Em todos os outros casos, você DEVE enviar o follow-up.\n"
-                f"2. Se decidir enviar: Use a mensagem da configuração como base, adaptando levemente para naturalidade. Seja curto, amigável e não insistente.\n"
+                f"1. *DECISÃO DE ENVIO:* A única condição para NÃO enviar mensagem é se o cliente pediu explicitamente para parar ou não ser mais contatado. Em todos os outros casos, você DEVE enviar o follow-up.\n"
+                f"2. Se decidir enviar: Use a mensagem da configuração como base, adaptando levemente para naturalidade. Utilize a formatação do WhatsApp (*negrito* para destaque).\n"
                 f"3. Não cumprimente novamente se já houver cumprimento no histórico.\n"
                 f"4. Retorne APENAS um JSON válido. Exemplo de formatos:\n"
                 f"   - Para enviar: {{ \"action\": \"send\", \"mensagem_para_enviar\": \"texto...\" }}\n"
                 f"   - Para não enviar: {{ \"action\": \"skip\", \"mensagem_para_enviar\": null }}\n"
             )
             
-            response = await self._generate_with_retry(prompt_text, db, user, atendimento_id=whatsapp.id)
+            response = await self._generate_with_retry(prompt_text, db, user, atendimento_id=whatsapp.id, persona=whatsapp.active_persona)
             
             return self._parse_json_response(response.text)
 
@@ -786,8 +838,8 @@ class GeminiService:
         question: str,
         user: models.User,
         atendimentos: List[models.Atendimento], # Lista de atendimentos do período
-        persona: Optional[models.Config],       # A persona padrão
         db: AsyncSession,
+        model_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Usa a IA para analisar dados do sistema com base em uma pergunta do usuário.
@@ -795,12 +847,17 @@ class GeminiService:
         """
         logger.info(f"Iniciando análise de dados para user_id={user.id} com a pergunta: '{question[:100]}...'")
 
-        # 1. System Instruction
+        # 1. System Instruction (Refinada para Analista Sênior)
         system_instruction = (
-            "Você é um analista de dados sênior especialista em atendimento ao cliente.\n"
-            "Sua tarefa é analisar os dados fornecidos e responder à pergunta do usuário.\n"
-            "Sua resposta DEVE ser estritamente um objeto JSON válido, sem markdown de código.\n"
-            "Siga a estrutura sugerida para organizar sua análise."
+            "Você é um Analista de Dados Sênior e Estrategista de Operações de Atendimento.\n"
+            "Sua missão é extrair insights acionáveis dos dados de atendimento fornecidos.\n\n"
+            "DIRETRIZES DE ANÁLISE:\n"
+            "1. RESPOSTA DIRETA: Comece sempre respondendo objetivamente à pergunta do usuário.\n"
+            "2. EVIDÊNCIAS: Sempre que identificar um padrão ou problema, cite o número de WhatsApp/contato dos atendimentos como exemplo.\n"
+            "3. VISÃO ESTRATÉGICA: Não apenas resuma, mas identifique gargalos de conversão, falhas de processo ou oportunidades de vendas.\n"
+            "4. OBJETIVIDADE: Use uma linguagem executiva, clara e focada em resultados.\n\n"
+            "FORMATO DE SAÍDA:\n"
+            "Sua resposta DEVE ser estritamente um objeto JSON válido, sem blocos de código markdown (```json)."
         )
 
         # 2. Processamento dos dados quantitativos (Estatísticas Gerais)
@@ -809,104 +866,97 @@ class GeminiService:
         for at in atendimentos:
             status_counts[at.status] = status_counts.get(at.status, 0) + 1
         
-        stats_summary = {
-            "total_atendimentos": total,
-            "distribuicao_status": status_counts,
-            "periodo_analisado": "Verificar datas nos filtros"
-        }
-
-        # 3. RAG em Memória para dados qualitativos (Conversas/Observações)
-        # Prepara textos para embedding (Limitado aos 100 mais recentes para performance)
-        docs_for_embedding = []
-        atendimentos_map = {} 
+        stats_table = "Métrica|Valor\n"
+        stats_table += f"Total de Atendimentos|{total}\n"
+        for st, count in status_counts.items():
+            stats_table += f"Status {st}|{count}"
         
-        # Ordena por data de atualização (mais recentes primeiro) se ainda não estiver
-        sorted_atendimentos = sorted(atendimentos, key=lambda x: x.updated_at, reverse=True)[:100]
-
-        for idx, at in enumerate(sorted_atendimentos):
-            conversa_text = ""
+        # 3. Formatação compacta de TODOS os atendimentos (Tabular)
+        # Limitamos a 150 atendimentos por segurança de contexto
+        sorted_atendimentos = sorted(atendimentos, key=lambda x: x.updated_at, reverse=True)[:150]
+        
+        rows = ["WhatsApp|Criado em|Atualizado em|Contato|Status|Tags|Resumo CRM|Histórico (Compacto)"]
+        for at in sorted_atendimentos:
+            conversa_compacta = ""
             try:
                 msgs = json.loads(at.conversa or "[]")
-                # Pega as últimas 5 mensagens para contexto
-                last_msgs = msgs[-5:]
-                conversa_text = " | ".join([f"{m.get('role')}: {m.get('content')}" for m in last_msgs])
+                parts = []
+                for m in msgs:
+                    role = "U" if m.get("role") == "user" else "A"
+                    content = m.get("content", "").replace("\n", " ").replace("|", "/").strip()
+                    parts.append(f"{role}: {content}")
+                conversa_compacta = " / ".join(parts)
             except:
-                conversa_text = "Sem histórico legível."
+                conversa_compacta = "Erro ao ler conversa."
 
-            doc_text = (
-                f"Status: {at.status}. "
-                f"Resumo: {at.resumo or ''}. "
-                f"Conversa recente: {conversa_text}"
-            )
-            docs_for_embedding.append(doc_text)
-            atendimentos_map[idx] = at
+            tags_str = ", ".join([t['name'] for t in at.tags]) if at.tags else "Nenhuma"
+            resumo_limpo = (at.resumo or "Sem resumo").replace("\n", " ").replace("|", "/")
+            
+            created_str = at.created_at.strftime("%H:%M %d/%m/%y") if at.created_at else "N/I"
+            updated_str = at.updated_at.strftime("%H:%M %d/%m/%y") if at.updated_at else "N/I"
+            
+            row = f"{at.whatsapp}|{created_str}|{updated_str}|{at.nome_contato or 'N/I'}|{at.status}|{tags_str}|{resumo_limpo}|{conversa_compacta}"
+            rows.append(row)
 
-        relevant_atendimentos_data = []
-        
-        if docs_for_embedding and question:
-            try:
-                q_embedding = await self.generate_embedding(question)
-                if q_embedding:
-                    doc_embeddings = await self.generate_embeddings_batch(docs_for_embedding)
-                    
-                    scores = []
-                    q_vec = np.array(q_embedding)
-                    norm_q = np.linalg.norm(q_vec)
+        atendimentos_table = "\n".join(rows)
 
-                    for d_vec in doc_embeddings:
-                        if not d_vec:
-                            scores.append(-1)
-                            continue
-                        d_vec_np = np.array(d_vec)
-                        norm_d = np.linalg.norm(d_vec_np)
-                        if norm_q == 0 or norm_d == 0:
-                            scores.append(0)
-                        else:
-                            scores.append(np.dot(q_vec, d_vec_np) / (norm_q * norm_d))
-                    
-                    # Seleciona Top 15 mais relevantes
-                    top_indices = np.argsort(scores)[::-1][:15]
-                    
-                    for idx in top_indices:
-                        if scores[idx] > 0.25: # Threshold de relevância
-                            at = atendimentos_map[idx]
-                            relevant_atendimentos_data.append({
-                                "id": at.id,
-                                "nome": at.nome_contato,
-                                "status": at.status,
-                                "resumo": at.resumo,
-                                "trecho_conversa": docs_for_embedding[idx]
-                            })
-            except Exception as e:
-                logger.error(f"Erro no RAG do Dashboard: {e}")
+        # 4. Montagem Final do Prompt - Sistema Modular de Componentes UI
+        prompt_str = (
+            f"# PERGUNTA DO USUÁRIO\n{question}\n\n"
+            f"# ESTATÍSTICAS GERAIS\n{stats_table}\n\n"
+            f"# ATENDIMENTOS DETALHADOS\n"
+            f"Use as datas 'Criado em' e 'Atualizado em' para identificar lentidões ou padrões de tempo.\n"
+            f"{atendimentos_table}\n\n"
+            f"# INSTRUÇÕES DE FORMATO DE RESPOSTA\n\n"
+            f"Você deve retornar um JSON com DOIS campos obrigatórios: 'resposta_direta' e 'modulos'.\n\n"
+            f"## CAMPO 1: resposta_direta\n"
+            f"Uma frase curta e direta respondendo à pergunta do usuário.\n\n"
+            f"## CAMPO 2: modulos\n"
+            f"Uma LISTA ORDENADA de componentes visuais que compõem o relatório.\n"
+            f"Você decide QUAIS módulos usar e em QUE ORDEM, dependendo do que os dados revelam.\n"
+            f"Use os componentes mais adequados para cada tipo de informação.\n\n"
+            f"### CATÁLOGO DE COMPONENTES DISPONÍVEIS:\n\n"
+            f"**1. hero_stat** - Use para destacar UMA métrica principal de impacto.\n"
+            f'{{"tipo": "hero_stat", "valor": "51", "label": "contatos em março", "descricao": "Frase de contexto curta.", "tendencia": "alta/baixa/neutro"}}\n\n'
+            f"**2. metric_grid** - Use para exibir até 4 KPIs calculados por você em grade.\n"
+            f'{{"tipo": "metric_grid", "titulo": "KPIs do Período", "metricas": [{{"label": "Taxa de Conversão", "valor": "32%", "icone": "percent", "cor": "verde/vermelho/amarelo/azul/roxo"}}, ...]}}\n\n'
+            f"**3. pie_chart** - Use para distribuições proporcionais (ex: motivos de perda, origem dos clientes).\n"
+            f'{{"tipo": "pie_chart", "titulo": "Título do Gráfico", "descricao": "Contexto breve.", "dados": [{{"name": "Categoria", "value": 42}}, ...]}}\n\n'
+            f"**4. bar_chart** - Use para comparações e rankings (ex: top produtos, top tags, equipamentos por demanda).\n"
+            f'{{"tipo": "bar_chart", "titulo": "Título", "descricao": "Contexto.", "eixo_x": "Nome do eixo X", "dados": [{{"name": "Item", "value": 15}}, ...]}}\n\n'
+            f"**5. friction_cards** - Use para listar os principais gargalos/fricções com nível de impacto.\n"
+            f'{{"tipo": "friction_cards", "titulo": "Pontos de Fricção", "itens": [{{"area": "Nome da área", "observacoes": "Explicação detalhada citando números de contato.", "impacto": "Alto/Médio/Baixo", "contatos_exemplo": ["5511999990001", "5511999990002"]}}, ...]}}\n\n'
+            f"**6. insight_cards** - Use para sugestões estratégicas e ações recomendadas.\n"
+            f'{{"tipo": "insight_cards", "titulo": "Insights Estratégicos", "itens": [{{"titulo": "Título da Sugestão", "descricao": "Detalhe acionável.", "prioridade": "alta/media/baixa", "icone": "trending/alert/lightbulb/target/zap"}}, ...]}}\n\n'
+            f"**7. text_section** - Use para diagnósticos narrativos, contextos e próximos passos.\n"
+            f'{{"tipo": "text_section", "titulo": "Título da Seção", "conteudo": "Parágrafo completo com análise narrativa.", "estilo": "diagnostico/estrategia/conclusao"}}\n\n'
+            f"**8. timeline_events** - Use para mostrar eventos ou atendimentos notáveis em ordem cronológica.\n"
+            f'{{"tipo": "timeline_events", "titulo": "Atendimentos em Destaque", "eventos": [{{"whatsapp": "5511999990001", "data": "15/03/26", "titulo": "Título do evento", "descricao": "O que aconteceu.", "tipo": "oportunidade/perda/alerta/sucesso"}}, ...]}}\n\n'
+            f"### REGRAS DE USO:\n"
+            f"1. Inclua SEMPRE ao menos 1 módulo 'hero_stat' ou 'metric_grid' respondendo à pergunta diretamente.\n"
+            f"2. Se os dados permitirem um gráfico relevante, inclua-o. Calcule os valores com base nos atendimentos fornecidos.\n"
+            f"3. Para análises de conversão, inclua 'friction_cards'. Para análises de performance, inclua 'metric_grid'.\n"
+            f"4. Inclua SEMPRE um 'insight_cards' com pelo menos 2 sugestões acionáveis.\n"
+            f"5. Termine com um 'text_section' de estilo 'conclusao'.\n"
+            f"6. Máximo de 6 módulos por resposta para manter a objetividade.\n\n"
+            f"### FORMATO FINAL DO JSON:\n"
+            f'{{\n'
+            f'  "resposta_direta": "Resposta objetiva à pergunta do usuário.",\n'
+            f'  "modulos": [\n'
+            f'    {{"tipo": "hero_stat", ...}},\n'
+            f'    {{"tipo": "pie_chart", ...}},\n'
+            f'    {{"tipo": "friction_cards", ...}},\n'
+            f'    {{"tipo": "insight_cards", ...}},\n'
+            f'    {{"tipo": "text_section", ...}}\n'
+            f'  ]\n'
+            f'}}'
+        )
 
-        persona_context = None
-        if persona:
-            persona_context = {"nome_persona": persona.nome_config, "contexto": persona.prompt}
+        # Se model_name não for passado, tenta pegar do default_persona do user se existir, senão usa o padrão do serviço
+        used_model = model_name or "gemini-2.5-flash"
 
-        analysis_prompt = {
-            "pergunta_usuario": question,
-            "dados_estatisticos": stats_summary,
-            "dados_qualitativos_relevantes": relevant_atendimentos_data,
-            "contexto_adicional": {
-                "resumo_usuario": {"id": user.id, "email": user.email, "tokens_restantes": user.tokens},
-                "contexto_persona_ia": persona_context or "N/A",
-            },
-            "instrucoes_formato": {
-                "analise_de_conversao": {
-                    "diagnostico_geral": "Um parágrafo resumindo a situação.",
-                    "principais_pontos_de_friccao": [
-                        {"area": "Nome da Área (ex: Preços)", "observacoes": "Detalhes observados em texto simples.", "impacto_na_conversao": "Alto/Médio/Baixo"}
-                    ],
-                    "insights_acionaveis": [
-                        {"titulo": "Título da Sugestão", "sugestoes": ["Sugestão 1 em texto simples.", "Sugestão 2 em texto simples."]}
-                    ],
-                    "proximos_passos_recomendados": "Recomendação final."
-                }
-            }
-        }
-
-        prompt_str = json.dumps(analysis_prompt, ensure_ascii=False, indent=2)
+        # Criamos um mock de persona para passar o modelo para o _generate_with_retry
+        mock_persona = models.Config(ai_model=used_model)
 
         response = await self._generate_with_retry(
             prompt_str, 

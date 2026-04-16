@@ -5,9 +5,75 @@ import {
     Plus, Save, Trash2, FileText, ChevronRight, Loader2,
     Link as LinkIcon, Star, CheckCircle, Folder, Copy, Share2, Database, ExternalLink, Bell, RefreshCw, Check,
     Calendar, Clock, X,
-    Search, User, Users, Info, Network, Maximize2
+    Search, User, Users, Info, Network, Maximize2, Cpu, Sliders, Zap, Bot
 } from 'lucide-react';
 import { WorkflowPreview, WorkflowEditorModal } from '../components/configs/WorkflowEditor';
+import { LLM_MODELS } from '../constants/models';
+
+// --- DESIGN SYSTEM ---
+const DS_STYLE = `
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&family=Inter:wght@400;500;600&display=swap');
+.configs-page { font-family: 'Inter', sans-serif; height: 100%; display: flex; flex-direction: column; }
+.configs-page h1, .configs-page h2, .configs-page h3, .configs-page h4 { font-family: 'Plus Jakarta Sans', sans-serif; }
+.persona-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.persona-card:hover { transform: translateX(4px); }
+.config-tab {
+    position: relative;
+    transition: all 0.2s;
+}
+.config-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: #3b82f6;
+    border-radius: 3px 3px 0 0;
+    box-shadow: 0 -2px 10px rgba(59,130,246,0.3);
+}
+.config-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 1rem;
+    background: #f8faff;
+    border: 1px solid rgba(203,213,225,0.6);
+    color: #0f172a;
+    outline: none;
+    transition: all 0.2s;
+}
+.config-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.1); background: #fff; }
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+    background: rgba(148, 163, 184, 0.4);
+    border-radius: 20px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #3b82f6;
+    background-clip: padding-box;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #3b82f6;
+    background-clip: padding-box;
+}
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+`;
 
 // --- CONFIGURAÇÃO ---
 // Substitua pelo client_email do seu JSON de credenciais
@@ -34,7 +100,11 @@ const initialFormData = {
     available_hours: { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] },
     is_calendar_connected: false,
     is_calendar_active: false,
-    workflow_json: { nodes: [], edges: [] }
+    workflow_json: { nodes: [], edges: [] },
+    ai_model: 'gemini-2.5-flash',
+    temperature: 0.5,
+    top_p: 0.95,
+    top_k: 40
 };
 
 
@@ -71,6 +141,16 @@ function Configs() {
     const isInitialLoad = useRef(true);
 
     const dayLabels = { seg: 'Segunda', ter: 'Terça', qua: 'Quarta', qui: 'Quinta', sex: 'Sexta', sab: 'Sábado', dom: 'Domingo' };
+
+    const activeTabsList = useMemo(() => [
+        { id: 'ia', label: 'Modelo IA', icon: Cpu },
+        { id: 'system', label: 'Instruções', icon: FileText },
+        { id: 'rag', label: 'Conhecimento', icon: Database },
+        { id: 'drive', label: 'Arquivos', icon: Folder },
+        { id: 'fluxo', label: 'Fluxo', icon: Network },
+        { id: 'notifications', label: 'Alertas', icon: Bell },
+        { id: 'agenda', label: 'Agenda', icon: Calendar }
+    ], []);
 
     const fetchData = useCallback(async () => {
         setIsLoading(true);
@@ -118,7 +198,11 @@ function Configs() {
             workflow_json: {
                 nodes: config.workflow_json?.nodes || [],
                 edges: (config.workflow_json?.edges || []).map(e => ({ ...e, type: 'customEdge' }))
-            }
+            },
+            ai_model: config.ai_model || 'gemini-2.5-flash',
+            temperature: config.temperature ?? 0.5,
+            top_p: config.top_p ?? 0.95,
+            top_k: config.top_k ?? 40
         });
 
         // Parse Schedule
@@ -208,8 +292,8 @@ function Configs() {
         } catch (err) { toast.error("Erro ao iniciar conexão."); }
     };
 
-    const handleSave = async (e) => {
-        e.preventDefault();
+    const handleSave = async (e, workflowOverride = null) => {
+        if (e) e.preventDefault();
         setIsSaving(true);
         setError('');
 
@@ -235,7 +319,11 @@ function Configs() {
             notification_destination: formData.notification_destination,
             available_hours: serializedHours,
             is_calendar_active: formData.is_calendar_active,
-            workflow_json: formData.workflow_json
+            workflow_json: workflowOverride || formData.workflow_json,
+            ai_model: formData.ai_model,
+            temperature: formData.temperature,
+            top_p: formData.top_p,
+            top_k: formData.top_k
         };
         try {
             let updatedConfig;
@@ -248,9 +336,10 @@ function Configs() {
             }
             await fetchData();
             handleSelectConfig(updatedConfig);
-            toast.success('Configuração salva com sucesso!');
+            if (!workflowOverride) toast.success('Configuração salva com sucesso!');
         } catch (err) {
             toast.error('Erro ao salvar. Verifique os campos.');
+            throw err;
         } finally {
             setIsSaving(false);
         }
@@ -388,7 +477,7 @@ function Configs() {
         try {
             const payload = { config_id: selectedConfig.id, spreadsheet_id: targetId, type: type };
             const response = await api.post('/configs/sync_sheet', payload, {
-                timeout: 3600000 // Aumentado para 60 minutos (3.600.000 ms) para comportar ~16 mil linhas
+                timeout: 7200000 // 120 minutos para comportar grandes volumes
             });
 
             if (type === 'system') {
@@ -414,7 +503,7 @@ function Configs() {
         try {
             const payload = { config_id: selectedConfig.id, drive_id: driveFolderId };
             const response = await api.post('/configs/sync_drive', payload, {
-                timeout: 3600000 // Aumentado para 60 minutos (3.600.000 ms) para comportar grandes volumes
+                timeout: 7200000 // 120 minutos para comportar grandes volumes de arquivos
             });
 
             const filesCount = response.data.files_found || 0;
@@ -422,7 +511,11 @@ function Configs() {
             // Atualiza o form data localmente
             setFormData(prev => ({ ...prev, arquivos_drive_json: null }));
 
-            toast.success(`Sucesso! ${filesCount} dados encontrados.`);
+            if (filesCount === 0) {
+                toast.success('Nenhum arquivo novo para sincronizar. Tudo já está atualizado!');
+            } else {
+                toast.success(`Sincronização concluída! ${filesCount} vetores adicionados ao RAG.`);
+            }
         } catch (err) {
             setError(err.response?.data?.detail || 'Falha ao sincronizar Drive. Verifique o ID e o compartilhamento.');
         } finally {
@@ -523,310 +616,386 @@ function Configs() {
     }, [activeTab]);
 
 
-    const labelClass = "block text-sm font-semibold text-gray-700 mb-1";
-    const inputClass = "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none";
+    const labelClass = "block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1";
+    const inputClass = "config-input";
 
     return (
-        <div className="p-6 md:p-10 bg-gray-50 h-full flex flex-col">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-800">Configurações de Contexto</h1>
-                <p className="text-gray-500 mt-1">Crie e gerencie as configurações de contexto para a sua IA.</p>
-            </div>
+        <div className="p-4 md:p-5 bg-[#f0f4ff] flex-1 flex flex-col configs-page h-[93vh]">
+            <style>{DS_STYLE}</style>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 min-h-0">
-                {/* SIDEBAR */}
-                <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg border flex flex-col min-h-0">
-                    <button onClick={handleNewConfig} className="flex-shrink-0 w-full flex items-center justify-center gap-2 bg-brand-primary text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-brand-primary-dark transition mb-6">
-                        <Plus size={20} /> Nova Configuração
-                    </button>
-                    <h2 className="flex-shrink-0 text-lg font-semibold text-gray-700 mb-3 px-1">Configurações Salvas</h2>
-                    {isLoading ? <p className="text-center text-gray-500">A carregar...</p> : (
-                        <ul className="space-y-2 overflow-y-auto custom-scrollbar pr-1 flex-1 min-h-0">
-                            {configs.map(config => (
-                                <li key={config.id} className="flex items-center gap-2">
-                                    <button onClick={() => handleSetDefault(config.id)} title="Definir como padrão">
-                                        <Star size={20} className={`transition-colors ${userData?.default_persona_id === config.id ? 'text-yellow-400 fill-current' : 'text-gray-300 hover:text-yellow-400'}`} />
-                                    </button>
-                                    <button onClick={() => handleSelectConfig(config)} className={`w-full text-left p-3 rounded-lg flex justify-between items-center transition-all duration-200 ${selectedConfig?.id === config.id ? 'bg-brand-primary text-white font-semibold shadow-sm' : 'hover:bg-gray-100 hover:pl-4'}`}>
-                                        <span className="truncate pr-2">{config.nome_config}</span>
-                                        <ChevronRight size={18} />
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
+            <div className="mx-auto w-full flex-1 flex flex-col min-h-0">
+                <div className="mb-6">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-200">
+                            <Bot size={22} className="text-white" />
+                        </div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+                            Persona <span className="text-blue-600 font-black">IA</span>
+                        </h1>
+                    </div>
+                    <p className="text-slate-500 font-medium text-sm flex items-center gap-2">
+                        <Info size={14} className="text-blue-400" /> Gerencie identidades e comportamentos da sua inteligência artificial.
+                    </p>
                 </div>
 
-                {/* MAIN CONTENT */}
-                <div className="lg:col-span-2 bg-white p-6 md:p-8 rounded-xl shadow-lg border overflow-y-auto min-h-0">
-                    <form onSubmit={handleSave} className="flex flex-col h-full">
-                        <div className="flex-grow">
-                            {/* Título */}
-                            <div className="flex items-center gap-4 mb-6">
-                                <FileText className="text-brand-primary" size={32} />
-                                <input type="text" placeholder="Dê um nome para esta Configuração..." name="nome_config" value={formData.nome_config} onChange={handleFormChange} required className="w-full text-2xl font-bold text-gray-800 border-b-2 border-gray-200 focus:border-brand-green focus:outline-none py-2 bg-transparent" />
-                            </div>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0">
+                    {/* SIDEBAR: SELEÇÃO DE PERSONA */}
+                    <div className="lg:col-span-3 space-y-8 flex flex-col h-[78vh]">
+                        <button onClick={handleNewConfig} className="w-full h-16 flex items-center justify-center gap-3 bg-blue-600 text-white font-black text-sm uppercase tracking-widest rounded-3xl shadow-xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 transition-all active:scale-[0.98] shrink-0">
+                            <Plus size={20} /> Nova Configuração
+                        </button>
 
-                            {/* Abas */}
-                            <div className="flex border-b border-gray-200 mb-6 overflow-x-auto custom-scrollbar">
-                                <button type="button" onClick={() => setActiveTab('system')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'system' ? 'border-b-2 border-brand-green text-brand-primary' : 'text-gray-500 hover:text-gray-800'}`}>
-                                    <LinkIcon size={18} /> Persona
-                                </button>
-                                <button type="button" onClick={() => setActiveTab('rag')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'rag' ? 'border-b-2 border-brand-green text-brand-primary' : 'text-gray-500 hover:text-gray-800'}`}>
-                                    <Database size={18} /> Dados
-                                </button>
-                                <button type="button" onClick={() => setActiveTab('drive')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'drive' ? 'border-b-2 border-brand-green text-brand-primary' : 'text-gray-500 hover:text-gray-800'}`}>
-                                    <Folder size={18} /> Arquivos
-                                </button>
-                                <button type="button" onClick={() => setActiveTab('fluxo')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'fluxo' ? 'border-b-2 border-brand-green text-brand-primary' : 'text-gray-500 hover:text-gray-800'}`}>
-                                    <Network size={18} /> Fluxo
-                                </button>
-                                <button type="button" onClick={() => setActiveTab('notifications')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'notifications' ? 'border-b-2 border-brand-green text-brand-primary' : 'text-gray-500 hover:text-gray-800'}`}>
-                                    <Bell size={18} /> Notificações
-                                </button>
-                                <button type="button" onClick={() => setActiveTab('agenda')} className={`flex items-center gap-2 px-4 py-3 font-semibold transition-all ${activeTab === 'agenda' ? 'border-b-2 border-brand-green text-brand-primary' : 'text-gray-500 hover:text-gray-800'}`}>
-                                    <Calendar size={18} /> Agenda
-                                </button>
-                            </div>
+                        <div className="bg-white/60 backdrop-blur-xl p-5 rounded-[2rem] shadow-sm border border-white flex flex-col flex-1 min-h-0">
+                            <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 px-2">Identidades Ativas</h2>
 
-                            {error && (
-                                <div className="mb-4 p-3 bg-red-50 text-red-700 rounded border border-red-200 text-sm">
-                                    {error}
+                            {isLoading ? (
+                                <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-40">
+                                    <Loader2 className="animate-spin text-blue-600" size={32} />
+                                    <span className="text-xs font-bold uppercase tracking-widest">Sincronizando...</span>
                                 </div>
-                            )}
+                            ) : (
+                                <ul className="space-y-3 overflow-y-scroll custom-scrollbar max-h-[calc(100vh-200px)] flex-1 pr-2">
+                                    {configs.map(config => {
+                                        const isDefault = userData?.default_persona_id === config.id;
+                                        const isSelected = selectedConfig?.id === config.id;
+                                        return (
+                                            <li key={config.id} className="persona-card group">
+                                                <div className={`p-4 rounded-3xl flex items-center gap-4 transition-all ${isSelected ? 'bg-white shadow-xl shadow-slate-200/50 scale-[1.02]' : 'hover:bg-white/40'}`}>
+                                                    <button onClick={() => handleSetDefault(config.id)} title="Definir como padrão" className="relative shrink-0">
+                                                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${isDefault ? 'bg-amber-100 text-amber-500 shadow-sm' : 'bg-slate-50 text-slate-300 hover:text-amber-400'}`}>
+                                                            <Star size={18} className={isDefault ? 'fill-current' : ''} />
+                                                        </div>
+                                                        {isDefault && <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 border-2 border-white rounded-full"></div>}
+                                                    </button>
 
-                            {/* CONTEÚDO ABA: SYSTEM (INSTRUÇÕES) */}
-                            {activeTab === 'system' && (
-                                <div className="animate-fade-in space-y-6">
-                                    {!selectedConfig?.spreadsheet_id ? (
-                                        <div className="p-6 bg-blue-50 border border-blue-100 rounded-lg shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                            <div>
-                                                <div className="flex items-center gap-2 font-semibold text-brand-primary-active mb-1">
-                                                    <FileText size={20} />
-                                                    <h3>Criar Planilha de Instruções</h3>
+                                                    <button onClick={() => handleSelectConfig(config)} className="flex-1 text-left min-w-0">
+                                                        <h3 className={`text-sm font-bold truncate ${isSelected ? 'text-blue-600' : 'text-slate-700'}`}>
+                                                            {config.nome_config}
+                                                        </h3>
+                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Sincronizado</p>
+                                                    </button>
+
+                                                    {isSelected && <div className="w-1.5 h-8 bg-blue-600 rounded-full"></div>}
+                                                    {!isSelected && <ChevronRight size={16} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />}
                                                 </div>
-                                                <p className="text-sm text-gray-700">Conecte sua conta do Google para criar a planilha automaticamente.</p>
-                                            </div>
-                                            <div className="flex-shrink-0">
-                                                <button type="button" onClick={() => handleProvision('system')} disabled={isSyncing || !selectedConfig?.id} className="flex items-center gap-3 bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-md font-bold whitespace-nowrap hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm">
-                                                    {isSyncing ? <Loader2 className="animate-spin mx-auto" size={20} /> : (
-                                                        <>
-                                                            <img src="https://img.icons8.com/color/24/000000/google-logo.png" alt="Google" className="w-5 h-5" />
-                                                            Conectar e Criar
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                            <div>
-                                                <h3 className="font-bold text-brand-primary flex items-center gap-2"><CheckCircle size={20} /> Planilha de Instruções Ativa</h3>
-                                                <p className="text-sm text-gray-500 mt-1">A planilha já foi gerada e está conectada a esta configuração.</p>
-                                            </div>
-                                            <div className="flex flex-wrap gap-3">
-                                                <button type="button" onClick={() => openResource(selectedConfig.spreadsheet_id, 'sheet')} className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors font-medium text-gray-700">
-                                                    <ExternalLink size={18} /> Abrir Planilha
-                                                </button>
-                                                <button type="button" onClick={() => handleSyncSheet('system')} disabled={isSyncing} className="flex items-center gap-2 bg-brand-primary text-white font-bold py-2 px-6 rounded shadow-md hover:bg-brand-primary-dark transition-all disabled:bg-gray-400">
-                                                    {isSyncing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Sincronizar
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Instruções System */}
-                                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 text-sm text-gray-700 space-y-4 mt-6">
-                                        <div className="flex items-center gap-2 font-semibold text-brand-primary-active">
-                                            <Info size={18} />
-                                            <h4>Como funciona a Planilha de Instruções (System Prompt)</h4>
-                                        </div>
-                                        <p className="text-gray-600">
-                                            Esta planilha define a personalidade, as regras de negócio e o comportamento geral da sua Inteligência Artificial.
-                                        </p>
-                                        <ul className="list-disc list-inside space-y-2 text-gray-600">
-                                            <li><strong>Persona:</strong> Defina o tom de voz, o nome do assistente e como ele deve se comportar.</li>
-                                            <li><strong>Regras:</strong> Crie categorias com diretrizes claras do que a IA deve ou não fazer (ex: "Sempre ofereça um desconto à vista", "Nunca passe informações de concorrentes").</li>
-                                            <li><strong>Sincronização:</strong> Sempre que alterar algo na planilha no Google Sheets, clique em <strong>Sincronizar</strong> aqui para que a IA aprenda as novas regras e passe a utilizá-las.</li>
-                                        </ul>
-                                    </div>
-                                </div>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
                             )}
+                        </div>
+                    </div>
 
-                            {/* CONTEÚDO ABA: FLUXO VISUAL */}
-                            {activeTab === 'fluxo' && (
-                                <div className="animate-fade-in space-y-6 h-[400px] flex flex-col">
-                                    <div className="flex justify-between items-end">
-                                        <div>
-                                            <h3 className="font-bold text-gray-800">Mapeamento de Fluxo da Conversa</h3>
-                                            <p className="text-sm text-gray-500">Desenhe os passos que a IA deve seguir durante a interação com o cliente.</p>
-                                        </div>
-                                        <button type="button" onClick={() => setIsWorkflowModalOpen(true)} className="flex items-center gap-2 bg-brand-primary text-white font-bold py-2 px-4 rounded-md shadow-sm hover:bg-brand-primary-dark transition-all">
-                                            <Maximize2 size={16} /> Editar Fluxo
+                    {/* MAIN CONTENT Area */}
+                    <div className="lg:col-span-9 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col h-[78vh] min-h-0">
+                        <form onSubmit={handleSave} className="flex-1 flex flex-col min-h-0">
+                            <div className="p-6 md:p-8 flex-1 flex flex-col overflow-y-scroll custom-scrollbar min-h-0">
+                                {/* Header da Config */}
+                                <div className="flex flex-col md:flex-row md:items-center gap-5 mb-8">
+                                    <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-inner">
+                                        <FileText size={28} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <input
+                                            type="text"
+                                            placeholder="Nome da Configuração (Ex: Atendente Comercial)"
+                                            name="nome_config"
+                                            value={formData.nome_config}
+                                            onChange={handleFormChange}
+                                            required
+                                            className="w-full text-3xl font-black text-slate-900 bg-transparent border-none focus:ring-0 placeholder:text-slate-200 tracking-tight"
+                                        />
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1 ml-1">Configurações da Persona</p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        {selectedConfig && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDelete(selectedConfig.id)}
+                                                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105 transition-all shadow-sm"
+                                                title="Excluir Persona"
+                                            >
+                                                <Trash2 size={20} />
+                                            </button>
+                                        )}
+                                        <button
+                                            type="submit"
+                                            disabled={isSaving}
+                                            className="flex items-center gap-3 bg-blue-600 text-white font-black text-xs uppercase tracking-widest py-3.5 px-8 rounded-2xl shadow-xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 transition-all disabled:bg-slate-300 disabled:shadow-none active:scale-95"
+                                        >
+                                            {isSaving ? <><Loader2 className="animate-spin" size={18} /> Sincronizando</> : <><Save size={18} /> Guardar Persona</>}
                                         </button>
                                     </div>
-
-                                    {/* Preview do Canvas */}
-                                    <div className="flex-1 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl relative overflow-hidden group">
-                                        <div className="absolute inset-0 z-10 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer backdrop-blur-[1px]" onClick={() => setIsWorkflowModalOpen(true)}>
-                                            <div className="bg-white px-6 py-3 rounded-full shadow-lg font-bold text-brand-primary flex items-center gap-2">
-                                                <Network size={20} /> Clique para expandir e editar
-                                            </div>
-                                        </div>
-                                    <WorkflowPreview workflowJson={formData.workflow_json} />
-                                    </div>
                                 </div>
-                            )}
 
-                            {/* CONTEÚDO ABA: RAG (CONHECIMENTO) */}
-                            {activeTab === 'rag' && (
-                                <div className="animate-fade-in space-y-6">
-                                    {!selectedConfig?.spreadsheet_rag_id ? (
-                                        <div className="p-6 bg-blue-50 border border-blue-100 rounded-lg shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                            <div>
-                                                <div className="flex items-center gap-2 font-semibold text-brand-primary mb-1">
-                                                    <Database size={20} />
-                                                    <h3>Criar Base de Conhecimento</h3>
+                                {/* Tabs Navigation */}
+                                <div className="flex gap-1 border-b border-slate-100 mb-8 overflow-x-auto overflow-y-hidden">
+                                    {activeTabsList.map(tab => {
+                                        const Icon = tab.icon;
+                                        return (
+                                            <button
+                                                key={tab.id}
+                                                type="button"
+                                                onClick={() => setActiveTab(tab.id)}
+                                                className={`config-tab flex items-center gap-2 px-5 py-3.5 text-xs font-bold transition-all whitespace-nowrap ${activeTab === tab.id ? 'active text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                            >
+                                                <Icon size={16} strokeWidth={activeTab === tab.id ? 2.5 : 2} />
+                                                {tab.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {error && (
+                                    <div className="mb-4 p-3 bg-red-50 text-red-700 rounded border border-red-200 text-sm">
+                                        {error}
+                                    </div>
+                                )}
+
+                                {/* CONTEÚDO ABA: SYSTEM (INSTRUÇÕES) */}
+                                {activeTab === 'system' && (
+                                    <div className="animate-fade-in space-y-8 overflow-y-scroll custom-scrollbar">
+                                        {!selectedConfig?.spreadsheet_id ? (
+                                            <div className="p-10 bg-blue-50/50 border border-blue-100/50 rounded-[2.5rem] shadow-sm flex flex-col items-center text-center gap-6">
+                                                <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center text-blue-600 shadow-xl shadow-blue-100">
+                                                    <FileText size={32} />
                                                 </div>
-                                                <p className="text-sm text-gray-700">Conecte sua conta do Google para criar a base de conhecimento automaticamente.</p>
-                                            </div>
-                                            <div className="flex-shrink-0">
-                                                <button type="button" onClick={() => handleProvision('rag')} disabled={isSyncing || !selectedConfig?.id} className="flex items-center gap-3 bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-md font-bold whitespace-nowrap hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm">
-                                                    {isSyncing ? <Loader2 className="animate-spin mx-auto" size={20} /> : (
+                                                <div>
+                                                    <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Configure o Cérebro da Operação</h3>
+                                                    <p className="text-sm text-slate-500 max-w-md mx-auto">Conecte sua conta do Google para gerar automaticamente a planilha de diretrizes e personalidade desta persona.</p>
+                                                </div>
+                                                <button type="button" onClick={() => handleProvision('system')} disabled={isSyncing || !selectedConfig?.id} className="flex items-center gap-3 bg-white text-slate-700 font-bold px-8 py-4 rounded-3xl border border-slate-200 hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-50 shadow-sm hover:shadow-xl hover:shadow-blue-100">
+                                                    {isSyncing ? <Loader2 className="animate-spin" size={20} /> : (
                                                         <>
                                                             <img src="https://img.icons8.com/color/24/000000/google-logo.png" alt="Google" className="w-5 h-5" />
-                                                            Conectar e Criar
+                                                            Gerar Matriz de Instruções
                                                         </>
                                                     )}
                                                 </button>
                                             </div>
-                                        </div>
-                                    ) : (
-                                        <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                            <div>
-                                                <h3 className="font-bold text-brand-primary flex items-center gap-2"><CheckCircle size={20} /> Base RAG Ativa</h3>
-                                                <p className="text-sm text-gray-500 mt-1">Sua base de conhecimento já está conectada.</p>
-                                            </div>
-                                            <div className="flex flex-wrap gap-3">
-                                                <button type="button" onClick={() => openResource(selectedConfig.spreadsheet_rag_id, 'sheet')} className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors font-medium text-gray-700">
-                                                    <ExternalLink size={18} /> Abrir Planilha
-                                                </button>
-                                                <button type="button" onClick={() => handleSyncSheet('rag')} disabled={isSyncing} className="flex items-center gap-2 bg-brand-primary text-white font-bold py-2 px-6 rounded shadow-md hover:bg-brand-primary-dark transition-all disabled:bg-gray-400">
-                                                    {isSyncing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Sincronizar
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Instruções RAG */}
-                                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 text-sm text-gray-700 space-y-4 mt-6">
-                                        <div className="flex items-center gap-2 font-semibold text-brand-primary-active">
-                                            <Info size={18} />
-                                            <h4>Como funciona a Base de Conhecimento (RAG)</h4>
-                                        </div>
-                                        <p className="text-gray-600">
-                                            Esta planilha atua como a memória estendida da sua IA, permitindo que ela consulte informações volumosas e dados estruturados em tempo real.
-                                        </p>
-                                        <ul className="list-disc list-inside space-y-2 text-gray-600">
-                                            <li><strong>Catálogo de Produtos:</strong> Liste seus produtos, serviços, preços, links e descrições detalhadas. A IA pesquisará nesta base antes de responder perguntas de vendas ou técnicas.</li>
-                                            <li><strong>Perguntas Frequentes (FAQ):</strong> Adicione as dúvidas mais recorrentes dos seus clientes com as respostas exatas que a IA deve fornecer.</li>
-                                            <li><strong>Sincronização:</strong> Toda vez que adicionar novos produtos ou alterar preços, lembre-se de clicar em <strong>Sincronizar</strong>.</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* CONTEÚDO ABA: DRIVE */}
-                            {activeTab === 'drive' && (
-                                <div className="animate-fade-in space-y-6">
-                                    {!selectedConfig?.drive_id ? (
-                                        <div className="p-6 bg-indigo-50 border border-indigo-100 rounded-lg shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                            <div>
-                                                <div className="flex items-center gap-2 font-semibold text-indigo-800 mb-1">
-                                                    <Folder size={20} />
-                                                    <h3>Criar Pasta no Google Drive</h3>
+                                        ) : (
+                                            <div className="p-8 bg-slate-50/50 rounded-[2rem] border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+                                                <div className="flex items-center gap-5">
+                                                    <div className="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center text-green-600">
+                                                        <CheckCircle size={28} />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-black text-slate-900 leading-tight">Matriz de Instruções Ativa</h3>
+                                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Conectado via Google Sheets</p>
+                                                    </div>
                                                 </div>
-                                                <p className="text-sm text-gray-700">Conecte sua conta do Google para criar a pasta automaticamente.</p>
+                                                <div className="flex gap-3">
+                                                    <button type="button" onClick={() => openResource(selectedConfig.spreadsheet_id, 'sheet')} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
+                                                        <ExternalLink size={18} /> Ver Planilha
+                                                    </button>
+                                                    <button type="button" onClick={() => handleSyncSheet('system')} disabled={isSyncing} className="flex items-center gap-2 bg-blue-600 text-white font-black py-3 px-8 rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:bg-slate-300 text-sm">
+                                                        {isSyncing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Sincronizar
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div className="flex-shrink-0">
-                                                <button type="button" onClick={() => handleProvision('drive')} disabled={isSyncing || !selectedConfig?.id} className="flex items-center gap-3 bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-md font-bold whitespace-nowrap hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm">
-                                                    {isSyncing ? <Loader2 className="animate-spin mx-auto" size={20} /> : (
+                                        )}
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                                                <h4 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                                    <Info size={14} /> Arquitetura do Sistema
+                                                </h4>
+                                                <p className="text-[13px] text-slate-500 leading-relaxed font-medium">
+                                                    Esta planilha define a alma da sua IA. Nela você configura o tom de voz, nome, limites éticos e conhecimentos específicos que não estão em documentos.
+                                                </p>
+                                            </div>
+                                            <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                                                <h4 className="text-xs font-black text-amber-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                                    <Star size={14} /> Dica de Performance
+                                                </h4>
+                                                <p className="text-[13px] text-slate-500 leading-relaxed font-medium">
+                                                    Sempre que alterar uma regra na planilha do Google, lembre-se de clicar em <strong>Sincronizar</strong> acima para que as mudanças tenham efeito imediato.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* CONTEÚDO ABA: FLUXO VISUAL */}
+                                {activeTab === 'fluxo' && (
+                                    <div className="animate-fade-in space-y-8 flex-1 flex flex-col min-h-0 overflow-y-scroll custom-scrollbar">
+                                        <div className="flex justify-between items-center bg-white/40 p-6 rounded-[2rem] border border-white">
+                                            <div>
+                                                <h3 className="text-xl font-black text-slate-900 tracking-tight">Arquitetura de Conversação</h3>
+                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Mapeamento visual de fluxo</p>
+                                            </div>
+                                            <button type="button" onClick={() => setIsWorkflowModalOpen(true)} className="flex items-center gap-3 bg-slate-900 text-white font-black py-4 px-8 rounded-2xl shadow-xl hover:bg-black transition-all text-xs uppercase tracking-widest">
+                                                <Maximize2 size={18} /> Expandir Editor
+                                            </button>
+                                        </div>
+
+                                        {/* Preview do Canvas */}
+                                        <div className="flex-1 bg-slate-50 border border-slate-100 rounded-[2.5rem] relative overflow-hidden group shadow-inner">
+                                            <div className="absolute inset-0 z-10 bg-slate-900/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer backdrop-blur-[2px]" onClick={() => setIsWorkflowModalOpen(true)}>
+                                                <div className="bg-white px-8 py-4 rounded-3xl shadow-2xl font-black text-slate-900 flex items-center gap-3 text-sm uppercase tracking-widest border border-slate-100">
+                                                    <Network size={22} className="text-blue-600" /> Editar Fluxograma
+                                                </div>
+                                            </div>
+                                            <WorkflowPreview workflowJson={formData.workflow_json} />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* CONTEÚDO ABA: RAG (CONHECIMENTO) */}
+                                {activeTab === 'rag' && (
+                                    <div className="animate-fade-in space-y-8 overflow-y-scroll custom-scrollbar">
+                                        {!selectedConfig?.spreadsheet_rag_id ? (
+                                            <div className="p-10 bg-indigo-50/50 border border-indigo-100/50 rounded-[2.5rem] shadow-sm flex flex-col items-center text-center gap-6">
+                                                <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center text-indigo-600 shadow-xl shadow-indigo-100">
+                                                    <Database size={32} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Construa sua Base de Dados</h3>
+                                                    <p className="text-sm text-slate-500 max-w-md mx-auto">Armazene catálogos, FAQs e documentos técnicos. A IA consultará estes dados em milissegundos.</p>
+                                                </div>
+                                                <button type="button" onClick={() => handleProvision('rag')} disabled={isSyncing || !selectedConfig?.id} className="flex items-center gap-3 bg-white text-slate-700 font-bold px-8 py-4 rounded-3xl border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all disabled:opacity-50 shadow-sm hover:shadow-xl hover:shadow-indigo-100">
+                                                    {isSyncing ? <Loader2 className="animate-spin" size={20} /> : (
                                                         <>
                                                             <img src="https://img.icons8.com/color/24/000000/google-logo.png" alt="Google" className="w-5 h-5" />
-                                                            Conectar e Criar
+                                                            Gerar Base de Conhecimento
                                                         </>
                                                     )}
                                                 </button>
                                             </div>
-                                        </div>
-                                    ) : (
-                                        <div className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                                            <div>
-                                                <h3 className="font-bold text-brand-primary flex items-center gap-2"><CheckCircle size={20} /> Pasta Conectada</h3>
-                                                <p className="text-sm text-gray-500 mt-1">Pasta no Drive configurada e pronta para receber ficheiros.</p>
+                                        ) : (
+                                            <div className="p-8 bg-slate-50/50 rounded-[2rem] border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+                                                <div className="flex items-center gap-5">
+                                                    <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                                        <CheckCircle size={28} />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-black text-slate-900 leading-tight">Base de Conhecimento Ativa</h3>
+                                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Conectado ao Google Sheets</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-3">
+                                                    <button type="button" onClick={() => openResource(selectedConfig.spreadsheet_rag_id, 'sheet')} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
+                                                        <ExternalLink size={18} /> Ver Planilha
+                                                    </button>
+                                                    <button type="button" onClick={() => handleSyncSheet('rag')} disabled={isSyncing} className="flex items-center gap-2 bg-indigo-600 text-white font-black py-3 px-8 rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:bg-slate-300 text-sm">
+                                                        {isSyncing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Sincronizar
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div className="flex flex-wrap gap-3">
-                                                <button type="button" onClick={() => openResource(selectedConfig.drive_id, 'drive')} className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors font-medium text-gray-700">
-                                                    <ExternalLink size={18} /> Abrir Pasta
-                                                </button>
-                                                <button type="button" onClick={handleSyncDrive} disabled={isSyncing} className="flex items-center gap-2 bg-brand-primary text-white font-bold py-2 px-6 rounded shadow-md hover:bg-brand-primary-dark transition-all disabled:bg-gray-400">
-                                                    {isSyncing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Sincronizar
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
+                                        )}
 
-                                    {/* Instruções Drive */}
-                                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 text-sm text-gray-700 space-y-4 mt-6">
-                                        <div className="flex items-center gap-2 font-semibold text-brand-primary-active">
-                                            <Info size={18} />
-                                            <h4>Como funciona a integração com o Google Drive</h4>
+                                        <div className="p-8 bg-blue-50/50 rounded-[2rem] border border-blue-100/50">
+                                            <h4 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                                <Zap size={14} /> Memória de Longo Prazo (RAG)
+                                            </h4>
+                                            <p className="text-[13px] text-slate-600 font-medium leading-relaxed">
+                                                O RAG (Retrieval-Augmented Generation) permite que a IA acesse milhares de linhas de dados sem alucinar. Ideal para:<br />
+                                                <span className="inline-block mt-2 font-bold text-slate-900">• Tabelas de Preços e Estoque</span><br />
+                                                <span className="inline-block mt-1 font-bold text-slate-900">• Políticas de Reembolso e Garantia</span><br />
+                                                <span className="inline-block mt-1 font-bold text-slate-900">• Manuais Técnicos de Produtos</span>
+                                            </p>
                                         </div>
-                                        <p className="text-gray-600">
-                                            Conecte uma pasta do Google Drive para que a IA consiga buscar e enviar arquivos de mídia (fotos, vídeos, PDFs) diretamente aos seus clientes durante o atendimento.
-                                        </p>
-                                        <ul className="list-disc list-inside space-y-2 text-gray-600">
-                                            <li><strong>Organização:</strong> É recomendado criar subpastas dentro da pasta principal para categorizar seus arquivos (ex: /Tabelas de Preços, /Fotos de Produtos). A IA reconhece toda a estrutura.</li>
-                                            <li><strong>Nomes Claros e Descritivos:</strong> Dê nomes explicativos aos arquivos (ex: "Foto_Painel_Ripado_Freijo.jpg" ou "Catalogo_Servicos_2025.pdf"). A IA utiliza o nome dos arquivos para entender qual conteúdo enviar quando o cliente solicitar.</li>
-                                            <li><strong>Sincronização:</strong> Ao subir novos arquivos para a pasta ou renomear arquivos existentes, clique sempre no botão <strong>Sincronizar</strong> nesta tela para a IA catalogar as novidades.</li>
-                                        </ul>
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                            {/* CONTEÚDO ABA: NOTIFICAÇÕES (PROSPECT AI) */}
-                            {activeTab === 'notifications' && (
-                                <div className="animate-fade-in space-y-6">
-                                    <div className="relative">
-                                        <label className={labelClass}>Destino das Notificações (WhatsApp)</label>
-                                        <div className="flex items-center gap-4">
-                                            <div className="relative flex-grow" ref={dropdownRef}>
-                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                {/* CONTEÚDO ABA: DRIVE */}
+                                {activeTab === 'drive' && (
+                                    <div className="animate-fade-in space-y-8 overflow-y-scroll custom-scrollbar">
+                                        {!selectedConfig?.drive_id ? (
+                                            <div className="p-10 bg-indigo-50/50 border border-indigo-100/50 rounded-[2.5rem] shadow-sm flex flex-col items-center text-center gap-6">
+                                                <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center text-indigo-600 shadow-xl shadow-indigo-100">
+                                                    <Folder size={32} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Repositório de Mídia</h3>
+                                                    <p className="text-sm text-slate-500 max-w-md mx-auto">Conecte uma pasta do Google Drive para que a IA envie fotos, vídeos e PDFs automaticamente.</p>
+                                                </div>
+                                                <button type="button" onClick={() => handleProvision('drive')} disabled={isSyncing || !selectedConfig?.id} className="flex items-center gap-3 bg-white text-slate-700 font-bold px-8 py-4 rounded-3xl border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all disabled:opacity-50 shadow-sm hover:shadow-xl hover:shadow-indigo-100">
+                                                    {isSyncing ? <Loader2 className="animate-spin" size={20} /> : (
+                                                        <>
+                                                            <img src="https://img.icons8.com/color/24/000000/google-logo.png" alt="Google" className="w-5 h-5" />
+                                                            Gerar Pasta no Drive
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="p-8 bg-slate-50/50 rounded-[2rem] border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+                                                <div className="flex items-center gap-5">
+                                                    <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                                        <CheckCircle size={28} />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-black text-slate-900 leading-tight">Google Drive Conectado</h3>
+                                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Armazenamento Ativo</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-3">
+                                                    <button type="button" onClick={() => openResource(selectedConfig.drive_id, 'drive')} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
+                                                        <ExternalLink size={18} /> Abrir Pasta
+                                                    </button>
+                                                    <button type="button" onClick={handleSyncDrive} disabled={isSyncing} className="flex items-center gap-2 bg-indigo-600 text-white font-black py-3 px-8 rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:bg-slate-300 text-sm">
+                                                        {isSyncing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Sincronizar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
+                                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                    <Info size={14} className="text-blue-600" /> Organização e Nomenclatura
+                                                </h4>
+                                                <p className="text-[13px] text-slate-500 font-medium leading-relaxed">
+                                                    A IA utiliza o <strong>nome do arquivo</strong> para decidir o que enviar. Evite nomes genéricos como "doc1.pdf". Use nomes como "Catalogo_Verao_2025.pdf".
+                                                </p>
+                                            </div>
+                                            <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
+                                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                    <Zap size={14} className="text-amber-500" /> Automação de Mídia
+                                                </h4>
+                                                <p className="text-[13px] text-slate-500 font-medium leading-relaxed">
+                                                    Sempre que o cliente pedir uma foto ou manual, a IA fará o upload direto da sua pasta conectada para o WhatsApp dele, sem intervenção humana.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* CONTEÚDO ABA: NOTIFICAÇÕES (PROSPECT AI) */}
+                                {activeTab === 'notifications' && (
+                                    <div className="animate-fade-in space-y-8 overflow-y-scroll custom-scrollbar">
+                                        <div className="bg-slate-50/50 p-4 pl-4 rounded-[2rem] border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-10 shadow-sm">
+                                            <div className="max-w-md">
+                                                <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Monitoramento de Alertas</h3>
+                                                <p className="text-sm text-slate-500 font-medium">Defina para qual WhatsApp a IA deve enviar alertas</p>
+                                            </div>
+                                            <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-3">Status Global</span>
+                                                <button type="button" onClick={() => setFormData(prev => ({ ...prev, notification_active: !prev.notification_active }))} className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all ${formData.notification_active ? 'bg-green-500' : 'bg-slate-200'}`}>
+                                                    <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform ${formData.notification_active ? 'translate-x-7' : 'translate-x-1'}`} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="relative">
+                                            <label className={labelClass}>Canal de Destino (Contato ou Grupo)</label>
+                                            <div className="relative" ref={dropdownRef}>
                                                 <input
                                                     type="text"
-                                                    placeholder="Pesquisar contato ou grupo..."
+                                                    placeholder="Pesquisar contatos..."
                                                     value={destSearchTerm}
                                                     onChange={(e) => {
                                                         setDestSearchTerm(e.target.value);
                                                         setIsDropdownOpen(true);
                                                     }}
                                                     onFocus={() => setIsDropdownOpen(true)}
-                                                    className={`${inputClass} pl-10 pr-16`}
+                                                    className={`${inputClass} pl-12 h-16 text-lg`}
                                                 />
-                                                <div className="absolute inset-y-0 right-0 flex items-center pr-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setFormData(prev => ({ ...prev, notification_active: !prev.notification_active }))}
-                                                        title={formData.notification_active ? "Desativar Notificações" : "Ativar Notificações"}
-                                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-green focus:ring-offset-2 ${formData.notification_active ? 'bg-brand-primary' : 'bg-gray-200'}`}
-                                                    >
-                                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.notification_active ? 'translate-x-6' : 'translate-x-1'}`} />
-                                                    </button>
-                                                </div>
 
-                                                {/* Dropdown de Destinos */}
+                                                {/* Dropdown de Destinos (Premium Style) */}
                                                 {isDropdownOpen && (
-                                                    <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto custom-scrollbar divide-y divide-gray-100">
+                                                    <div className="absolute z-20 mt-3 w-full bg-white border border-slate-100 rounded-[2rem] shadow-2xl max-h-[400px] overflow-y-auto custom-scrollbar p-3">
                                                         {filteredDestinations.map(dest => {
                                                             const isGroup = dest.remoteJid?.endsWith('@g.us');
                                                             const isSelected = normalizeJid(formData.notification_destination) === normalizeJid(dest.remoteJid);
@@ -840,173 +1009,219 @@ function Configs() {
                                                                         setDestSearchTerm(normalized);
                                                                         setIsDropdownOpen(false);
                                                                     }}
-                                                                    className={`w-full flex items-center gap-3 p-3 text-left transition-colors hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}
+                                                                    className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all hover:bg-slate-50 mb-1 ${isSelected ? 'bg-blue-50/50 border border-blue-100' : 'border border-transparent'}`}
                                                                 >
-                                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isGroup ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-brand-primary'}`}>
-                                                                        {isGroup ? <Users size={20} /> : <User size={20} />}
+                                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${isGroup ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                                        {isGroup ? <Users size={24} /> : <User size={24} />}
                                                                     </div>
-                                                                    <div className="flex-grow min-w-0">
-                                                                        <p className={`text-sm font-semibold truncate ${isSelected ? 'text-brand-primary-active' : 'text-gray-800'}`}>
-                                                                            {dest.name || dest.subject || (isGroup ? "Grupo sem nome" : "Contato sem nome")}
+                                                                    <div className="flex-grow min-w-0 text-left">
+                                                                        <p className={`text-[13px] font-black truncate uppercase tracking-tight ${isSelected ? 'text-blue-700' : 'text-slate-800'}`}>
+                                                                            {dest.name || dest.subject || (isGroup ? "Canal Sombra" : "Operador Oculto")}
                                                                         </p>
-                                                                        <p className="text-xs text-gray-500 truncate">{dest.remoteJid}</p>
+                                                                        <p className="text-[10px] font-bold text-slate-400 truncate tracking-widest">{dest.remoteJid}</p>
                                                                     </div>
-                                                                    {isSelected && <CheckCircle size={18} className="text-brand-primary flex-shrink-0" />}
+                                                                    {isSelected && <CheckCircle size={20} className="text-blue-600 flex-shrink-0" />}
                                                                 </button>
                                                             );
                                                         })}
-
-                                                        {/* Opção Manual */}
-                                                        {manualJid && !filteredDestinations.some(d => normalizeJid(d.remoteJid) === manualJid) && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setFormData(prev => ({ ...prev, notification_destination: manualJid }));
-                                                                    setDestSearchTerm(manualJid);
-                                                                    setIsDropdownOpen(false);
-                                                                }}
-                                                                className={`w-full flex items-center gap-3 p-3 text-left transition-colors hover:bg-blue-50 ${formData.notification_destination === manualJid ? 'bg-blue-50' : ''}`}
-                                                            >
-                                                                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-green-100 text-brand-primary">
-                                                                    <Plus size={20} />
-                                                                </div>
-                                                                <div className="flex-grow min-w-0">
-                                                                    <p className="text-sm font-semibold text-gray-800">Adicionar número manualmente</p>
-                                                                    <p className="text-xs text-gray-500 truncate">{manualJid}</p>
-                                                                </div>
-                                                                {formData.notification_destination === manualJid && <CheckCircle size={18} className="text-brand-primary flex-shrink-0" />}
-                                                            </button>
-                                                        )}
-
-                                                        {destinations.length === 0 && !manualJid && (
-                                                            <div className="p-8 text-center text-gray-500 italic text-sm">Nenhum contato carregado. Clique em atualizar.</div>
-                                                        )}
-                                                        {destSearchTerm && filteredDestinations.length === 0 && !manualJid && (
-                                                            <div className="p-8 text-center text-gray-500 italic text-sm">Nenhum contato encontrado.</div>
-                                                        )}
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* Instruções Notificações */}
-                                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 text-sm text-gray-700 space-y-4 mt-6">
-                                        <div className="flex items-center gap-2 font-semibold text-brand-primary-active">
-                                            <Info size={18} />
-                                            <h4>Como funcionam as Notificações</h4>
+                                        <div className="p-8 bg-blue-50/50 rounded-[2rem] border border-blue-100/50">
+                                            <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                <Info size={14} /> Inteligência de Notificações
+                                            </h4>
+                                            <p className="text-[13px] text-slate-500 font-medium leading-relaxed">
+                                                A Prospect AI notificará você instantaneamente quando: <br />
+                                                <span className="inline-block mt-2 font-bold text-slate-900">• Um cliente demonstrar interesse crítico de compra</span><br />
+                                                <span className="inline-block mt-1 font-bold text-slate-900">• Houver uma pergunta técnica que a IA não conseguiu resolver</span><br />
+                                                <span className="inline-block mt-1 font-bold text-slate-900">• O atendimento for transferido para um consultor humano</span>
+                                            </p>
                                         </div>
-                                        <p className="text-gray-600">
-                                            Ao habilitar esta opção, o sistema enviará alertas automáticos para o contato ou grupo selecionado sempre que a IA transferir um atendimento.
-                                        </p>
-                                        <ul className="list-disc list-inside space-y-2 text-gray-600">
-                                            <li><strong>Destinos:</strong> É possível mandar as notificações tanto para um contato individual quanto para um grupo.</li>
-                                            <li><strong>Contato não listado:</strong> Se não estiver aparecendo o contato desejado na busca, você pode digitar o seu número completo (com DDD) e adicionar manualmente. Lembre-se de salvar a configuração depois.</li>
-                                            <li><strong>Grupo não listado:</strong> Se não estiver aparecendo o grupo, adicione o contato <strong className="cursor-pointer text-brand-primary hover:text-brand-primary-active hover:underline transition-colors" onClick={() => { navigator.clipboard.writeText("45 98622675"); toast.success("Número copiado!"); }} title="Clique para copiar">45 98622675</strong> ao grupo que deseja receber as notificações para que o sistema consiga listá-lo.</li>
-                                        </ul>
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                            {/* CONTEÚDO ABA: AGENDA */}
-                            {activeTab === 'agenda' && (
-                                <div className="animate-fade-in space-y-6">
-                                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                        <div className="flex items-center gap-4">
-                                            <Calendar className={formData.is_calendar_connected ? "text-brand-primary" : "text-gray-400"} size={24} />
-                                            <div>
-                                                <p className="text-sm font-bold text-gray-800">{formData.is_calendar_connected ? "Google Agenda Conectado" : "Google Agenda não conectado"}</p>
-                                                <p className="text-xs text-gray-500">Sincronize eventos para evitar conflitos.</p>
+                                {/* CONTEÚDO ABA: AGENDA */}
+                                {activeTab === 'agenda' && (
+                                    <div className="animate-fade-in space-y-8 overflow-y-scroll custom-scrollbar">
+                                        <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${formData.is_calendar_connected ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
+                                                    <Calendar size={24} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-black text-slate-900 leading-tight">{formData.is_calendar_connected ? "Google Agenda Sincronizado" : "Sincronização Pendente"}</p>
+                                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-tight mt-0.5">Gestão Automática de Horários</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-6">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status IA</span>
+                                                    <button type="button" onClick={() => setFormData(p => ({ ...p, is_calendar_active: !p.is_calendar_active }))} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.is_calendar_active ? 'bg-blue-600' : 'bg-slate-200'}`}>
+                                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${formData.is_calendar_active ? 'translate-x-6' : 'translate-x-1'}`} />
+                                                    </button>
+                                                </div>
+                                                {!formData.is_calendar_connected ? (
+                                                    <button type="button" onClick={handleConnectCalendar} className="px-6 py-2.5 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition">Conectar</button>
+                                                ) : (
+                                                    <button type="button" onClick={() => api.post(`/configs/google-calendar/${selectedConfig.id}/disconnect`).then(() => fetchData())} className="px-6 py-2.5 bg-red-50 text-red-500 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-red-100 transition">Desvincular</button>
+                                                )}
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-xs font-semibold text-gray-600">Ativar na IA</span>
-                                            <button type="button" onClick={() => setFormData(p => ({ ...p, is_calendar_active: !p.is_calendar_active }))} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.is_calendar_active ? 'bg-brand-primary' : 'bg-gray-200'}`}>
-                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.is_calendar_active ? 'translate-x-6' : 'translate-x-1'}`} />
-                                            </button>
-                                            {!formData.is_calendar_connected ? (
-                                                <button type="button" onClick={handleConnectCalendar} className="px-4 py-2 bg-brand-primary text-white text-xs font-bold rounded-md hover:bg-brand-primary-dark transition">Conectar</button>
-                                            ) : (
-                                                <button type="button" onClick={() => api.post(`/configs/google-calendar/${selectedConfig.id}/disconnect`).then(() => fetchData())} className="px-4 py-2 bg-red-100 text-red-700 text-xs font-bold rounded-md hover:bg-red-200 transition">Desconectar</button>
-                                            )}
+
+                                        <div className="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm">
+                                            <div className="p-6 bg-slate-50/50 border-b border-slate-50">
+                                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                    <Clock size={16} className="text-blue-600" /> Janelas de Disponibilidade
+                                                </h3>
+                                            </div>
+                                            <div className="p-6 space-y-4">
+                                                {['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'].map(day => (
+                                                    <div key={day} className="flex items-center gap-6 p-4 rounded-2xl hover:bg-slate-50/50 transition-colors">
+                                                        <div className="w-28 flex-shrink-0">
+                                                            <label className="flex items-center cursor-pointer group">
+                                                                <div className="relative">
+                                                                    <input type="checkbox" className="sr-only" checked={schedule[day]?.active || false} onChange={() => toggleDay(day)} />
+                                                                    <div className={`block w-9 h-5 rounded-full transition-colors ${schedule[day]?.active ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
+                                                                    <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${schedule[day]?.active ? 'transform translate-x-4' : ''}`}></div>
+                                                                </div>
+                                                                <span className={`ml-3 text-xs font-black uppercase tracking-widest transition-colors ${schedule[day]?.active ? 'text-blue-600' : 'text-slate-400'}`}>{dayLabels[day]}</span>
+                                                            </label>
+                                                        </div>
+                                                        <div className="flex-1 flex flex-wrap gap-2 items-center">
+                                                            {schedule[day]?.active ? (
+                                                                <>
+                                                                    {schedule[day].blocks.map((block, idx) => (
+                                                                        <div key={idx} className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm animate-fade-in">
+                                                                            <input type="time" value={block.start} onChange={(e) => updateTimeBlock(day, idx, 'start', e.target.value)} className="bg-transparent text-xs font-bold text-slate-700 outline-none w-16 text-center" />
+                                                                            <span className="text-slate-300 font-black">/</span>
+                                                                            <input type="time" value={block.end} onChange={(e) => updateTimeBlock(day, idx, 'end', e.target.value)} className="bg-transparent text-xs font-bold text-slate-700 outline-none w-16 text-center" />
+                                                                            <button type="button" onClick={() => removeTimeBlock(day, idx)} className="text-slate-300 hover:text-red-500 ml-1 transition-colors"><X size={14} /></button>
+                                                                        </div>
+                                                                    ))}
+                                                                    <button type="button" onClick={() => addTimeBlock(day)} className="w-8 h-8 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-all"><Plus size={16} /></button>
+                                                                </>
+                                                            ) : (
+                                                                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest italic">Indisponível para novos agendamentos</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
+                                )}
 
-                                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                                        <div className="p-4 bg-gray-50 border-b border-gray-200">
-                                            <h3 className="font-bold text-gray-700 flex items-center gap-2"><Clock size={18} className="text-brand-primary" /> Horários de Atendimento</h3>
-                                        </div>
-                                        <div className="p-4 space-y-2">
-                                            {['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'].map(day => (
-                                                <div key={day} className="flex items-start gap-3 py-2 border-b border-gray-100 last:border-0">
-                                                    <div className="w-24 pt-1.5 flex-shrink-0">
-                                                        <label className="flex items-center cursor-pointer">
-                                                            <div className="relative">
-                                                                <input type="checkbox" className="sr-only" checked={schedule[day]?.active || false} onChange={() => toggleDay(day)} />
-                                                                <div className={`block w-8 h-5 rounded-full transition-colors ${schedule[day]?.active ? 'bg-brand-primary' : 'bg-gray-300'}`}></div>
-                                                                <div className={`dot absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform ${schedule[day]?.active ? 'transform translate-x-3' : ''}`}></div>
-                                                            </div>
-                                                            <span className="ml-2 text-sm font-medium text-gray-700">{dayLabels[day]}</span>
-                                                        </label>
+                                {/* CONTEÚDO ABA: IA (MODELO) */}
+                                {activeTab === 'ia' && (
+                                    <div className="animate-fade-in space-y-10">
+                                        <div className="bg-slate-50/50 border border-slate-100 rounded-[2.5rem] overflow-hidden">
+                                            <div className="px-8 py-6 bg-white/40 border-b border-white flex items-center justify-between">
+                                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                    <Cpu size={16} className="text-blue-600" /> Parâmetros de Processamento
+                                                </h3>
+                                            </div>
+                                            <div className="p-8 space-y-8">
+                                                <div className="max-w-md">
+                                                    <label className={labelClass}>Modelo de Inteligência</label>
+                                                    <select
+                                                        name="ai_model"
+                                                        value={formData.ai_model}
+                                                        onChange={handleFormChange}
+                                                        className={`${inputClass} appearance-none cursor-pointer bg-white`}
+                                                    >
+                                                        {LLM_MODELS.map(model => (
+                                                            <option key={model.id} value={model.id}>{model.name}</option>
+                                                        ))}
+                                                    </select>
+                                                    <p className="mt-2 text-[10px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1.5">
+                                                        <Zap size={10} className="text-amber-400" /> Recomendado para automações em massa
+                                                    </p>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                                                    <div>
+                                                        <div className="flex justify-between items-center mb-4">
+                                                            <label className={labelClass}>Criatividade</label>
+                                                            <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{formData.temperature}</span>
+                                                        </div>
+                                                        <input
+                                                            type="range"
+                                                            name="temperature"
+                                                            min="0"
+                                                            max="2"
+                                                            step="0.1"
+                                                            value={formData.temperature}
+                                                            onChange={handleFormChange}
+                                                            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                                        />
+                                                        <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-2 uppercase">
+                                                            <span>Factual</span>
+                                                            <span>Criativo</span>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex-1 flex flex-wrap gap-2 items-center">
-                                                        {schedule[day]?.active && (
-                                                            <>
-                                                                {schedule[day].blocks.map((block, idx) => (
-                                                                    <div key={idx} className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded border border-gray-200">
-                                                                        <input type="time" value={block.start} onChange={(e) => updateTimeBlock(day, idx, 'start', e.target.value)} className="bg-transparent text-sm outline-none w-20 text-center" />
-                                                                        <span className="text-gray-400 text-xs">-</span>
-                                                                        <input type="time" value={block.end} onChange={(e) => updateTimeBlock(day, idx, 'end', e.target.value)} className="bg-transparent text-sm outline-none w-20 text-center" />
-                                                                        <button type="button" onClick={() => removeTimeBlock(day, idx)} className="text-gray-400 hover:text-red-500 ml-1"><X size={14} /></button>
-                                                                    </div>
-                                                                ))}
-                                                                <button type="button" onClick={() => addTimeBlock(day)} className="p-1 text-brand-primary hover:bg-blue-50 rounded transition-colors"><Plus size={18} /></button>
-                                                            </>
-                                                        )}
+
+                                                    <div>
+                                                        <div className="flex justify-between items-center mb-4">
+                                                            <label className={labelClass}>Diversidade (Top P)</label>
+                                                            <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{formData.top_p}</span>
+                                                        </div>
+                                                        <input
+                                                            type="range"
+                                                            name="top_p"
+                                                            min="0"
+                                                            max="1"
+                                                            step="0.05"
+                                                            value={formData.top_p}
+                                                            onChange={handleFormChange}
+                                                            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                                        />
+                                                        <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-2 uppercase">
+                                                            <span>Focado</span>
+                                                            <span>Amplo</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className={labelClass}>Top K</label>
+                                                        <input
+                                                            type="number"
+                                                            name="top_k"
+                                                            min="1"
+                                                            max="50"
+                                                            value={formData.top_k}
+                                                            onChange={handleFormChange}
+                                                            className={inputClass}
+                                                        />
+                                                        <p className="mt-2 text-[10px] font-bold text-slate-400 uppercase">Limita vocabulário (Padrão: 40)</p>
                                                     </div>
                                                 </div>
-                                            ))}
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    {/* Instruções Agenda */}
-                                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 text-sm text-gray-700 space-y-4 mt-6">
-                                        <div className="flex items-center gap-2 font-semibold text-brand-primary-active">
-                                            <Info size={18} />
-                                            <h4>Como funciona a integração com a Agenda</h4>
-                                        </div>
-                                        <p className="text-gray-600">
-                                            Conecte sua conta do Google Agenda para que a IA possa verificar seus horários livres e realizar agendamentos com os clientes de forma 100% automática.
-                                        </p>
-                                        <ul className="list-disc list-inside space-y-2 text-gray-600">
-                                            <li><strong>Conexão:</strong> Clique em "Conectar" para vincular sua conta do Google. A IA lerá seus eventos já existentes para evitar choques de horário.</li>
-                                            <li><strong>Disponibilidade:</strong> Defina acima os blocos de horários em que você aceita receber novas reuniões (ex: Seg a Sex, das 09:00 às 18:00).</li>
-                                            <li><strong>Ativação:</strong> Lembre-se de ligar a chave <strong>Ativar na IA</strong> ali em cima para liberar a funcionalidade de agendamento durante as conversas.</li>
-                                        </ul>
                                     </div>
-                                </div>
-                            )}
-                        </div>
+                                )}
+                            </div>
 
-                        <div className="flex justify-end items-center gap-4 pt-8 mt-auto border-t border-gray-100">
-                            {selectedConfig && (<button type="button" onClick={() => handleDelete(selectedConfig.id)} className="font-semibold text-red-500 hover:text-red-700 flex items-center gap-2 mr-auto px-2 py-2 transition-colors text-sm"><Trash2 size={16} /> Excluir Configuração</button>)}
-                            <button type="submit" disabled={isSaving} className="flex items-center gap-2 bg-slate-800 text-white font-semibold py-2.5 px-6 rounded-xl shadow-md hover:bg-slate-900 hover:shadow-lg transition-all disabled:bg-gray-300 disabled:shadow-none text-sm">
-                                {isSaving ? <><Loader2 className="animate-spin" size={18} /> Guardando...</> : <><Save size={18} /> Guardar Configuração</>}
-                            </button>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
-
-                {/* MODAL DE CONSTRUÇÃO DE FLUXO (UI ATUALIZADA) */}
-                <WorkflowEditorModal
-                    isOpen={isWorkflowModalOpen}
-                    onClose={() => setIsWorkflowModalOpen(false)}
-                    initialWorkflow={formData.workflow_json}
-                    onSave={(currentWorkflow) => {
-                        setFormData(prev => ({ ...prev, workflow_json: currentWorkflow }));
-                    }}
-                />
             </div>
+
+            {/* MODAL DE CONSTRUÇÃO DE FLUXO (UI ATUALIZADA) */}
+            <WorkflowEditorModal
+                isOpen={isWorkflowModalOpen}
+                onClose={() => setIsWorkflowModalOpen(false)}
+                initialWorkflow={formData.workflow_json}
+                onSave={(currentWorkflow) => {
+                    setFormData(prev => ({ ...prev, workflow_json: currentWorkflow }));
+                }}
+                onSaveAndPersist={async (currentWorkflow) => {
+                    await handleSave(null, currentWorkflow);
+                }}
+            />
         </div>
     );
 }

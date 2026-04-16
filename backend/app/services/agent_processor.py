@@ -354,7 +354,8 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                                     "type": msg.get("type", "text"),
                                     "media_id": msg.get("media_id"),
                                     "filename": msg.get("filename"),
-                                    "status": msg.get("status", "sent")
+                                    "status": msg.get("status", "sent"),
+                                    "is_ai": True
                                 })
                             current_hist.sort(key=lambda x: x.get('timestamp') or 0) # Reordena para garantir a cronologia.
                         

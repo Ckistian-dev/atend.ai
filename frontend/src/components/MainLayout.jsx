@@ -35,15 +35,31 @@ const MainLayout = () => {
     // Mostra um loading enquanto busca os dados do usuário
     if (isLoading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-gray-100">
-                <div className="text-lg font-medium text-gray-700">Carregando...</div>
+            <div style={{
+                display: 'flex',
+                height: '100vh',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'linear-gradient(175deg, #0b1c30 0%, #0942b3 55%, #1d4ed8 100%)'
+            }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{
+                        width: '42px', height: '42px',
+                        border: '3px solid rgba(255,255,255,0.15)',
+                        borderTopColor: '#ffffff',
+                        borderRadius: '50%',
+                        animation: 'spin 0.75s linear infinite'
+                    }} />
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                    <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '0.85rem', color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>Carregando...</span>
+                </div>
             </div>
         );
     }
 
     // Estrutura do layout principal
     return (
-        <div className="flex h-screen bg-gray-100">
+        <div className="flex h-screen" style={{ background: '#f0f4ff' }}>
             {/* Passamos o api_type para a Sidebar.
               A Sidebar usará isso para decidir se mostra o link "Finalizados".
             */}
@@ -54,7 +70,7 @@ const MainLayout = () => {
                 <Header /> 
                 
                 {/* O Outlet renderiza a página da rota atual (Dashboard, Atendimentos, etc.) */}
-                <main className="flex-1 overflow-y-auto">
+                <main className="flex-1 flex flex-col overflow-hidden min-h-0">
                     <Outlet />
                 </main>
             </div>

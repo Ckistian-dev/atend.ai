@@ -537,7 +537,7 @@ class WhatsAppService:
         headers = {"Authorization": f"Bearer {access_token}"}
         # Parâmetros para buscar todos os campos relevantes e aumentar o limite
         params = {
-            "fields": "name,status,language,components",
+            "fields": "id,name,status,language,components",
             "limit": 200  # Aumenta o limite para buscar mais templates de uma vez
         }
 
@@ -580,6 +580,37 @@ class WhatsAppService:
         except Exception as e:
             logger.error(f"WBP: Erro inesperado ao criar template: {e}", exc_info=True)
             raise MessageSendError(f"Erro inesperado ao criar template: {e}") from e
+
+    async def delete_template_official(self, business_account_id: str, access_token: str, template_name: str = None, template_id: str = None) -> bool:
+        """
+        Exclui um template de mensagem na API Oficial (WBP).
+        Usa o endpoint da conta (WABA) para maior compatibilidade.
+        """
+        if not business_account_id or not access_token:
+            raise ValueError("WBP: business_account_id e access_token são obrigatórios.")
+        if not template_name:
+            raise ValueError("WBP: template_name é obrigatório para exclusão via WABA.")
+
+        url = f"{self.wbp_graph_url_base}/{self.wbp_api_version}/{business_account_id}/message_templates"
+        headers = {"Authorization": f"Bearer {access_token}"}
+        
+        # Parâmetros obrigatórios e opcionais
+        params = {"name": template_name}
+        if template_id:
+            params["hsm_id"] = template_id  # Algumas versões da API aceitam hsm_id para maior precisão
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.delete(url, headers=headers, params=params, timeout=30.0)
+                response.raise_for_status()
+                return True
+        except httpx.HTTPStatusError as e:
+            error_body = e.response.text if e.response else "N/A"
+            logger.error(f"WBP: Erro HTTP {e.response.status_code} ao excluir template {template_name}: {error_body}")
+            raise MessageSendError(f"Falha ao excluir template na Meta: {error_body}") from e
+        except Exception as e:
+            logger.error(f"WBP: Erro inesperado ao excluir template: {e}", exc_info=True)
+            raise MessageSendError(f"Erro inesperado ao excluir template: {e}") from e
 
     async def get_app_id(self, access_token: str) -> Optional[str]:
         """Obtém o APP_ID associado ao token de acesso."""

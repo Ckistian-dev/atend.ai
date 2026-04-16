@@ -15,6 +15,10 @@ class ConfigBase(BaseModel):
     is_calendar_active: Optional[bool] = False
     google_calendar_credentials: Optional[Dict[str, Any]] = None
     workflow_json: Optional[Dict[str, Any]] = None
+    ai_model: Optional[str] = "gemini-2.5-flash"
+    temperature: Optional[float] = 0.5
+    top_p: Optional[float] = 0.95
+    top_k: Optional[int] = 40
 
 
 class ConfigCreate(ConfigBase):
@@ -31,6 +35,10 @@ class ConfigUpdate(BaseModel):
     available_hours: Optional[Dict[str, Any]] = None
     is_calendar_active: Optional[bool] = None
     workflow_json: Optional[Dict[str, Any]] = None
+    ai_model: Optional[str] = None
+    temperature: Optional[float] = None
+    top_p: Optional[float] = None
+    top_k: Optional[int] = None
 
 class Config(ConfigBase):
     id: int
@@ -144,6 +152,7 @@ class FormattedMessage(BaseModel):
     id: str
     role: str
     content: Optional[str] = None
+    caption: Optional[str] = None  # Texto original enviado pelo usuário junto com a mídia
     timestamp: Optional[Any] = Field(default_factory=lambda: int(datetime.now(timezone.utc).timestamp()))
     status: Optional[str] = None
     type: str = "text"
@@ -153,4 +162,6 @@ class FormattedMessage(BaseModel):
     mime_type: Optional[str] = None
     is_template: Optional[bool] = False
     buttons: Optional[List[str]] = None
+    quoted_msg: Optional[Dict[str, Any]] = None
+    is_ai: Optional[bool] = False
     model_config = {"from_attributes": True}

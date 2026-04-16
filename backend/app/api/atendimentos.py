@@ -646,6 +646,35 @@ async def create_whatsapp_template(
         logger.error(f"Erro ao criar template: {e}", exc_info=True)
         raise HTTPException(status_code=502, detail=str(e))
 
+@router.delete("/whatsapp/templates/{template_name}", summary="Excluir template na Meta")
+async def delete_whatsapp_template(
+    template_name: str,
+    template_id: Optional[str] = Query(None),
+    current_user: models.User = Depends(dependencies.get_current_active_user),
+    whatsapp_service: WhatsAppService = Depends(get_whatsapp_service)
+):
+    """
+    Exclui um template diretamente na conta do WhatsApp Business vinculada ao usuário.
+    Tenta excluir pelo ID (se fornecido) ou pelo nome.
+    """
+    if not hasattr(current_user, 'wbp_business_account_id') or not current_user.wbp_business_account_id:
+        raise HTTPException(
+            status_code=400,
+            detail="ID da Conta do WhatsApp Business não está configurado para este usuário."
+        )
+
+    try:
+        await whatsapp_service.delete_template_official(
+            business_account_id=current_user.wbp_business_account_id,
+            access_token=settings.WBP_ACCESS_TOKEN,
+            template_name=template_name,
+            template_id=template_id
+        )
+        return {"message": f"Template '{template_name}' excluído com sucesso."}
+    except Exception as e:
+        logger.error(f"Erro ao excluir template: {e}", exc_info=True)
+        raise HTTPException(status_code=502, detail=str(e))
+
 # Endpoint para baixar mídias recebidas via API Oficial
 @router.get("/{atendimento_id}/media/{media_id}", summary="Baixar mídia diretamente (API Oficial)")
 async def download_media_directly(

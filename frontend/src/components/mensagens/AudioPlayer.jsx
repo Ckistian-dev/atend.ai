@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import api from '../../api/axiosConfig';
 
-const AudioPlayer = ({ atendimentoId, mediaId, transcription }) => {
+const AudioPlayer = ({ atendimentoId, mediaId, transcription, isAssistant }) => {
     const [audioSrc, setAudioSrc] = useState(null);
     // --- ALTERADO: O estado de loading agora começa como 'idle' ---
     const [loadState, setLoadState] = useState('idle'); // 'idle', 'loading', 'loaded', 'error'
@@ -76,28 +76,36 @@ const AudioPlayer = ({ atendimentoId, mediaId, transcription }) => {
     };
 
     return (
-        // --- ALTERADO: Adicionada a ref ao container principal ---
-        <div ref={playerRef} className="space-y-2">
-            {/* --- ALTERADO: Lógica de renderização simplificada --- */}
-            <div className="w-full h-10">
+        // --- ALTERADO: Adicionada a ref ao container principal e min-width para evitar colapso ---
+        <div
+            ref={playerRef}
+            className="space-y-2 p-1 rounded-xl transition-all duration-300 min-w-[260px] md:min-w-[300px] bg-white/50 backdrop-blur-sm shadow-sm"
+        >
+            <div className="w-full h-11 flex items-center">
                 {loadState === 'loading' || loadState === 'idle' ? (
-                    // Mostra um placeholder de loading enquanto não estiver carregado
-                    <div className="flex items-center justify-center h-10 bg-gray-100 rounded-full text-gray-500">
-                        <Loader2 size={18} className="animate-spin mr-2" />
-                        <span className="text-sm">A carregar áudio...</span>
+                    <div className="flex items-center justify-center w-full h-11 rounded-xl group bg-slate-100/50 text-slate-400">
+                        <Loader2 size={18} className="animate-spin mr-3 text-blue-500" />
+                        <span className="text-[11px] font-black uppercase tracking-widest">Carregando...</span>
                     </div>
                 ) : loadState === 'error' ? (
-                    // Mostra uma mensagem de erro se falhar
-                    <div className="flex items-center justify-center h-10 bg-red-100 text-red-600 rounded-full text-sm">Erro ao carregar</div>
+                    <div className="flex items-center justify-center w-full h-11 rounded-xl border border-red-100 bg-red-50 text-red-500 text-[11px] font-black uppercase tracking-widest">
+                        Falha no carregamento
+                    </div>
                 ) : (
-                    // Mostra o player de áudio quando estiver pronto
-                    <audio src={audioSrc} controls className="w-full h-10" />
+                    <audio
+                        src={audioSrc}
+                        controls
+                        className="w-full h-9 audio-player-custom"
+                    />
                 )}
             </div>
 
-            {/* Área da Transcrição */}
             {transcription && (
-                <p className="whitespace-pre-wrap text-sm border-t border-gray-200 pt-2">{transcription}</p>
+                <div className={`pt-2 border-t ${isAssistant ? 'border-white/10' : 'border-slate-200/60'}`}>
+                    <p className={`text-[13px] leading-relaxed font-medium italic ${isAssistant ? 'text-white/90' : 'text-slate-600'}`}>
+                        "{transcription}"
+                    </p>
+                </div>
             )}
         </div>
     );

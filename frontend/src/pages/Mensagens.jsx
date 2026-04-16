@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom'; // Importado useSearchParams
-import api from '../api/axiosConfig'; 
+import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import {
     Loader2, MoreVertical, Download, Wand2, Check, X as XIcon, Sparkles
@@ -17,8 +17,114 @@ import FilterPopover from '../components/mensagens/FilterPopover';
 import TemplateModal from '../components/mensagens/TemplateModal';
 import FeedbackModal from '../components/mensagens/FeedbackModal';
 
+// --- DESIGN SYSTEM: INTELLIGENT STRATUM (MENSAGENS EDITION) ---
+const DS_STYLE = `
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    :root {
+        --ds-bg: #f0f4ff;
+        --ds-surface: rgba(255, 255, 255, 0.6);
+        --ds-accent: #2563eb;
+        --ds-text-main: #0f172a;
+        --ds-text-muted: #64748b;
+        --ds-radius-lg: 3rem;
+        --ds-shadow-premium: 0 25px 50px -12px rgba(37, 99, 235, 0.08);
+    }
+
+    .mensagens-loft {
+        font-family: 'Inter', sans-serif;
+        background: var(--ds-bg);
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .contact-list-container {
+        background: var(--ds-surface);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.8) !important;
+        border-radius: var(--ds-radius-lg);
+        box-shadow: var(--ds-shadow-premium);
+        margin: 0.75rem;
+        margin-right: 0.75rem;
+    }
+
+    .chat-center-card {
+        background: var(--ds-surface);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        border-radius: var(--ds-radius-lg);
+        box-shadow: var(--ds-shadow-premium);
+        margin: 0.75rem;
+        margin-left: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        position: relative; /* Necessário para o overlay da sidebar */
+    }
+
+    .profile-glass-sidebar {
+        background: rgba(255, 255, 255, 0.85); /* Mais opaco para leitura */
+        backdrop-filter: blur(20px);
+        border-left: 1px solid rgba(255, 255, 255, 0.3);
+        width: 380px;
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 50;
+        box-shadow: -10px 0 30px rgba(0,0,0,0.05);
+    }
+
+    .chat-header-editorial {
+        padding: 1rem 1.5rem;
+        background: rgba(255, 255, 255, 0.4);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .chat-bubble-user {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: white;
+        border-radius: 1.5rem 1.5rem 0.2rem 1.5rem;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+    }
+
+    .chat-bubble-ia {
+        background: white;
+        color: var(--ds-text-main);
+        border-radius: 1.5rem 1.5rem 1.5rem 0.2rem;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .editorial-label {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        font-weight: 800;
+        font-size: 0.65rem;
+        color: var(--ds-text-muted);
+    }
+
+    .executive-title {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+    }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); background-clip: padding-box; }
+`;
+
 const getTextColorForBackground = (hexColor) => {
-    // Força o texto a ser branco, conforme solicitado
     return '#FFFFFF';
 };
 
@@ -79,7 +185,7 @@ function Mensagens() {
 
     const [selectedAtendimento, setSelectedAtendimento] = useState(null);
     const [totalAtendimentos, setTotalAtendimentos] = useState(0);
-    
+
     // --- ALTERADO: O limite agora é lido e salvo no localStorage ---
     const [limit, setLimit] = useState(() => {
         const savedLimit = localStorage.getItem('atendimentosPageLimit');
@@ -100,7 +206,7 @@ function Mensagens() {
     // --- NOVO: Estado para a sidebar de perfil ---
     const [isProfileSidebarOpen, setIsProfileSidebarOpen] = useState(false);
     const sidebarRef = useRef(null);
-    
+
     // --- NOVO: Estados para o Feedback da IA ---
     const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 
@@ -133,7 +239,7 @@ function Mensagens() {
         // Ativamos o estado de carregamento se o limite for maior que o inicial.
         if (!isInitialLoad && limit > 20) {
             setIsFetchingMore(true);
-        } 
+        }
 
         try {
             const params = new URLSearchParams({
@@ -250,7 +356,7 @@ function Mensagens() {
         };
 
         fetchData(true).then(() => {
-             if (isMounted) timeoutId = setTimeout(poll, 5000);
+            if (isMounted) timeoutId = setTimeout(poll, 5000);
         });
 
         const handleVisibilityChange = () => {
@@ -308,7 +414,7 @@ function Mensagens() {
                     const res = await api.get(`/atendimentos/${currentAtendimentoId}`);
                     if (isMounted && res.data) {
                         const serverData = res.data;
-                        
+
                         setAtendimentos(prevAtendimentos => {
                             const localAtendimento = prevAtendimentos.find(at => at.id === currentAtendimentoId);
                             if (!localAtendimento) return prevAtendimentos;
@@ -318,12 +424,12 @@ function Mensagens() {
 
                             // Atualiza se houver qualquer mudança (data, conversa ou status)
                             if (serverDate > localDate || localAtendimento.conversa !== serverData.conversa || localAtendimento.status !== serverData.status) {
-                                
+
                                 setSelectedAtendimento(prevSelected => {
                                     if (prevSelected?.id === currentAtendimentoId) return serverData;
                                     return prevSelected;
                                 });
-                                
+
                                 return prevAtendimentos.map(at => at.id === currentAtendimentoId ? serverData : at);
                             }
                             return prevAtendimentos;
@@ -375,11 +481,11 @@ function Mensagens() {
             setFilteredAtendimentos([]);
             return;
         }
-        
+
         // --- LÓGICA DE FILTRAGEM REMOVIDA ---
         // A filtragem agora é feita 100% no backend. O frontend apenas ordena os resultados recebidos.
         // A variável 'mensagens' já contém a lista filtrada vinda da API.
-        let filtered = mensagens; 
+        let filtered = mensagens;
 
         // Ordena a lista filtrada (b - a para decrescente, mais novo primeiro)
         const sortedFiltered = [...filtered].sort((a, b) => {
@@ -618,7 +724,7 @@ function Mensagens() {
     const updateAtendimentoState = (atendimentoId, updatedAtendimento) => {
         // Atualiza a lista completa para refletir o estado final vindo do servidor.
         setAtendimentos(prev => prev.map(at => (at.id === atendimentoId ? updatedAtendimento : at)));
-        
+
         // Se o atendimento atualizado for o que está selecionado, atualiza a janela de chat.
         if (selectedAtendimento?.id === atendimentoId) {
             setSelectedAtendimento(updatedAtendimento);
@@ -903,7 +1009,7 @@ function Mensagens() {
 
                 let content = msg.content || '';
                 if (msg.type && msg.type !== 'text' && msg.type !== 'sending') {
-                     content += ` [Anexo: ${msg.type}${msg.filename ? ` - ${msg.filename}` : ''}]`;
+                    content += ` [Anexo: ${msg.type}${msg.filename ? ` - ${msg.filename}` : ''}]`;
                 }
 
                 exportText += `[${dateStr}] ${sender}:\n${content}\n\n`;
@@ -1028,43 +1134,49 @@ function Mensagens() {
     }
 
     return (
-        <div className="flex h-[93vh] bg-white">
-            <aside className="w-full md:w-[30%] lg:w-[25%] flex flex-col border-r border-gray-200 min-h-0 relative">
-                <div className="relative">
-                    <SearchAndFilter
-                        searchTerm={searchTerm}
-                        setSearchTerm={setSearchTerm}
-                        activeButtonGroup={activeButtonGroup}
-                        toggleFilter={toggleFilter}
-                        onFilterIconClick={() => setIsFilterPopoverOpen(prev => !prev)} // ALTERADO: Verifica se os filtros não são nulos
-                        hasActiveFilters={!!statusFilters || !!tagFilters}
-                    />
-                    <FilterPopover
-                        isOpen={isFilterPopoverOpen}
-                        onClose={() => setIsFilterPopoverOpen(false)}
-                        statusOptions={statusOptions}
-                        allTags={allTags}
-                        selectedStatus={statusFilters}
-                        onStatusChange={handleStatusFilterChange}
-                        selectedTags={tagFilters}
-                        onTagChange={handleTagFilterChange}
-                        onClearFilters={handleClearAllFilters}
-                        limit={limit}
-                        onLimitChange={setLimit}
-                        timeStart={timeStart}
-                        onTimeStartChange={setTimeStart}
-                        timeEnd={timeEnd}
-                        onTimeEndChange={setTimeEnd}
-                    />
+        <div className="mensagens-loft flex h-[93vh]">
+            <style>{DS_STYLE}</style>
+
+            {/* ASIDE: LISTA DE CONTATOS (EDITORIAL) */}
+            <aside className="w-full md:w-[320px] lg:w-[360px] flex flex-col min-h-0 relative contact-list-container">
+                <div>
+                    <div className="relative">
+                        <SearchAndFilter
+                            searchTerm={searchTerm}
+                            setSearchTerm={setSearchTerm}
+                            activeButtonGroup={activeButtonGroup}
+                            toggleFilter={toggleFilter}
+                            onFilterIconClick={() => setIsFilterPopoverOpen(prev => !prev)}
+                            hasActiveFilters={!!statusFilters || !!tagFilters}
+                        />
+                        <FilterPopover
+                            isOpen={isFilterPopoverOpen}
+                            onClose={() => setIsFilterPopoverOpen(false)}
+                            statusOptions={statusOptions}
+                            allTags={allTags}
+                            selectedStatus={statusFilters}
+                            onStatusChange={handleStatusFilterChange}
+                            selectedTags={tagFilters}
+                            onTagChange={handleTagFilterChange}
+                            onClearFilters={handleClearAllFilters}
+                            limit={limit}
+                            onLimitChange={setLimit}
+                            timeStart={timeStart}
+                            onTimeStartChange={setTimeStart}
+                            timeEnd={timeEnd}
+                            onTimeEndChange={setTimeEnd}
+                        />
+                    </div>
                 </div>
-                <div className="flex-1 overflow-y-auto">
+
+                <div className="flex-1 overflow-y-auto px-4 custom-scrollbar">
                     {isLoading ? (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                        <div className="flex flex-col items-center justify-center h-full text-slate-400">
                             <Loader2 size={32} className="animate-spin mb-4" />
-                            <p className="text-sm">Carregando atendimentos...</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest">Carregando</p>
                         </div>
                     ) : (
-                        <>
+                        <div className="space-y-1 pb-10">
                             {filteredAtendimentos.length > 0 ? (
                                 filteredAtendimentos.map((at) => (
                                     <ContactItem
@@ -1075,114 +1187,119 @@ function Mensagens() {
                                         statusOptions={statusOptions}
                                         onUpdateStatus={handleUpdateAtendimento}
                                         getTextColorForBackground={getTextColorForBackground}
-                                        // As props de controle de tag foram removidas do ContactItem na etapa anterior, então aqui está correto.
                                         allTags={allTags}
-                                        onUpdateTags={handleUpdateAtendimento} // Reutilizado para tags
+                                        onUpdateTags={handleUpdateAtendimento}
                                         onAddNewTag={handleAddNewTag}
                                         onSwitchToAtendimentos={handleSwitchToAtendimentos}
                                     />
                                 ))
                             ) : (
-                                <p className="text-center text-gray-500 p-6">
-                                    Nenhum atendimento encontrado para este filtro.
-                                </p>
+                                <div className="p-10 text-center">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                        Nenhum registro
+                                    </p>
+                                </div>
                             )}
-                            {/* --- Lógica do botão "Carregar Mais" --- */}
                             {filteredAtendimentos.length > 0 && filteredAtendimentos.length < totalAtendimentos && (
-                                <div className="p-3 text-center border-t border-gray-200">
+                                <div className="mt-8 px-4">
                                     <button
                                         onClick={handleLoadMore}
-                                        className="w-full px-4 py-2 text-sm font-medium text-brand-primary bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-wait flex items-center justify-center gap-2"
+                                        className="w-full py-4 text-[11px] font-black uppercase tracking-widest text-blue-600 bg-blue-50/50 rounded-2xl hover:bg-blue-100 transition-all disabled:opacity-50"
                                         disabled={isFetchingMore}
                                     >
-                                        {isFetchingMore ? (
-                                            <>
-                                                <Loader2 size={16} className="animate-spin" />
-                                                A carregar...
-                                            </>
-                                        ) : `Carregar Mais (${filteredAtendimentos.length}/${totalAtendimentos})`
-                                        }
+                                        {isFetchingMore ? <Loader2 size={16} className="animate-spin mx-auto" /> : `Exibir mais ${totalAtendimentos - filteredAtendimentos.length}`}
                                     </button>
                                 </div>
                             )}
-                        </>
+                        </div>
                     )}
                 </div>
             </aside>
 
             {/* --- MODIFICADO: Layout principal agora é flex horizontal --- */}
-            <main className="flex-1 flex min-h-0">
+            {/* MAIN: JANELA DE CHAT (THE LOFT) */}
+            <main className="flex-1 flex min-h-0 relative">
                 {selectedAtendimento ? (
-                    <>
-                        {/* Coluna da Conversa (ocupa o espaço restante) */}
-                        <div className="flex-1 flex flex-col min-h-0">
-                            <header className="flex-shrink-0 flex items-center p-3 bg-white border-b border-gray-200">
-                                <div className="w-10 h-10 rounded-full mr-3 flex-shrink-0 bg-gray-300 flex items-center justify-center">
-                                    <span className="text-lg font-bold text-white">
-                                        {selectedAtendimento.nome_contato
-                                            ? (selectedAtendimento.nome_contato || '??').substring(0, 2).toUpperCase()
-                                            : (selectedAtendimento.whatsapp || '??').slice(-2)}
-                                    </span>
+                    <div className="flex-1 flex min-h-0">
+                        {/* THE CHAT CARD */}
+                        <div className="chat-center-card">
+                            <header className="chat-header-editorial flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 executive-title text-lg">
+                                        {(selectedAtendimento.nome_contato || selectedAtendimento.whatsapp || '??').substring(0, 2).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <h2 className="executive-title text-lg text-slate-900 leading-tight">
+                                            {selectedAtendimento.nome_contato || selectedAtendimento.whatsapp}
+                                        </h2>
+                                        <div className="flex items-center gap-3 mt-0.5">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                                <p className="editorial-label text-[9px]">Atendimento Ativo</p>
+                                            </div>
+
+                                            {/* HEADER TAGS */}
+                                            {selectedAtendimento.tags && selectedAtendimento.tags.length > 0 && (
+                                                <div className="flex items-center gap-1.5 ml-1 pl-3 border-l border-slate-200">
+                                                    {selectedAtendimento.tags.map((tag, idx) => (
+                                                        <span
+                                                            key={idx}
+                                                            className="px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md border shadow-sm flex items-center gap-1 transition-all hover:scale-105"
+                                                            style={{
+                                                                backgroundColor: `${tag.color}10`,
+                                                                color: tag.color,
+                                                                borderColor: `${tag.color}30`
+                                                            }}
+                                                        >
+                                                            <div className="w-1 h-1 rounded-full" style={{ backgroundColor: tag.color }} />
+                                                            {tag.name}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex-1">
-                                    <h2 className="text-md font-semibold text-gray-800">{selectedAtendimento.nome_contato || selectedAtendimento.whatsapp}</h2>
-                                </div>
-                                <div className="ml-auto flex items-center gap-1">
-                                    {/* --- NOVO: Botão de Feedback Treinamento --- */}
-                                    <button
-                                        onClick={() => setIsFeedbackModalOpen(true)}
-                                        className={`p-2 rounded-full text-brand-text-muted hover:text-brand-primary-active hover:bg-gray-100 transition-opacity ${isProfileSidebarOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-                                        title="Sugerir melhoria no Treinamento da IA"
-                                    >
+
+                                <div className="flex items-center gap-1 text-slate-400">
+                                    <button onClick={() => setIsFeedbackModalOpen(true)} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white hover:text-blue-600 transition-all" title="IA Training">
                                         <Wand2 size={20} />
                                     </button>
-                                    {/* --- NOVO: Botão de Exportar --- */}
-                                    <button
-                                        onClick={handleExportConversation}
-                                        className={`p-2 rounded-full text-brand-text-muted hover:text-brand-primary-active hover:bg-gray-100 transition-opacity ${isProfileSidebarOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-                                        title="Exportar conversa"
-                                    >
+                                    <button onClick={handleExportConversation} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white hover:text-blue-600 transition-all" title="Exportar Log">
                                         <Download size={20} />
                                     </button>
-                                    {/* --- ALTERADO: O botão agora some quando a sidebar está aberta --- */}
-                                    <button
-                                        onClick={() => setIsProfileSidebarOpen(prev => !prev)}
-                                        className={`p-2 rounded-full text-brand-text-muted hover:text-brand-primary-active hover:bg-gray-100 transition-opacity ${isProfileSidebarOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-                                        title="Ver dados do contato"
-                                    >
+                                    <button onClick={() => setIsProfileSidebarOpen(prev => !prev)} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${isProfileSidebarOpen ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'hover:bg-white hover:text-blue-600'}`} title="Dashboard de Lead">
                                         <MoreVertical size={20} />
                                     </button>
                                 </div>
                             </header>
-                            <ChatBody
-                                mensagem={selectedAtendimento}
-                                onViewMedia={handleViewMedia}
-                                onDownloadDocument={handleDownloadDocument}
-                                isDownloadingMedia={isDownloadingMedia}
-                                isLoading={isLoading} // --- ADICIONADO: Passa o estado de loading
-                            />
-                            <ChatFooter
-                                onSendMessage={handleSendMessage}
-                                onSendMedia={handleSendMedia}
-                                onOpenTemplateModal={() => setIsTemplateModalOpen(true)}
-                            />
-                        </div>
-                        {/* --- MODIFICADO: Animação do Perfil --- */}
-                        {/* A sidebar agora é posicionada de forma absoluta em telas menores para deslizar sobre o conteúdo */}
-                        {/* Em telas maiores (md), a largura é animada para um efeito de "encolher". A largura máxima é definida no contêiner pai para evitar que ele "salte" durante a animação. */}
-                        <div 
-                            ref={sidebarRef}
-                            className={`
-                            absolute md:relative top-0 right-0 h-full md:max-w-sm flex-shrink-0
-                            transition-all duration-300 ease-in-out
-                            ${isProfileSidebarOpen
-                                ? 'w-full translate-x-0' // Aberto: largura total no mobile, largura do max-w-sm no desktop
-                                : 'w-0 translate-x-full md:translate-x-0' // Fechado: largura 0 e fora da tela no mobile/desktop
-                            }
-                        `}>
-                            {/* O conteúdo só é renderizado se o atendimento existir, e é ocultado quando a sidebar está fechada */}
-                            {/* O contêiner interno sempre tem a largura total do pai, garantindo que o conteúdo não quebre o layout. */}
-                            <div className={`h-full w-full bg-gray-50 ${!isProfileSidebarOpen && 'overflow-hidden'}`}>
+
+                            <div className="flex-1 min-h-0 bg-slate-50/30 overflow-hidden flex flex-col">
+                                <ChatBody
+                                    mensagem={selectedAtendimento}
+                                    onViewMedia={handleViewMedia}
+                                    onDownloadDocument={handleDownloadDocument}
+                                    isDownloadingMedia={isDownloadingMedia}
+                                    isLoading={isLoading}
+                                />
+                            </div>
+
+                            <div className="px-6 py-4 bg-white/40 border-t border-white">
+                                <ChatFooter
+                                    onSendMessage={handleSendMessage}
+                                    onSendMedia={handleSendMedia}
+                                    onOpenTemplateModal={() => setIsTemplateModalOpen(true)}
+                                />
+                            </div>
+
+                            {/* PROFILE SIDEBAR (INTEGRATED AS OVERLAY) */}
+                            <div
+                                ref={sidebarRef}
+                                className={`
+                                    profile-glass-sidebar h-full overflow-hidden transition-all duration-300 ease-in-out
+                                    ${isProfileSidebarOpen ? 'w-[360px] opacity-100 translate-x-0' : 'w-0 opacity-0 translate-x-full pointer-events-none'}
+                                `}
+                            >
                                 <ProfileSidebar
                                     atendimento={selectedAtendimento}
                                     onClose={() => setIsProfileSidebarOpen(false)}
@@ -1198,17 +1315,11 @@ function Mensagens() {
                                 />
                             </div>
                         </div>
-                    </>
+                    </div>
                 ) : (
-                    // --- MODIFICADO: Mostra placeholder de carregamento se a lista principal estiver carregando ---
-                    isLoading ? (
-                        <div className="flex flex-col items-center justify-center w-full h-full bg-gray-50 text-gray-500">
-                            <Loader2 size={32} className="animate-spin mb-4" />
-                            <p className="text-sm">A carregar...</p>
-                        </div>
-                    ) : (
+                    <div className="flex-1 flex items-center justify-center">
                         <ChatPlaceholder />
-                    )
+                    </div>
                 )}
             </main>
 
@@ -1228,12 +1339,12 @@ function Mensagens() {
                 onSend={handleSendTemplate}
                 atendimento={selectedAtendimento}
             />
-            
+
             {/* --- MODAL DE FEEDBACK E TREINAMENTO --- */}
-            <FeedbackModal 
-                isOpen={isFeedbackModalOpen} 
-                onClose={() => setIsFeedbackModalOpen(false)} 
-                atendimentoId={selectedAtendimento?.id} 
+            <FeedbackModal
+                isOpen={isFeedbackModalOpen}
+                onClose={() => setIsFeedbackModalOpen(false)}
+                atendimentoId={selectedAtendimento?.id}
             />
 
         </div>
