@@ -25,7 +25,7 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId }) => {
         try {
             const res = await api.post(`/atendimentos/${atendimentoId}/analyze_feedback`, {
                 feedback: feedbackText
-            }, { timeout: 300000 });
+            }, { timeout: 600000 });
             setFeedbackAnalysis(res.data);
         } catch (error) {
             toast.error("Erro ao analisar a conversa.");
