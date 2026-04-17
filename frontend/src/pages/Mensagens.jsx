@@ -122,7 +122,35 @@ const DS_STYLE = `
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); background-clip: padding-box; }
+
+    @keyframes highlight-pop {
+        0% { transform: scale(1); filter: brightness(1); }
+        20% { transform: scale(1.04); filter: brightness(1.2); }
+        100% { transform: scale(1); filter: brightness(1); }
+    }
+
+    @keyframes highlight-ring-expand {
+        0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6); opacity: 1; }
+        100% { box-shadow: 0 0 0 40px rgba(37, 99, 235, 0); opacity: 0; }
+    }
+
+    .highlight-message {
+        position: relative;
+        animation: highlight-pop 1.2s cubic-bezier(0.2, 0, 0.2, 1);
+        z-index: 50;
+    }
+
+    .highlight-message::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        animation: highlight-ring-expand 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+        z-index: -1;
+    }
 `;
+
 
 const getTextColorForBackground = (hexColor) => {
     return '#FFFFFF';

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { Check, CheckCheck, AlertCircle, Clock, MessageSquare, Wand2, Loader2, Sparkles } from 'lucide-react';
+import { Check, CheckCheck, AlertCircle, Clock, MessageSquare, Wand2, Loader2, Sparkles, Navigation } from 'lucide-react';
+import toast from 'react-hot-toast';
 import MessageContent from './MessageContent';
 
 // --- Componente: Corpo da Conversa (Mensagens) ---
@@ -12,6 +13,7 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
     const prevAtendimentoIdRef = useRef(null);
     // --- NOVO: Ref para saber se o usuário estava no final do scroll antes da atualização ---
     const userWasAtBottomRef = useRef(true);
+    const [highlightedMessageId, setHighlightedMessageId] = useState(null);
 
     useEffect(() => {
         let parsedMessages = [];
@@ -76,6 +78,18 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
         }
     }
 
+    const handleScrollToMessage = (targetId) => {
+        if (!targetId) return;
+        const element = document.getElementById(`msg-${targetId}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setHighlightedMessageId(targetId);
+            setTimeout(() => setHighlightedMessageId(null), 2000);
+        } else {
+            toast.error("Mensagem original não encontrada nesta conversa.");
+        }
+    };
+
     return (
         <div
             ref={chatContainerRef}
@@ -87,11 +101,15 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
                 const isLastInGroup = !nextMsg || nextMsg.role !== msg.role;
 
                 return (
-                    <div key={msg.id} className={`flex flex-col ${isAssistant ? 'items-end' : 'items-start'} ${isLastInGroup ? 'mb-4' : 'mb-1'}`}>
+                    <div 
+                        key={msg.id} 
+                        className={`flex flex-col transition-all duration-500 ${isAssistant ? 'items-end' : 'items-start'} ${isLastInGroup ? 'mb-4' : 'mb-1'}`}
+                    >
                         <div
+                            id={`msg-${msg.id}`}
                             className={`relative max-w-[85%] md:max-w-[70%] transition-all duration-300 ${
                                 isAssistant ? 'chat-bubble-user' : 'chat-bubble-ia shadow-sm border border-white/40'
-                            }`}
+                            } ${highlightedMessageId === msg.id ? 'highlight-message' : ''}`}
                         >
                             {msg.is_template && (
                                 <div className={`text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2 pb-2 border-b ${isAssistant ? 'border-white/20 text-white/80' : 'border-slate-100 text-blue-600'}`}>
@@ -105,6 +123,7 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
                                 onViewMedia={onViewMedia}
                                 onDownloadDocument={onDownloadDocument}
                                 isDownloading={isDownloadingMedia}
+                                onQuotedClick={handleScrollToMessage}
                             />
 
                             <div className={`flex items-center gap-2 mt-3 ${isAssistant ? 'justify-end text-white/60' : 'justify-start text-slate-400'}`}>
