@@ -101,15 +101,14 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
                 const isLastInGroup = !nextMsg || nextMsg.role !== msg.role;
 
                 return (
-                    <div 
-                        key={msg.id} 
+                    <div
+                        key={msg.id}
                         className={`flex flex-col transition-all duration-500 ${isAssistant ? 'items-end' : 'items-start'} ${isLastInGroup ? 'mb-4' : 'mb-1'}`}
                     >
                         <div
                             id={`msg-${msg.id}`}
-                            className={`relative max-w-[85%] md:max-w-[70%] transition-all duration-300 ${
-                                isAssistant ? 'chat-bubble-user' : 'chat-bubble-ia shadow-sm border border-white/40'
-                            } ${highlightedMessageId === msg.id ? 'highlight-message' : ''}`}
+                            className={`relative max-w-[85%] md:max-w-[70%] transition-all duration-300 ${isAssistant ? 'chat-bubble-user' : 'chat-bubble-ia shadow-sm border border-white/40'
+                                } ${highlightedMessageId === msg.id ? 'highlight-message' : ''}`}
                         >
                             {msg.is_template && (
                                 <div className={`text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2 pb-2 border-b ${isAssistant ? 'border-white/20 text-white/80' : 'border-slate-100 text-blue-600'}`}>

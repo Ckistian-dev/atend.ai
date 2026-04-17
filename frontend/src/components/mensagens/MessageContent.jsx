@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Download, Loader2, FileText } from 'lucide-react';
+import { AlertTriangle, Download, Loader2, FileText, AlertCircle } from 'lucide-react';
 
 // Importa o novo componente de áudio
 import AudioPlayer from './AudioPlayer';
@@ -69,14 +69,13 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
         const senderName = isQuotedAssistant ? 'Você' : 'Cliente';
 
         return (
-            <div 
+            <div
                 onClick={() => onQuotedClick && quoted.id && onQuotedClick(quoted.id)}
-                className={`mb-3 p-3 rounded-xl border-l-4 flex flex-col gap-1 overflow-hidden select-none transition-all ${
-                    quoted.id ? 'cursor-pointer hover:brightness-110 active:scale-[0.98]' : ''
-                } ${isAssistant
-                ? 'bg-black/20 border-white/40'
-                : 'bg-slate-100/80 border-blue-500'
-                }`}
+                className={`mb-3 p-3 rounded-xl border-l-4 flex flex-col gap-1 overflow-hidden select-none transition-all ${quoted.id ? 'cursor-pointer hover:brightness-110 active:scale-[0.98]' : ''
+                    } ${isAssistant
+                        ? 'bg-black/20 border-white/40'
+                        : 'bg-slate-100/80 border-blue-500'
+                    }`}
             >
                 <span className={`text-[11px] font-black uppercase tracking-wider ${isAssistant ? 'text-white/90' : 'text-blue-600'
                     }`}>
