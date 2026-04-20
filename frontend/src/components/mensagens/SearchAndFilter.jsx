@@ -6,13 +6,10 @@ const SearchAndFilter = ({ searchTerm, setSearchTerm, activeButtonGroup, toggleF
         <div className="flex-shrink-0 p-4 pb-4 flex flex-col gap-6">
             {/* BARRA DE BUSCA PREMIUM */}
             <div className="relative group">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                    <Search size={20} />
-                </div>
                 <input
                     type="text"
                     placeholder="Buscar Contatos..."
-                    className="w-full pl-14 pr-14 py-4 bg-white/50 border border-transparent rounded-2xl focus:bg-white focus:outline-none focus:shadow-2xl focus:shadow-blue-900/5 transition-all text-[14px] font-bold text-slate-700 placeholder:text-slate-300"
+                    className="w-full px-6 pr-14 py-4 bg-white/50 border border-transparent rounded-2xl focus:bg-white focus:outline-none focus:shadow-2xl focus:shadow-blue-900/5 transition-all text-[14px] font-bold text-slate-700 placeholder:text-slate-300"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />

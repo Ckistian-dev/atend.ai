@@ -5,10 +5,12 @@ import {
     Plus, Save, Trash2, FileText, ChevronRight, Loader2,
     Link as LinkIcon, Star, CheckCircle, Folder, Copy, Share2, Database, ExternalLink, Bell, RefreshCw, Check,
     Calendar, Clock, X,
-    Search, User, Users, Info, Network, Maximize2, Cpu, Sliders, Zap, Bot
+    Search, User, Users, Info, Network, Maximize2, Cpu, Sliders, Zap, Bot, ChevronLeft
 } from 'lucide-react';
 import { WorkflowPreview, WorkflowEditorModal } from '../components/configs/WorkflowEditor';
 import { LLM_MODELS } from '../constants/models';
+import PageLoader from '../components/common/PageLoader';
+
 
 // --- DESIGN SYSTEM ---
 const DS_STYLE = `
@@ -137,6 +139,7 @@ function Configs() {
 
     // Estados do Workflow
     const [isWorkflowModalOpen, setIsWorkflowModalOpen] = useState(false);
+    const [mobileView, setMobileView] = useState('list'); // 'list' ou 'form'
 
     const isInitialLoad = useRef(true);
 
@@ -233,9 +236,9 @@ function Configs() {
 
         setDestSearchTerm(config.notification_destination || '');
 
-        // Setup workflow
-
-        setActiveTab('system');
+        // No mobile, após selecionar, vamos para o formulário
+        setMobileView('form');
+        setActiveTab('ia');
         setError('');
     }, []);
 
@@ -258,7 +261,8 @@ function Configs() {
             defaultSchedule[day] = { active: false, blocks: [{ start: '09:00', end: '18:00' }] };
         });
         setSchedule(defaultSchedule);
-        setActiveTab('system');
+        setMobileView('form');
+        setActiveTab('ia');
         setError('');
     }, []);
 
@@ -619,50 +623,51 @@ function Configs() {
     const labelClass = "block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1";
     const inputClass = "config-input";
 
+    if (isLoading && configs.length === 0) {
+        return <PageLoader message="Configurações da Persona" subMessage="Carregando modelos e diretrizes..." />;
+    }
+
     return (
-        <div className="p-4 md:p-5 bg-[#f0f4ff] flex-1 flex flex-col configs-page h-[93vh]">
+        <div className="p-0 sm:p-4 md:p-5 bg-[#f0f4ff] flex-1 flex flex-col configs-page h-full sm:h-[93vh]">
             <style>{DS_STYLE}</style>
 
             <div className="mx-auto w-full flex-1 flex flex-col min-h-0">
-                <div className="mb-6">
+                <div className={`${mobileView === 'form' ? 'hidden sm:block' : 'block'} mb-6 p-4 sm:p-0`}>
                     <div className="flex items-center gap-3 mb-2">
                         <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-200">
                             <Bot size={22} className="text-white" />
                         </div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+                        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                             Persona <span className="text-blue-600 font-black">IA</span>
                         </h1>
                     </div>
-                    <p className="text-slate-500 font-medium text-sm flex items-center gap-2">
+                    <p className="text-slate-500 font-medium text-xs sm:text-sm flex items-center gap-2">
                         <Info size={14} className="text-blue-400" /> Gerencie identidades e comportamentos da sua inteligência artificial.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 sm:h-full overflow-hidden">
                     {/* SIDEBAR: SELEÇÃO DE PERSONA */}
-                    <div className="lg:col-span-3 space-y-8 flex flex-col h-[78vh]">
-                        <button onClick={handleNewConfig} className="w-full h-16 flex items-center justify-center gap-3 bg-blue-600 text-white font-black text-sm uppercase tracking-widest rounded-3xl shadow-xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 transition-all active:scale-[0.98] shrink-0">
-                            <Plus size={20} /> Nova Configuração
+                    <div className={`${mobileView === 'form' ? 'hidden sm:flex' : 'flex'} lg:col-span-3 space-y-4 sm:space-y-8 flex flex-col h-full sm:h-[78vh] p-4 sm:p-0`}>
+                        <button onClick={handleNewConfig} className="w-full h-14 sm:h-16 flex items-center justify-center gap-3 bg-blue-600 text-white font-black text-sm uppercase tracking-widest rounded-[1.5rem] sm:rounded-3xl shadow-xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 transition-all active:scale-[0.98] shrink-0">
+                            <Plus size={20} /> Nova Persona
                         </button>
 
-                        <div className="bg-white/60 backdrop-blur-xl p-5 rounded-[2rem] shadow-sm border border-white flex flex-col flex-1 min-h-0">
-                            <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 px-2">Identidades Ativas</h2>
+                        <div className="bg-white p-4 sm:p-5 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col flex-1 min-h-0 overflow-hidden">
+                            <h2 className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 sm:mb-6 px-2">Identidades Ativas</h2>
 
                             {isLoading ? (
-                                <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-40">
-                                    <Loader2 className="animate-spin text-blue-600" size={32} />
-                                    <span className="text-xs font-bold uppercase tracking-widest">Sincronizando...</span>
-                                </div>
+                                <PageLoader fullScreen={false} message="Sincronizando Identidades" subMessage="" />
                             ) : (
-                                <ul className="space-y-3 overflow-y-scroll custom-scrollbar max-h-[calc(100vh-200px)] flex-1 pr-2">
+                                <ul className="space-y-2 sm:space-y-3 overflow-y-auto custom-scrollbar flex-1 pr-1">
                                     {configs.map(config => {
                                         const isDefault = userData?.default_persona_id === config.id;
                                         const isSelected = selectedConfig?.id === config.id;
                                         return (
                                             <li key={config.id} className="persona-card group">
-                                                <div className={`p-4 rounded-3xl flex items-center gap-4 transition-all ${isSelected ? 'bg-white shadow-xl shadow-slate-200/50 scale-[1.02]' : 'hover:bg-white/40'}`}>
+                                                <div className={`p-3 sm:p-4 rounded-2xl sm:rounded-3xl flex items-center gap-3 sm:gap-4 transition-all ${isSelected ? 'bg-blue-50/50 shadow-sm' : 'hover:bg-slate-50'}`}>
                                                     <button onClick={() => handleSetDefault(config.id)} title="Definir como padrão" className="relative shrink-0">
-                                                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${isDefault ? 'bg-amber-100 text-amber-500 shadow-sm' : 'bg-slate-50 text-slate-300 hover:text-amber-400'}`}>
+                                                        <div className={`w-10 h-10 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all ${isDefault ? 'bg-amber-100 text-amber-500 shadow-sm' : 'bg-slate-50 text-slate-300 hover:text-amber-400'}`}>
                                                             <Star size={18} className={isDefault ? 'fill-current' : ''} />
                                                         </div>
                                                         {isDefault && <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 border-2 border-white rounded-full"></div>}
@@ -672,11 +677,10 @@ function Configs() {
                                                         <h3 className={`text-sm font-bold truncate ${isSelected ? 'text-blue-600' : 'text-slate-700'}`}>
                                                             {config.nome_config}
                                                         </h3>
-                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Sincronizado</p>
+                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Ativo</p>
                                                     </button>
 
-                                                    {isSelected && <div className="w-1.5 h-8 bg-blue-600 rounded-full"></div>}
-                                                    {!isSelected && <ChevronRight size={16} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />}
+                                                    <ChevronRight size={16} className={`text-slate-300 transition-all ${isSelected ? 'text-blue-600' : 'opacity-0 sm:group-hover:opacity-100'}`} />
                                                 </div>
                                             </li>
                                         );
@@ -687,43 +691,58 @@ function Configs() {
                     </div>
 
                     {/* MAIN CONTENT Area */}
-                    <div className="lg:col-span-9 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col h-[78vh] min-h-0">
+                    <div className={`${mobileView === 'list' ? 'hidden sm:flex' : 'flex'} lg:col-span-9 bg-white rounded-0 sm:rounded-[2.5rem] shadow-sm border-none sm:border border-slate-100 flex flex-col h-full sm:h-[78vh] min-h-0`}>
                         <form onSubmit={handleSave} className="flex-1 flex flex-col min-h-0">
-                            <div className="p-6 md:p-8 flex-1 flex flex-col overflow-y-scroll custom-scrollbar min-h-0">
+                            <div className="p-4 sm:p-6 md:p-8 flex-1 flex flex-col overflow-y-auto custom-scrollbar min-h-0">
                                 {/* Header da Config */}
-                                <div className="flex flex-col md:flex-row md:items-center gap-5 mb-8">
-                                    <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-inner">
-                                        <FileText size={28} />
+                                <div className="flex flex-col md:flex-row md:items-center gap-4 sm:gap-6 mb-6 sm:mb-10">
+                                    <div className="flex items-center gap-3 sm:gap-5 flex-1 min-w-0">
+                                        <button
+                                            type="button"
+                                            onClick={() => setMobileView('list')}
+                                            className="sm:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-slate-100 text-slate-400 shadow-sm shrink-0 active:scale-95 transition-all"
+                                        >
+                                            <ChevronLeft size={20} />
+                                        </button>
+
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-3">
+                                                <div className="hidden sm:flex w-12 h-12 rounded-2xl bg-blue-50 items-center justify-center text-blue-600 shadow-inner shrink-0">
+                                                    <FileText size={24} />
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nome da Persona"
+                                                    name="nome_config"
+                                                    value={formData.nome_config}
+                                                    onChange={handleFormChange}
+                                                    required
+                                                    className="w-full text-2xl sm:text-3xl font-black text-slate-900 bg-transparent border-none focus:ring-0 placeholder:text-slate-200 tracking-tight p-0"
+                                                />
+                                            </div>
+                                            <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1 sm:mt-2 ml-0 sm:ml-12">Configurações da Persona</p>
+                                        </div>
                                     </div>
-                                    <div className="flex-1">
-                                        <input
-                                            type="text"
-                                            placeholder="Nome da Configuração (Ex: Atendente Comercial)"
-                                            name="nome_config"
-                                            value={formData.nome_config}
-                                            onChange={handleFormChange}
-                                            required
-                                            className="w-full text-3xl font-black text-slate-900 bg-transparent border-none focus:ring-0 placeholder:text-slate-200 tracking-tight"
-                                        />
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1 ml-1">Configurações da Persona</p>
-                                    </div>
-                                    <div className="flex items-center gap-3">
+
+                                    <div className="flex items-center gap-2 sm:gap-3">
                                         {selectedConfig && (
                                             <button
                                                 type="button"
                                                 onClick={() => handleDelete(selectedConfig.id)}
-                                                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 hover:scale-105 transition-all shadow-sm"
+                                                className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl sm:rounded-2xl bg-red-50 text-red-500 hover:bg-red-100 transition-all shrink-0"
                                                 title="Excluir Persona"
                                             >
-                                                <Trash2 size={20} />
+                                                <Trash2 size={18} sm:size={20} />
                                             </button>
                                         )}
                                         <button
                                             type="submit"
                                             disabled={isSaving}
-                                            className="flex items-center gap-3 bg-blue-600 text-white font-black text-xs uppercase tracking-widest py-3.5 px-8 rounded-2xl shadow-xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 transition-all disabled:bg-slate-300 disabled:shadow-none active:scale-95"
+                                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 sm:gap-3 bg-blue-600 text-white font-black text-[10px] sm:text-xs uppercase tracking-widest py-3 sm:py-3.5 px-4 sm:px-8 rounded-xl sm:rounded-2xl shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all disabled:bg-slate-300"
                                         >
-                                            {isSaving ? <><Loader2 className="animate-spin" size={18} /> Sincronizando</> : <><Save size={18} /> Guardar Persona</>}
+                                            {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                                            <span className="hidden sm:inline">Guardar Persona</span>
+                                            <span className="sm:hidden">Salvar</span>
                                         </button>
                                     </div>
                                 </div>
@@ -784,11 +803,11 @@ function Configs() {
                                                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Conectado via Google Sheets</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-3">
-                                                    <button type="button" onClick={() => openResource(selectedConfig.spreadsheet_id, 'sheet')} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
+                                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                                                    <button type="button" onClick={() => openResource(selectedConfig.spreadsheet_id, 'sheet')} className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl sm:rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
                                                         <ExternalLink size={18} /> Ver Planilha
                                                     </button>
-                                                    <button type="button" onClick={() => handleSyncSheet('system')} disabled={isSyncing} className="flex items-center gap-2 bg-blue-600 text-white font-black py-3 px-8 rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:bg-slate-300 text-sm">
+                                                    <button type="button" onClick={() => handleSyncSheet('system')} disabled={isSyncing} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white font-black py-3 px-8 rounded-xl sm:rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:bg-slate-300 text-sm">
                                                         {isSyncing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Sincronizar
                                                     </button>
                                                 </div>
@@ -819,12 +838,12 @@ function Configs() {
                                 {/* CONTEÚDO ABA: FLUXO VISUAL */}
                                 {activeTab === 'fluxo' && (
                                     <div className="animate-fade-in space-y-8 flex-1 flex flex-col min-h-0 overflow-y-scroll custom-scrollbar">
-                                        <div className="flex justify-between items-center bg-white/40 p-6 rounded-[2rem] border border-white">
+                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-slate-100 gap-4">
                                             <div>
-                                                <h3 className="text-xl font-black text-slate-900 tracking-tight">Arquitetura de Conversação</h3>
-                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Mapeamento visual de fluxo</p>
+                                                <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Arquitetura de Conversação</h3>
+                                                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Mapeamento visual de fluxo</p>
                                             </div>
-                                            <button type="button" onClick={() => setIsWorkflowModalOpen(true)} className="flex items-center gap-3 bg-slate-900 text-white font-black py-4 px-8 rounded-2xl shadow-xl hover:bg-black transition-all text-xs uppercase tracking-widest">
+                                            <button type="button" onClick={() => setIsWorkflowModalOpen(true)} className="w-full sm:w-auto flex items-center justify-center gap-3 bg-slate-900 text-white font-black py-4 px-8 rounded-xl sm:rounded-2xl shadow-xl hover:bg-black transition-all text-[10px] sm:text-xs uppercase tracking-widest">
                                                 <Maximize2 size={18} /> Expandir Editor
                                             </button>
                                         </div>
@@ -873,11 +892,11 @@ function Configs() {
                                                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Conectado ao Google Sheets</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-3">
-                                                    <button type="button" onClick={() => openResource(selectedConfig.spreadsheet_rag_id, 'sheet')} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
+                                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                                                    <button type="button" onClick={() => openResource(selectedConfig.spreadsheet_rag_id, 'sheet')} className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl sm:rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
                                                         <ExternalLink size={18} /> Ver Planilha
                                                     </button>
-                                                    <button type="button" onClick={() => handleSyncSheet('rag')} disabled={isSyncing} className="flex items-center gap-2 bg-indigo-600 text-white font-black py-3 px-8 rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:bg-slate-300 text-sm">
+                                                    <button type="button" onClick={() => handleSyncSheet('rag')} disabled={isSyncing} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white font-black py-3 px-8 rounded-xl sm:rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:bg-slate-300 text-sm">
                                                         {isSyncing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Sincronizar
                                                     </button>
                                                 </div>
@@ -930,11 +949,11 @@ function Configs() {
                                                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Armazenamento Ativo</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-3">
-                                                    <button type="button" onClick={() => openResource(selectedConfig.drive_id, 'drive')} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
+                                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+                                                    <button type="button" onClick={() => openResource(selectedConfig.drive_id, 'drive')} className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl sm:rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
                                                         <ExternalLink size={18} /> Abrir Pasta
                                                     </button>
-                                                    <button type="button" onClick={handleSyncDrive} disabled={isSyncing} className="flex items-center gap-2 bg-indigo-600 text-white font-black py-3 px-8 rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:bg-slate-300 text-sm">
+                                                    <button type="button" onClick={handleSyncDrive} disabled={isSyncing} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white font-black py-3 px-8 rounded-xl sm:rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:bg-slate-300 text-sm">
                                                         {isSyncing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Sincronizar
                                                     </button>
                                                 </div>
@@ -965,12 +984,12 @@ function Configs() {
                                 {/* CONTEÚDO ABA: NOTIFICAÇÕES (PROSPECT AI) */}
                                 {activeTab === 'notifications' && (
                                     <div className="animate-fade-in space-y-8 overflow-y-scroll custom-scrollbar">
-                                        <div className="bg-slate-50/50 p-4 pl-4 rounded-[2rem] border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-10 shadow-sm">
+                                        <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm">
                                             <div className="max-w-md">
-                                                <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Monitoramento de Alertas</h3>
-                                                <p className="text-sm text-slate-500 font-medium">Defina para qual WhatsApp a IA deve enviar alertas</p>
+                                                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mb-2 text-left">Monitoramento de Alertas</h3>
+                                                <p className="text-xs sm:text-sm text-slate-500 font-medium text-left">Defina para qual WhatsApp a IA deve enviar alertas</p>
                                             </div>
-                                            <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm">
+                                            <div className="flex items-center gap-3 bg-white p-2 rounded-xl sm:rounded-2xl border border-slate-100 shadow-sm w-full sm:w-auto justify-between sm:justify-start">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-3">Status Global</span>
                                                 <button type="button" onClick={() => setFormData(prev => ({ ...prev, notification_active: !prev.notification_active }))} className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all ${formData.notification_active ? 'bg-green-500' : 'bg-slate-200'}`}>
                                                     <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform ${formData.notification_active ? 'translate-x-7' : 'translate-x-1'}`} />
@@ -1046,27 +1065,27 @@ function Configs() {
                                 {/* CONTEÚDO ABA: AGENDA */}
                                 {activeTab === 'agenda' && (
                                     <div className="animate-fade-in space-y-8 overflow-y-scroll custom-scrollbar">
-                                        <div className="p-6 bg-slate-50/50 border border-slate-100 rounded-3xl flex items-center justify-between">
+                                        <div className="p-4 sm:p-6 bg-slate-50 border border-slate-100 rounded-2xl sm:rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                                             <div className="flex items-center gap-4">
-                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${formData.is_calendar_connected ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
-                                                    <Calendar size={24} />
+                                                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-colors ${formData.is_calendar_connected ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>
+                                                    <Calendar size={20} sm:size={24} />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-black text-slate-900 leading-tight">{formData.is_calendar_connected ? "Google Agenda Sincronizado" : "Sincronização Pendente"}</p>
-                                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-tight mt-0.5">Gestão Automática de Horários</p>
+                                                    <p className="text-sm font-black text-slate-900 leading-tight">{formData.is_calendar_connected ? "Google Agenda" : "Agenda Pendente"}</p>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-0.5">Gestão Automática</p>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-6">
-                                                <div className="flex items-center gap-3">
+                                            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                                                <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto gap-4 bg-white/50 p-2 px-4 rounded-xl border border-slate-100 sm:border-none">
                                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status IA</span>
                                                     <button type="button" onClick={() => setFormData(p => ({ ...p, is_calendar_active: !p.is_calendar_active }))} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${formData.is_calendar_active ? 'bg-blue-600' : 'bg-slate-200'}`}>
                                                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${formData.is_calendar_active ? 'translate-x-6' : 'translate-x-1'}`} />
                                                     </button>
                                                 </div>
                                                 {!formData.is_calendar_connected ? (
-                                                    <button type="button" onClick={handleConnectCalendar} className="px-6 py-2.5 bg-blue-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition">Conectar</button>
+                                                    <button type="button" onClick={handleConnectCalendar} className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-100">Conectar</button>
                                                 ) : (
-                                                    <button type="button" onClick={() => api.post(`/configs/google-calendar/${selectedConfig.id}/disconnect`).then(() => fetchData())} className="px-6 py-2.5 bg-red-50 text-red-500 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-red-100 transition">Desvincular</button>
+                                                    <button type="button" onClick={() => api.post(`/configs/google-calendar/${selectedConfig.id}/disconnect`).then(() => fetchData())} className="w-full sm:w-auto px-6 py-2.5 bg-red-50 text-red-500 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-red-100 transition">Desvincular</button>
                                                 )}
                                             </div>
                                         </div>
@@ -1079,8 +1098,8 @@ function Configs() {
                                             </div>
                                             <div className="p-6 space-y-4">
                                                 {['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'].map(day => (
-                                                    <div key={day} className="flex items-center gap-6 p-4 rounded-2xl hover:bg-slate-50/50 transition-colors">
-                                                        <div className="w-28 flex-shrink-0">
+                                                    <div key={day} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 p-3 sm:p-4 rounded-xl sm:rounded-2xl hover:bg-slate-50/50 transition-colors border border-transparent sm:border-none">
+                                                        <div className="w-full sm:w-28 flex-shrink-0 flex items-center justify-between sm:block">
                                                             <label className="flex items-center cursor-pointer group">
                                                                 <div className="relative">
                                                                     <input type="checkbox" className="sr-only" checked={schedule[day]?.active || false} onChange={() => toggleDay(day)} />
@@ -1090,7 +1109,7 @@ function Configs() {
                                                                 <span className={`ml-3 text-xs font-black uppercase tracking-widest transition-colors ${schedule[day]?.active ? 'text-blue-600' : 'text-slate-400'}`}>{dayLabels[day]}</span>
                                                             </label>
                                                         </div>
-                                                        <div className="flex-1 flex flex-wrap gap-2 items-center">
+                                                        <div className="flex-1 flex flex-wrap gap-2 items-center w-full">
                                                             {schedule[day]?.active ? (
                                                                 <>
                                                                     {schedule[day].blocks.map((block, idx) => (
@@ -1123,7 +1142,7 @@ function Configs() {
                                                     <Cpu size={16} className="text-blue-600" /> Parâmetros de Processamento
                                                 </h3>
                                             </div>
-                                            <div className="p-8 space-y-8">
+                                            <div className="p-4 sm:p-8 space-y-6 sm:space-y-8">
                                                 <div className="max-w-md">
                                                     <label className={labelClass}>Modelo de Inteligência</label>
                                                     <select
@@ -1141,7 +1160,7 @@ function Configs() {
                                                     </p>
                                                 </div>
 
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10">
                                                     <div>
                                                         <div className="flex justify-between items-center mb-4">
                                                             <label className={labelClass}>Criatividade</label>

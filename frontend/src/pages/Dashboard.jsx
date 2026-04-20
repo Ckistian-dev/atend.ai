@@ -1,6 +1,8 @@
 // src/pages/Dashboard.jsx
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import api from '../api/axiosConfig';
+import PageLoader from '../components/common/PageLoader';
+
 import {
     BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
     Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
@@ -105,27 +107,34 @@ const CustomTooltip = ({ active, payload, label }) => {
 // 1. Hero Stat
 const HeroStatModule = ({ modulo }) => {
     const trendMap = {
-        alta: { icon: <ChevronUp size={18} />, class: 'text-emerald-600 bg-emerald-100', label: 'Em alta' },
-        baixa: { icon: <ChevronDown size={18} />, class: 'text-red-600 bg-red-100', label: 'Em queda' },
-        neutro: { icon: <Minus size={18} />, class: 'text-gray-500 bg-gray-100', label: 'Estável' },
+        alta: { icon: <ChevronUp size={18} />, class: 'text-emerald-300 bg-white/10', border: 'border-emerald-400/30', label: 'Em alta' },
+        baixa: { icon: <ChevronDown size={18} />, class: 'text-rose-300 bg-white/10', border: 'border-rose-400/30', label: 'Em queda' },
+        neutro: { icon: <Minus size={18} />, class: 'text-blue-100 bg-white/10', border: 'border-white/10', label: 'Estável' },
     };
     const trend = trendMap[modulo.tendencia] || trendMap.neutro;
     return (
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-8 shadow-xl">
-            <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/10" />
-            <div className="absolute -bottom-12 -left-8 w-40 h-40 rounded-full bg-white/5" />
-            <div className="relative z-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-                <div>
-                    <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-3">Resposta Principal</p>
-                    <p className="text-white text-7xl font-black tracking-tighter leading-none">{modulo.valor}</p>
-                    <p className="text-blue-100 text-xl font-semibold mt-3">{modulo.label}</p>
+        <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#1d4ed8] via-[#2563eb] to-[#3b82f6] p-6 sm:p-10 shadow-2xl">
+            {/* Glossy effects */}
+            <div className="absolute top-[-40px] right-[-40px] w-64 h-64 rounded-full bg-white/10 blur-3xl" />
+            <div className="absolute bottom-[-60px] left-[-40px] w-56 h-56 rounded-full bg-indigo-400/20 blur-3xl" />
+
+            <div className="relative z-10 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+                <div className="space-y-2">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full border border-white/10">
+                        <Sparkles size={12} className="text-blue-200" />
+                        <p className="text-blue-100 text-[10px] font-bold uppercase tracking-[0.15em]">Resposta Principal</p>
+                    </div>
+                    <div className="flex flex-col">
+                        <p className="text-white text-6xl sm:text-7xl font-black tracking-tighter leading-none">{modulo.valor}</p>
+                        <p className="text-blue-50 text-xl sm:text-2xl font-bold mt-2">{modulo.label}</p>
+                    </div>
                 </div>
-                <div className="flex flex-col gap-3 items-start md:items-end">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold ${trend.class}`}>
+                <div className="flex flex-col gap-4 items-start md:items-end">
+                    <span className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold border ${trend.border} ${trend.class} backdrop-blur-md shadow-lg`}>
                         {trend.icon}{trend.label}
                     </span>
                     {modulo.descricao && (
-                        <p className="text-blue-200 text-sm max-w-xs text-right leading-relaxed">{modulo.descricao}</p>
+                        <p className="text-blue-100/80 text-sm max-w-xs md:text-right leading-relaxed font-medium">{modulo.descricao}</p>
                     )}
                 </div>
             </div>
@@ -135,23 +144,25 @@ const HeroStatModule = ({ modulo }) => {
 
 // 2. Metric Grid
 const MetricGridModule = ({ modulo }) => (
-    <div className="rounded-2xl bg-white p-6 shadow-sm" style={{ boxShadow: '0 2px 16px rgba(15,23,42,0.06)' }}>
+    <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
         {modulo.titulo && (
-            <div className="flex items-center gap-2 mb-5">
-                <LayoutGrid size={17} className="text-blue-400" />
-                <h3 className="text-slate-700 font-semibold" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo}</h3>
+            <div className="flex items-center gap-2 mb-6">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                    <LayoutGrid size={18} className="text-blue-600" />
+                </div>
+                <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo}</h3>
             </div>
         )}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {(modulo.metricas || []).map((m, i) => {
                 const cor = COR_MAP[m.cor] || COR_MAP.azul;
                 return (
-                    <div key={i} className={`rounded-2xl p-4 bg-slate-50/80 hover:bg-white transition-all`} style={{ boxShadow: '0 1px 8px rgba(15,23,42,0.05)' }}>
-                        <div className={`w-9 h-9 rounded-xl ${cor.icon} text-white flex items-center justify-center mb-3 shadow`}>
-                            {ICON_MAP[m.icone] || <Activity size={16} />}
+                    <div key={i} className="group rounded-[20px] p-5 bg-slate-50/50 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 border border-transparent hover:border-slate-100 ring-1 ring-slate-200/20">
+                        <div className={`w-10 h-10 rounded-xl ${cor.icon} text-white flex items-center justify-center mb-4 shadow-lg shadow-blue-500/10 group-hover:scale-110 transition-transform`}>
+                            {ICON_MAP[m.icone] || <Activity size={18} />}
                         </div>
-                        <p className="text-2xl font-black text-slate-800 leading-none mb-1">{m.valor}</p>
-                        <p className="text-slate-500 text-xs font-medium leading-snug">{m.label}</p>
+                        <p className="text-3xl font-black text-slate-900 tracking-tighter leading-none mb-1.5">{m.valor}</p>
+                        <p className="text-slate-500 text-xs font-bold uppercase tracking-wider leading-snug">{m.label}</p>
                     </div>
                 );
             })}
@@ -164,40 +175,57 @@ const PieChartModule = ({ modulo }) => {
     if (!modulo.dados?.length) return null;
     const total = modulo.dados.reduce((s, d) => s + (d.value || 0), 0);
     return (
-        <div className="rounded-2xl bg-white p-6" style={{ boxShadow: '0 2px 16px rgba(15,23,42,0.06)' }}>
-            <div className="flex items-center gap-2 mb-1">
-                <PieIcon size={17} className="text-violet-400" />
-                <h3 className="text-slate-700 font-semibold" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo}</h3>
+        <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-violet-50 rounded-lg">
+                        <PieIcon size={18} className="text-violet-600" />
+                    </div>
+                    <div>
+                        <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo}</h3>
+                        {modulo.descricao && <p className="text-slate-400 text-xs mt-0.5">{modulo.descricao}</p>}
+                    </div>
+                </div>
+                <div className="hidden sm:flex flex-col items-end">
+                    <span className="text-2xl font-black text-slate-900 tracking-tighter leading-none">{total.toLocaleString('pt-BR')}</span>
+                    <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-none mt-1">Total Geral</span>
+                </div>
             </div>
-            {modulo.descricao && <p className="text-slate-400 text-sm mb-5 pl-7">{modulo.descricao}</p>}
-            <div className="flex flex-col md:flex-row items-center gap-6 mt-4">
-                <div className="w-52 h-52 flex-shrink-0">
+
+            <div className="flex flex-col lg:flex-row items-center gap-8">
+                <div className="w-full max-w-[240px] aspect-square flex-shrink-0 relative">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie data={modulo.dados} dataKey="value" cx="50%" cy="50%"
-                                innerRadius={55} outerRadius={90} paddingAngle={3} strokeWidth={2} stroke="#fff">
+                                innerRadius="60%" outerRadius="90%" paddingAngle={4} strokeWidth={0} stroke="#fff">
                                 {modulo.dados.map((_, idx) => (
-                                    <Cell key={idx} fill={CHART_PALETTE[idx % CHART_PALETTE.length]} />
+                                    <Cell key={idx} fill={CHART_PALETTE[idx % CHART_PALETTE.length]} className="focus:outline-none transition-all" />
                                 ))}
                             </Pie>
                             <Tooltip content={<CustomTooltip />} />
                         </PieChart>
                     </ResponsiveContainer>
-                </div>
-                <div className="flex-1 w-full">
-                    <div className="text-center mb-4 pb-4 border-b border-gray-100">
-                        <span className="text-3xl font-black text-gray-800">{total.toLocaleString('pt-BR')}</span>
-                        <span className="text-gray-400 text-sm ml-2">total</span>
+                    {/* Inner label for mobile center or just visual */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none sm:hidden">
+                        <span className="text-2xl font-black text-slate-800 leading-none">{total}</span>
+                        <span className="text-slate-400 text-[10px] uppercase font-bold tracking-widest mt-1">Total</span>
                     </div>
-                    <div className="flex flex-col gap-2.5">
+                </div>
+
+                <div className="w-full flex-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
                         {modulo.dados.map((entry, i) => (
-                            <div key={i} className="flex items-center gap-2.5 text-sm">
-                                <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: CHART_PALETTE[i % CHART_PALETTE.length] }} />
-                                <span className="text-gray-600 flex-1 truncate">{entry.name}</span>
-                                <span className="text-gray-800 font-bold">{entry.value}</span>
-                                <span className="text-gray-400 text-xs w-10 text-right">
-                                    {total > 0 ? Math.round(entry.value / total * 100) : 0}%
-                                </span>
+                            <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100/50 hover:bg-slate-100/80 transition-colors">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: CHART_PALETTE[i % CHART_PALETTE.length] }} />
+                                    <span className="text-slate-600 font-semibold text-xs truncate">{entry.name}</span>
+                                </div>
+                                <div className="flex items-center gap-3 shrink-0">
+                                    <span className="text-slate-900 font-bold text-sm tracking-tight">{entry.value}</span>
+                                    <span className="text-blue-600 text-[10px] font-black w-8 text-right px-1 bg-blue-50 rounded">
+                                        {total > 0 ? Math.round(entry.value / total * 100) : 0}%
+                                    </span>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -211,25 +239,35 @@ const PieChartModule = ({ modulo }) => {
 const BarChartModule = ({ modulo }) => {
     if (!modulo.dados?.length) return null;
     return (
-        <div className="rounded-2xl bg-white p-6" style={{ boxShadow: '0 2px 16px rgba(15,23,42,0.06)' }}>
-            <div className="flex items-center gap-2 mb-1">
-                <BarChart2 size={17} className="text-blue-400" />
-                <h3 className="text-slate-700 font-semibold" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo}</h3>
+        <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
+            <div className="flex items-center gap-2.5 mb-6">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                    <BarChart2 size={18} className="text-blue-600" />
+                </div>
+                <div>
+                    <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo}</h3>
+                    {modulo.descricao && <p className="text-slate-400 text-xs mt-0.5">{modulo.descricao}</p>}
+                </div>
             </div>
-            {modulo.descricao && <p className="text-slate-400 text-sm mb-5 pl-7">{modulo.descricao}</p>}
-            <div className="h-64 mt-4">
+
+            <div className="h-64 sm:h-72 mt-4 -ml-6 sm:ml-0">
                 <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={modulo.dados} margin={{ top: 5, right: 10, left: -20, bottom: 10 }} barSize={28}>
-                        <CartesianGrid strokeDasharray="2 4" stroke="#f0f0f0" vertical={false} />
-                        <XAxis dataKey="name" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false}
-                            interval={0} angle={modulo.dados.length > 5 ? -30 : 0}
-                            textAnchor={modulo.dados.length > 5 ? 'end' : 'middle'}
-                            height={modulo.dados.length > 5 ? 60 : 30} />
-                        <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
-                        <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f9fafb' }} />
-                        <Bar dataKey="value" name={modulo.eixo_x || 'Valor'} radius={[6, 6, 0, 0]}>
+                    <BarChart data={modulo.dados} margin={{ top: 5, right: 10, left: 10, bottom: 20 }} barSize={32}>
+                        <defs>
+                            <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
+                                <stop offset="100%" stopColor="#2563eb" stopOpacity={0.8} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false}
+                            interval={0} angle={modulo.dados.length > 5 ? -35 : 0}
+                            textAnchor={modulo.dados.length > 5 ? 'end' : 'middle'} />
+                        <YAxis tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc', radius: 8 }} />
+                        <Bar dataKey="value" name={modulo.eixo_x || 'Valor'} radius={[8, 8, 0, 0]} fill="url(#barGradient)">
                             {modulo.dados.map((_, idx) => (
-                                <Cell key={idx} fill={CHART_PALETTE[idx % CHART_PALETTE.length]} />
+                                <Cell key={idx} className="hover:opacity-80 transition-opacity cursor-pointer" />
                             ))}
                         </Bar>
                     </BarChart>
@@ -241,29 +279,31 @@ const BarChartModule = ({ modulo }) => {
 
 // 5. Friction Cards
 const FrictionCardsModule = ({ modulo }) => (
-    <div className="rounded-2xl bg-white p-6" style={{ boxShadow: '0 2px 16px rgba(15,23,42,0.06)' }}>
-        <div className="flex items-center gap-2 mb-5">
-            <AlertTriangle size={17} className="text-red-500" />
-            <h3 className="text-slate-700 font-semibold" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo || 'Pontos de Fricção'}</h3>
+    <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
+        <div className="flex items-center gap-2.5 mb-6">
+            <div className="p-2 bg-rose-50 rounded-lg">
+                <AlertTriangle size={18} className="text-rose-600" />
+            </div>
+            <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo || 'Pontos de Fricção'}</h3>
         </div>
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {(modulo.itens || []).map((item, i) => {
                 const cfg = IMPACTO_CONFIG[item.impacto] || IMPACTO_CONFIG['Baixo'];
                 return (
-                    <div key={i} className="rounded-2xl p-4 bg-slate-50/80 hover:bg-white hover:shadow-md transition-all" style={{ border: '1px solid rgba(203,213,225,0.4)' }}>
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                            <h4 className="text-slate-800 font-semibold text-sm">{item.area}</h4>
-                            <span className={`flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.pill}`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                    <div key={i} className="group rounded-[20px] p-5 bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-300">
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                            <h4 className="text-slate-800 font-bold text-sm leading-tight flex-1">{item.area}</h4>
+                            <span className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${cfg.pill} shadow-sm`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} animate-pulse`} />
                                 {item.impacto}
                             </span>
                         </div>
-                        <p className="text-gray-500 text-sm leading-relaxed">{item.observacoes}</p>
+                        <p className="text-slate-500 text-xs leading-relaxed font-medium mb-4">{item.observacoes}</p>
                         {(item.contatos_exemplo?.length > 0 || item.ids_exemplo?.length > 0) && (
-                            <div className="flex flex-wrap gap-1.5 mt-3">
-                                <span className="text-gray-400 text-xs mr-1">Contatos:</span>
+                            <div className="flex flex-wrap gap-1.5 pt-3 border-t border-slate-200/50">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Exemplos:</span>
                                 {(item.contatos_exemplo || item.ids_exemplo || []).map((contato, idx) => (
-                                    <span key={idx} className="text-xs font-mono px-2 py-0.5 bg-gray-100 border border-gray-200 rounded-md text-gray-600">
+                                    <span key={idx} className="text-[10px] font-bold px-2 py-0.5 bg-white border border-slate-200 rounded-lg text-slate-600 shadow-sm">
                                         {contato}
                                     </span>
                                 ))}
@@ -278,28 +318,30 @@ const FrictionCardsModule = ({ modulo }) => (
 
 // 6. Insight Cards
 const InsightCardsModule = ({ modulo }) => (
-    <div className="rounded-2xl bg-white p-6" style={{ boxShadow: '0 2px 16px rgba(15,23,42,0.06)' }}>
-        <div className="flex items-center gap-2 mb-5">
-            <Sparkles size={17} className="text-amber-500" />
-            <h3 className="text-slate-700 font-semibold" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo || 'Insights Estratégicos'}</h3>
+    <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
+        <div className="flex items-center gap-2.5 mb-6">
+            <div className="p-2 bg-amber-50 rounded-lg">
+                <Sparkles size={18} className="text-amber-600" />
+            </div>
+            <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo || 'Insights Estratégicos'}</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {(modulo.itens || []).map((item, i) => {
                 const pri = PRIORIDADE_CONFIG[item.prioridade] || PRIORIDADE_CONFIG.baixa;
                 return (
-                    <div key={i} className={`rounded-xl p-4 border-l-4 border border-gray-200 ${pri.border} ${pri.bg} hover:shadow-sm transition-all`}>
-                        <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex-shrink-0 flex items-center justify-center text-gray-500 shadow-sm">
-                                {ICON_MAP[item.icone] || <Lightbulb size={14} />}
+                    <div key={i} className={`group relative rounded-[20px] p-5 border-l-4 ${pri.border} ${pri.bg} border-t border-r border-b border-transparent hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-300`}>
+                        <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-white flex-shrink-0 flex items-center justify-center text-slate-500 shadow-md group-hover:scale-110 group-hover:rotate-3 transition-transform">
+                                {ICON_MAP[item.icone] || <Lightbulb size={18} />}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                    <h4 className="text-gray-800 font-semibold text-sm">{item.titulo}</h4>
-                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${pri.badge}`}>
+                                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                    <h4 className="text-slate-800 font-bold text-sm tracking-tight">{item.titulo}</h4>
+                                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest ${pri.badge} shadow-sm border border-black/5`}>
                                         {pri.label}
                                     </span>
                                 </div>
-                                <p className="text-gray-500 text-xs leading-relaxed">{item.descricao}</p>
+                                <p className="text-slate-600 text-xs leading-relaxed font-medium">{item.descricao}</p>
                             </div>
                         </div>
                     </div>
@@ -512,11 +554,10 @@ const AIAnalyzer = ({ onAnalyze, isLoading, analysis, error }) => {
     const models = LLM_MODELS;
 
     const predefined = [
-        { q: "Quantos contatos tivemos e qual a distribuição por status?", icon: <Users size={13} /> },
-        { q: "Quais são os principais motivos de perda de conversão?", icon: <AlertTriangle size={13} /> },
-        { q: "Analise o tempo de resposta e identifique gargalos operacionais.", icon: <Clock size={13} /> },
-        { q: "Sugira ações concretas para aumentar nossa taxa de conversão.", icon: <TrendingUp size={13} /> },
-        { q: "Quais regiões geográficas foram mais frequentes nos contatos?", icon: <Target size={13} /> },
+        { q: "Resumo dos atendimentos e status?", icon: <Users size={13} /> },
+        { q: "Por que perdemos conversão?", icon: <AlertTriangle size={13} /> },
+        { q: "Identifique gargalos operacionais.", icon: <Clock size={13} /> },
+        { q: "Sugira ações para converter mais.", icon: <TrendingUp size={13} /> },
     ];
 
     const handleSubmit = (e) => {
@@ -525,120 +566,110 @@ const AIAnalyzer = ({ onAnalyze, isLoading, analysis, error }) => {
     };
 
     return (
-        <div className="bg-white rounded-2xl p-6 mt-8" style={{ boxShadow: '0 4px 24px rgba(15,23,42,0.07)' }}>
+        <div className="bg-white rounded-[32px] p-5 sm:p-8 mt-8 border border-slate-100 shadow-2xl shadow-slate-200/50">
             {/* Header */}
-            <div className="flex items-start gap-4 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 via-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-200">
-                    <Brain size={22} className="text-white" />
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-8 text-center sm:text-left">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-blue-500 to-indigo-600 flex items-center justify-center shadow-xl shadow-blue-200 shrink-0">
+                    <Brain size={28} className="text-white" />
                 </div>
-                <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                        <h3 className="text-slate-800 font-black text-lg tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Análise Inteligente</h3>
-                        <span className="px-1.5 rounded-md bg-blue-50 text-blue-600 text-[9px] font-black uppercase tracking-widest border border-blue-100">AI PRO</span>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
+                        <h3 className="text-slate-900 font-black text-xl tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Análise Inteligente</h3>
+                        <span className="px-2 py-0.5 rounded-lg bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest border border-blue-100">PRO</span>
                     </div>
-                    <p className="text-slate-400 text-[13px] truncate">Utilize nossa IA para extrair insights estratégicos, identificar gargalos e otimizar sua conversão de forma automática.</p>
+                    <p className="text-slate-400 text-sm leading-relaxed max-w-2xl px-2 sm:px-0">Gere insights estratégicos, identifique gargalos e otimize sua conversão automaticamente.</p>
                 </div>
             </div>
-
-            {/* Divisor */}
-            <div className="h-px mb-5" style={{ background: 'rgba(203,213,225,0.5)' }} />
 
             {/* Command Bar Area */}
-            <div className="flex flex-col lg:flex-row items-end gap-3 mb-5">
-                {/* Seleção de modelo */}
-                <div className="w-full lg:w-72">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.12em] mb-1.5 ml-1">Modelo de IA</label>
-                    <div className="relative group">
-                        <Cpu size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors pointer-events-none" />
-                        <select
-                            value={selectedModel}
-                            onChange={e => setSelectedModel(e.target.value)}
-                            className="w-full bg-slate-50/50 hover:bg-slate-100/80 text-slate-700 text-sm rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
-                            style={{ border: '1px solid rgba(203,213,225,0.6)' }}
-                        >
-                            {models.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                        </select>
-                        <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <div className="flex flex-col gap-5 mb-8">
+                <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-end">
+                    {/* Seleção de modelo */}
+                    <div className="w-full lg:w-64 space-y-1.5">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Modelo de IA</label>
+                        <div className="relative">
+                            <select
+                                value={selectedModel}
+                                onChange={e => setSelectedModel(e.target.value)}
+                                className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-2xl pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer font-bold"
+                            >
+                                {models.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                            </select>
+                            <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
                     </div>
+
+                    {/* Input de pergunta */}
+                    <form onSubmit={handleSubmit} className="flex-1 flex flex-col sm:flex-row gap-3">
+                        <div className="flex-1 relative group">
+                            <Sparkles size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500/50 group-focus-within:text-blue-600 transition-colors" />
+                            <input
+                                type="text"
+                                value={question}
+                                onChange={e => setQuestion(e.target.value)}
+                                placeholder="O que você quer analisar hoje?"
+                                className="w-full bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 text-sm font-medium rounded-2xl pl-12 pr-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                disabled={isLoading}
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={isLoading || !question.trim()}
+                            className="w-full sm:w-auto px-8 py-3.5 bg-slate-900 border border-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-black transition-all shadow-xl shadow-slate-200 active:scale-95 disabled:opacity-50"
+                        >
+                            {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                            <span>{isLoading ? 'Analisando' : 'Analisar'}</span>
+                        </button>
+                    </form>
                 </div>
 
-                {/* Input de pergunta */}
-                <form onSubmit={handleSubmit} className="flex-1 flex gap-2 w-full">
-                    <div className="relative flex-1 group">
-                        <Sparkles size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500/60 group-focus-within:text-blue-500 transition-colors" />
-                        <input
-                            type="text"
-                            value={question}
-                            onChange={e => setQuestion(e.target.value)}
-                            placeholder="Faça uma pergunta para a IA sobre estes dados..."
-                            className="w-full bg-slate-50/50 hover:bg-slate-100/80 text-slate-800 placeholder-slate-400 text-sm rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                            style={{ border: '1px solid rgba(203,213,225,0.6)' }}
-                            disabled={isLoading}
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={isLoading || !question.trim()}
-                        className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-500/10 active:scale-95"
-                    >
-                        {isLoading ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
-                        <span className="hidden sm:inline">{isLoading ? 'Analisando...' : 'Analisar'}</span>
-                    </button>
-                </form>
-            </div>
-
-            {/* Sugestões de Perguntas */}
-            <div className="mb-2">
-                <div className="mt-2 flex flex-nowrap gap-2 overflow-x-auto pb-2 no-scrollbar">
+                {/* Sugestões de Perguntas */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar -mx-2 px-2">
                     {predefined.map(({ q, icon }, i) => (
                         <button
                             key={i}
                             onClick={() => setQuestion(q)}
                             disabled={isLoading}
-                            className="flex-shrink-0 flex items-center gap-2 text-[11px] font-medium px-3.5 py-2 rounded-full bg-white text-slate-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all disabled:opacity-50 shadow-sm whitespace-nowrap"
-                            style={{ border: '1px solid rgba(203,213,225,0.5)' }}
+                            className="flex-shrink-0 flex items-center gap-2 text-[10px] font-black uppercase tracking-wider px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all disabled:opacity-50 shadow-sm whitespace-nowrap"
                         >
-                            <span className="text-blue-500 opacity-80">{icon}</span>
-                            {q}
+                            {icon}{q}
                         </button>
                     ))}
                 </div>
             </div>
 
-            {/* Loading */}
+            {/* Error handling */}
+            {error && !isLoading && (
+                <div className="mb-8 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-3">
+                    <AlertCircle size={18} className="text-rose-500 shrink-0 mt-0.5" />
+                    <p className="text-rose-700 text-sm font-bold">{error}</p>
+                </div>
+            )}
+
+            {/* Loading placeholder */}
             {isLoading && (
-                <div className="mt-6 flex flex-col items-center justify-center py-12 gap-4">
-                    <div className="relative w-14 h-14">
-                        <div className="absolute inset-0 rounded-full border-2 border-blue-200 animate-ping opacity-50" />
-                        <div className="w-14 h-14 rounded-full border-2 border-blue-200 border-t-blue-600 animate-spin" />
-                        <Brain size={20} className="absolute inset-0 m-auto text-blue-600" />
+                <div className="py-16 flex flex-col items-center justify-center gap-6 animate-pulse">
+                    <div className="relative">
+                        <div className="w-16 h-16 rounded-3xl bg-blue-50 flex items-center justify-center">
+                            <Brain size={32} className="text-blue-600" />
+                        </div>
+                        <div className="absolute top-0 right-0 w-4 h-4 bg-blue-500 rounded-full border-2 border-white animate-bounce" />
                     </div>
                     <div className="text-center">
-                        <p className="text-slate-700 font-semibold">Analisando dados...</p>
-                        <p className="text-slate-400 text-sm mt-1">A IA está escolhendo as melhores visualizações</p>
+                        <p className="text-slate-800 font-black text-lg">Processando Insights...</p>
+                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Isso pode levar alguns segundos</p>
                     </div>
                 </div>
             )}
 
-            {/* Erro */}
-            {error && !isLoading && (
-                <div className="mt-5 p-4 bg-red-50 rounded-2xl flex items-start gap-3" style={{ border: '1px solid rgba(252,165,165,0.4)' }}>
-                    <AlertCircle size={17} className="text-red-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                        <p className="text-red-700 font-semibold text-sm">Erro na análise</p>
-                        <p className="text-red-400 text-sm mt-0.5">{error}</p>
-                    </div>
-                </div>
-            )}
-
-            {/* Relatório */}
+            {/* Relatório Final */}
             {analysis && !isLoading && <AnalysisReport analysisData={analysis} />}
         </div>
     );
 };
 
 // ─── STAT CARD ────────────────────────────────────────────────────────────────
-const StatCard = ({ icon, label, value, gradient }) => {
+const StatCard = ({ icon, label, value, gradient, delay = 0 }) => {
     const renderedValue = useMemo(() => {
         if (value === undefined || value === null) return "—";
         const strVal = String(value);
@@ -673,15 +704,23 @@ const StatCard = ({ icon, label, value, gradient }) => {
     }, [value]);
 
     return (
-        <div className="relative overflow-hidden bg-white rounded-2xl p-5 hover:shadow-lg transition-all group cursor-default" style={{ boxShadow: '0 2px 16px rgba(15,23,42,0.06)' }}>
-            <div className={`absolute -top-6 -right-6 w-24 h-24 rounded-full bg-gradient-to-br ${gradient} opacity-[0.07] group-hover:opacity-[0.13] transition-opacity`} />
-            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center mb-4 shadow`}>
+        <div
+            className="group relative overflow-hidden bg-white rounded-[24px] p-6 hover:shadow-2xl hover:shadow-slate-200 transition-all duration-500 border border-slate-100/50 hover:border-blue-100 hover:-translate-y-1.5 cursor-default"
+            style={{ animation: `fade-in-up 0.5s ease backwards ${delay}s` }}
+        >
+            <div className={`absolute -top-12 -right-12 w-32 h-32 rounded-full bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-[0.08] blur-2xl transition-opacity duration-700`} />
+            <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} text-white flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500`}>
                 {icon}
             </div>
-            <div className="text-2xl font-black text-slate-800 tracking-tight leading-none" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+            <div className="text-3xl font-black text-slate-900 tracking-tighter leading-none mb-2" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                 {renderedValue}
             </div>
-            <p className="text-slate-400 text-xs font-medium mt-1.5 leading-snug">{label}</p>
+            <p className="text-slate-400 text-[11px] font-bold uppercase tracking-wider leading-snug group-hover:text-slate-600 transition-colors">{label}</p>
+
+            {/* Corner decorator */}
+            <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Sparkles size={12} className="text-slate-200" />
+            </div>
         </div>
     );
 };
@@ -693,8 +732,8 @@ const DateRangeFilter = ({ onDateChange }) => {
     const [showPicker, setShowPicker] = useState(false);
 
     const ranges = {
-        '7d': { label: 'Últimos 7 dias' },
-        '30d': { label: 'Últimos 30 dias' },
+        '7d': { label: '7 D' },
+        '30d': { label: '30 D' },
         'this_month': { label: 'Este Mês' },
         'custom': { label: 'Personalizado' },
     };
@@ -715,30 +754,32 @@ const DateRangeFilter = ({ onDateChange }) => {
     };
 
     return (
-        <div className="relative">
-            <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl" style={{ border: '1px solid rgba(203,213,225,0.4)' }}>
+        <div className="relative w-full sm:w-auto">
+            <div className="flex items-center gap-1 bg-slate-200/50 p-1.5 rounded-2xl border border-slate-300/30 overflow-x-auto no-scrollbar max-w-full shadow-inner shadow-black/5">
                 {Object.entries(ranges).map(([key, { label }]) => (
                     <button key={key} onClick={() => handleSelect(key)}
-                        className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5
-                            ${active === key ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-4 py-2 text-xs font-black rounded-xl transition-all flex items-center gap-2 whitespace-nowrap uppercase tracking-tighter
+                            ${active === key
+                                ? 'bg-white text-blue-700 shadow-xl shadow-blue-500/10 ring-1 ring-blue-500/10'
+                                : 'text-slate-500 hover:text-slate-900 hovr:bg-white/50'}`}
                     >
-                        {key === 'custom' && <CalendarIcon size={12} />}
+                        {key === 'custom' && <CalendarIcon size={14} className={active === key ? 'text-blue-500' : 'text-slate-400'} />}
                         {label}
                     </button>
                 ))}
             </div>
             {showPicker && (
-                <div className="absolute top-full right-0 mt-2 bg-white p-4 rounded-2xl z-20" style={{ boxShadow: '0 8px 40px rgba(15,23,42,0.12)', border: '1px solid rgba(203,213,225,0.4)' }}>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Período personalizado</p>
+                <div className="absolute top-full right-0 mt-3 bg-white p-5 rounded-[28px] z-[60] shadow-2xl shadow-blue-900/10 border border-slate-200 animate-fade-in-up">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 text-center">Filtro Customizado</p>
                     <DatePicker selectsRange inline locale="pt-BR" dateFormat="dd/MM/yyyy" maxDate={new Date()}
                         startDate={customRange[0]} endDate={customRange[1]}
                         onChange={update => setCustomRange(update)} />
-                    <div className="flex justify-end gap-2 mt-3">
-                        <button onClick={() => setShowPicker(false)} className="px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">Cancelar</button>
+                    <div className="flex gap-2 mt-4">
+                        <button onClick={() => setShowPicker(false)} className="flex-1 py-2.5 text-xs font-bold text-slate-500 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">Cancelar</button>
                         <button
                             onClick={() => { if (customRange[0] && customRange[1]) { onDateChange(customRange[0], customRange[1]); setShowPicker(false); } }}
                             disabled={!customRange[0] || !customRange[1]}
-                            className="px-3 py-1.5 text-xs text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-40"
+                            className="flex-1 py-2.5 text-xs font-black text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-40 shadow-lg shadow-blue-600/20 transition-all"
                         >Aplicar</button>
                     </div>
                 </div>
@@ -800,24 +841,21 @@ const Dashboard = () => {
     };
 
     if (isLoading && !data) {
-        return (
-            <div className="flex h-full items-center justify-center" style={{ background: '#f0f4ff' }}>
-                <div className="flex flex-col items-center gap-3">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
-                        <Loader2 size={26} className="text-white animate-spin" />
-                    </div>
-                    <p className="text-slate-400 text-sm font-medium">Carregando dashboard...</p>
-                </div>
-            </div>
-        );
+        return <PageLoader message="Construindo Visão Geral" subMessage="Sincronizando dados em tempo real..." />;
     }
 
     if (error) {
         return (
-            <div className="flex h-full items-center justify-center" style={{ background: '#f0f4ff' }}>
-                <div className="flex flex-col items-center gap-3 p-10 text-center">
-                    <AlertCircle size={36} className="text-red-400" />
-                    <p className="text-slate-700 font-semibold">{error}</p>
+            <div className="flex h-full items-center justify-center p-6">
+                <div className="max-w-md w-full bg-white rounded-[32px] p-10 text-center shadow-2xl shadow-slate-200 border border-slate-100">
+                    <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-rose-500">
+                        <AlertCircle size={32} />
+                    </div>
+                    <h3 className="text-xl font-black text-slate-800 mb-2">Opa, algo deu errado</h3>
+                    <p className="text-slate-500 font-medium leading-relaxed mb-8">{error}</p>
+                    <button onClick={() => window.location.reload()} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-black transition-all">
+                        Tentar Novamente
+                    </button>
                 </div>
             </div>
         );
@@ -826,108 +864,152 @@ const Dashboard = () => {
     const hasChartData = data?.charts?.contatosPorDia && data?.charts?.atendimentosPorSituacao;
 
     return (
-        <div className="h-full overflow-y-auto custom-scrollbar p-6 md:p-8" style={{ background: '#f0f4ff', fontFamily: 'Inter, sans-serif' }}>
-            <style>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(203, 213, 225, 1); border-radius: 20px; border: 2px solid transparent; background-clip: padding-box; }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3b82f6; background-clip: padding-box; }
-                @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&family=Inter:wght@400;500;600&display=swap');
-                .no-scrollbar::-webkit-scrollbar { display: none; }
-                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-            `}</style>
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div className="min-h-full pb-10 p-4 lg:p-8">
+            {/* Header Area */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-6">
                 <div>
-                    <h1 className="text-2xl font-black text-slate-800 tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Dashboard</h1>
-                    <p className="text-slate-400 mt-0.5 text-sm">Visão geral dos atendimentos e análise com IA</p>
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-200">
+                            <TrendingUp size={22} className="text-white" />
+                        </div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Dashboard</h1>
+                    </div>
+                    <p className="text-slate-500 font-medium text-sm flex items-center gap-2">
+                        <Info size={14} className="text-blue-400" /> Analise o desempenho em tempo real e insights estratégicos.
+                    </p>
                 </div>
                 <DateRangeFilter onDateChange={handleDateChange} />
             </div>
 
-            {/* Spinner de atualização */}
+            {/* Spinner Global de atualização */}
             {isLoading && (
-                <div className="fixed inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-50">
-                    <Loader2 size={30} className="text-blue-600 animate-spin" />
-                </div>
+                <PageLoader fullScreen message="Sincronizando..." subMessage="Atualizando métricas em tempo real" />
             )}
 
             {data && hasChartData && (
-                <div className="space-y-6">
-                    {/* Stat Cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                        <StatCard icon={<TrendingUp size={19} />} label={data.stats?.totalAtendimentos?.label} value={data.stats?.totalAtendimentos?.value} gradient="from-blue-600 to-indigo-600" />
-                        <StatCard icon={<CheckCircle size={19} />} label={data.stats?.totalConcluidos?.label} value={data.stats?.totalConcluidos?.value} gradient="from-emerald-500 to-teal-500" />
-                        <StatCard icon={<Percent size={19} />} label={data.stats?.taxaConversao?.label} value={data.stats?.taxaConversao?.value} gradient="from-amber-400 to-orange-500" />
-                        <StatCard icon={<Clock size={19} />} label={data.stats?.tempoMedioAtendimento?.label || "Tempo T. Médio"} value={data.stats?.tempoMedioAtendimento?.value} gradient="from-cyan-500 to-blue-500" />
-                        <StatCard icon={<Activity size={19} />} label={data.stats?.tempoMedioResposta?.label || "Resposta Média"} value={data.stats?.tempoMedioResposta?.value} gradient="from-pink-500 to-rose-500" />
-                        <StatCard icon={<Cpu size={19} />} label={data.stats?.consumoMedioTokens?.label} value={data.stats?.consumoMedioTokens?.value} gradient="from-violet-500 to-purple-600" />
+                <div className="space-y-8 lg:space-y-12">
+                    {/* Stat Cards Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-6">
+                        <StatCard icon={<TrendingUp size={20} />} label={data.stats?.totalAtendimentos?.label} value={data.stats?.totalAtendimentos?.value} gradient="from-blue-600 to-indigo-600" delay={0.1} />
+                        <StatCard icon={<CheckCircle size={20} />} label={data.stats?.totalConcluidos?.label} value={data.stats?.totalConcluidos?.value} gradient="from-emerald-500 to-teal-500" delay={0.15} />
+                        <StatCard icon={<Percent size={20} />} label={data.stats?.taxaConversao?.label} value={data.stats?.taxaConversao?.value} gradient="from-amber-400 to-orange-500" delay={0.2} />
+                        <StatCard icon={<Clock size={20} />} label={data.stats?.tempoMedioAtendimento?.label || "Tempo T. Médio"} value={data.stats?.tempoMedioAtendimento?.value} gradient="from-cyan-500 to-blue-500" delay={0.25} />
+                        <StatCard icon={<Activity size={20} />} label={data.stats?.tempoMedioResposta?.label || "Resposta Média"} value={data.stats?.tempoMedioResposta?.value} gradient="from-pink-500 to-rose-500" delay={0.3} />
+                        <StatCard icon={<Cpu size={20} />} label={data.stats?.consumoMedioTokens?.label} value={data.stats?.consumoMedioTokens?.value} gradient="from-violet-500 to-purple-600" delay={0.35} />
                     </div>
 
-                    {/* Gráficos */}
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    {/* Gráficos Principais */}
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                         {/* Line Chart */}
-                        <div className="lg:col-span-3 bg-white rounded-2xl p-6" style={{ boxShadow: '0 2px 16px rgba(15,23,42,0.06)' }}>
-                            <div className="flex items-center gap-2 mb-5">
-                                <Activity size={17} className="text-blue-500" />
-                                <h3 className="text-slate-700 font-semibold" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Volume de Atendimentos por Dia</h3>
+                        <div className="lg:col-span-3 bg-white rounded-[32px] p-6 sm:p-8 shadow-xl shadow-slate-100 border border-slate-100/50" style={{ animation: 'fade-in-up 0.6s ease backwards 0.4s' }}>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2.5 bg-blue-50 rounded-2xl">
+                                        <Activity size={18} className="text-blue-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-slate-800 font-bold text-lg tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Atendimentos & Tokens</h3>
+                                        <p className="text-slate-400 text-xs mt-0.5">Evolução temporal do volume de conversas</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                        <span className="text-[10px] font-black text-slate-500 uppercase">Volume</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
+                                        <span className="text-[10px] font-black text-slate-500 uppercase">Tokens</span>
+                                    </div>
+                                </div>
                             </div>
-                            <ResponsiveContainer width="100%" height={360}>
-                                <LineChart data={data.charts.contatosPorDia} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                                    <CartesianGrid strokeDasharray="2 4" stroke="#f3f4f6" vertical={false} />
-                                    <XAxis dataKey="date" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                    <YAxis yAxisId="left" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                    <YAxis yAxisId="right" orientation="right" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={formatTokenAxis} />
-                                    <Tooltip content={<CustomTooltip />} />
-                                    <Legend wrapperStyle={{ fontSize: 12, color: '#6b7280', paddingTop: 12 }} />
-                                    <Line yAxisId="left" type="monotone" dataKey="total" stroke={STATUS_COLORS['Total']} strokeWidth={2.5} name="Total" dot={false} />
-                                    <Line yAxisId="right" type="monotone" dataKey="tokens" stroke={STATUS_COLORS['Tokens']} strokeWidth={1.5} name="Tokens" dot={false} strokeDasharray="4 3" />
-                                    {Object.entries(STATUS_COLORS)
-                                        .filter(([k]) => k !== 'Total' && k !== 'Tokens')
-                                        .map(([status, color]) => (
-                                            <Line key={status} yAxisId="left" type="monotone" dataKey={status} stroke={color} strokeWidth={1.5} name={status} dot={false} />
-                                        ))}
-                                </LineChart>
-                            </ResponsiveContainer>
+
+                            <div className="h-[280px] sm:h-[380px] -ml-4 sm:ml-0 overflow-visible">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={data.charts.contatosPorDia} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="totalGradient" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor={STATUS_COLORS['Total']} stopOpacity={0.1} />
+                                                <stop offset="95%" stopColor={STATUS_COLORS['Total']} stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                        <XAxis
+                                            dataKey="date"
+                                            tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            interval={window.innerWidth < 640 ? Math.floor(data.charts.contatosPorDia.length / 5) : 'preserveStartEnd'}
+                                            tickFormatter={(val) => {
+                                                try {
+                                                    const [d, m] = val.split('/');
+                                                    return `${d}/${m}`;
+                                                } catch { return val; }
+                                            }}
+                                        />
+                                        <YAxis yAxisId="left" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                                        <YAxis yAxisId="right" orientation="right" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} tickFormatter={formatTokenAxis} />
+                                        <Tooltip content={<CustomTooltip />} />
+                                        <Line yAxisId="left" type="monotone" dataKey="total" stroke={STATUS_COLORS['Total']} strokeWidth={window.innerWidth < 640 ? 3 : 4} name="Total" dot={window.innerWidth < 640 ? false : { r: 4, fill: '#fff', strokeWidth: 3, stroke: STATUS_COLORS['Total'] }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                                        <Line yAxisId="right" type="monotone" dataKey="tokens" stroke={STATUS_COLORS['Tokens']} strokeWidth={1.5} name="Tokens" dot={false} strokeDasharray="5 5" opacity={0.6} />
+                                        {Object.entries(STATUS_COLORS)
+                                            .filter(([k]) => k !== 'Total' && k !== 'Tokens')
+                                            .map(([status, color]) => (
+                                                <Line key={status} yAxisId="left" type="monotone" dataKey={status} stroke={color} strokeWidth={1.5} name={status} dot={false} opacity={0.7} />
+                                            ))}
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
                         </div>
 
-                        {/* Pie Chart */}
-                        <div className="bg-white rounded-2xl p-6" style={{ boxShadow: '0 2px 16px rgba(15,23,42,0.06)' }}>
-                            <div className="flex items-center gap-2 mb-5">
-                                <PieIcon size={17} className="text-violet-500" />
-                                <h3 className="text-slate-700 font-semibold" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Por Situação</h3>
+                        {/* Pie Chart Card */}
+                        <div className="bg-white rounded-[32px] p-8 shadow-xl shadow-slate-100 border border-slate-100/50" style={{ animation: 'fade-in-up 0.6s ease backwards 0.5s' }}>
+                            <div className="flex items-center gap-3 mb-8">
+                                <div className="p-2.5 bg-violet-50 rounded-2xl">
+                                    <PieIcon size={18} className="text-violet-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-slate-800 font-bold text-lg tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Mix de Conversão</h3>
+                                    <p className="text-slate-400 text-xs mt-0.5">Distribuição por situação</p>
+                                </div>
                             </div>
-                            <ResponsiveContainer width="100%" height={260}>
-                                <PieChart>
-                                    <Pie data={data.charts.atendimentosPorSituacao} dataKey="value" nameKey="name"
-                                        cx="50%" cy="50%" innerRadius={50} outerRadius={80}
-                                        paddingAngle={3} strokeWidth={2} stroke="#f9fafb">
-                                        {data.charts.atendimentosPorSituacao.map((entry, i) => (
-                                            <Cell key={i} fill={STATUS_COLORS[entry.name] || CHART_PALETTE[i % CHART_PALETTE.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip content={<CustomTooltip />} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                            <div className="mt-3 flex flex-col gap-2">
+                            <div className="h-[260px] relative">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie data={data.charts.atendimentosPorSituacao} dataKey="value" nameKey="name"
+                                            cx="50%" cy="50%" innerRadius="55%" outerRadius="90%"
+                                            paddingAngle={4} strokeWidth={0} stroke="#f9fafb">
+                                            {data.charts.atendimentosPorSituacao.map((entry, i) => (
+                                                <Cell key={i} fill={STATUS_COLORS[entry.name] || CHART_PALETTE[i % CHART_PALETTE.length]} className="focus:outline-none" />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip content={<CustomTooltip />} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <div className="mt-8 flex flex-col gap-3">
                                 {data.charts.atendimentosPorSituacao.map((entry, i) => (
-                                    <div key={i} className="flex items-center gap-2.5 text-xs">
-                                        <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: STATUS_COLORS[entry.name] || CHART_PALETTE[i % CHART_PALETTE.length] }} />
-                                        <span className="text-gray-500 flex-1 truncate">{entry.name}</span>
-                                        <span className="text-gray-700 font-bold">{entry.value}</span>
+                                    <div key={i} className="flex items-center justify-between group p-2 rounded-xl hover:bg-slate-50 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: STATUS_COLORS[entry.name] || CHART_PALETTE[i % CHART_PALETTE.length] }} />
+                                            <span className="text-slate-500 font-semibold text-xs">{entry.name}</span>
+                                        </div>
+                                        <span className="text-slate-900 font-black text-sm tracking-tight">{entry.value}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     </div>
 
-                    {/* AI Analyzer */}
-                    <AIAnalyzer
-                        onAnalyze={handleAIAnalysis}
-                        isLoading={isAnalyzing}
-                        analysis={analysisResult}
-                        error={analysisError}
-                    />
+                    {/* AI Analyzer Area */}
+                    <div style={{ animation: 'fade-in-up 0.7s ease backwards 0.6s' }}>
+                        <AIAnalyzer
+                            onAnalyze={handleAIAnalysis}
+                            isLoading={isAnalyzing}
+                            analysis={analysisResult}
+                            error={analysisError}
+                        />
+                    </div>
                 </div>
             )}
         </div>

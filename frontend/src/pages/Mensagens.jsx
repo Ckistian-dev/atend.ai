@@ -3,8 +3,10 @@ import { useSearchParams } from 'react-router-dom'; // Importado useSearchParams
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import {
-    Loader2, MoreVertical, Download, Wand2, Check, X as XIcon, Sparkles
+    Loader2, MoreVertical, Download, Wand2, Check, X as XIcon, Sparkles, ChevronLeft
 } from 'lucide-react';
+import PageLoader from '../components/common/PageLoader';
+
 import { format } from 'date-fns';
 import MediaModal from '../components/mensagens/MediaModal';
 import ProfileSidebar from '../components/mensagens/ProfileSidebar';
@@ -42,27 +44,41 @@ const DS_STYLE = `
         background: var(--ds-surface);
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.8) !important;
-        border-radius: var(--ds-radius-lg);
-        box-shadow: var(--ds-shadow-premium);
-        margin: 0.75rem;
-        margin-right: 0.75rem;
+        border: none !important;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        height: 100%;
+        @media (min-width: 768px) {
+            margin: 0.75rem;
+            margin-right: 0.375rem;
+            border: 1px solid rgba(255, 255, 255, 0.8) !important;
+            border-radius: var(--ds-radius-lg);
+            box-shadow: var(--ds-shadow-premium);
+        }
     }
 
     .chat-center-card {
         background: var(--ds-surface);
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        border-radius: var(--ds-radius-lg);
-        box-shadow: var(--ds-shadow-premium);
-        margin: 0.75rem;
-        margin-left: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        margin: 0;
+        height: 100%;
         overflow: hidden;
         display: flex;
         flex-direction: column;
         flex: 1;
-        position: relative; /* Necessário para o overlay da sidebar */
+        position: relative;
+        @media (min-width: 768px) {
+            margin: 0.75rem;
+            margin-left: 0.375rem;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: var(--ds-radius-lg);
+            box-shadow: var(--ds-shadow-premium);
+        }
     }
 
     .profile-glass-sidebar {
@@ -88,16 +104,21 @@ const DS_STYLE = `
         background: linear-gradient(135deg, #2563eb, #1d4ed8);
         color: white;
         border-radius: 1.5rem 1.5rem 0.2rem 1.5rem;
-        padding: 1.25rem 1.5rem;
-        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        padding: 0.85rem 1.1rem;
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+        font-size: 0.9rem;
+        line-height: 1.5;
     }
 
     .chat-bubble-ia {
         background: white;
         color: var(--ds-text-main);
         border-radius: 1.5rem 1.5rem 1.5rem 0.2rem;
-        padding: 1.25rem 1.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        padding: 0.85rem 1.1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        font-size: 0.9rem;
+        line-height: 1.5;
+        border: 1px solid rgba(255, 255, 255, 0.8);
     }
 
     .editorial-label {
@@ -528,14 +549,10 @@ function Mensagens() {
 
         // NOVO: Lógica de seleção inicial
         if (sortedFiltered.length > 0) {
-            if (!selectedAtendimento) {
-                if (initialAtendimentoId) {
-                    // Tenta selecionar o atendimento do URL
-                    const found = sortedFiltered.find(at => at.id === parseInt(initialAtendimentoId, 10));
-                    setSelectedAtendimento(found || sortedFiltered[0]); // Fallback se o ID não for encontrado
-                } else {
-                    setSelectedAtendimento(sortedFiltered[0]); // Seleciona o primeiro se não houver ID no URL e nada selecionado
-                }
+            if (!selectedAtendimento && initialAtendimentoId) {
+                // Tenta selecionar o atendimento do URL apenas na carga inicial
+                const found = sortedFiltered.find(at => at.id === parseInt(initialAtendimentoId, 10));
+                if (found) setSelectedAtendimento(found);
             }
         }
         // --- FIM DA MODIFICAÇÃO (SELEÇÃO) ---
@@ -815,12 +832,15 @@ function Mensagens() {
 
                         } else if (itemToProcess.type === 'media') {
                             // --- Lógica de envio de MÍDIA (movida para cá) ---
-                            const { file, mediaType, filename, localUrl } = itemToProcess.payload;
+                            const { file, mediaType, filename, localUrl, caption } = itemToProcess.payload;
                             localUrlToRevoke = localUrl; // Marca para revogar
 
                             const formData = new FormData();
                             formData.append('file', file, filename);
                             formData.append('type', mediaType);
+                            if (caption) {
+                                formData.append('caption', caption);
+                            }
 
                             responseAtendimento = await api.post(
                                 `/atendimentos/${atendimentoId}/send_media`,
@@ -902,7 +922,7 @@ function Mensagens() {
 
     // --- SUBSTITUA A FUNÇÃO 'handleSendMedia' ---
     // Ação: Enfileirar Mensagem de MÍDIA. (Chamada pelo ChatFooter)
-    const handleSendMedia = (file, type, filename) => {
+    const handleSendMedia = (file, type, filename, caption = null) => {
         if (!selectedAtendimento) return;
         const atendimentoId = selectedAtendimento.id;
 
@@ -914,7 +934,8 @@ function Mensagens() {
             id: optimisticId,
             role: 'assistant',
             type: 'sending',
-            content: `Enviando ${type}...`,
+            content: caption ? caption : `Enviando ${type}...`,
+            caption: caption,
             localUrl: localUrl,
             filename: filename,
             timestamp: Math.floor(Date.now() / 1000)
@@ -927,7 +948,7 @@ function Mensagens() {
         const queueItem = {
             id: optimisticId,
             type: 'media',
-            payload: { file, mediaType: type, filename, localUrl } // Payload completo
+            payload: { file, mediaType: type, filename, localUrl, caption } // Payload completo
         };
 
         setSendingQueue(prev => ({
@@ -1153,20 +1174,20 @@ function Mensagens() {
         };
     }, [isProfileSidebarOpen]);
 
-    if (isLoading && !currentUser) {
-        return <div className="flex h-screen items-center justify-center text-gray-600">A carregar interface de mensagens...</div>;
-    }
-
     if (error) {
         return <div className="flex h-screen items-center justify-center text-red-600 p-10">{error}</div>;
     }
 
+    if (isLoading && (!currentUser || mensagens.length === 0)) {
+        return <PageLoader message="Carregando Mensagens" subMessage="Sincronizando suas conversas mais recentes..." />;
+    }
+
     return (
-        <div className="mensagens-loft flex h-[93vh]">
+        <div className="mensagens-loft flex h-full overflow-hidden">
             <style>{DS_STYLE}</style>
 
             {/* ASIDE: LISTA DE CONTATOS (EDITORIAL) */}
-            <aside className="w-full md:w-[320px] lg:w-[360px] flex flex-col min-h-0 relative contact-list-container">
+            <aside className={`${selectedAtendimento ? 'hidden md:flex' : 'flex'} w-full md:w-[320px] lg:w-[360px] flex-col min-h-0 relative contact-list-container transition-all duration-300`}>
                 <div>
                     <div className="relative">
                         <SearchAndFilter
@@ -1199,9 +1220,8 @@ function Mensagens() {
 
                 <div className="flex-1 overflow-y-auto px-4 custom-scrollbar">
                     {isLoading ? (
-                        <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                            <Loader2 size={32} className="animate-spin mb-4" />
-                            <p className="text-[10px] font-black uppercase tracking-widest">Carregando</p>
+                        <div className="h-full flex items-center justify-center">
+                            <PageLoader fullScreen={false} message="Buscando..." subMessage="" />
                         </div>
                     ) : (
                         <div className="space-y-1 pb-10">
@@ -1246,29 +1266,37 @@ function Mensagens() {
 
             {/* --- MODIFICADO: Layout principal agora é flex horizontal --- */}
             {/* MAIN: JANELA DE CHAT (THE LOFT) */}
-            <main className="flex-1 flex min-h-0 relative">
+            <main className={`${selectedAtendimento ? 'flex' : 'hidden md:flex'} flex-1 min-h-0 relative h-full`}>
                 {selectedAtendimento ? (
                     <div className="flex-1 flex min-h-0">
                         {/* THE CHAT CARD */}
                         <div className="chat-center-card">
-                            <header className="chat-header-editorial flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 executive-title text-lg">
+                            <header className="chat-header-editorial flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
+                                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                                    {/* Botão de Voltar Mobile */}
+                                    <button
+                                        onClick={() => setSelectedAtendimento(null)}
+                                        className="md:hidden p-2 -ml-2 text-slate-400 hover:text-blue-600 transition-colors"
+                                    >
+                                        <ChevronLeft size={24} />
+                                    </button>
+
+                                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 executive-title text-base sm:text-lg shrink-0">
                                         {(selectedAtendimento.nome_contato || selectedAtendimento.whatsapp || '??').substring(0, 2).toUpperCase()}
                                     </div>
-                                    <div>
-                                        <h2 className="executive-title text-lg text-slate-900 leading-tight">
+                                    <div className="min-w-0 flex-1">
+                                        <h2 className="executive-title text-base sm:text-lg text-slate-900 leading-tight truncate">
                                             {selectedAtendimento.nome_contato || selectedAtendimento.whatsapp}
                                         </h2>
-                                        <div className="flex items-center gap-3 mt-0.5">
-                                            <div className="flex items-center gap-2">
+                                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1">
+                                            <div className="flex items-center gap-1.5 shrink-0">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                                <p className="editorial-label text-[9px]">Atendimento Ativo</p>
+                                                <p className="editorial-label text-[8px] sm:text-[9px]">Atendimento Ativo</p>
                                             </div>
 
                                             {/* HEADER TAGS */}
                                             {selectedAtendimento.tags && selectedAtendimento.tags.length > 0 && (
-                                                <div className="flex items-center gap-1.5 ml-1 pl-3 border-l border-slate-200">
+                                                <div className="flex flex-wrap items-center gap-1.5 pt-0.5 sm:pt-0 sm:pl-3 sm:border-l border-slate-200">
                                                     {selectedAtendimento.tags.map((tag, idx) => (
                                                         <span
                                                             key={idx}
@@ -1312,7 +1340,7 @@ function Mensagens() {
                                 />
                             </div>
 
-                            <div className="px-6 py-4 bg-white/40 border-t border-white">
+                            <div className="px-3 sm:px-6 pt-2 pb-4 sm:py-4 bg-white/40 border-t border-white/50">
                                 <ChatFooter
                                     onSendMessage={handleSendMessage}
                                     onSendMedia={handleSendMedia}

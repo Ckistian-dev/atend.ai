@@ -52,7 +52,7 @@ const previewNodeTypes = {
         };
 
         return (
-            <div className="relative min-w-[280px] pointer-events-none w-full h-full shadow-xl shadow-blue-900/5 rounded-[2rem] bg-white/90 backdrop-blur-md border border-white/20 node-card">
+            <div className="relative min-w-[240px] sm:min-w-[280px] pointer-events-none w-full h-full shadow-xl shadow-blue-900/5 rounded-2xl sm:rounded-[2rem] bg-white/90 backdrop-blur-md border border-white/20 node-card">
                 {/* 8 Handles for Preview (Visible if connected) */}
                 <Handle type="target" position={Position.Top} id="t-top" className={isHandleConnected('t-top') ? connectedHandleStyle : "opacity-0"} />
                 <Handle type="source" position={Position.Top} id="s-top" className={isHandleConnected('s-top') ? connectedHandleStyle : "opacity-0"} />
@@ -63,14 +63,15 @@ const previewNodeTypes = {
                 <Handle type="target" position={Position.Right} id="t-right" className={isHandleConnected('t-right') ? connectedHandleStyle : "opacity-0"} />
                 <Handle type="source" position={Position.Right} id="s-right" className={isHandleConnected('s-right') ? connectedHandleStyle : "opacity-0"} />
 
-                <div className="px-6 py-5 flex flex-col gap-2 h-full w-full">
+                <div className="px-4 py-4 sm:px-6 sm:py-5 flex flex-col gap-2 h-full w-full">
                     <div className="flex items-center gap-2 mb-1">
-                        <div className="w-8 h-8 rounded-xl bg-blue-600/10 flex items-center justify-center text-blue-600">
-                            <Sparkles size={16} />
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-600/10 flex items-center justify-center text-blue-600">
+                            <Sparkles size={14} className="sm:hidden" />
+                            <Sparkles size={16} className="hidden sm:block" />
                         </div>
-                        <div className="font-black text-[13px] text-slate-800 uppercase tracking-tight">{data.label}</div>
+                        <div className="font-black text-[12px] sm:text-[13px] text-slate-800 uppercase tracking-tight truncate">{data.label}</div>
                     </div>
-                    <div className="text-[13px] text-slate-500 font-medium leading-relaxed whitespace-pre-wrap flex-1">{data.description || 'Nenhuma instrução definida'}</div>
+                    <div className="text-[12px] sm:text-[13px] text-slate-500 font-medium leading-relaxed whitespace-pre-wrap flex-1">{data.description || 'Nenhuma instrução definida'}</div>
                 </div>
             </div>
         );
@@ -239,11 +240,11 @@ export const WorkflowEditorModal = ({ isOpen, onClose, initialWorkflow, onSave, 
                     <NodeResizer 
                         color="#3b82f6" 
                         isVisible={selected} 
-                        minWidth={280} 
+                        minWidth={240} 
                         minHeight={120} 
                         handleStyle={{ width: 10, height: 10, borderRadius: 5, border: '2px solid white' }}
                     />
-                    <div className={`relative group w-full h-full min-w-[280px] min-h-[120px] shadow-2xl rounded-[2.2rem] bg-white border-2 transition-all ${selected ? 'border-is-primary scale-[1.02] shadow-blue-200/50' : 'border-slate-50 shadow-slate-200/50'}`}>
+                    <div className={`relative group w-full h-full min-w-[240px] sm:min-w-[280px] min-h-[120px] shadow-2xl rounded-2xl sm:rounded-[2.2rem] bg-white border-2 transition-all ${selected ? 'border-blue-600 scale-[1.02] shadow-blue-200/50' : 'border-slate-50 shadow-slate-200/50'}`}>
                         {/* Multiple Handles */}
                         <Handle type="target" position={Position.Top} id="t-top" className={isHandleConnected('t-top') ? connectedHandleStyle : unconnectedHandleStyleHorizontal} />
                         <Handle type="source" position={Position.Top} id="s-top" className={isHandleConnected('s-top') ? connectedHandleStyle : unconnectedHandleStyleHorizontal} />
@@ -255,7 +256,7 @@ export const WorkflowEditorModal = ({ isOpen, onClose, initialWorkflow, onSave, 
                         <Handle type="source" position={Position.Right} id="s-right" className={isHandleConnected('s-right') ? connectedHandleStyle : unconnectedHandleStyleVertical} />
 
                         {/* Header do Node */}
-                        <div className={`px-5 py-3 border-b flex items-center justify-between rounded-t-[2.2rem] transition-colors ${selected ? 'bg-blue-50/50 border-blue-100' : 'bg-slate-50/50 border-slate-100'}`}>
+                        <div className={`px-4 sm:px-5 py-2 sm:py-3 border-b flex items-center justify-between rounded-t-2xl sm:rounded-t-[2.2rem] transition-colors ${selected ? 'bg-blue-50/50 border-blue-100' : 'bg-slate-50/50 border-slate-100'}`}>
                             <div className="flex items-center gap-2 flex-1">
                                 {isEditingLabel ? (
                                     <input 
@@ -270,8 +271,8 @@ export const WorkflowEditorModal = ({ isOpen, onClose, initialWorkflow, onSave, 
                                     />
                                 ) : (
                                     <div 
-                                        onDoubleClick={() => setIsEditingLabel(true)}
-                                        className="font-black text-[11px] text-slate-800 uppercase tracking-widest px-2 py-0.5 min-h-[20px] cursor-text hover:bg-white/50 rounded transition-colors truncate flex-1"
+                                        onClick={() => setIsEditingLabel(true)}
+                                        className="font-black text-[11px] text-slate-800 uppercase tracking-widest px-2 py-0.5 min-h-[20px] cursor-text hover:bg-slate-50 rounded transition-colors truncate flex-1"
                                     >
                                         {data.label || 'NOME DA ETAPA'}
                                     </div>
@@ -287,22 +288,22 @@ export const WorkflowEditorModal = ({ isOpen, onClose, initialWorkflow, onSave, 
                             </button>
                         </div>
                         
-                        <div className="px-5 py-4 flex-1 overflow-hidden rounded-b-[2.2rem]">
+                        <div className="px-4 sm:px-5 py-3 sm:py-4 flex-1 overflow-hidden rounded-b-2xl sm:rounded-b-[2.2rem]">
                             {isEditingDesc ? (
                                 <textarea 
                                     autoFocus
                                     value={data.description || ''} 
                                     onChange={onChangeDesc} 
                                     onBlur={() => setIsEditingDesc(false)}
-                                    className="nodrag w-full h-full min-h-[60px] text-[13px] text-slate-600 font-medium leading-relaxed resize-none focus:outline-none bg-white border border-blue-100 rounded p-2"
-                                    placeholder="Descreva aqui o que a IA deve fazer nesta etapa..."
+                                    className="nodrag w-full h-full min-h-[60px] text-[12px] sm:text-[13px] text-slate-600 font-medium leading-relaxed resize-none focus:outline-none bg-white border border-blue-100 rounded-lg p-2"
+                                    placeholder="Descreva aqui o que a IA deve fazer..."
                                 />
                             ) : (
                                 <div 
-                                    onDoubleClick={() => setIsEditingDesc(true)}
-                                    className="text-[13px] text-slate-600 font-medium leading-relaxed p-2 min-h-[60px] cursor-text hover:bg-slate-50/50 rounded transition-colors whitespace-pre-wrap"
+                                    onClick={() => setIsEditingDesc(true)}
+                                    className="text-[12px] sm:text-[13px] text-slate-600 font-medium leading-relaxed p-2 min-h-[60px] cursor-text hover:bg-slate-50/50 rounded transition-colors whitespace-pre-wrap"
                                 >
-                                    {data.description || 'Clique duas vezes para definir as instruções desta etapa...'}
+                                    {data.description || 'Toque para definir as instruções desta etapa...'}
                                 </div>
                             )}
                         </div>
@@ -361,7 +362,7 @@ export const WorkflowEditorModal = ({ isOpen, onClose, initialWorkflow, onSave, 
                                 />
                             ) : (
                                 <div 
-                                    onDoubleClick={() => setIsEditing(true)}
+                                    onClick={() => setIsEditing(true)}
                                     className="bg-white/95 backdrop-blur-md text-blue-700 rounded-2xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-center min-w-[6rem] shadow-xl border border-blue-50 cursor-text hover:border-blue-200 transition-all"
                                 >
                                     {edgeLabel || 'Condição...'}
@@ -387,46 +388,47 @@ export const WorkflowEditorModal = ({ isOpen, onClose, initialWorkflow, onSave, 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-fade-in workflow-editor" onClick={onClose}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-md sm:p-4 animate-fade-in workflow-editor" onClick={onClose}>
             <style>{DS_STYLE}</style>
-            <div className="bg-white/95 backdrop-blur-xl w-full h-full max-w-[1400px] max-h-[90vh] rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden border border-white animate-fade-in-up-fast" onClick={e => e.stopPropagation()}>
+            <div className="bg-white/95 backdrop-blur-xl w-full h-full max-w-[1400px] sm:max-h-[90vh] rounded-none sm:rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden border-none sm:border border-white animate-fade-in-up-fast" onClick={e => e.stopPropagation()}>
                 
                 {/* Header do Modal: Intelligent Stratum Style */}
-                <div className="px-10 py-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <div className="flex items-center gap-5">
-                        <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-200">
-                            <Network size={28} />
+                <div className="px-6 sm:px-10 py-5 sm:py-8 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50/50 gap-4">
+                    <div className="flex items-center gap-4 sm:gap-5">
+                        <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-200 shrink-0">
+                            <Network size={22} className="sm:hidden" />
+                            <Network size={28} className="hidden sm:block" />
                         </div>
                         <div>
-                            <h3 className="text-2xl font-black tracking-tight text-slate-800 uppercase">Arquitetura de Fluxo</h3>
-                            <p className="text-[13px] font-medium text-slate-400 flex items-center gap-2">
-                                <Sparkles size={12} className="text-blue-500" /> Desenhe os caminhos lógicos e tomadas de decisão da sua Persona.
+                            <h3 className="text-lg sm:text-2xl font-black tracking-tight text-slate-800 uppercase">Arquitetura de Fluxo</h3>
+                            <p className="hidden sm:flex text-[13px] font-medium text-slate-400 items-center gap-2">
+                                <Sparkles size={12} className="text-blue-500" /> Desenhe os caminhos lógicos da sua Persona.
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
                         <button 
                             type="button" 
                             onClick={onClose} 
-                            className="px-6 py-3 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all"
+                            className="flex-1 sm:flex-none px-4 sm:px-6 py-3 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all bg-slate-100 sm:bg-transparent rounded-xl"
                         >
-                            Descartar
+                            Sair
                         </button>
                         <button 
                             type="button" 
                             onClick={handleSaveWorkflow} 
                             disabled={isSavingFlow}
-                            className="bg-is-primary hover:bg-is-primary-container text-white font-black py-4 px-8 rounded-2xl shadow-xl shadow-blue-200 flex items-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] text-[11px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-[2] sm:flex-none bg-blue-600 hover:bg-blue-700 text-white font-black py-3 sm:py-4 px-6 sm:px-8 rounded-xl sm:rounded-2xl shadow-xl shadow-blue-200 flex items-center justify-center gap-2 sm:gap-3 transition-all text-[10px] sm:text-[11px] uppercase tracking-widest disabled:opacity-50"
                         >
                             {isSavingFlow ? (
-                                <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Salvando...</>
+                                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> ...</>
                             ) : (
-                                <><Save size={18} /> Aplicar Alterações</>
+                                <><Save size={16} sm:size={18} /> Aplicar</>
                             )}
                         </button>
                         <button 
                             onClick={onClose} 
-                            className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-100 text-slate-400 hover:bg-white hover:text-slate-900 shadow-sm transition-all"
+                            className="hidden sm:flex w-12 h-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 hover:bg-white hover:text-slate-900 shadow-sm transition-all"
                         >
                             <X size={24} />
                         </button>
@@ -435,19 +437,19 @@ export const WorkflowEditorModal = ({ isOpen, onClose, initialWorkflow, onSave, 
 
                 <div className="flex-1 flex relative bg-[#fcfdff]">
                     {/* Floating Controls Overlay */}
-                    <div className="absolute top-8 left-8 z-10 flex flex-col gap-4">
+                    <div className="absolute top-4 sm:top-8 left-4 sm:left-8 z-10 flex flex-col gap-3 sm:gap-4 pointer-events-none">
                         <button 
                             type="button" 
                             onClick={handleAddNode} 
-                            className="group flex items-center gap-4 bg-white p-2 pr-6 rounded-full shadow-2xl shadow-blue-900/10 border border-slate-100 hover:scale-[1.05] transition-all"
+                            className="group flex items-center gap-3 sm:gap-4 bg-white p-1.5 sm:p-2 pr-5 sm:pr-6 rounded-full shadow-2xl border border-slate-100 pointer-events-auto active:scale-95 transition-all"
                         >
-                            <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg group-hover:rotate-90 transition-transform duration-500">
-                                <Plus size={24} strokeWidth={3} />
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg group-hover:rotate-90 transition-transform duration-500">
+                                <Plus size={20} sm:size={24} strokeWidth={3} />
                             </div>
-                            <span className="text-[12px] font-black uppercase tracking-widest text-slate-700">Adicionar Etapa</span>
+                            <span className="text-[10px] sm:text-[12px] font-black uppercase tracking-widest text-slate-700">Adicionar</span>
                         </button>
 
-                        <div className="bg-white/80 backdrop-blur-md p-4 rounded-[2rem] border border-slate-100 shadow-xl shadow-blue-900/5 max-w-[200px]">
+                        <div className="hidden sm:block bg-white/80 backdrop-blur-md p-4 rounded-[2rem] border border-slate-100 shadow-xl shadow-blue-900/5 max-w-[200px]">
                             <h4 className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3">
                                 <Info size={12} /> Dicas Rápidas
                             </h4>
@@ -470,7 +472,7 @@ export const WorkflowEditorModal = ({ isOpen, onClose, initialWorkflow, onSave, 
                         fitView
                     >
                         <Background variant="dots" gap={20} size={1} color="#e2e8f0" />
-                        <Controls className="!m-8 !shadow-2xl !border-none !rounded-2xl overflow-hidden" />
+                        <Controls className="!m-4 sm:!m-8 !shadow-2xl !border-none !rounded-2xl overflow-hidden" />
                     </ReactFlow>
                 </div>
             </div>

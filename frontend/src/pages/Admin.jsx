@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import { Edit, Trash2, Loader2, UserPlus, Save, CheckCircle, XCircle, Settings, MessageSquare, Phone, Clock, Plus, X, Shield, ShieldAlert, Search } from 'lucide-react';
+import PageLoader from '../components/common/PageLoader';
+
 
 // ─── DESIGN SYSTEM ──────────────────────────────────────────────────────────
 const DS_STYLE = `
@@ -413,16 +415,7 @@ function Admin() {
     );
 
     if (isLoading) {
-        return (
-            <div className="flex h-full items-center justify-center" style={{ background: '#f0f4ff' }}>
-                <div className="flex flex-col items-center gap-3">
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0b1c30, #1d4ed8)', boxShadow: '0 8px 24px rgba(29,78,216,0.3)' }}>
-                        <Loader2 size={28} className="text-white animate-spin" />
-                    </div>
-                    <p className="text-slate-400 text-sm">Carregando painel...</p>
-                </div>
-            </div>
-        );
+        return <PageLoader message="Carregando painel..." subMessage="Preparando ambiente administrativo..." />;
     }
 
     if (error) {

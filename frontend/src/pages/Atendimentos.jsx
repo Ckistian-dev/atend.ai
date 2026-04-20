@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import toast from 'react-hot-toast';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axiosConfig';
-import { Search, MessageSquare, Edit, Trash2, AlertTriangle, ChevronLeft, ChevronRight, X as XIcon, Tag, Download, Plus, MessageSquarePlus, Loader2, Send, FileImage, FileVideo, File as FileIcon, Upload, FileText, Info, Bot, Clock, Database, User, Zap, ListFilter } from 'lucide-react';
+import { Search, MessageSquare, Edit, Trash2, AlertTriangle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X as XIcon, Tag, Download, Plus, MessageSquarePlus, Loader2, Send, FileImage, FileVideo, File as FileIcon, Upload, FileText, Info, Bot, Clock, Database, User, Zap, ListFilter } from 'lucide-react';
+import PageLoader from '../components/common/PageLoader';
 import CreateTemplateModal from '../components/mensagens/CreateTemplateModal';
 import FilterPopover from '../components/mensagens/FilterPopover';
 
@@ -132,12 +133,66 @@ const DS_STYLE = `
 `;
 
 const Modal = ({ onClose, children, maxWidth = 'max-w-xl' }) => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center atend-modal-overlay p-4" style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(12px)' }} onClick={onClose}>
-        <div className={`bg-white w-full ${maxWidth} flex flex-col max-h-[92vh] overflow-hidden shadow-[0_32px_120px_-20px_rgba(15,23,42,0.3)] transition-all duration-300 ease-out`} style={{ borderRadius: '2.5rem' }} onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center atend-modal-overlay p-0 sm:p-4" style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(12px)' }} onClick={onClose}>
+        <div className={`bg-white w-full ${maxWidth} flex flex-col h-[95vh] sm:h-auto sm:max-h-[92vh] overflow-hidden shadow-[0_32px_120px_-20px_rgba(15,23,42,0.3)] transition-all duration-300 ease-out rounded-t-[2.5rem] sm:rounded-[2.5rem]`} onClick={e => e.stopPropagation()}>
             {children}
         </div>
     </div>
 );
+
+// --- COMPONENTE DROPDOWN PERSONALIZADO ---
+const CustomDropdown = ({ value, onChange, options, placeholder = "Selecione...", icon: Icon, label }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsOpen(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const selectedOption = options.find(opt => opt.value === value || opt.nome === value);
+
+    return (
+        <div className="relative w-full" ref={dropdownRef}>
+            {label && <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2.5 ml-1 flex items-center gap-2">{Icon && <Icon size={14} className="text-blue-500" />}{label}</label>}
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="atend-input flex items-center justify-between bg-slate-50/50 border-slate-100 hover:bg-white hover:border-blue-500/30 transition-all px-5 h-14"
+            >
+                <span className={`truncate ${selectedOption ? 'text-slate-900 font-bold' : 'text-slate-400'}`}>
+                    {selectedOption ? (selectedOption.label || selectedOption.nome || selectedOption.nome_config) : placeholder}
+                </span>
+                <ChevronRight size={18} className={`text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`} />
+            </button>
+
+            {isOpen && (
+                <div className="absolute z-[60] w-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden animate-fade-in-up-fast max-h-60 overflow-y-auto custom-scrollbar">
+                    {options.map((opt, idx) => {
+                        const val = opt.value !== undefined ? opt.value : (opt.nome || opt.id);
+                        const labelText = opt.label || opt.nome || opt.nome_config;
+                        const isSelected = value === val;
+
+                        return (
+                            <button
+                                key={idx}
+                                type="button"
+                                onClick={() => { onChange(val); setIsOpen(false); }}
+                                className={`w-full px-5 py-3.5 text-left text-sm font-bold transition-colors flex items-center justify-between ${isSelected ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}
+                            >
+                                {labelText}
+                                {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]" />}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
 
 // --- COMPONENTE DE PREVIEW DO TEMPLATE ---
 const TemplatePreview = ({ template, variables, headerFile, onVariableChange, onFileChange }) => {
@@ -247,28 +302,28 @@ const ConversationModal = ({ onClose, conversation, contactIdentifier }) => {
 
     return (
         <Modal onClose={onClose} maxWidth="max-w-3xl">
-            <div className="h-[85vh] flex flex-col bg-[#F0F2F5]">
+            <div className="flex-1 flex flex-col bg-[#F0F2F5] min-h-0">
                 {/* Header do Chat */}
-                <div className="px-8 py-5 bg-white border-b border-slate-200 flex items-center gap-4 shrink-0 shadow-sm z-10">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black shadow-lg shadow-blue-100">
-                        {contactIdentifier?.substring(0, 1).toUpperCase() || <User size={20} />}
+                <div className="px-4 sm:px-8 py-4 sm:py-5 bg-white border-b border-slate-200 flex items-center gap-3 sm:gap-4 shrink-0 shadow-sm z-10">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black shadow-lg shadow-blue-100 shrink-0 text-sm sm:text-base">
+                        {contactIdentifier?.substring(0, 1).toUpperCase() || <User size={18} />}
                     </div>
-                    <div className="flex-1">
-                        <h3 className="text-xl font-black text-slate-800 tracking-tight">{contactIdentifier}</h3>
-                        <div className="flex items-center gap-2 mt-0.5">
-                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Histórico de Interações</span>
+                    <div className="flex-1 min-w-0">
+                        <h3 className="text-base sm:text-xl font-black text-slate-800 tracking-tight truncate">{contactIdentifier}</h3>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                            <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">Histórico</span>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-600 transition-colors hover:bg-slate-100 rounded-xl">
-                        <XIcon size={24} />
+                        <XIcon size={20} className="sm:w-6 sm:h-6" />
                     </button>
                 </div>
 
                 {/* Área de Mensagens */}
                 <div
                     ref={chatContainerRef}
-                    className="flex-1 p-6 md:p-10 overflow-y-auto space-y-6 custom-scrollbar"
+                    className="flex-1 p-4 sm:p-10 overflow-y-auto space-y-4 sm:space-y-6 custom-scrollbar"
                     style={{
                         backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")',
                         backgroundBlendMode: 'overlay',
@@ -276,11 +331,11 @@ const ConversationModal = ({ onClose, conversation, contactIdentifier }) => {
                     }}
                 >
                     {messages.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full gap-4 text-slate-400">
-                            <div className="w-20 h-20 rounded-full bg-white/50 backdrop-blur-md flex items-center justify-center border border-white">
-                                <MessageSquarePlus size={32} />
+                        <div className="flex flex-col items-center justify-center h-full gap-4 text-slate-400 p-8 text-center">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/50 backdrop-blur-md flex items-center justify-center border border-white">
+                                <MessageSquarePlus size={28} className="sm:w-8 sm:h-8" />
                             </div>
-                            <p className="font-bold text-xs uppercase tracking-[0.2em] bg-white/50 px-4 py-2 rounded-full backdrop-blur-sm border border-white">
+                            <p className="font-bold text-[10px] sm:text-xs uppercase tracking-[0.2em] bg-white/50 px-4 py-2 rounded-full backdrop-blur-sm border border-white">
                                 Nenhuma interação registrada
                             </p>
                         </div>
@@ -289,24 +344,24 @@ const ConversationModal = ({ onClose, conversation, contactIdentifier }) => {
                             const isAssistant = msg.role === 'assistant';
                             return (
                                 <div key={index} className={`flex w-full ${isAssistant ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[85%] px-5 py-4 rounded-3xl shadow-sm border ${isAssistant
+                                    <div className={`max-w-[90%] sm:max-w-[85%] px-4 sm:px-5 py-3 sm:py-4 rounded-2xl sm:rounded-3xl shadow-sm border ${isAssistant
                                         ? 'bg-[#dcf8c6] border-green-100 rounded-tr-none'
                                         : 'bg-white border-white rounded-tl-none'
                                         }`}>
                                         <div className="flex items-center gap-2 mb-1">
                                             {isAssistant ? (
-                                                <div className="flex items-center gap-1 text-[9px] font-black text-green-700 uppercase tracking-tighter">
+                                                <div className="flex items-center gap-1 text-[8px] sm:text-[9px] font-black text-green-700 uppercase tracking-tighter">
                                                     <Bot size={10} /> Atendente IA
                                                 </div>
                                             ) : (
-                                                <div className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">
+                                                <div className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-tighter">
                                                     Cliente
                                                 </div>
                                             )}
                                         </div>
-                                        <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                                        <p className="text-[13px] sm:text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                                         <div className="flex justify-end mt-1 opacity-40">
-                                            <span className="text-[9px] font-bold text-slate-500">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            <span className="text-[8px] sm:text-[9px] font-bold text-slate-500">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -440,33 +495,33 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allT
         <Modal onClose={onClose} maxWidth="max-w-2xl">
             <div className="flex flex-col h-full atend-page text-left overflow-hidden">
                 {/* Header Premium */}
-                <div className="px-8 py-7 bg-white flex items-center gap-5 shrink-0">
-                    <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-200">
-                        <Edit size={24} className="text-white" />
+                <div className="px-6 sm:px-8 py-6 sm:py-7 bg-white flex items-center gap-4 sm:gap-5 shrink-0 border-b border-slate-50">
+                    <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-200 shrink-0">
+                        <Edit size={20} className="text-white sm:w-6 sm:h-6" />
                     </div>
-                    <div className="flex-1">
-                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Editar Atendimento</h3>
-                        <div className="flex items-center gap-2 text-slate-500 font-medium text-xs mt-1">
-                            <MessageSquare size={14} className="text-blue-500" />
-                            <span>{atendimento.whatsapp}</span>
+                    <div className="flex-1 min-w-0">
+                        <h3 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight truncate">Editar Atendimento</h3>
+                        <div className="flex items-center gap-2 text-slate-500 font-medium text-[10px] sm:text-xs mt-0.5">
+                            <MessageSquare size={12} className="text-blue-500" />
+                            <span className="truncate">{atendimento.whatsapp}</span>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-600 transition-colors hover:bg-slate-100 rounded-xl">
-                        <XIcon size={24} />
+                        <XIcon size={20} className="sm:w-6 sm:h-6" />
                     </button>
                 </div>
 
                 {/* Tab Navigation */}
-                <div className="flex px-8 border-b border-slate-100 bg-white shrink-0 overflow-x-auto">
+                <div className="flex px-4 sm:px-8 border-b border-slate-100 bg-white shrink-0 overflow-x-auto no-scrollbar">
                     {tabs.map(tab => {
                         const Icon = tab.icon;
                         return (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`atend-tab flex items-center gap-2.5 px-6 py-4 text-[13px] font-bold whitespace-nowrap ${activeTab === tab.id ? 'active' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`atend-tab flex items-center gap-2.5 px-4 sm:px-6 py-4 text-[12px] sm:text-[13px] font-bold whitespace-nowrap ${activeTab === tab.id ? 'active' : 'text-slate-400 hover:text-slate-600'}`}
                             >
-                                <Icon size={18} />
+                                <Icon size={16} className="sm:w-[18px] sm:h-[18px]" />
                                 {tab.label}
                             </button>
                         );
@@ -488,21 +543,24 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allT
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className={labelClass}><Zap size={14} /> Situação</label>
-                                    <select value={status} onChange={e => setStatus(e.target.value)} className="atend-input">
-                                        {(statusOptions || []).map(opt => (
-                                            <option key={opt.nome} value={opt.nome}>{opt.nome}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className={labelClass}><Bot size={14} /> Persona Ativa</label>
-                                    <select value={personaId ?? ''} onChange={e => setPersonaId(e.target.value === '' ? null : parseInt(e.target.value, 10))} className="atend-input font-bold text-blue-600">
-                                        <option value="">-- Nenhuma Persona --</option>
-                                        {personaOptions}
-                                    </select>
-                                </div>
+                                <CustomDropdown
+                                    label="Situação"
+                                    icon={Zap}
+                                    value={status}
+                                    onChange={setStatus}
+                                    options={statusOptions || []}
+                                />
+                                <CustomDropdown
+                                    label="Persona Ativa"
+                                    icon={Bot}
+                                    value={personaId}
+                                    onChange={setPersonaId}
+                                    options={[
+                                        { id: '', nome_config: '-- Nenhuma Persona --' },
+                                        ...(personas || [])
+                                    ]}
+                                    placeholder="Selecione a Persona..."
+                                />
                             </div>
                         </div>
                     )}
@@ -583,12 +641,12 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allT
                 </div>
 
                 {/* Footer Premium */}
-                <div className="px-10 py-8 bg-white border-t border-slate-100 flex justify-end gap-5 shrink-0">
-                    <button type="button" onClick={onClose} className="px-8 py-4 text-slate-400 font-bold hover:text-slate-600 transition-all text-sm uppercase tracking-widest">
+                <div className="px-6 sm:px-10 py-6 sm:py-8 bg-white border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-3 sm:gap-5 shrink-0">
+                    <button type="button" onClick={onClose} className="order-2 sm:order-1 px-8 py-3 sm:py-4 text-slate-400 font-bold hover:text-slate-600 transition-all text-xs sm:text-sm uppercase tracking-widest">
                         Cancelar
                     </button>
                     <button type="button" onClick={handleSave}
-                        className="px-10 py-4 text-white font-black rounded-2xl transition-all shadow-xl shadow-blue-200 hover:-translate-y-1 active:scale-95 text-xs uppercase tracking-[0.2em]"
+                        className="order-1 sm:order-2 px-10 py-4 text-white font-black rounded-2xl transition-all shadow-xl shadow-blue-200 hover:-translate-y-1 active:scale-95 text-[10px] sm:text-xs uppercase tracking-[0.2em]"
                         style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}>
                         Salvar Alterações
                     </button>
@@ -601,45 +659,45 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allT
 // --- MODAL DE CONFIRMAÇÃO PARA APAGAR ---
 const DeleteConfirmationModal = ({ atendimento, onConfirm, onClose }) => (
     <Modal onClose={onClose} maxWidth="max-w-lg">
-        <div className="p-12 text-center atend-page">
-            <div className="mx-auto flex items-center justify-center h-24 w-24 rounded-[2rem] bg-red-50 mb-8 shadow-inner">
-                <div className="h-16 w-16 rounded-2xl bg-red-500 flex items-center justify-center shadow-lg shadow-red-200 animate-bounce">
-                    <Trash2 className="h-8 w-8 text-white" />
+        <div className="p-8 sm:p-12 text-center atend-page">
+            <div className="mx-auto flex items-center justify-center h-20 w-20 sm:h-24 sm:w-24 rounded-[1.5rem] sm:rounded-[2rem] bg-red-50 mb-6 sm:mb-8 shadow-inner">
+                <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl sm:rounded-2xl bg-red-500 flex items-center justify-center shadow-lg shadow-red-200 animate-bounce">
+                    <Trash2 className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
             </div>
 
-            <h3 className="text-3xl font-black text-slate-900 tracking-tight">Excluir Atendimento?</h3>
+            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Excluir Atendimento?</h3>
 
-            <div className="mt-6 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                <p className="text-sm text-slate-500 leading-relaxed">
+            <div className="mt-4 sm:mt-6 p-4 sm:p-6 bg-slate-50 rounded-2xl sm:rounded-3xl border border-slate-100">
+                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
                     Você está prestes a apagar permanentemente o histórico e as configurações de:
                 </p>
-                <div className="mt-3 flex items-center justify-center gap-3 bg-white py-3 px-5 rounded-2xl shadow-sm border border-slate-200">
+                <div className="mt-3 flex items-center justify-center gap-3 bg-white py-3 px-5 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200">
                     <MessageSquare size={16} className="text-red-500" />
-                    <strong className="text-slate-800 font-black text-lg">{atendimento?.whatsapp ?? 'Contato'}</strong>
+                    <strong className="text-slate-800 font-black text-base sm:text-lg truncate max-w-full">{atendimento?.whatsapp ?? 'Contato'}</strong>
                 </div>
             </div>
 
-            <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="mt-8 sm:mt-10 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <button
                     type="button"
                     onClick={onClose}
-                    className="px-8 py-4 text-slate-400 font-bold hover:text-slate-600 transition-all text-xs uppercase tracking-widest border border-transparent hover:bg-slate-50 rounded-2xl"
+                    className="order-2 sm:order-1 px-8 py-3 sm:py-4 text-slate-400 font-bold hover:text-slate-600 transition-all text-[10px] sm:text-xs uppercase tracking-widest border border-transparent hover:bg-slate-50 rounded-xl sm:rounded-2xl"
                 >
                     Manter Atendimento
                 </button>
                 <button
                     type="button"
                     onClick={() => atendimento && onConfirm(atendimento.id)}
-                    className="px-8 py-4 bg-red-500 text-white font-black rounded-2xl hover:bg-red-600 transition-all shadow-xl shadow-red-200 hover:-translate-y-1 active:scale-95 text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+                    className="order-1 sm:order-2 px-8 py-3 sm:py-4 bg-red-500 text-white font-black rounded-xl sm:rounded-2xl hover:bg-red-600 transition-all shadow-xl shadow-red-200 hover:-translate-y-1 active:scale-95 text-[10px] sm:text-xs uppercase tracking-widest flex items-center justify-center gap-2"
                     disabled={!atendimento}
                 >
-                    <Trash2 size={16} /> Confirmar Exclusão
+                    <Trash2 size={14} className="sm:w-4 sm:h-4" /> Confirmar Exclusão
                 </button>
             </div>
 
-            <p className="mt-6 text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                <AlertTriangle size={12} /> Esta ação não pode ser desfeita
+            <p className="mt-6 text-[9px] sm:text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] flex items-center justify-center gap-2">
+                <AlertTriangle size={12} /> <span className="truncate">Esta ação não pode ser desfeita</span>
             </p>
         </div>
     </Modal>
@@ -809,18 +867,35 @@ const CreateModal = ({ personas, statusOptions, onSave, onClose, allTags, setAll
         <Modal onClose={onClose} maxWidth="max-w-4xl">
             <div className="flex flex-col h-full atend-page text-left overflow-hidden bg-white">
                 {/* Header Premium */}
-                <div className="px-10 py-8 border-b border-slate-100 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-5">
-                        <div className="w-16 h-16 rounded-[1.5rem] bg-blue-600 flex items-center justify-center shadow-2xl shadow-blue-200">
-                            <Plus size={32} className="text-white" />
+                <div className="px-6 sm:px-10 py-6 sm:py-8 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white z-10 relative">
+                    <div className="flex items-center gap-4 sm:gap-6">
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl sm:rounded-[1.75rem] bg-blue-600 flex items-center justify-center shadow-xl shadow-blue-500/20 text-white">
+                            <Plus size={32} strokeWidth={2.5} className="w-6 h-6 sm:w-8 sm:h-8" />
                         </div>
                         <div>
-                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">Novo Atendimento</h3>
-                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">Configuração inicial de contato</p>
+                            <h3 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight leading-none">Novo Atendimento</h3>
+                            <div className="flex items-center gap-2 mt-2">
+                                <div className="flex items-center">
+                                    {[1, 2, 3].map((step) => (
+                                        <div key={step} className="flex items-center">
+                                            <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                                                (step === 1 && activeTab === 'dados') || 
+                                                (step === 2 && activeTab === 'mensagem') || 
+                                                (step === 3 && activeTab === 'organizacao') 
+                                                ? 'w-6 bg-blue-600' : 'bg-slate-200'
+                                            }`} />
+                                            {step < 3 && <div className="w-4 h-[1px] bg-slate-100 mx-1" />}
+                                        </div>
+                                    ))}
+                                </div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                                    Etapa {activeTab === 'dados' ? '1' : activeTab === 'mensagem' ? '2' : '3'} de 3
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-3 text-slate-300 hover:text-slate-600 transition-colors hover:bg-slate-100 rounded-2xl">
-                        <XIcon size={28} />
+                    <button onClick={onClose} className="p-2 sm:p-3 text-slate-300 hover:text-slate-600 transition-all hover:bg-slate-50 rounded-2xl">
+                        <XIcon size={24} className="sm:w-7 sm:h-7" />
                     </button>
                 </div>
 
@@ -846,27 +921,48 @@ const CreateModal = ({ personas, statusOptions, onSave, onClose, allTags, setAll
                         <div className="p-10 animate-fadeIn space-y-8 max-w-2xl mx-auto">
                             <div className="grid grid-cols-1 gap-8">
                                 <div>
-                                    <label className={labelClass}><MessageSquare size={14} /> WhatsApp do Cliente *</label>
-                                    <input type="text" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="Ex: 5511999998888" className="atend-input font-bold text-lg" />
+                                    <label className={labelClass}><Zap size={14} className="text-blue-500" /> WhatsApp do Cliente *</label>
+                                    <div className="relative group">
+                                        <input 
+                                            type="text" 
+                                            value={whatsapp} 
+                                            onChange={e => setWhatsapp(e.target.value)} 
+                                            placeholder="Ex: 5511999998888" 
+                                            className="atend-input px-6 font-bold text-lg bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-500/50 shadow-sm transition-all" 
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 font-medium mt-2 ml-1 italic">Use o formato internacional: DDI + DDD + Número</p>
                                 </div>
                                 <div>
-                                    <label className={labelClass}><Database size={14} /> Nome Completo (Opcional)</label>
-                                    <input type="text" value={nomeContato} onChange={e => setNomeContato(e.target.value)} className="atend-input" placeholder='Nome do cliente para o CRM' />
+                                    <label className={labelClass}><User size={14} className="text-blue-500" /> Nome do Contato (Opcional)</label>
+                                    <div className="relative group">
+                                        <input 
+                                            type="text" 
+                                            value={nomeContato} 
+                                            onChange={e => setNomeContato(e.target.value)} 
+                                            className="atend-input px-6 bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-500/50 shadow-sm transition-all" 
+                                            placeholder='Ex: João da Silva' 
+                                        />
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div>
-                                        <label className={labelClass}><Zap size={14} /> Situação</label>
-                                        <select value={status} onChange={e => setStatus(e.target.value)} className="atend-input">
-                                            {(statusOptions || []).map(opt => <option key={opt.nome} value={opt.nome}>{opt.nome}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className={labelClass}><Bot size={14} /> Persona Alocada</label>
-                                        <select value={personaId} onChange={e => setPersonaId(e.target.value)} className="atend-input font-bold text-blue-600">
-                                            <option value="">-- Automática --</option>
-                                            {(personas || []).map(p => <option key={p.id} value={p.id}>{p.nome_config}</option>)}
-                                        </select>
-                                    </div>
+                                    <CustomDropdown
+                                        label="Situação"
+                                        icon={Zap}
+                                        value={status}
+                                        onChange={setStatus}
+                                        options={statusOptions || []}
+                                    />
+                                    <CustomDropdown
+                                        label="Persona Alocada"
+                                        icon={Bot}
+                                        value={personaId}
+                                        onChange={setPersonaId}
+                                        options={[
+                                            { id: '', nome_config: '-- Automática --' },
+                                            ...(personas || [])
+                                        ]}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -897,14 +993,15 @@ const CreateModal = ({ personas, statusOptions, onSave, onClose, allTags, setAll
                                         <div className="space-y-6 relative z-10">
                                             <div className="space-y-3">
                                                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Selecionar Modelo</label>
-                                                <select
+                                                <CustomDropdown
                                                     value={selectedTemplateName}
-                                                    onChange={e => setSelectedTemplateName(e.target.value)}
-                                                    className="atend-input bg-slate-50/50 border-slate-200 focus:bg-white h-16 text-sm font-bold shadow-sm"
-                                                >
-                                                    <option value="">-- Sem mensagem inicial --</option>
-                                                    {templates.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
-                                                </select>
+                                                    onChange={setSelectedTemplateName}
+                                                    options={[
+                                                        { value: '', label: '-- Sem mensagem inicial --' },
+                                                        ...templates.map(t => ({ value: t.name, label: t.name }))
+                                                    ]}
+                                                    placeholder="Escolha um modelo..."
+                                                />
                                             </div>
 
                                             {activeTemplate && (
@@ -935,24 +1032,30 @@ const CreateModal = ({ personas, statusOptions, onSave, onClose, allTags, setAll
                                 </div>
 
                                 {activeTemplate ? (
-                                    <div className="flex-1 bg-slate-100 rounded-[4rem] p-6 shadow-inner relative overflow-hidden flex flex-col items-center justify-center min-h-[500px]"
+                                    <div className="flex-1 bg-slate-100 rounded-[3rem] sm:rounded-[4rem] p-4 sm:p-8 shadow-inner relative overflow-hidden flex flex-col items-center justify-center min-h-[500px]"
                                         style={{
                                             backgroundImage: 'url("https://www.transparenttextures.com/patterns/cubes.png")',
                                             backgroundColor: '#f1f5f9'
                                         }}>
                                         <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-slate-200/20 pointer-events-none" />
 
-                                        <div className="w-full max-w-md relative z-10 animate-fadeIn">
-                                            <div className="bg-white rounded-[3rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(15,23,42,0.15)] border border-white">
-                                                <div className="bg-slate-50/80 backdrop-blur-md px-8 py-5 border-b border-slate-100 flex items-center justify-between">
-                                                    <div className="flex gap-2">
-                                                        <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
-                                                        <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
-                                                        <div className="w-2.5 h-2.5 rounded-full bg-slate-200" />
+                                        {/* Phone Frame Mockup */}
+                                        <div className="w-full max-w-[340px] relative z-10 animate-fadeIn bg-slate-900 p-3 rounded-[3.5rem] shadow-2xl ring-4 ring-slate-800/50">
+                                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-3xl z-20 flex items-center justify-center">
+                                                <div className="w-12 h-1 bg-slate-800 rounded-full" />
+                                            </div>
+                                            
+                                            <div className="bg-white rounded-[2.8rem] overflow-hidden shadow-inner border border-slate-800/20">
+                                                <div className="bg-[#075e54] px-6 py-8 pb-4 flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white">
+                                                        <User size={16} />
                                                     </div>
-                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Preview WhatsApp</span>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[11px] font-bold text-white tracking-tight">AtendAI Oficial</span>
+                                                        <span className="text-[8px] text-white/60">Online agora</span>
+                                                    </div>
                                                 </div>
-                                                <div className="p-6 bg-[#e5ddd5] min-h-[300px]" style={{ backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")', backgroundBlendMode: 'overlay' }}>
+                                                <div className="p-4 bg-[#e5ddd5] min-h-[350px] relative" style={{ backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")', backgroundBlendMode: 'overlay' }}>
                                                     <TemplatePreview
                                                         template={activeTemplate}
                                                         variables={variables}
@@ -965,10 +1068,15 @@ const CreateModal = ({ personas, statusOptions, onSave, onClose, allTags, setAll
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="hidden lg:flex flex-1 items-center justify-center bg-slate-50/50 rounded-[4rem] border-2 border-dashed border-slate-200">
-                                        <div className="flex flex-col items-center gap-4 opacity-20">
-                                            <MessageSquare size={64} strokeWidth={1} />
-                                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Aguardando Seleção</span>
+                                    <div className="hidden lg:flex flex-1 items-center justify-center bg-white rounded-[4rem] border shadow-sm p-12">
+                                        <div className="flex flex-col items-center gap-6 text-center max-w-xs transition-all duration-700">
+                                            <div className="w-24 h-24 rounded-[2.5rem] bg-blue-50 flex items-center justify-center text-blue-600 animate-pulse shadow-inner">
+                                                <MessageSquare size={48} strokeWidth={1.5} />
+                                            </div>
+                                            <div>
+                                                <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-300 block mb-2">Pendente</span>
+                                                <p className="text-[13px] text-slate-500 font-medium leading-relaxed">Selecione um modelo à esquerda para visualizar como a mensagem aparecerá no dispositivo do cliente.</p>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -1014,17 +1122,17 @@ const CreateModal = ({ personas, statusOptions, onSave, onClose, allTags, setAll
                                 {availableTags.length > 0 && (
                                     <div className="mt-4">
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                            <Tag size={12} className="text-blue-400" /> Etiquetas Sugeridas (selecione):
+                                            <Tag size={12} className="text-blue-500" /> Etiquetas Recomendadas
                                         </p>
-                                        <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
+                                        <div className="flex flex-wrap gap-2 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
                                             {availableTags.map(tag => (
                                                 <button
                                                     key={tag.name}
                                                     type="button"
                                                     onClick={() => handleToggleTag(tag)}
-                                                    className="px-3.5 py-2 rounded-2xl border border-slate-200 text-[11px] font-black text-slate-500 hover:bg-white hover:border-blue-400 hover:text-blue-600 transition-all flex items-center gap-2 bg-slate-50/30 shadow-sm"
+                                                    className="group px-3.5 py-2 rounded-2xl border border-slate-200 text-[11px] font-bold text-slate-600 hover:border-blue-500/50 hover:bg-blue-50 transition-all flex items-center gap-2 bg-white shadow-sm active:scale-95"
                                                 >
-                                                    <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: tag.color }} />
+                                                    <div className="w-2.5 h-2.5 rounded-full shadow-sm transition-transform group-hover:scale-125" style={{ backgroundColor: tag.color }} />
                                                     {tag.name}
                                                 </button>
                                             ))}
@@ -1048,15 +1156,15 @@ const CreateModal = ({ personas, statusOptions, onSave, onClose, allTags, setAll
                 </div>
 
                 {/* Footer Premium */}
-                <div className="px-10 py-8 bg-white border-t border-slate-100 flex justify-end gap-5 shrink-0">
-                    <button type="button" onClick={onClose} className="px-8 py-4 text-slate-400 font-bold hover:text-slate-600 transition-all text-sm uppercase tracking-widest">
-                        Cancelar
+                <div className="px-6 sm:px-10 py-6 sm:py-8 bg-white border-t border-slate-100 flex flex-col sm:flex-row justify-end items-center gap-4 sm:gap-6 shrink-0 shadow-[0_-10px_40px_-15px_rgba(15,23,42,0.05)]">
+                    <button type="button" onClick={onClose} className="order-2 sm:order-1 px-8 py-3 text-slate-400 font-bold hover:text-slate-600 transition-all text-xs uppercase tracking-widest">
+                        Cancelar alteração
                     </button>
                     <button type="button" onClick={handleSave} disabled={isSending}
-                        className="px-12 py-4 text-white font-black rounded-[1.5rem] transition-all shadow-2xl shadow-blue-200 hover:shadow-blue-400 hover:-translate-y-1 active:scale-95 text-xs uppercase tracking-[0.2em] flex items-center gap-3"
-                        style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}>
-                        {isSending ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-                        {isSending ? 'Sincronizando...' : 'Iniciar Atendimento'}
+                        className="order-1 sm:order-2 w-full sm:w-auto min-w-[240px] px-12 py-4 sm:py-5 text-white font-black rounded-2xl transition-all shadow-2xl shadow-blue-500/30 hover:shadow-blue-600/40 hover:-translate-y-1 active:scale-[0.98] text-[10px] sm:text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3"
+                        style={{ background: 'linear-gradient(135deg, #2563eb, #7c3aed)' }}>
+                        {isSending ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} fill="currentColor" />}
+                        {isSending ? 'Processando...' : 'Criar & Iniciar Atendimento'}
                     </button>
                 </div>
             </div>
@@ -1099,6 +1207,8 @@ function Atendimentos() {
     const [timeEnd, setTimeEnd] = useState(searchParams.get('time_end') || '');
     const [pageSize, setPageSize] = useState(parseInt(searchParams.get('limit') || '20', 10));
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || '');
+    const [sortOrder, setSortOrder] = useState(searchParams.get('sort_order') || 'desc');
 
     // Ref para evitar fetch duplicado no modo Strict do React
     const initialFetchDone = useRef(false);
@@ -1115,6 +1225,9 @@ function Atendimentos() {
                 page: currentPage,
                 limit: pageSize
             };
+
+            if (sortBy) params.sort_by = sortBy;
+            if (sortOrder) params.sort_order = sortOrder;
 
             // Adiciona filtros se existirem
             if (selectedStatus) params.status = selectedStatus;
@@ -1159,7 +1272,7 @@ function Atendimentos() {
                 initialFetchDone.current = true; // Marca que o fetch inicial foi feito
             }
         }
-    }, [searchTerm, currentPage, pageSize, selectedStatus, selectedTag, timeStart, timeEnd, setSearchParams]); // isMountedRef não precisa ser dependência
+    }, [searchTerm, currentPage, pageSize, selectedStatus, selectedTag, timeStart, timeEnd, sortBy, sortOrder, setSearchParams]); // Adicionado sortBy e sortOrder
 
     // --- CORREÇÃO DE POLLING (COM PAUSA EM SEGUNDO PLANO) ---
     useEffect(() => {
@@ -1213,6 +1326,38 @@ function Atendimentos() {
         if (!Array.isArray(personas)) return 'Carregando...';
         return personas.find(p => p.id === id)?.nome_config || 'Nenhuma';
     };
+
+    const handleSort = (column) => {
+        if (sortBy === column) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortBy(column);
+            setSortOrder('asc');
+        }
+        setCurrentPage(1);
+    };
+
+    const renderSortIcon = (column) => {
+        const Icon = sortBy === column && sortOrder === 'asc' ? ChevronUp : ChevronDown;
+        return (
+            <Icon 
+                size={14} 
+                className={`transition-all duration-300 ${sortBy === column ? 'text-blue-600 opacity-100' : 'text-slate-300 opacity-0 group-hover:opacity-100'}`} 
+            />
+        );
+    };
+
+    const SortableHeader = ({ column, label, className = "", center = false }) => (
+        <th 
+            className={`px-4 sm:px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] cursor-pointer group hover:bg-slate-100/50 transition-colors ${center ? 'text-center' : ''} ${className}`}
+            onClick={() => handleSort(column)}
+        >
+            <div className={`flex items-center gap-2 ${center ? 'justify-center' : ''}`}>
+                {label}
+                {renderSortIcon(column)}
+            </div>
+        </th>
+    );
 
     const handleCloseModals = () => setModalData({ type: null, data: null });
 
@@ -1388,13 +1533,17 @@ function Atendimentos() {
         }
     };
 
+    if (isLoading && atendimentos.length === 0) {
+        return <PageLoader message="Carregando Atendimentos" subMessage="Sincronizando todas as suas conversas..." />;
+    }
+
     return (
-        <div className="atend-page h-full overflow-y-auto custom-scrollbar p-6 md:p-8" style={{ background: '#f0f4ff' }}>
+        <div className="atend-page h-full overflow-y-auto custom-scrollbar p-6 sm:p-10 lg:p-12" style={{ background: '#f0f4ff' }}>
             <style>{DS_STYLE}</style>
             <style>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+                .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(203, 213, 225, 1); border-radius: 20px; border: 2px solid transparent; background-clip: padding-box; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(203, 213, 225, 0.8); border-radius: 20px; border: 3px solid transparent; background-clip: padding-box; }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3b82f6; background-clip: padding-box; }
             `}</style>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-6">
@@ -1403,26 +1552,26 @@ function Atendimentos() {
                         <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-200">
                             <MessageSquare size={22} className="text-white" />
                         </div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Atendimentos</h1>
+                        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Atendimentos</h1>
                     </div>
-                    <p className="text-slate-500 font-medium text-sm flex items-center gap-2">
-                        <Info size={14} className="text-blue-400" /> Visualize e gerencie todas as conversas ativas.
+                    <p className="text-slate-500 font-medium text-xs sm:text-sm flex items-center gap-2">
+                        <Info size={14} className="text-blue-400 shrink-0" /> <span className="truncate sm:whitespace-normal">Visualize e gerencie todas as conversas ativas.</span>
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
                     {selectedIds.length > 0 && (
                         <button
                             onClick={() => navigate('/disparos', { state: { selectedIds } })}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-white text-violet-600 rounded-xl text-sm font-bold transition-all animate-fade-in"
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-violet-600 rounded-xl text-xs sm:text-sm font-bold transition-all animate-fade-in whitespace-nowrap"
                             style={{ border: '1px solid rgba(139,92,246,0.3)', boxShadow: '0 4px 12px rgba(139,92,246,0.1)' }}
                         >
-                            <Send size={15} />
-                            Disparo em Massa ({selectedIds.length})
+                            <Send size={14} />
+                            <span className="sm:inline">Disparo ({selectedIds.length})</span>
                         </button>
                     )}
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="flex items-center gap-2 px-5 py-2.5 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/25 transition-all"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-lg shadow-blue-500/25 transition-all whitespace-nowrap"
                         style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)' }}
                     >
                         <Plus size={16} />
@@ -1430,7 +1579,7 @@ function Atendimentos() {
                     </button>
                     <button
                         onClick={handleExport}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-white text-slate-600 rounded-xl text-sm font-semibold border border-slate-200 hover:bg-slate-50 transition-all"
+                        className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-white text-slate-600 rounded-xl text-sm font-semibold border border-slate-200 hover:bg-slate-50 transition-all"
                     >
                         <Download size={16} />
                         Exportar
@@ -1447,10 +1596,10 @@ function Atendimentos() {
             )}
 
 
-            <div className="bg-white rounded-[2.5rem] premium-shadow border border-slate-100/50">
-                <div className="p-8 border-b border-slate-50 rounded-t-[2.5rem]">
-                    <div className="flex flex-col md:flex-row gap-4 items-center">
-                        <div className="relative group flex-1 w-full">
+            <div className="bg-white rounded-[3rem] premium-shadow border border-slate-100/50 overflow-hidden">
+                <div className="p-6 sm:p-10 border-b border-slate-50 rounded-t-[3rem]">
+                    <div className="flex flex-col md:flex-row gap-6 items-center">
+                        <div className="relative group flex-1 w-full text-left">
                             <input
                                 type="text"
                                 placeholder="Pesquisar por telefone, nome, situação ou resumo..."
@@ -1459,7 +1608,7 @@ function Atendimentos() {
                                     setSearchTerm(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="atend-input pl-16 bg-slate-50/50 border-slate-100 focus:bg-white"
+                                className="atend-input px-6 sm:px-8 bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-500/30 font-medium"
                             />
                         </div>
                         <div className="relative w-full md:w-auto">
@@ -1525,7 +1674,7 @@ function Atendimentos() {
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-100">
                                 {isSelectingForBulk && (
-                                    <th className="px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] text-center w-16">
+                                    <th className="px-4 sm:px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] text-center w-16">
                                         <input
                                             type="checkbox"
                                             onChange={handleSelectAll}
@@ -1534,23 +1683,20 @@ function Atendimentos() {
                                         />
                                     </th>
                                 )}
-                                <th className="px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">Contato</th>
-                                <th className="px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">Atualização</th>
-                                <th className="px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] text-center">Status</th>
-                                <th className="px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">Categorias</th>
-                                <th className="px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em]">Inteligência / Resumo</th>
-                                <th className="px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] text-center">Agente</th>
-                                <th className="px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] text-center">Ações</th>
+                                <SortableHeader column="contato" label="Contato" />
+                                <SortableHeader column="atualizacao" label="Atualização" className="hidden lg:table-cell" />
+                                <SortableHeader column="status" label="Status" center />
+                                <th className="px-4 sm:px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] hidden sm:table-cell">Categorias</th>
+                                <th className="px-4 sm:px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] hidden xl:table-cell">Inteligência / Resumo</th>
+                                <SortableHeader column="agente" label="Agente" center className="hidden md:table-cell" />
+                                <th className="px-4 sm:px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] text-center">Ações</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
                             {isLoading ? (
                                 <tr>
                                     <td colSpan={isSelectingForBulk ? "8" : "7"} className="px-6 py-20 text-center">
-                                        <div className="flex flex-col items-center gap-3 opacity-40">
-                                            <Loader2 size={32} className="animate-spin text-blue-600" />
-                                            <p className="text-[11px] font-black uppercase tracking-widest">Sincronizando Atendimentos...</p>
-                                        </div>
+                                        <PageLoader fullScreen={false} message="Atualizando lista..." subMessage="" />
                                     </td>
                                 </tr>
                             ) : (
@@ -1574,22 +1720,25 @@ function Atendimentos() {
                                                     />
                                                 </td>
                                             )}
-                                            <td className="px-6 py-5">
+                                            <td className="px-4 sm:px-6 py-5">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="avatar-circle" style={{ backgroundColor: `${renderProps.style?.backgroundColor || '#3b82f6'}15`, color: renderProps.style?.backgroundColor || '#3b82f6' }}>
+                                                    <div className="avatar-circle hidden xs:flex" style={{ backgroundColor: `${renderProps.style?.backgroundColor || '#3b82f6'}15`, color: renderProps.style?.backgroundColor || '#3b82f6' }}>
                                                         {initials}
                                                     </div>
                                                     <div className="flex flex-col min-w-0">
                                                         <span className="text-sm font-bold text-slate-900 truncate leading-tight">
                                                             {at.nome_contato || at.whatsapp}
                                                         </span>
-                                                        {at.nome_contato && (
-                                                            <span className="text-[11px] font-bold text-slate-400 mt-0.5 tracking-tight">{at.whatsapp}</span>
-                                                        )}
+                                                        <span className="text-[11px] font-bold text-slate-400 mt-0.5 tracking-tight flex items-center gap-2">
+                                                            {at.whatsapp}
+                                                            <span className="lg:hidden flex items-center gap-1">
+                                                                • <Clock size={10} /> {at.updated_at ? new Date(at.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                                            </span>
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-5">
+                                            <td className="px-6 py-5 hidden lg:table-cell">
                                                 <div className="flex flex-col">
                                                     <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
                                                         <Clock size={12} className="text-blue-500" />
@@ -1600,25 +1749,25 @@ function Atendimentos() {
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-5 text-center">
-                                                <span className="inline-flex items-center px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full"
+                                            <td className="px-4 sm:px-6 py-5 text-center">
+                                                <span className="inline-flex items-center px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-full"
                                                     style={{ backgroundColor: `${renderProps.style?.backgroundColor}10`, color: renderProps.style?.backgroundColor, border: `1px solid ${renderProps.style?.backgroundColor}25` }}>
                                                     {at.status ?? 'N/A'}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-5">
+                                            <td className="px-6 py-5 hidden sm:table-cell">
                                                 <div className="flex flex-wrap gap-1.5 max-w-[150px]">
                                                     {(at.tags && atendimentos.length > 0 && at.tags.length > 0) ? (
-                                                        at.tags.slice(0, 2).map(tag => (
+                                                        at.tags.slice(0, 1).map(tag => (
                                                             <span key={tag.name} className="px-2 py-0.5 text-[9px] font-black uppercase tracking-tight text-white rounded-md shadow-sm" style={{ backgroundColor: tag.color }}>
                                                                 {tag.name}
                                                             </span>
                                                         ))
                                                     ) : <span className="text-[10px] text-slate-300 font-bold uppercase tracking-tighter">Sem Tags</span>}
-                                                    {at.tags?.length > 2 && <span className="text-[9px] font-black text-slate-400">+{at.tags.length - 2}</span>}
+                                                    {at.tags?.length > 1 && <span className="text-[9px] font-black text-slate-400">+{at.tags.length - 1}</span>}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-5">
+                                            <td className="px-6 py-5 hidden xl:table-cell">
                                                 <div className="expand-cell">
                                                     {at.resumo ? (
                                                         <p title={at.resumo} className="text-[13px] text-slate-600 line-clamp-2 leading-relaxed font-medium italic opacity-80 group-hover:opacity-100 transition-all">
@@ -1629,7 +1778,7 @@ function Atendimentos() {
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-5 text-center">
+                                            <td className="px-6 py-5 text-center hidden md:table-cell">
                                                 <div className="inline-flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm transition-colors">
                                                     <Bot size={14} className="text-blue-600" />
                                                     <span className="text-[11px] font-black text-slate-700 tracking-tight">
@@ -1637,11 +1786,11 @@ function Atendimentos() {
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-5 text-center">
-                                                <div className="flex justify-center items-center gap-1 transition-opacity">
-                                                    <button onClick={(e) => { e.stopPropagation(); setModalData({ type: 'conversation', data: at }); }} className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-xl transition-all" title="Ver conversa"><MessageSquare size={16} /></button>
-                                                    <button onClick={(e) => { e.stopPropagation(); setModalData({ type: 'edit', data: at }); }} className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-xl transition-all" title="Editar"><Edit size={16} /></button>
-                                                    <button onClick={(e) => { e.stopPropagation(); setModalData({ type: 'delete', data: at }); }} className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-xl transition-all" title="Apagar"><Trash2 size={16} /></button>
+                                            <td className="px-4 sm:px-6 py-5 text-center">
+                                                <div className="flex justify-center items-center gap-0.5 sm:gap-1 transition-opacity">
+                                                    <button onClick={(e) => { e.stopPropagation(); setModalData({ type: 'conversation', data: at }); }} className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-lg sm:rounded-xl transition-all" title="Ver conversa"><MessageSquare size={16} /></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); setModalData({ type: 'edit', data: at }); }} className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-lg sm:rounded-xl transition-all" title="Editar"><Edit size={16} /></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); setModalData({ type: 'delete', data: at }); }} className="hidden xs:flex w-8 sm:w-9 h-8 sm:h-9 items-center justify-center text-slate-400 hover:text-red-500 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-lg sm:rounded-xl transition-all" title="Apagar"><Trash2 size={16} /></button>
                                                 </div>
                                             </td>
                                         </tr>

@@ -8,6 +8,7 @@ const MainLayout = () => {
     const [currentUserApiType, setCurrentUserApiType] = useState(null);
     const [isSuperUser, setIsSuperUser] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -57,21 +58,35 @@ const MainLayout = () => {
         );
     }
 
+
     // Estrutura do layout principal
     return (
-        <div className="flex h-screen" style={{ background: '#f0f4ff' }}>
-            {/* Passamos o api_type para a Sidebar.
-              A Sidebar usará isso para decidir se mostra o link "Finalizados".
-            */}
-            <Sidebar currentUserApiType={currentUserApiType} isSuperUser={isSuperUser} />
-            
-            <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Seu Header (cabeçalho superior) */}
-                <Header /> 
-                
+        <div className="flex h-screen bg-[#f0f4ff] font-inter overflow-hidden relative">
+            {/* Overlay para Mobile: fecha o menu ao clicar fora */}
+            {isMobileMenuOpen && (
+                <div
+                    className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
+            {/* Sidebar: Passamos o estado mobile */}
+            <Sidebar
+                currentUserApiType={currentUserApiType}
+                isSuperUser={isSuperUser}
+                isMobileMenuOpen={isMobileMenuOpen}
+                setIsMobileMenuOpen={setIsMobileMenuOpen}
+            />
+
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+                {/* Header (cabeçalho superior) - agora recebe o controle do menu */}
+                <Header setIsMobileMenuOpen={setIsMobileMenuOpen} />
+
                 {/* O Outlet renderiza a página da rota atual (Dashboard, Atendimentos, etc.) */}
-                <main className="flex-1 flex flex-col overflow-hidden min-h-0">
-                    <Outlet />
+                <main className="flex-1 flex flex-col overflow-hidden bg-[#f8faff]">
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                        <Outlet />
+                    </div>
                 </main>
             </div>
         </div>

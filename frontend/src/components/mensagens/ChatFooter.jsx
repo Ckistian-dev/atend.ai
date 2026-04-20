@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-    Paperclip, Mic, Send, Image as ImageIcon, FileText, Loader2, StopCircle, Trash2, FileVideo, MessageSquarePlus
+    Paperclip, Mic, Send, Image as ImageIcon, FileText, Loader2, StopCircle, Trash2, FileVideo, MessageSquarePlus, X as XIcon
 } from 'lucide-react';
 
 const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
@@ -8,11 +8,14 @@ const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
     const [showAttachMenu, setShowAttachMenu] = useState(false);
     const attachMenuRef = useRef(null); // Ref para o menu de anexo
 
+    // --- NOVO: Estado para arquivos selecionados ---
+    const [selectedFiles, setSelectedFiles] = useState([]);
 
     // --- Novos estados para mídia ---
     const [isRecording, setIsRecording] = useState(false);
     const [isSendingMedia, setIsSendingMedia] = useState(false); // Trava o input
     const [recordingTime, setRecordingTime] = useState(0);
+    const [isDragging, setIsDragging] = useState(false); // NOVO: Estado para drag & drop
 
     // --- Refs ---
     const mediaRecorderRef = useRef(null);
@@ -202,36 +205,114 @@ const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
         // O 'finally' block com a limpeza dos inputs FOI REMOVIDO DAQUI
     };
 
-    // Handler para os inputs de arquivo
-    const handleFileChange = (event, type) => {
-        const files = event.target.files; // Pega a FileList
-        if (!files || files.length === 0) {
-            return; // Sai se nada foi selecionado
-        }
+    // Centraliza o processamento de arquivos recebidos (input, paste, drop)
+    const processIncomingFiles = (files) => {
+        if (!files || files.length === 0) return;
 
-        // Itera sobre todos os arquivos selecionados
-        for (const file of files) {
-            if (file) {
-                // Chama a função de enfileiramento para CADA arquivo
-                handleSendFile(file, type); // O 'customFilename' é nulo
+        const newFiles = Array.from(files).map(file => {
+            let type = 'document';
+            if (file.type.startsWith('image/')) type = 'image';
+            else if (file.type.startsWith('video/')) type = 'video';
+            else if (file.type.startsWith('audio/')) type = 'audio';
+
+            let previewUrl = null;
+            if (type === 'image' || type === 'video') {
+                previewUrl = URL.createObjectURL(file);
             }
-        }
+            return { file, type, previewUrl };
+        });
 
-        // Limpa o valor dos inputs APÓS o loop (movido de 'handleSendFile' para cá)
+        setSelectedFiles(prev => [...prev, ...newFiles]);
+    };
+
+    // Handler para os inputs de arquivo (Botão Anexo)
+    const handleFileChange = (event, type) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+        
+        // Se o tipo foi forçado pelo botão (ex: Imagem), usamos ele, senão detectamos
+        const processed = Array.from(files).map(file => {
+            let previewUrl = null;
+            if (type === 'image' || type === 'video') {
+                previewUrl = URL.createObjectURL(file);
+            }
+            return { file, type, previewUrl };
+        });
+
+        setSelectedFiles(prev => [...prev, ...processed]);
+
         if (imageInputRef.current) imageInputRef.current.value = null;
         if (docInputRef.current) docInputRef.current.value = null;
         if (videoInputRef.current) videoInputRef.current.value = null;
 
-        setShowAttachMenu(false); // Fecha o menu após enfileirar tudo
+        setShowAttachMenu(false);
     };
 
-    // --- Lógica de Envio de Texto (MODIFICADA) ---
-    // 1. A lógica de envio foi extraída para esta função
+    // NOVO: Handler para colar arquivos
+    const handlePaste = (e) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+
+        const files = [];
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].kind === 'file') {
+                const file = items[i].getAsFile();
+                if (file) files.push(file);
+            }
+        }
+        
+        if (files.length > 0) {
+            processIncomingFiles(files);
+        }
+    };
+
+    // NOVO: Handlers para Drag & Drop
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+            processIncomingFiles(files);
+        }
+    };
+
+    const removeSelectedFile = (indexToRemove) => {
+        setSelectedFiles(prev => {
+            const next = [...prev];
+            const item = next[indexToRemove];
+            if (item && item.previewUrl) {
+                URL.revokeObjectURL(item.previewUrl);
+            }
+            next.splice(indexToRemove, 1);
+            return next;
+        });
+    };
+
+    // --- Lógica de Envio de Texto e/ou Mídia (MODIFICADA) ---
     const submitTextLogic = () => {
         const textToSend = text.trim();
-        if (!textToSend || isRecording || isSendingMedia) return;
+        // Não faz nada se não houver texto E não houver arquivos selecionados E não for gravação
+        if (!textToSend && selectedFiles.length === 0 && !isRecording) return;
+        if (isSendingMedia) return;
 
         setText(''); // Limpa o input
+
+        const filesToSubmit = [...selectedFiles];
+        setSelectedFiles([]); // Limpa a seleção
 
         // Foca e reseta a altura do textarea
         setTimeout(() => {
@@ -243,7 +324,17 @@ const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
             }
         }, 0);
 
-        onSendMessage(textToSend); // Envia (sem await)
+        if (filesToSubmit.length > 0) {
+            // Se houver arquivos, passa o texto como legenda para o PRIMEIRO arquivo
+            filesToSubmit.forEach((item, index) => {
+                const captionThisFile = (index === 0 && textToSend) ? textToSend : null;
+                onSendMedia(item.file, item.type, item.file.name, captionThisFile);
+            });
+            // Se houver texto mas por algum motivo não mandou, não é necessário fazer nada extra pois ele vai na legenda
+        } else if (textToSend) {
+            // Se não houver arquivos mas houver texto, manda como apenas mensagem de texto
+            onSendMessage(textToSend); // Envia (sem await)
+        }
     };
 
     // 2. O handler do <form> agora só chama a lógica
@@ -272,11 +363,15 @@ const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
 
     return (
         <footer className="footer-loft bg-transparent">
-            <input type="file" ref={imageInputRef} accept="image/png, image/jpeg, image/webp" className="hidden" onChange={(e) => handleFileChange(e, 'image')} multiple />
+            <input type="file" ref={imageInputRef} accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, 'image')} multiple />
             <input type="file" ref={docInputRef} accept=".pdf,.doc,.docx,.xls,.xlsx,.txt" className="hidden" onChange={(e) => handleFileChange(e, 'document')} multiple />
-            <input type="file" ref={videoInputRef} accept="video/mp4,video/3gpp" className="hidden" onChange={(e) => handleFileChange(e, 'video')} multiple />
+            <input type="file" ref={videoInputRef} accept="video/*" className="hidden" onChange={(e) => handleFileChange(e, 'video')} multiple />
 
-            <div className={`relative flex items-center gap-3 p-1.5 bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-blue-900/5 border border-white transition-all duration-500 ${isRecording ? 'ring-2 ring-red-500/20' : 'hover:shadow-blue-900/10'}`}>
+            <div 
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`relative flex ${selectedFiles.length > 0 ? 'items-end' : 'items-center'} gap-3 p-1.5 bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-blue-900/5 border transition-all duration-500 ${isRecording ? 'ring-2 ring-red-500/20' : 'hover:shadow-blue-900/10'} ${isDragging ? 'border-dashed border-blue-500 bg-blue-50/50 scale-[1.01]' : 'border-white'}`}>
 
                 {isRecording ? (
                     <div className="flex-1 flex items-center justify-between px-3 h-12">
@@ -326,22 +421,50 @@ const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
                             </button>
                         </div>
 
-                        {/* TEXT INPUT CAPSULE */}
-                        <div className="flex-1 min-w-0">
+                        {/* TEXT INPUT CAPSULE AND PREVIEWS */}
+                        <div className="flex-1 flex flex-col min-w-0 gap-4">
+                            {selectedFiles.length > 0 && (
+                                <div className="w-full flex items-center gap-2 pb-2 mb-1 border-b border-slate-100 overflow-x-auto no-scrollbar">
+                                    {selectedFiles.map((item, index) => (
+                                        <div key={index} className="relative group shrink-0 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 overflow-hidden w-16 h-16">
+                                            <button
+                                                type="button"
+                                                onClick={() => removeSelectedFile(index)}
+                                                className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center bg-black/50 hover:bg-red-500 text-white rounded-full transition-colors z-10"
+                                            >
+                                                <XIcon size={12} />
+                                            </button>
+                                            {item.type === 'image' ? (
+                                                <img src={item.previewUrl} alt="preview" className="w-full h-full object-cover" />
+                                            ) : item.type === 'video' ? (
+                                                <video src={item.previewUrl} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center p-2 text-slate-500">
+                                                    <FileText size={20} />
+                                                    <span className="text-[9px] mt-1 text-center w-full truncate">
+                                                        {item.file.name}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                             <textarea
                                 ref={textInputRef}
                                 rows={1}
-                                placeholder="Responda aqui..."
-                                className="w-full px-2 py-auto pt-1 bg-transparent text-[14px] font-bold text-slate-800 focus:outline-none resize-none no-scrollbar placeholder:text-slate-300"
+                                placeholder={selectedFiles.length > 0 ? "Adicione uma legenda..." : "Responda aqui..."}
+                                className={`w-full px-2 bg-transparent text-[14px] font-bold text-slate-800 focus:outline-none resize-none no-scrollbar placeholder:text-slate-300 ${selectedFiles.length > 0 ? 'mb-3' : ''}`}
                                 value={text}
                                 onChange={(e) => setText(e.target.value)}
                                 onKeyDown={handleKeyDown}
+                                onPaste={handlePaste}
                             />
                         </div>
 
                         {/* SEND / MIC BUTTON */}
                         <div className="pr-1">
-                            {text.trim() ? (
+                            {(text.trim() || selectedFiles.length > 0) ? (
                                 <button type="submit" disabled={isSendingMedia} onClick={handleSubmitText} className="w-11 h-11 flex items-center justify-center rounded-[1.2rem] bg-blue-600 text-white shadow-xl shadow-blue-200 hover:scale-105 active:scale-95 transition-all">
                                     <Send size={20} />
                                 </button>

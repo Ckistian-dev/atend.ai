@@ -166,6 +166,11 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
                                 </button>
                             )}
                         </div>
+                        {msg.caption && (
+                            <p className={`text-[15px] leading-relaxed font-medium mt-2 ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
+                                {formatWhatsAppText(msg.caption)}
+                            </p>
+                        )}
                     </div>
                 );
 

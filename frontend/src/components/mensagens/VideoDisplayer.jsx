@@ -63,20 +63,29 @@ const VideoDisplayer = ({ atendimentoId, mediaId, caption }) => {
     const openModal = () => setIsModalOpen(true);
     const closeModal = () => setIsModalOpen(false);
 
+    const MediaSkeleton = () => (
+        <div className="absolute inset-0 bg-slate-200/40 overflow-hidden backdrop-blur-sm">
+            <div className="w-full h-full animate-shimmer opacity-50" />
+            <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                    <Loader2 className="animate-spin text-white/80" size={24} />
+                </div>
+            </div>
+        </div>
+    );
+
     return (
-        <div ref={displayerRef} className="space-y-3 w-full max-w-[320px]">
-            <div className="relative aspect-[4/3] bg-slate-100 rounded-[2rem] overflow-hidden shadow-2xl shadow-blue-900/5 cursor-pointer group border border-black/5" onClick={openModal}>
-                {(loadState === 'loading' || loadState === 'idle') && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-slate-50 animate-pulse">
-                        <Loader2 className="animate-spin text-blue-600/30" size={24} />
-                    </div>
-                )}
+        <div ref={displayerRef} className="space-y-3 w-[280px] sm:w-[320px] md:w-[360px]">
+            <div className="relative aspect-[4/3] bg-black/5 rounded-[1.5rem] overflow-hidden shadow-2xl shadow-blue-900/5 cursor-pointer group border border-white/10" onClick={openModal}>
+                {(loadState === 'loading' || loadState === 'idle') && <MediaSkeleton />}
+                
                 {loadState === 'error' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-red-300">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 text-red-300">
                         <AlertCircle size={24} />
-                        <span className="text-[10px] font-black uppercase mt-2">Falha Vídeo</span>
+                        <span className="text-[10px] font-black uppercase mt-2">Falha no carregamento</span>
                     </div>
                 )}
+                
                 {loadState === 'loaded' && videoSrc && (
                     <>
                         <video src={videoSrc} muted playsInline className="w-full h-full object-cover" />
@@ -88,6 +97,7 @@ const VideoDisplayer = ({ atendimentoId, mediaId, caption }) => {
                     </>
                 )}
             </div>
+
 
             {caption && (
                 <div className="px-2">

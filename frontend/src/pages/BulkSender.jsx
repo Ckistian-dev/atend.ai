@@ -3,6 +3,8 @@ import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Send, FileText, Users, Upload, Loader2, Info, CheckCircle, Search, FileImage, FileVideo, File as FileIcon, LayoutGrid, Plus, ExternalLink, Reply, Zap } from 'lucide-react';
+import PageLoader from '../components/common/PageLoader';
+
 import TemplateModal from '../components/mensagens/TemplateModal';
 import CreateTemplateModal from '../components/mensagens/CreateTemplateModal';
 
@@ -408,10 +410,12 @@ function BulkSender() {
         }
     };
 
-    if (isLoading) return <div className="flex h-full items-center justify-center"><Loader2 className="animate-spin" size={32} /></div>;
+    if (isLoading) {
+        return <PageLoader message="Carregando Galeria" subMessage="Preparando templates e campanhas..." />;
+    }
 
     return (
-        <div className="p-4 md:p-10 bg-[#f0f4ff] h-full overflow-y-auto custom-scrollbar bulk-page">
+        <div className="p-3 sm:p-6 md:p-10 bg-[#f8faff] h-full overflow-y-auto custom-scrollbar bulk-page">
             <style>{DS_STYLE}</style>
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 8px; }
@@ -419,32 +423,33 @@ function BulkSender() {
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(203, 213, 225, 1); border-radius: 20px; border: 2px solid transparent; background-clip: padding-box; }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3b82f6; background-clip: padding-box; }
             `}</style>
-            <div className="mx-auto">
-                <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="mx-auto max-w-7xl">
+                <div className="mb-6 sm:mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-200">
-                                <Zap size={22} className="text-white" />
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-200 shrink-0">
+                                <Zap size={22} className="text-white sm:hidden" />
+                                <Zap size={24} className="text-white hidden sm:block" />
                             </div>
-                            <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-                                Disparos <span className="text-blue-600 font-black">Inteligentes</span>
+                            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
+                                Disparos <span className="text-blue-600">Inteligentes</span>
                             </h1>
                         </div>
-                        <p className="text-slate-500 font-medium text-sm flex items-center gap-2">
-                            <Info size={14} className="text-blue-400" /> Orchestre campanhas em massa com precisão executiva.
+                        <p className="text-slate-500 font-medium text-xs sm:text-sm flex items-center gap-2">
+                            <Info size={14} className="text-blue-400" /> Orchestre campanhas com precisão executiva.
                         </p>
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10">
                     {/* Painel de Configuração */}
-                    <div className="lg:col-span-7 space-y-8">
+                    <div className="lg:col-span-7 space-y-6 sm:space-y-8">
                         {/* Seção 1: O Que Enviar */}
-                        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100/50 relative overflow-hidden">
+                        <div className="bg-white p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] shadow-sm border border-slate-100/50 relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full -mr-16 -mt-16 blur-3xl opacity-50"></div>
 
-                            <div className="relative z-10 space-y-8">
-                                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">01. Configurações de Envio</h4>
+                            <div className="relative z-10 space-y-6 sm:space-y-8">
+                                <h4 className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">01. Configurações de Envio</h4>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <div className="col-span-1 sm:col-span-2">
@@ -503,37 +508,37 @@ function BulkSender() {
                         </div>
 
                         {/* Seção 2: Para Quem Enviar */}
-                        <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100/50">
-                            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8">02. Seleção de Destinatários</h4>
+                        <div className="bg-white p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] shadow-sm border border-slate-100/50">
+                            <h4 className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 sm:mb-8">02. Seleção de Destinatários</h4>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div className="grid grid-cols-2 gap-3 sm:gap-5">
                                 {/* Opção: Buscar na Base */}
                                 <div onClick={() => navigate('/atendimentos', { state: { isSelectingForBulk: true, selectedIds } })}
-                                    className={`premium-tile cursor-pointer p-6 rounded-3xl border-2 transition-all flex flex-col items-center text-center ${selectedIds.length > 0 ? 'border-blue-500 bg-blue-50/30' : 'border-slate-100 bg-slate-50/50'}`}>
-                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all ${selectedIds.length > 0 ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-slate-400 shadow-sm'}`}>
-                                        <Search size={22} />
+                                    className={`premium-tile cursor-pointer p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-2 transition-all flex flex-col items-center text-center ${selectedIds.length > 0 ? 'border-blue-500 bg-blue-50/30' : 'border-slate-100 bg-slate-50/50'}`}>
+                                    <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-all ${selectedIds.length > 0 ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-slate-400 shadow-sm'}`}>
+                                        <Search size={20} className="sm:hidden" />
+                                        <Search size={22} className="hidden sm:block" />
                                     </div>
-                                    <h5 className="font-black text-slate-800 text-sm mb-1">Base Interna</h5>
-                                    <p className="text-[11px] text-slate-500 font-medium">Contatos da plataforma</p>
-
+                                    <h5 className="font-black text-slate-800 text-[12px] sm:text-sm mb-1 leading-tight text-center">Base Interna</h5>
+                                    
                                     {selectedIds.length > 0 && (
-                                        <div className="mt-4 px-4 py-1.5 bg-blue-600 text-white text-[10px] font-black rounded-full shadow-md animate-fade-in uppercase tracking-wider">
+                                        <div className="mt-2 text-blue-600 text-[9px] font-black uppercase tracking-wider">
                                             {selectedIds.length} selecionados
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Opção: Planilha Externa */}
-                                <label className={`premium-tile cursor-pointer p-6 rounded-3xl border-2 transition-all flex flex-col items-center text-center ${file ? 'border-indigo-500 bg-indigo-50/30' : 'border-slate-100 bg-slate-50/50'}`}>
+                                <label className={`premium-tile cursor-pointer p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-2 transition-all flex flex-col items-center text-center ${file ? 'border-indigo-500 bg-indigo-50/30' : 'border-slate-100 bg-slate-50/50'}`}>
                                     <input type="file" accept=".csv" className="sr-only" onChange={handleCsvFileChange} />
-                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-all ${file ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-slate-400 shadow-sm'}`}>
-                                        <Upload size={22} />
+                                    <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-all ${file ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-slate-400 shadow-sm'}`}>
+                                        <Upload size={20} className="sm:hidden" />
+                                        <Upload size={22} className="hidden sm:block" />
                                     </div>
-                                    <h5 className="font-black text-slate-800 text-sm mb-1">Planilha CSV</h5>
-                                    <p className="text-[11px] text-slate-500 font-medium">Importação externa</p>
-
+                                    <h5 className="font-black text-slate-800 text-[12px] sm:text-sm mb-1 leading-tight text-center">Planilha CSV</h5>
+                                    
                                     {file && (
-                                        <div className="mt-4 px-4 py-1.5 bg-indigo-600 text-white text-[10px] font-black rounded-full shadow-md animate-fade-in uppercase tracking-wider truncate max-w-full">
+                                        <div className="mt-2 text-indigo-600 text-[9px] font-black uppercase tracking-wider truncate max-w-full">
                                             {file.name}
                                         </div>
                                     )}
@@ -556,9 +561,9 @@ function BulkSender() {
 
                     {/* Coluna de Visualização */}
                     <div className="lg:col-span-5 space-y-6">
-                        <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100/50 overflow-hidden flex flex-col h-full min-h-[600px]">
-                            <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-white">
-                                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Visualização</h4>
+                        <div className="bg-white rounded-[1.5rem] sm:rounded-[2rem] shadow-sm border border-slate-100/50 overflow-hidden flex flex-col h-full sm:min-h-[600px]">
+                            <div className="p-5 sm:p-6 border-b border-slate-50 flex items-center justify-between bg-white">
+                                <h4 className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Visualização</h4>
                                 <div className="flex gap-1">
                                     <div className="w-2.5 h-2.5 rounded-full bg-slate-100"></div>
                                     <div className="w-2.5 h-2.5 rounded-full bg-slate-100"></div>
@@ -566,7 +571,7 @@ function BulkSender() {
                                 </div>
                             </div>
 
-                            <div className="flex-1 p-8 bg-[#fdfdfd] flex flex-col items-center justify-center overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(rgba(248, 250, 252, 0.95), rgba(248, 250, 252, 0.95)), url("https://static.vecteezy.com/system/resources/previews/021/736/713/non_2x/doodle-lines-arrows-circles-and-curves-hand-drawn-design-elements-isolated-on-white-background-for-infographic-illustration-vector.jpg")', backgroundSize: 'cover' }}>
+                            <div className="flex-1 p-5 sm:p-8 bg-[#fdfdfd] flex flex-col items-center justify-center overflow-y-auto custom-scrollbar" style={{ background: 'linear-gradient(rgba(248, 250, 252, 0.95), rgba(248, 250, 252, 0.95)), url("https://static.vecteezy.com/system/resources/previews/021/736/713/non_2x/doodle-lines-arrows-circles-and-curves-hand-drawn-design-elements-isolated-on-white-background-for-infographic-illustration-vector.jpg")', backgroundSize: 'cover' }}>
                                 {activeTemplate ? (
                                     <div className="w-full max-w-sm animate-fade-in">
                                         <TemplatePreview
@@ -609,15 +614,15 @@ function BulkSender() {
                                 )}
                             </div>
 
-                            <div className="p-8 border-t border-slate-50">
+                            <div className="p-5 sm:p-8 border-t border-slate-50">
                                 <button
                                     type="submit"
                                     disabled={issubmitting}
-                                    className="w-full h-16 flex items-center justify-center gap-4 text-white rounded-3xl font-black text-lg transition-all shadow-xl shadow-blue-500/20 active:scale-[0.98] disabled:opacity-50 disabled:grayscale hover:shadow-2xl hover:-translate-y-1"
+                                    className="w-full h-14 sm:h-16 flex items-center justify-center gap-3 sm:gap-4 text-white rounded-2xl sm:rounded-3xl font-black text-base sm:text-lg transition-all shadow-xl shadow-blue-500/20 active:scale-[0.98] disabled:opacity-50 hover:shadow-2xl hover:-translate-y-1"
                                     style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)' }}
                                 >
-                                    {issubmitting ? <Loader2 className="animate-spin" /> : <Send size={20} />}
-                                    {issubmitting ? 'Preseguindo...' : 'Iniciar Sequência de Disparos'}
+                                    {issubmitting ? <Loader2 className="animate-spin" /> : <Send size={18} sm:size={20} />}
+                                    {issubmitting ? 'Processando...' : 'Iniciar Sequência de Disparos'}
                                 </button>
                                 <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest text-center mt-4">
                                     Custo estimado: R$ {((selectedIds.length + contactCount) * 0.50).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

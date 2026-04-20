@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { X, Send, Loader2, AlertTriangle, Search, Upload, FileImage, FileVideo, File as FileIcon, Plus, ExternalLink, Reply, Trash2, Sparkles, MessageSquare } from 'lucide-react';
+import { X, Send, Loader2, AlertTriangle, Search, Upload, FileImage, FileVideo, File as FileIcon, Plus, ExternalLink, Reply, Trash2, Sparkles, MessageSquare, ChevronLeft } from 'lucide-react';
 import api from '../../api/axiosConfig'; // Importa a configuração do Axios
 import CreateTemplateModal from './CreateTemplateModal';
 import ConfirmationModal from '../common/ConfirmationModal';
@@ -12,7 +12,7 @@ const TemplateSidebar = ({ templates, selectedTemplate, onSelect, onDelete, sear
     }, [templates, searchTerm]);
 
     return (
-        <aside className="w-80 border-r border-slate-100 bg-slate-50/50 flex flex-col min-h-0">
+        <aside className="w-full sm:w-80 border-r border-slate-100 bg-slate-50/50 flex flex-col min-h-0 h-full">
             {/* Barra de Busca */}
             <div className="p-4 border-b border-slate-100">
                 <div className="flex gap-2">
@@ -53,8 +53,8 @@ const TemplateSidebar = ({ templates, selectedTemplate, onSelect, onDelete, sear
                                     onDelete(t);
                                 }}
                                 className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-all opacity-0 group-hover:opacity-100 ${selectedTemplate?.name === t.name
-                                        ? 'text-white hover:bg-white/10'
-                                        : 'text-slate-300 hover:text-red-500 hover:bg-red-50'
+                                    ? 'text-white hover:bg-white/10'
+                                    : 'text-slate-300 hover:text-red-500 hover:bg-red-50'
                                     }`}
                                 title="Excluir template"
                             >
@@ -142,7 +142,7 @@ const TemplatePreview = ({ template, variables, headerFile, onVariableChange, on
 
     return (
         <div className="flex flex-col items-center">
-            <div className="mb-6 text-center">
+            <div className="mb-6 mt-10 text-center">
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-2">
                     <Sparkles size={12} /> Visualização Real
                 </div>
@@ -421,60 +421,80 @@ const TemplateModal = ({ isOpen, onClose, onSend }) => {
         }
     };
 
+    const [viewMode, setViewMode] = useState('list'); // 'list' ou 'preview' (mobile)
+
+    useEffect(() => {
+        if (selectedTemplate) setViewMode('preview');
+        else setViewMode('list');
+    }, [selectedTemplate]);
+
     if (!isOpen) return null;
 
     return (
         <>
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in" onClick={onClose}>
-                <div className="bg-white/95 backdrop-blur-xl rounded-[3rem] shadow-[0_30px_80px_rgba(0,0,0,0.2)] w-full max-w-5xl h-[85vh] flex flex-col border border-white animate-fade-in-up-fast overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 sm:p-4 animate-fade-in" onClick={onClose}>
+                <div className="bg-white rounded-0 sm:rounded-[3rem] shadow-[0_30px_80px_rgba(0,0,0,0.2)] w-full max-w-none sm:max-w-5xl h-full sm:h-[85vh] flex flex-col border-none sm:border border-white animate-fade-in-up-fast overflow-hidden" onClick={e => e.stopPropagation()}>
                     {/* Cabeçalho do Modal */}
-                    <div className="flex-shrink-0 flex justify-between items-center p-8 border-b border-slate-100 bg-slate-50/50">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-600 shadow-inner">
-                                <Sparkles size={28} />
+                    <div className="flex-shrink-0 flex justify-between items-center p-4 sm:p-8 border-b border-slate-100 bg-slate-50/50">
+                        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-600 shadow-inner shrink-0">
+                                <Sparkles size={24} className="sm:hidden" />
+                                <Sparkles size={28} className="hidden sm:block" />
                             </div>
-                            <div>
-                                <h3 className="text-2xl font-black tracking-tight text-slate-800 executive-title">Enviar Template</h3>
-                                <p className="text-[13px] font-medium text-slate-400">Escolha um modelo inteligente aprovado pela Meta.</p>
+                            <div className="min-w-0">
+                                <h3 className="text-lg sm:text-2xl font-black tracking-tight text-slate-800 executive-title truncate">Enviar Template</h3>
+                                <p className="text-[11px] sm:text-[13px] font-medium text-slate-400 truncate">Modelos aprovados pela Meta.</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                             <button
                                 onClick={() => setIsCreateModalOpen(true)}
-                                className="bg-white border border-slate-200 text-slate-700 h-12 px-5 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center gap-2 shadow-sm"
+                                className="bg-white border border-slate-200 text-slate-700 h-10 sm:h-12 px-3 sm:px-5 rounded-xl sm:rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center gap-2 shadow-sm"
                             >
-                                <Plus size={18} className="text-blue-600" /> Novo Template
+                                <Plus size={18} className="text-blue-600" />
+                                <span className="hidden sm:inline">Novo Template</span>
                             </button>
-                            <button onClick={onClose} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-100/50 text-slate-400 hover:bg-white hover:text-slate-900 shadow-sm transition-all">
-                                <X size={24} />
+                            <button onClick={onClose} className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl sm:rounded-2xl bg-slate-100/50 text-slate-400 hover:bg-white hover:text-slate-900 shadow-sm transition-all text-sm sm:text-base">
+                                <X size={20} className="sm:hidden" />
+                                <X size={24} className="hidden sm:block" />
                             </button>
                         </div>
                     </div>
 
                     {/* Corpo do Modal (Sidebar + Conteúdo) */}
-                    <div className="flex-1 flex min-h-0">
-                        <TemplateSidebar
-                            templates={templates}
-                            selectedTemplate={selectedTemplate}
-                            onSelect={handleSelectTemplate}
-                            onDelete={handleDeleteTemplate}
-                            searchTerm={searchTerm}
-                            setSearchTerm={setSearchTerm}
-                            onCreateClick={() => setIsCreateModalOpen(true)}
-                        />
+                    <div className="flex-1 flex min-h-0 relative">
+                        <div className={`${viewMode === 'preview' ? 'hidden sm:flex' : 'flex'} w-full sm:w-80 flex-shrink-0`}>
+                            <TemplateSidebar
+                                templates={templates}
+                                selectedTemplate={selectedTemplate}
+                                onSelect={handleSelectTemplate}
+                                onDelete={handleDeleteTemplate}
+                                searchTerm={searchTerm}
+                                setSearchTerm={setSearchTerm}
+                                onCreateClick={() => setIsCreateModalOpen(true)}
+                            />
+                        </div>
 
-                        {/* --- ALTERAÇÃO AQUI: Adicionado o plano de fundo de chat --- */}
                         <main
-                            className="flex-1 flex flex-col p-8 overflow-y-auto custom-scrollbar bg-slate-50/30"
+                            className={`${viewMode === 'list' ? 'hidden sm:flex' : 'flex'} flex-1 flex flex-col p-4 sm:p-8 overflow-y-auto custom-scrollbar bg-slate-50/30 relative`}
                             style={{
                                 backgroundImage: `
                             linear-gradient(rgba(248, 250, 252, 0.96), rgba(248, 250, 252, 0.96)),
                             url('https://static.vecteezy.com/system/resources/previews/021/736/713/non_2x/doodle-lines-arrows-circles-and-curves-hand-drawn-design-elements-isolated-on-white-background-for-infographic-illustration-vector.jpg')
                             `,
                                 backgroundSize: '400px',
-                                backgroundPosition: 'center',
                             }}
                         >
+                            {/* Botão de Voltar Mobile (Preview -> List) */}
+                            {viewMode === 'preview' && (
+                                <button
+                                    onClick={() => setSelectedTemplate(null)}
+                                    className="sm:hidden absolute top-4 left-4 z-10 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-100 active:scale-95 transition-all"
+                                >
+                                    <ChevronLeft size={16} /> Lista de Templates
+                                </button>
+                            )}
+
                             {isLoading ? (
                                 <div className="flex-1 flex flex-col items-center justify-center gap-4">
                                     <div className="p-4 bg-white rounded-3xl shadow-xl shadow-blue-100/50 outline outline-8 outline-blue-50">
@@ -497,7 +517,7 @@ const TemplateModal = ({ isOpen, onClose, onSend }) => {
                     </div>
 
                     {/* Rodapé do Modal */}
-                    <div className="flex-shrink-0 flex justify-between items-center p-8 border-t border-slate-100 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
+                    <div className="flex-shrink-0 flex flex-col sm:flex-row justify-between items-center p-4 sm:p-8 border-t border-slate-100 bg-white gap-4">
                         {error ? (
                             <div className="bg-red-50 text-red-600 px-5 py-3 rounded-2xl text-[11px] font-bold flex items-center gap-3 animate-shake">
                                 <div className="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center"><AlertTriangle size={14} /></div>
@@ -508,12 +528,12 @@ const TemplateModal = ({ isOpen, onClose, onSend }) => {
                                 Certifique-se de preencher todas as variáveis para garantir o envio correto.
                             </p>
                         )}
-                        <div className="ml-auto flex items-center gap-4">
-                            <button onClick={onClose} className="px-8 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all">Cancelar</button>
+                        <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-4">
+                            <button onClick={onClose} className="w-full sm:w-auto px-8 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all border border-slate-100 sm:border-none rounded-2xl">Cancelar</button>
                             <button
                                 onClick={handleSend}
                                 disabled={!selectedTemplate || isSending || isLoading}
-                                className="flex items-center gap-4 bg-brand-primary text-white px-10 py-5 rounded-3xl font-black uppercase tracking-widest text-[11px] hover:bg-brand-primary-active hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-brand-primary/20 disabled:opacity-50 disabled:grayscale disabled:scale-100"
+                                className="w-full sm:w-auto flex items-center justify-center gap-4 bg-brand-primary text-white px-10 py-5 rounded-2xl sm:rounded-3xl font-black uppercase tracking-widest text-[11px] hover:bg-brand-primary-active hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-brand-primary/20 disabled:opacity-50 disabled:grayscale disabled:scale-100"
                             >
                                 {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                                 {isSending ? 'Enviando...' : 'Disparar Template'}

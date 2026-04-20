@@ -107,7 +107,7 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
                     >
                         <div
                             id={`msg-${msg.id}`}
-                            className={`relative max-w-[85%] md:max-w-[70%] transition-all duration-300 ${isAssistant ? 'chat-bubble-user' : 'chat-bubble-ia shadow-sm border border-white/40'
+                            className={`relative max-w-[78%] md:max-w-[70%] transition-all duration-300 ${isAssistant ? 'chat-bubble-user' : 'chat-bubble-ia shadow-sm border border-white/40'
                                 } ${highlightedMessageId === msg.id ? 'highlight-message' : ''}`}
                         >
                             {msg.is_template && (

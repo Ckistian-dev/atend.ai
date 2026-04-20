@@ -1,269 +1,7 @@
-// src/components/Header.jsx
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { CSSTransition, SwitchTransition } from 'react-transition-group';
-import { Ticket, User as UserIcon, AlertCircle, Zap, Activity, UserCheck, UserX } from 'lucide-react';
+import { Ticket, User as UserIcon, AlertCircle, Zap, Activity, UserCheck, UserX, Menu } from 'lucide-react';
 import api from '../api/axiosConfig';
-
-/* ─────────────────────────────────────────
-   STYLES
-   ───────────────────────────────────────── */
-const HEADER_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
-
-  /* ── Root header ── */
-  .hdr-root {
-    position: relative;
-    display: flex;
-    align-items: center;
-    min-height: 60px;
-    padding: 0 1.5rem;
-    background: #ffffff;
-    box-shadow: 0 1px 0 rgba(196,197,215,0.3), 0 4px 16px rgba(11,28,48,0.04);
-    z-index: 20;
-    flex-shrink: 0;
-  }
-
-  .hdr-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    gap: 1rem;
-  }
-
-  /* ── Left cluster ── */
-  .hdr-left {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    min-width: 0;
-  }
-
-  /* ── Agent status pill ── */
-  .hdr-agent-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.35rem 0.85rem;
-    border-radius: 999px;
-    border: none;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.78rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
-    flex-shrink: 0;
-  }
-
-  .hdr-agent-btn.running {
-    background: linear-gradient(135deg, #dce1ff 0%, #e0ebff 100%);
-    color: #0942b3;
-    box-shadow: 0 2px 8px rgba(9,66,179,0.12);
-  }
-
-  .hdr-agent-btn.stopped {
-    background: #eff4ff;
-    color: #6b758a;
-    box-shadow: none;
-  }
-
-  .hdr-agent-btn:hover {
-    transform: scale(1.04);
-    box-shadow: 0 4px 14px rgba(9,66,179,0.16);
-  }
-
-  .hdr-agent-pulse {
-    position: relative;
-    width: 7px; height: 7px;
-    flex-shrink: 0;
-  }
-  .hdr-agent-pulse-ring {
-    position: absolute; inset: 0;
-    border-radius: 50%;
-    background: #0942b3;
-    opacity: 0.4;
-    animation: agentPulse 1.4s ease-out infinite;
-  }
-  .hdr-agent-pulse-dot {
-    position: absolute; inset: 1px;
-    border-radius: 50%;
-    background: #0942b3;
-  }
-  .hdr-agent-btn.stopped .hdr-agent-pulse-ring { display: none; }
-  .hdr-agent-btn.stopped .hdr-agent-pulse-dot { background: #9ca3af; }
-
-  @keyframes agentPulse {
-    0%   { transform: scale(1); opacity: 0.4; }
-    70%  { transform: scale(2.2); opacity: 0; }
-    100% { opacity: 0; }
-  }
-
-  /* ── Activity ticker ── */
-  .hdr-activity-wrap {
-    position: relative;
-    height: 32px;
-    overflow: hidden;
-    min-width: 0;
-  }
-
-  .hdr-activity {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    height: 32px;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    color: #434655;
-    padding: 0 0.6rem;
-    border-radius: 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 320px;
-  }
-
-  .hdr-activity-icon { color: #0942b3; flex-shrink: 0; }
-  .hdr-activity-label { color: #9ca3af; }
-  .hdr-activity-value { font-weight: 600; color: #0b1c30; }
-
-  /* Activity transition */
-  .hdr-fade-enter { opacity: 0; transform: translateY(-60%); }
-  .hdr-fade-enter-active { opacity: 1; transform: translateY(0); transition: opacity 380ms ease-out, transform 380ms cubic-bezier(0.22,1,0.36,1); }
-  .hdr-fade-exit  { opacity: 1; transform: translateY(0); }
-  .hdr-fade-exit-active { opacity: 0; transform: translateY(60%); transition: opacity 280ms ease-in, transform 280ms ease-in; }
-
-  /* ── Right cluster ── */
-  .hdr-right {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    flex-shrink: 0;
-  }
-
-  /* ── Token chip ── */
-  .hdr-token-chip {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.35rem 0.8rem;
-    border-radius: 999px;
-    background: #eff4ff;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    color: #434655;
-    cursor: default;
-    flex-shrink: 0;
-  }
-
-  .hdr-token-chip .token-icon { color: #0942b3; }
-
-  .hdr-token-value {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #0b1c30;
-  }
-
-  @keyframes tokenTick {
-    0%   { transform: scale(1); }
-    50%  { transform: scale(1.15); }
-    100% { transform: scale(1); }
-  }
-  .token-tick { animation: tokenTick 0.3s ease-in-out; }
-
-  /* ── Attendant button ── */
-  .hdr-attendant-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.35rem 0.9rem;
-    border-radius: 999px;
-    border: none;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.78rem;
-    font-weight: 600;
-    transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
-    flex-shrink: 0;
-  }
-
-  .hdr-attendant-btn.online {
-    background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%);
-    color: #065f46;
-    box-shadow: 0 2px 8px rgba(16,185,129,0.14);
-  }
-
-  .hdr-attendant-btn.offline {
-    background: #f1f5f9;
-    color: #6b758a;
-  }
-
-  .hdr-attendant-btn:hover {
-    transform: scale(1.04);
-  }
-
-  .hdr-attendant-btn.online:hover {
-    box-shadow: 0 4px 14px rgba(16,185,129,0.22);
-  }
-
-  .hdr-status-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .hdr-attendant-btn.online .hdr-status-dot  { background: #10b981; }
-  .hdr-attendant-btn.offline .hdr-status-dot { background: #94a3b8; }
-
-  .hdr-email {
-    max-width: 160px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  /* ── Skeleton ── */
-  .hdr-skeleton {
-    height: 32px;
-    border-radius: 999px;
-    width: 260px;
-    background: linear-gradient(90deg, #eff4ff 25%, #e0ebff 50%, #eff4ff 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.4s ease-in-out infinite;
-  }
-
-  @keyframes shimmer {
-    0%   { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-
-  /* ── Error state ── */
-  .hdr-error {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.8rem;
-    color: #ba1a1a;
-  }
-
-  /* ── Divider ── */
-  .hdr-vdivider {
-    width: 1px; height: 20px;
-    background: rgba(196,197,215,0.45);
-    flex-shrink: 0;
-  }
-`;
-
-let headerStylesInjected = false;
-function injectHeaderStyles() {
-  if (headerStylesInjected) return;
-  const style = document.createElement('style');
-  style.textContent = HEADER_STYLES;
-  document.head.appendChild(style);
-  headerStylesInjected = true;
-}
 
 /* ─────────────────────────────────────────
    SUB-COMPONENTS
@@ -274,15 +12,23 @@ const AgentStatus = ({ status, onToggle }) => {
   return (
     <button
       onClick={onToggle}
-      className={`hdr-agent-btn ${isRunning ? 'running' : 'stopped'}`}
+      className={`
+        flex items-center gap-2 px-3 py-1.5 rounded-full font-semibold text-[11px] uppercase tracking-wider transition-all duration-200 shadow-sm
+        ${isRunning
+          ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'
+          : 'bg-slate-50 text-slate-500 ring-1 ring-slate-200'}
+        hover:scale-105 active:scale-95
+      `}
       title="Clique para ativar/pausar o agente de IA"
       id="header-agent-toggle-btn"
     >
-      <span className="hdr-agent-pulse">
-        <span className="hdr-agent-pulse-ring" />
-        <span className="hdr-agent-pulse-dot" />
-      </span>
-      <Zap size={13} />
+      <div className="relative w-2 h-2">
+        {isRunning && (
+          <div className="absolute inset-0 rounded-full bg-blue-500 animate-ping opacity-75" />
+        )}
+        <div className={`relative w-2 h-2 rounded-full ${isRunning ? 'bg-blue-600' : 'bg-slate-400'}`} />
+      </div>
+      <Zap size={12} className={isRunning ? 'fill-blue-600' : ''} />
       <span className="hidden sm:inline">{isRunning ? 'Agente Ativo' : 'Agente Pausado'}</span>
     </button>
   );
@@ -291,17 +37,19 @@ const AgentStatus = ({ status, onToggle }) => {
 const ActivityTicker = ({ activity }) => {
   if (!activity) {
     return (
-      <div className="hdr-activity" title="Nenhuma atividade recente">
-        <Activity size={14} className="hdr-activity-icon" />
-        <span className="hdr-activity-label hidden sm:inline">Nenhuma atividade recente</span>
+      <div className="flex items-center gap-2 text-slate-400 text-xs font-medium" title="Nenhuma atividade recente">
+        <Activity size={14} className="text-blue-600" />
+        <span className="hidden md:inline">Nenhuma atividade recente</span>
       </div>
     );
   }
   return (
-    <div className="hdr-activity" title={`Última: ${activity.observacao}`}>
-      <Activity size={14} className="hdr-activity-icon" />
-      <span className="hdr-activity-label hidden sm:inline">{activity.whatsapp}:</span>
-      <span className="hdr-activity-value hidden sm:inline">{activity.situacao}</span>
+    <div className="flex items-center gap-2 text-slate-600 text-xs font-medium w-full bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100" title={`Última: ${activity.observacao}`}>
+      <Activity size={14} className="text-blue-600 shrink-0" />
+      <span className="truncate">
+        <span className="text-slate-400 font-normal mr-1">{activity.whatsapp}:</span>
+        {activity.situacao}
+      </span>
     </div>
   );
 };
@@ -336,14 +84,14 @@ const CountUp = ({ end, duration = 1200 }) => {
 /* ─────────────────────────────────────────
    MAIN COMPONENT
    ───────────────────────────────────────── */
-const Header = () => {
-  injectHeaderStyles();
-
+const Header = ({ setIsMobileMenuOpen }) => {
   const [user, setUser] = useState(null);
   const [agentStatus, setAgentStatus] = useState(null);
   const [latestActivity, setLatestActivity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isHeaderExpanded, setIsHeaderExpanded] = useState(false);
+  const headerRef = useRef(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -385,6 +133,19 @@ const Header = () => {
     return () => { mounted = false; clearTimeout(tid); document.removeEventListener('visibilitychange', onVis); };
   }, [fetchData]);
 
+  /* Fechar ao clicar fora */
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (headerRef.current && !headerRef.current.contains(event.target)) {
+        setIsHeaderExpanded(false);
+      }
+    };
+    if (isHeaderExpanded) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isHeaderExpanded]);
+
   const handleToggleAgent = async () => {
     const isRunning = agentStatus === 'running';
     setAgentStatus(isRunning ? 'stopped' : 'running');
@@ -410,76 +171,129 @@ const Header = () => {
 
   /* ── Render ── */
   const renderContent = () => {
-    if (loading) return <div className="hdr-skeleton" />;
+    if (loading) return (
+      <div className="w-full h-8 bg-slate-100 rounded-full animate-pulse" />
+    );
+
     if (error) return (
-      <div className="hdr-error">
+      <div className="flex items-center gap-2 text-red-500 text-xs font-semibold">
         <AlertCircle size={16} />
-        <span>Erro ao carregar dados.</span>
+        <span>Erro de sincronização</span>
       </div>
     );
+
     if (user?.is_superuser) return null;
 
     return (
-      <div className="hdr-inner">
-        {/* Left */}
-        <div className="hdr-left">
-          {agentStatus && (
-            <AgentStatus status={agentStatus} onToggle={handleToggleAgent} />
-          )}
-          <div className="hdr-vdivider" />
-          <SwitchTransition mode="out-in">
-            <CSSTransition
-              key={latestActivity?.id || 'no-activity'}
-              timeout={380}
-              classNames="hdr-fade"
+      <div className="flex flex-col w-full">
+        <div className="flex items-center justify-between w-full h-16 gap-1.5 sm:gap-4">
+          {/* Left Side: Mobile Menu Toggle & Agent Status & Ticker */}
+          <div className="flex items-center gap-1.5 sm:gap-4 flex-1 min-w-0">
+            {/* Hamburger Menu Toggle (Mobile Only) */}
+            <button
+              className="lg:hidden p-2 -ml-1 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+              onClick={() => setIsMobileMenuOpen(true)}
             >
-              <div className="hdr-activity-wrap">
-                <ActivityTicker activity={latestActivity} />
-              </div>
-            </CSSTransition>
-          </SwitchTransition>
-        </div>
+              <Menu size={20} />
+            </button>
 
-        {/* Right */}
-        <div className="hdr-right">
-          {/* Token chip */}
-          <div className="hdr-token-chip" title="Seus tokens restantes">
-            <Ticket size={15} className="token-icon" />
-            <span className="hdr-token-value">
-              {user?.tokens !== undefined && user?.tokens !== null
-                ? <CountUp end={user.tokens} />
-                : '—'}
-            </span>
-            <span className="hidden sm:inline" style={{ fontSize: '0.75rem', color: '#6b758a' }}>tokens</span>
+            {agentStatus && (
+              <div className="shrink-0">
+                <AgentStatus status={agentStatus} onToggle={handleToggleAgent} />
+              </div>
+            )}
+
+            <div className="hidden md:block w-px h-5 bg-slate-200" />
+
+            <div className="hidden sm:block min-w-0">
+              <SwitchTransition mode="out-in">
+                <CSSTransition
+                  key={latestActivity?.id || 'no-activity'}
+                  timeout={380}
+                  classNames={{
+                    enter: 'opacity-0 -translate-y-2',
+                    enterActive: 'opacity-100 translate-y-0 transition-all duration-300',
+                    exit: 'opacity-100 translate-y-0',
+                    exitActive: 'opacity-0 translate-y-2 transition-all duration-200'
+                  }}
+                >
+                  <div className="min-w-0">
+                    <ActivityTicker activity={latestActivity} />
+                  </div>
+                </CSSTransition>
+              </SwitchTransition>
+            </div>
+
+            {/* Expansion Toggle Button (Mobile Only) */}
+            <button
+              className="sm:hidden p-2 text-slate-400 hover:text-blue-600 transition-all"
+              onClick={() => setIsHeaderExpanded(!isHeaderExpanded)}
+            >
+              <Activity size={16} className={isHeaderExpanded ? 'text-blue-600' : ''} />
+            </button>
           </div>
 
-          <div className="hdr-vdivider" />
-
-          {/* Attendant status */}
-          {user ? (
-            <button
-              onClick={handleToggleAttendant}
-              id="header-attendant-toggle-btn"
-              className={`hdr-attendant-btn ${user.atendente_online ? 'online' : 'offline'}`}
-              title={`Você está ${user.atendente_online ? 'Online' : 'Offline'}. Clique para alterar.`}
-            >
-              <span className="hdr-status-dot" />
-              {user.atendente_online ? <UserCheck size={14} /> : <UserX size={14} />}
-              <span className="hdr-email hidden sm:inline">{user.email}</span>
-            </button>
-          ) : (
-            <div className="hdr-token-chip">
-              <UserIcon size={15} />
-              <span>...</span>
+          {/* Right Side: Tokens & User Status */}
+          <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
+            {/* Token chip */}
+            <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 bg-blue-50/50 rounded-full ring-1 ring-blue-100 transition-all hover:bg-blue-50" title="Tokens restantes">
+              <Ticket size={14} className="text-blue-600" />
+              <span className="text-[13px] font-bold text-slate-900">
+                {user?.tokens !== undefined && user?.tokens !== null
+                  ? <CountUp end={user.tokens} />
+                  : '—'}
+              </span>
+              <span className="hidden lg:inline text-[10px] uppercase font-bold text-slate-400 tracking-wider">tokens</span>
             </div>
-          )}
+
+            <div className="hidden md:block w-px h-5 bg-slate-200" />
+
+            {/* Attendant status */}
+            {user ? (
+              <button
+                onClick={handleToggleAttendant}
+                id="header-attendant-toggle-btn"
+                className={`
+                  flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-full font-bold transition-all duration-200
+                  ${user.atendente_online
+                    ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 shadow-sm shadow-emerald-100'
+                    : 'bg-slate-50 text-slate-500 ring-1 ring-slate-200'}
+                  hover:scale-105 active:scale-95
+                `}
+                title={`Você está ${user.atendente_online ? 'Online' : 'Offline'}. Clique para alterar.`}
+              >
+                <div className={`w-1.5 h-1.5 rounded-full ${user.atendente_online ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                <div className="shrink-0">
+                  {user.atendente_online ? <UserCheck size={14} /> : <UserX size={14} />}
+                </div>
+                <span className="text-xs max-w-[120px] truncate hidden md:inline">{user.email}</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full ring-1 ring-slate-100">
+                <UserIcon size={14} className="text-slate-400" />
+                <div className="w-8 h-2 bg-slate-200 rounded-full animate-pulse" />
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Expansion Row (Mobile Only) */}
+        {isHeaderExpanded && (
+          <div className="sm:hidden flex items-center justify-between py-3 border-t border-slate-50 animate-fade-in-up">
+            <div className="flex-1 min-w-0 pr-4">
+              <ActivityTicker activity={latestActivity} />
+            </div>
+            <div className="shrink-0 text-[9px] font-bold text-blue-500 uppercase tracking-tighter">
+              ULTIMA ATIVIDADE
+            </div>
+          </div>
+        )}
       </div>
     );
   };
 
   return (
-    <header className="hdr-root">
+    <header ref={headerRef} className={`sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm shadow-slate-100/50 transition-all duration-300 px-2 sm:px-4 ${isHeaderExpanded ? 'h-auto' : 'h-16'}`}>
       {renderContent()}
     </header>
   );

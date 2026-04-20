@@ -43,6 +43,10 @@ export default {
           'whatsapp-background': '#ede9e1',
         },
       },
+      fontFamily: {
+        'plus-jakarta': ['"Plus Jakarta Sans"', 'sans-serif'],
+        'inter': ['Inter', 'sans-serif'],
+      },
       // Animações mantidas para deixar a interface mais fluida
       keyframes: {
         'fade-in': {
@@ -53,10 +57,16 @@ export default {
           '0%': { opacity: '0', transform: 'translateY(20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        'shake': {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '25%': { transform: 'translateX(-4px)' },
+          '75%': { transform: 'translateX(4px)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.3s ease-out',
         'fade-in-up': 'fade-in-up 0.4s ease-out',
+        'shake': 'shake 0.2s ease-in-out 0s 2',
       },
     },
   },

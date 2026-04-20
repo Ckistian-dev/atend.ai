@@ -142,7 +142,9 @@ async def get_atendimentos(
     page: int = Query(1, ge=1, description="Número da página"),
     limit: int = Query(20, ge=1, le=10000, description="Itens por página"),
     time_start: Optional[str] = Query(None, description="Data e horário de início do filtro (YYYY-MM-DDTHH:MM)"),
-    time_end: Optional[str] = Query(None, description="Data e horário de fim do filtro (YYYY-MM-DDTHH:MM)")
+    time_end: Optional[str] = Query(None, description="Data e horário de fim do filtro (YYYY-MM-DDTHH:MM)"),
+    sort_by: Optional[str] = Query(None, description="Nome da coluna para ordenação"),
+    sort_order: Optional[str] = Query("desc", description="Ordem da ordenação (asc ou desc)")
 ):
     """
     Lista todos os atendimentos para o usuário logado, com suporte a busca e paginação.
@@ -153,6 +155,8 @@ async def get_atendimentos(
     - `time_start`: Filtra atendimentos atualizados a partir deste horário.
     - `time_end`: Filtra atendimentos atualizados até este horário.
     - `limit`: Define o número máximo de itens por página.
+    - `sort_by`: Define a coluna de ordenação (contato, atualizacao, status, agente).
+    - `sort_order`: Define a ordem (asc ou desc).
     """
     
     # Calcula o número de registros a pular (offset) com base na página atual e no limite
@@ -164,11 +168,27 @@ async def get_atendimentos(
         .where(models.Atendimento.user_id == current_user.id)
     )
 
-    # --- LÓGICA DE ORDENAÇÃO POR ÚLTIMA MENSAGEM DO CLIENTE ---
-    # Define a expressão para pegar o timestamp da última mensagem do cliente via função SQL
+    # --- LÓGICA DE ORDENAÇÃO POR ÚLTIMA MENSAGEM DO CLIENTE (Default) ---
     last_client_ts = func.get_last_user_msg_timestamp(models.Atendimento.conversa)
-    # Usa updated_at como fallback caso não haja mensagem do cliente (ex: atendimento recém criado)
-    sort_expression = func.coalesce(last_client_ts, models.Atendimento.updated_at)
+    sort_expression_default = func.coalesce(last_client_ts, models.Atendimento.updated_at)
+
+    # --- DEFINIÇÃO DA EXPRESSÃO DE ORDENAÇÃO DINÂMICA ---
+    if sort_by == 'contato':
+        sort_field = func.coalesce(models.Atendimento.nome_contato, models.Atendimento.whatsapp)
+    elif sort_by == 'status':
+        sort_field = models.Atendimento.status
+    elif sort_by == 'agente':
+        sort_field = models.Atendimento.active_persona_id
+    elif sort_by == 'atualizacao':
+        sort_field = sort_expression_default
+    else:
+        sort_field = sort_expression_default
+
+    # Aplica a ordem (asc ou desc)
+    if sort_order == 'asc':
+        final_sort = sort_field.asc()
+    else:
+        final_sort = sort_field.desc()
 
     # --- NOVO: Adiciona filtro por status, se fornecido ---
     # A query agora pode receber uma lista de status (ex: status=Concluído&status=Atendente Chamado)
@@ -177,37 +197,18 @@ async def get_atendimentos(
 
     # --- NOVO: Adiciona filtro por tags, se fornecido ---
     if tags:
-        # Para cada tag na lista, verifica se ela existe no array JSON 'tags' do atendimento.
-        # A sintaxe `[{'name': 'tag_name'}]` é um padrão para construir um objeto JSON
-        # que será usado na verificação de contenção (`@>`).
-        # A lógica foi alterada para usar o operador `?` que verifica a existência de um
-        # elemento de nível superior que corresponda ao padrão.
-        # CORREÇÃO: Usar o operador '@>' (contém) para buscar dentro do array de objetos JSON.
-        # O operador '?' não funciona para arrays de objetos, apenas para arrays de strings ou chaves de nível superior.
-        # --- CORREÇÃO DO ERRO 'jsonb @> character varying' ---
-        # O erro ocorre porque o driver estava passando a string JSON como 'varchar'.
-        # Ao usar json.loads() primeiro, convertemos a string em um objeto Python (lista de dicionários).
-        # O driver asyncpg sabe como serializar corretamente este objeto Python para o tipo JSONB do PostgreSQL.
         tag_pattern_obj = [{'name': tags[0]}] # Apenas o primeiro tag é usado por enquanto
         stmt_base = stmt_base.where(cast(models.Atendimento.tags, JSONB).contains(tag_pattern_obj))
 
     # --- NOVO: Adiciona filtro por intervalo de horário ---
     if time_start:
         try:
-            # 1. Parse da string 'YYYY-MM-DDTHH:MM' para um objeto datetime "naïve".
             local_dt_naive = datetime.fromisoformat(time_start)
-            
-            # 2. Assume que este horário é do fuso horário local (ex: São Paulo) e o torna "aware".
-            #    Idealmente, o fuso horário viria do usuário, mas fixar em 'America/Sao_Paulo' é uma solução robusta para o Brasil.
             import pytz
             sao_paulo_tz = pytz.timezone('America/Sao_Paulo')
             local_dt_aware = sao_paulo_tz.localize(local_dt_naive)
-            
-            # 3. Converte o horário "aware" para UTC, que é como o banco armazena.
             start_datetime_utc = local_dt_aware.astimezone(pytz.utc)
-
-            # 4. Filtra usando a coluna `updated_at`, que reflete a última atividade.
-            stmt_base = stmt_base.where(sort_expression >= start_datetime_utc)
+            stmt_base = stmt_base.where(sort_expression_default >= start_datetime_utc)
         except (ValueError, ImportError):
             logger.warning(f"Formato de time_start inválido: '{time_start}'. Ignorando filtro.")
         except Exception as e:
@@ -215,16 +216,12 @@ async def get_atendimentos(
 
     if time_end:
         try:
-            # Lógica similar para time_end
             local_dt_naive = datetime.fromisoformat(time_end)
-            
             import pytz
             sao_paulo_tz = pytz.timezone('America/Sao_Paulo')
             local_dt_aware = sao_paulo_tz.localize(local_dt_naive)
-            
             end_datetime_utc = local_dt_aware.astimezone(pytz.utc)
-
-            stmt_base = stmt_base.where(sort_expression <= end_datetime_utc)
+            stmt_base = stmt_base.where(sort_expression_default <= end_datetime_utc)
         except (ValueError, ImportError):
             logger.warning(f"Formato de time_end inválido: '{time_end}'. Ignorando filtro.")
         except Exception as e:
@@ -247,7 +244,7 @@ async def get_atendimentos(
     # Constrói a query final para buscar os dados da página atual
     stmt_data = (
         stmt_base
-        .order_by(sort_expression.desc()) # Ordena pelos mais recentes (cliente)
+        .order_by(final_sort) 
         .offset(skip) # Pula os registros das páginas anteriores
         .limit(limit) # Limita ao número de itens por página
         .options(
@@ -462,6 +459,7 @@ async def send_manual_media_message(
     atendimento_id: int,
     file: UploadFile = File(...),
     type: str = Form(...), # 'image', 'audio', 'document'
+    caption: Optional[str] = Form(None), # Texto da legenda
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(dependencies.get_current_active_user),
     whatsapp_service: WhatsAppService = Depends(get_whatsapp_service),
@@ -518,7 +516,7 @@ async def send_manual_media_message(
             file_bytes=file_bytes,
             filename=filename,
             mimetype=mimetype,
-            caption=None # O frontend não manda caption, mas o 'content' agora é a análise
+            caption=caption # Passar a legenda da requisição
         )
         
         logger.info(f"Mídia manual enviada para {whatsapp_number}. API Msg ID: {send_result.get('id')}")
@@ -536,6 +534,7 @@ async def send_manual_media_message(
             id=str(message_id),
             role='assistant',
             content=generated_content, # Usa o texto de fallback gerado
+            caption=caption,
             timestamp=timestamp_epoch,
             type=type,
             url=None, 
