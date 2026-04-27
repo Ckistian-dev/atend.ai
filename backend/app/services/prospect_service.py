@@ -155,17 +155,38 @@ class ProspectService:
             logger.warning(f"ProspectService: Notificação ativa mas sem destino configurado para a persona '{persona.nome_config}' (Atendimento {atendimento.id}).")
             return
 
+        destinations = [d.strip() for d in persona.notification_destination.split(",") if d.strip()]
+        if not destinations:
+            logger.warning(f"ProspectService: Nenhum destino válido encontrado (Atendimento {atendimento.id}).")
+            return
+
+        target_destination = destinations[0]
+
+        if len(destinations) > 1:
+            if atendimento.notificacao_contato and atendimento.notificacao_contato in destinations:
+                target_destination = atendimento.notificacao_contato
+            else:
+                current_idx = persona.notification_round_robin_index or 0
+                next_idx = current_idx % len(destinations)
+                target_destination = destinations[next_idx]
+
+                persona.notification_round_robin_index = next_idx + 1
+                atendimento.notificacao_contato = target_destination
+                db.add(persona)
+                db.add(atendimento)
+                await db.commit()
+
         title = "🚀 *Novo Chamado!*" if is_new_status else "📩 *Nova Mensagem (Pendente)*"
         message = f"{title}\n\n*Cliente:* {atendimento.nome_contato or atendimento.whatsapp}\n*WhatsApp:* {atendimento.whatsapp}\n"
         if atendimento.resumo:
             message += f"*Resumo:* {atendimento.resumo}\n"
         
         try:
-            logger.info(f"ProspectService: Enviando notificação para {persona.notification_destination}...")
-            await self.send_notification(db, user, persona.notification_destination, message)
-            logger.info(f"ProspectAI: Notificação enviada com sucesso para {persona.notification_destination} (Atendimento {atendimento.id})")
+            logger.info(f"ProspectService: Enviando notificação para {target_destination}...")
+            await self.send_notification(db, user, target_destination, message)
+            logger.info(f"ProspectAI: Notificação enviada com sucesso para {target_destination} (Atendimento {atendimento.id})")
         except Exception as e:
-            logger.error(f"ProspectAI: Erro ao enviar notificação para {persona.notification_destination}: {e}")
+            logger.error(f"ProspectAI: Erro ao enviar notificação para {target_destination}: {e}")
 
 _prospect_service = None
 def get_prospect_service():

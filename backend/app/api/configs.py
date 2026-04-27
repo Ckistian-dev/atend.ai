@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Body, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import delete, select
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import logging
 import os
 import json
@@ -21,7 +21,7 @@ from app.crud import crud_config, crud_user
 from app.api.dependencies import get_current_active_user
 from app.services.google_sheets_service import GoogleSheetsService
 from app.services.google_drive_service import get_drive_service
-from app.services.gemini_service import get_gemini_service
+from app.services.gemini_service import GeminiService, get_gemini_service
 from app.services.prospect_service import get_prospect_service
 from app.services.google_calendar_service import get_google_calendar_service
 
@@ -712,3 +712,52 @@ async def disconnect_calendar(
         db_config.is_calendar_active = False
         await db.commit()
     return {"message": "Agenda desconectada."}
+
+class WorkflowFeedbackPayload(BaseModel):
+    feedback: str
+
+@router.post("/{config_id}/analyze_workflow", summary="Analisar fluxo via IA para melhoria (Modo Edição Direta)")
+async def analyze_workflow_feedback(
+    config_id: int,
+    payload: WorkflowFeedbackPayload = Body(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user),
+    gemini_service: GeminiService = Depends(get_gemini_service)
+):
+    persona = await crud_config.get_config(db=db, config_id=config_id, user_id=current_user.id)
+    if not persona:
+        raise HTTPException(status_code=404, detail="Configuração não encontrada")
+
+    # In a pure workflow editing mode, there is no conversation history or rag context.
+    analysis = await gemini_service.analyze_conversation_feedback(
+        feedback=payload.feedback,
+        history_str="[Nenhuma conversa associada. Apenas edição direta do fluxo pelo usuário na área de configurações.]",
+        rag_context="",
+        current_instructions=persona.prompt or "",
+        current_workflow=persona.workflow_json,
+        db=db,
+        user=current_user
+    )
+    return analysis
+
+class ApplyWorkflowPayload(BaseModel):
+    novo_workflow: Optional[Dict[str, Any]] = None
+
+@router.post("/{config_id}/apply_workflow", summary="Aplicar novo fluxo na Persona (Modo Edição Direta)")
+async def apply_workflow_feedback(
+    config_id: int,
+    payload: ApplyWorkflowPayload = Body(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    persona = await crud_config.get_config(db=db, config_id=config_id, user_id=current_user.id)
+    if not persona:
+        raise HTTPException(status_code=404, detail="Configuração não encontrada")
+
+    if payload.novo_workflow:
+        persona.workflow_json = payload.novo_workflow
+        db.add(persona)
+        await db.commit()
+        return {"message": "Novo fluxo visual salvo com sucesso."}
+    
+    return {"message": "Nenhuma alteração foi solicitada no fluxo."}

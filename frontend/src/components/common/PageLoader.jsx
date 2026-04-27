@@ -51,7 +51,7 @@ const PageLoader = ({
     }
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-[#f8faff] animate-page-loader-fade-in">
+        <div className="absolute inset-0 z-[9999] flex items-center justify-center p-6 bg-[#f8faff] animate-page-loader-fade-in">
             {content}
         </div>
     );

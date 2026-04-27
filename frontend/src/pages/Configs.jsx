@@ -5,10 +5,11 @@ import {
     Plus, Save, Trash2, FileText, ChevronRight, Loader2,
     Link as LinkIcon, Star, CheckCircle, Folder, Copy, Share2, Database, ExternalLink, Bell, RefreshCw, Check,
     Calendar, Clock, X,
-    Search, User, Users, Info, Network, Maximize2, Cpu, Sliders, Zap, Bot, ChevronLeft
+    Search, User, Users, Info, Network, Maximize2, Cpu, Sliders, Zap, Bot, ChevronLeft, Wand2
 } from 'lucide-react';
 import { WorkflowPreview, WorkflowEditorModal } from '../components/configs/WorkflowEditor';
-import { LLM_MODELS } from '../constants/models';
+import FeedbackModal from '../components/mensagens/FeedbackModal';
+import { LLM_MODELS, DEFAULT_MODEL } from '../constants/models';
 import PageLoader from '../components/common/PageLoader';
 
 
@@ -51,10 +52,9 @@ const DS_STYLE = `
 
 .custom-scrollbar::-webkit-scrollbar {
     width: 8px;
+    height: 8px;
 }
-.custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-}
+.custom-scrollbar::-webkit-scrollbar-thumb {
     background: rgba(148, 163, 184, 0.4);
     border-radius: 20px;
     border: 2px solid transparent;
@@ -103,7 +103,7 @@ const initialFormData = {
     is_calendar_connected: false,
     is_calendar_active: false,
     workflow_json: { nodes: [], edges: [] },
-    ai_model: 'gemini-2.5-flash',
+    ai_model: DEFAULT_MODEL,
     temperature: 0.5,
     top_p: 0.95,
     top_k: 40
@@ -139,6 +139,7 @@ function Configs() {
 
     // Estados do Workflow
     const [isWorkflowModalOpen, setIsWorkflowModalOpen] = useState(false);
+    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
     const [mobileView, setMobileView] = useState('list'); // 'list' ou 'form'
 
     const isInitialLoad = useRef(true);
@@ -202,7 +203,7 @@ function Configs() {
                 nodes: config.workflow_json?.nodes || [],
                 edges: (config.workflow_json?.edges || []).map(e => ({ ...e, type: 'customEdge' }))
             },
-            ai_model: config.ai_model || 'gemini-2.5-flash',
+            ai_model: config.ai_model || DEFAULT_MODEL,
             temperature: config.temperature ?? 0.5,
             top_p: config.top_p ?? 0.95,
             top_k: config.top_k ?? 40
@@ -234,7 +235,8 @@ function Configs() {
         // Verifica se o destino salvo está na lista (se não estiver e tiver valor, ativa modo manual)
         // Isso será feito após carregar os destinos, ou assumimos manual se não for vazio
 
-        setDestSearchTerm(config.notification_destination || '');
+        // setDestSearchTerm('');
+        setDestSearchTerm('');
 
         // No mobile, após selecionar, vamos para o formulário
         setMobileView('form');
@@ -692,8 +694,9 @@ function Configs() {
 
                     {/* MAIN CONTENT Area */}
                     <div className={`${mobileView === 'list' ? 'hidden sm:flex' : 'flex'} lg:col-span-9 bg-white rounded-0 sm:rounded-[2.5rem] shadow-sm border-none sm:border border-slate-100 flex flex-col h-full sm:h-[78vh] min-h-0`}>
-                        <form onSubmit={handleSave} className="flex-1 flex flex-col min-h-0">
-                            <div className="p-4 sm:p-6 md:p-8 flex-1 flex flex-col overflow-y-auto custom-scrollbar min-h-0">
+                        <form onSubmit={handleSave} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                            {/* Header & Tabs - Fixo no topo */}
+                            <div className="px-4 pt-4 sm:px-6 sm:pt-6 md:px-8 md:pt-8 bg-white/80 backdrop-blur-md sticky top-0 z-20 shrink-0 border-b border-slate-50">
                                 {/* Header da Config */}
                                 <div className="flex flex-col md:flex-row md:items-center gap-4 sm:gap-6 mb-6 sm:mb-10">
                                     <div className="flex items-center gap-3 sm:gap-5 flex-1 min-w-0">
@@ -747,8 +750,8 @@ function Configs() {
                                     </div>
                                 </div>
 
-                                {/* Tabs Navigation */}
-                                <div className="flex gap-1 border-b border-slate-100 mb-8 overflow-x-auto overflow-y-hidden">
+                                {/* Abas de Configuração */}
+                                <div className="flex gap-1 border-b border-slate-100 overflow-x-auto custom-scrollbar overflow-y-hidden mb-0">
                                     {activeTabsList.map(tab => {
                                         const Icon = tab.icon;
                                         return (
@@ -756,16 +759,20 @@ function Configs() {
                                                 key={tab.id}
                                                 type="button"
                                                 onClick={() => setActiveTab(tab.id)}
-                                                className={`config-tab flex items-center gap-2 px-5 py-3.5 text-xs font-bold transition-all whitespace-nowrap ${activeTab === tab.id ? 'active text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                                className={`config-tab flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3.5 text-[10px] sm:text-xs font-bold transition-all whitespace-nowrap ${activeTab === tab.id ? 'active text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
                                             >
-                                                <Icon size={16} strokeWidth={activeTab === tab.id ? 2.5 : 2} />
+                                                <Icon size={14} className="sm:w-4 sm:h-4" strokeWidth={activeTab === tab.id ? 2.5 : 2} />
                                                 {tab.label}
                                             </button>
                                         );
                                     })}
                                 </div>
+                            </div>
 
+                            {/* Área de Conteúdo - Rolável */}
+                            <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8 min-h-0">
                                 {error && (
+
                                     <div className="mb-4 p-3 bg-red-50 text-red-700 rounded border border-red-200 text-sm">
                                         {error}
                                     </div>
@@ -804,10 +811,10 @@ function Configs() {
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-                                                    <button type="button" onClick={() => openResource(selectedConfig.spreadsheet_id, 'sheet')} className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl sm:rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
+                                                    <button type="button" onClick={() => openResource(selectedConfig.spreadsheet_id, 'sheet')} className="w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl sm:rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
                                                         <ExternalLink size={18} /> Ver Planilha
                                                     </button>
-                                                    <button type="button" onClick={() => handleSyncSheet('system')} disabled={isSyncing} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white font-black py-3 px-8 rounded-xl sm:rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:bg-slate-300 text-sm">
+                                                    <button type="button" onClick={() => handleSyncSheet('system')} disabled={isSyncing} className="w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 bg-blue-600 text-white font-black py-3 px-8 rounded-xl sm:rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:bg-slate-300 text-sm">
                                                         {isSyncing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Sincronizar
                                                     </button>
                                                 </div>
@@ -816,7 +823,7 @@ function Configs() {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                                                <h4 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                                <h4 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-1.5 sm:gap-2">
                                                     <Info size={14} /> Arquitetura do Sistema
                                                 </h4>
                                                 <p className="text-[13px] text-slate-500 leading-relaxed font-medium">
@@ -824,7 +831,7 @@ function Configs() {
                                                 </p>
                                             </div>
                                             <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                                                <h4 className="text-xs font-black text-amber-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                                <h4 className="text-xs font-black text-amber-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-1.5 sm:gap-2">
                                                     <Star size={14} /> Dica de Performance
                                                 </h4>
                                                 <p className="text-[13px] text-slate-500 leading-relaxed font-medium">
@@ -843,13 +850,18 @@ function Configs() {
                                                 <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Arquitetura de Conversação</h3>
                                                 <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Mapeamento visual de fluxo</p>
                                             </div>
-                                            <button type="button" onClick={() => setIsWorkflowModalOpen(true)} className="w-full sm:w-auto flex items-center justify-center gap-3 bg-slate-900 text-white font-black py-4 px-8 rounded-xl sm:rounded-2xl shadow-xl hover:bg-black transition-all text-[10px] sm:text-xs uppercase tracking-widest">
-                                                <Maximize2 size={18} /> Expandir Editor
-                                            </button>
+                                            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                                                <button type="button" onClick={() => setIsFeedbackModalOpen(true)} className="w-full sm:w-auto flex items-center justify-center gap-3 bg-blue-100 text-blue-600 font-black py-4 px-6 rounded-xl sm:rounded-2xl shadow-xl hover:bg-blue-200 transition-all text-[10px] sm:text-xs uppercase tracking-widest">
+                                                    <Wand2 size={18} /> IA
+                                                </button>
+                                                <button type="button" onClick={() => setIsWorkflowModalOpen(true)} className="w-full sm:w-auto flex items-center justify-center gap-3 bg-slate-900 text-white font-black py-4 px-8 rounded-xl sm:rounded-2xl shadow-xl hover:bg-black transition-all text-[10px] sm:text-xs uppercase tracking-widest">
+                                                    <Maximize2 size={18} /> Expandir Editor
+                                                </button>
+                                            </div>
                                         </div>
 
                                         {/* Preview do Canvas */}
-                                        <div className="flex-1 bg-slate-50 border border-slate-100 rounded-[2.5rem] relative overflow-hidden group shadow-inner">
+                                        <div className="flex-1 bg-slate-50 border border-slate-100 rounded-[2.5rem] relative overflow-hidden group shadow-inner min-h-[550px]">
                                             <div className="absolute inset-0 z-10 bg-slate-900/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer backdrop-blur-[2px]" onClick={() => setIsWorkflowModalOpen(true)}>
                                                 <div className="bg-white px-8 py-4 rounded-3xl shadow-2xl font-black text-slate-900 flex items-center gap-3 text-sm uppercase tracking-widest border border-slate-100">
                                                     <Network size={22} className="text-blue-600" /> Editar Fluxograma
@@ -893,10 +905,10 @@ function Configs() {
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-                                                    <button type="button" onClick={() => openResource(selectedConfig.spreadsheet_rag_id, 'sheet')} className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl sm:rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
+                                                    <button type="button" onClick={() => openResource(selectedConfig.spreadsheet_rag_id, 'sheet')} className="w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl sm:rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
                                                         <ExternalLink size={18} /> Ver Planilha
                                                     </button>
-                                                    <button type="button" onClick={() => handleSyncSheet('rag')} disabled={isSyncing} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white font-black py-3 px-8 rounded-xl sm:rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:bg-slate-300 text-sm">
+                                                    <button type="button" onClick={() => handleSyncSheet('rag')} disabled={isSyncing} className="w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 bg-indigo-600 text-white font-black py-3 px-8 rounded-xl sm:rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:bg-slate-300 text-sm">
                                                         {isSyncing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Sincronizar
                                                     </button>
                                                 </div>
@@ -904,7 +916,7 @@ function Configs() {
                                         )}
 
                                         <div className="p-8 bg-blue-50/50 rounded-[2rem] border border-blue-100/50">
-                                            <h4 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                            <h4 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-1.5 sm:gap-2">
                                                 <Zap size={14} /> Memória de Longo Prazo (RAG)
                                             </h4>
                                             <p className="text-[13px] text-slate-600 font-medium leading-relaxed">
@@ -950,10 +962,10 @@ function Configs() {
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-                                                    <button type="button" onClick={() => openResource(selectedConfig.drive_id, 'drive')} className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl sm:rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
+                                                    <button type="button" onClick={() => openResource(selectedConfig.drive_id, 'drive')} className="w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl sm:rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
                                                         <ExternalLink size={18} /> Abrir Pasta
                                                     </button>
-                                                    <button type="button" onClick={handleSyncDrive} disabled={isSyncing} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 text-white font-black py-3 px-8 rounded-xl sm:rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:bg-slate-300 text-sm">
+                                                    <button type="button" onClick={handleSyncDrive} disabled={isSyncing} className="w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 bg-indigo-600 text-white font-black py-3 px-8 rounded-xl sm:rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:bg-slate-300 text-sm">
                                                         {isSyncing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Sincronizar
                                                     </button>
                                                 </div>
@@ -962,7 +974,7 @@ function Configs() {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
-                                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-1.5 sm:gap-2">
                                                     <Info size={14} className="text-blue-600" /> Organização e Nomenclatura
                                                 </h4>
                                                 <p className="text-[13px] text-slate-500 font-medium leading-relaxed">
@@ -970,7 +982,7 @@ function Configs() {
                                                 </p>
                                             </div>
                                             <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
-                                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-1.5 sm:gap-2">
                                                     <Zap size={14} className="text-amber-500" /> Automação de Mídia
                                                 </h4>
                                                 <p className="text-[13px] text-slate-500 font-medium leading-relaxed">
@@ -1000,9 +1012,25 @@ function Configs() {
                                         <div className="relative">
                                             <label className={labelClass}>Canal de Destino (Contato ou Grupo)</label>
                                             <div className="relative" ref={dropdownRef}>
+                                                <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
+                                                    {(formData.notification_destination || '').split(',').map(d => d.trim()).filter(Boolean).map(destId => (
+                                                        <div key={destId} className="flex items-center gap-1.5 sm:gap-2 bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">
+                                                            {destId}
+                                                            <button type="button" onClick={() => {
+                                                                setFormData(prev => {
+                                                                    const current = (prev.notification_destination || '').split(',').map(s => s.trim()).filter(Boolean);
+                                                                    return { ...prev, notification_destination: current.filter(id => id !== destId).join(', ') };
+                                                                });
+                                                            }} className="text-blue-400 hover:text-blue-700 transition">
+                                                                <X size={14} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
                                                 <input
                                                     type="text"
-                                                    placeholder="Pesquisar contatos..."
+                                                    placeholder="Pesquisar contatos para adicionar à fila..."
                                                     value={destSearchTerm}
                                                     onChange={(e) => {
                                                         setDestSearchTerm(e.target.value);
@@ -1015,18 +1043,55 @@ function Configs() {
                                                 {/* Dropdown de Destinos (Premium Style) */}
                                                 {isDropdownOpen && (
                                                     <div className="absolute z-20 mt-3 w-full bg-white border border-slate-100 rounded-[2rem] shadow-2xl max-h-[400px] overflow-y-auto custom-scrollbar p-3">
+                                                        {/* OPÇÃO DE ADICIONAR MANUALMENTE */}
+                                                        {manualJid && !filteredDestinations.some(d => normalizeJid(d.remoteJid) === manualJid) && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setFormData(prev => {
+                                                                        let current = (prev.notification_destination || '').split(',').map(s => s.trim()).filter(Boolean);
+                                                                        if (!current.includes(manualJid)) {
+                                                                            current.push(manualJid);
+                                                                        }
+                                                                        return { ...prev, notification_destination: current.join(', ') };
+                                                                    });
+                                                                    setDestSearchTerm('');
+                                                                }}
+                                                                className="w-full flex items-center gap-4 p-4 rounded-2xl transition-all bg-blue-600 text-white hover:bg-blue-700 mb-3 shadow-lg shadow-blue-100"
+                                                            >
+                                                                <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                                                                    <Plus size={24} />
+                                                                </div>
+                                                                <div className="flex-grow text-left">
+                                                                    <p className="text-[13px] font-black uppercase tracking-tight">Adicionar Número Manual</p>
+                                                                    <p className="text-[10px] font-bold opacity-80">{manualJid}</p>
+                                                                </div>
+                                                                <ChevronRight size={20} />
+                                                            </button>
+                                                        )}
+
                                                         {filteredDestinations.map(dest => {
                                                             const isGroup = dest.remoteJid?.endsWith('@g.us');
-                                                            const isSelected = normalizeJid(formData.notification_destination) === normalizeJid(dest.remoteJid);
+                                                            const normalizedDest = normalizeJid(dest.remoteJid);
+                                                            const currentDests = (formData.notification_destination || '').split(',').map(s => s.trim()).filter(Boolean);
+                                                            const isSelected = currentDests.includes(normalizedDest);
+
                                                             return (
                                                                 <button
                                                                     key={dest.id}
                                                                     type="button"
                                                                     onClick={() => {
                                                                         const normalized = normalizeJid(dest.remoteJid);
-                                                                        setFormData(prev => ({ ...prev, notification_destination: normalized }));
-                                                                        setDestSearchTerm(normalized);
-                                                                        setIsDropdownOpen(false);
+                                                                        setFormData(prev => {
+                                                                            let current = (prev.notification_destination || '').split(',').map(s => s.trim()).filter(Boolean);
+                                                                            if (current.includes(normalized)) {
+                                                                                current = current.filter(id => id !== normalized);
+                                                                            } else {
+                                                                                current.push(normalized);
+                                                                            }
+                                                                            return { ...prev, notification_destination: current.join(', ') };
+                                                                        });
+                                                                        setDestSearchTerm('');
                                                                     }}
                                                                     className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all hover:bg-slate-50 mb-1 ${isSelected ? 'bg-blue-50/50 border border-blue-100' : 'border border-transparent'}`}
                                                                 >
@@ -1043,13 +1108,20 @@ function Configs() {
                                                                 </button>
                                                             );
                                                         })}
+
+                                                        {filteredDestinations.length === 0 && !manualJid && (
+                                                            <div className="p-8 text-center text-slate-400">
+                                                                <Search size={32} className="mx-auto mb-3 opacity-20" />
+                                                                <p className="text-xs font-bold uppercase tracking-widest">Nenhum destino encontrado</p>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
 
                                         <div className="p-8 bg-blue-50/50 rounded-[2rem] border border-blue-100/50">
-                                            <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                            <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-4 flex items-center gap-1.5 sm:gap-2">
                                                 <Info size={14} /> Inteligência de Notificações
                                             </h4>
                                             <p className="text-[13px] text-slate-500 font-medium leading-relaxed">
@@ -1092,7 +1164,7 @@ function Configs() {
 
                                         <div className="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm">
                                             <div className="p-6 bg-slate-50/50 border-b border-slate-50">
-                                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-1.5 sm:gap-2">
                                                     <Clock size={16} className="text-blue-600" /> Janelas de Disponibilidade
                                                 </h3>
                                             </div>
@@ -1109,11 +1181,11 @@ function Configs() {
                                                                 <span className={`ml-3 text-xs font-black uppercase tracking-widest transition-colors ${schedule[day]?.active ? 'text-blue-600' : 'text-slate-400'}`}>{dayLabels[day]}</span>
                                                             </label>
                                                         </div>
-                                                        <div className="flex-1 flex flex-wrap gap-2 items-center w-full">
+                                                        <div className="flex-1 flex flex-wrap gap-1.5 sm:gap-2 items-center w-full">
                                                             {schedule[day]?.active ? (
                                                                 <>
                                                                     {schedule[day].blocks.map((block, idx) => (
-                                                                        <div key={idx} className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm animate-fade-in">
+                                                                        <div key={idx} className="flex items-center gap-1.5 sm:gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm animate-fade-in">
                                                                             <input type="time" value={block.start} onChange={(e) => updateTimeBlock(day, idx, 'start', e.target.value)} className="bg-transparent text-xs font-bold text-slate-700 outline-none w-16 text-center" />
                                                                             <span className="text-slate-300 font-black">/</span>
                                                                             <input type="time" value={block.end} onChange={(e) => updateTimeBlock(day, idx, 'end', e.target.value)} className="bg-transparent text-xs font-bold text-slate-700 outline-none w-16 text-center" />
@@ -1138,7 +1210,7 @@ function Configs() {
                                     <div className="animate-fade-in space-y-10">
                                         <div className="bg-slate-50/50 border border-slate-100 rounded-[2.5rem] overflow-hidden">
                                             <div className="px-8 py-6 bg-white/40 border-b border-white flex items-center justify-between">
-                                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-1.5 sm:gap-2">
                                                     <Cpu size={16} className="text-blue-600" /> Parâmetros de Processamento
                                                 </h3>
                                             </div>
@@ -1241,6 +1313,17 @@ function Configs() {
                     await handleSave(null, currentWorkflow);
                 }}
             />
+
+            {isFeedbackModalOpen && (
+                <FeedbackModal
+                    isOpen={isFeedbackModalOpen}
+                    onClose={() => {
+                        setIsFeedbackModalOpen(false);
+                        fetchData(); // para atualizar caso o fluxo mude
+                    }}
+                    configId={selectedConfig?.id}
+                />
+            )}
         </div>
     );
 }

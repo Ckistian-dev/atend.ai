@@ -1119,6 +1119,7 @@ async def analyze_feedback(
         history_str=history_str,
         rag_context=rag_context,
         current_instructions=persona.prompt or "",
+        current_workflow=persona.workflow_json,
         db=db,
         user=current_user
     )
@@ -1133,46 +1134,74 @@ class AlteracaoPlanilha(schemas.BaseModel):
     motivo: Optional[str] = None
 
 class ApplyFeedbackPayload(schemas.BaseModel):
-    alteracoes: List[AlteracaoPlanilha]
+    alteracoes_planilha: Optional[List[AlteracaoPlanilha]] = None
+    alteracoes_rag: Optional[List[AlteracaoPlanilha]] = None
+    novo_workflow: Optional[Dict[str, Any]] = None
 
-@router.post("/{atendimento_id}/apply_feedback", summary="Aplicar sugestões no prompt da Persona")
+@router.post("/{atendimento_id}/apply_feedback", summary="Aplicar sugestões na Persona (Sistema, RAG e Fluxo)")
 async def apply_feedback(
     atendimento_id: int,
     payload: ApplyFeedbackPayload = Body(...),
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(dependencies.get_current_active_user)
 ):
+    from app.api.configs import run_sync_sheet # Lazy import para evitar import circular
+
     db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, user_id=current_user.id)
     if not db_atendimento: raise HTTPException(status_code=404, detail="Atendimento não encontrado")
         
     persona_id = db_atendimento.active_persona_id or current_user.default_persona_id
     persona = await db.get(models.Config, persona_id)
-    if not persona or not persona.spreadsheet_id:
-        raise HTTPException(status_code=400, detail="Persona não encontrada ou sem planilha de sistema configurada.")
+    if not persona:
+        raise HTTPException(status_code=400, detail="Persona não encontrada.")
         
     sheets_service = GoogleSheetsService()
     try:
-        alteracoes_dict = [a.model_dump() for a in payload.alteracoes]
-        await sheets_service.apply_feedback_to_sheet(persona.spreadsheet_id, alteracoes_dict)
-        
-        # Sincroniza a planilha após aplicar o feedback
-        sheet_data_json = await sheets_service.get_sheet_as_json(persona.spreadsheet_id)
-        prompt_buffer = []
-        for sheet_name, rows in sheet_data_json.items():
-            if not rows:
-                continue
-            headers = list(rows[0].keys())
-            lines = [f"# {sheet_name}", "|".join(headers)]
-            for row in rows:
-                values = [str(row.get(h, "") or "").strip().replace("\n", "\\n").replace("\r", "") for h in headers]
-                lines.append("|".join(values))
-            prompt_buffer.append("\n".join(lines))
-        
-        persona.prompt = "\n\n".join(prompt_buffer)
+        mensagens_sucesso = []
+
+        # 1. Aplicar alterações na Planilha de Sistema
+        if payload.alteracoes_planilha and persona.spreadsheet_id:
+            alteracoes_dict = [a.model_dump() for a in payload.alteracoes_planilha]
+            await sheets_service.apply_feedback_to_sheet(persona.spreadsheet_id, alteracoes_dict)
+            
+            # Sincroniza a planilha após aplicar o feedback
+            sheet_data_json = await sheets_service.get_sheet_as_json(persona.spreadsheet_id)
+            prompt_buffer = []
+            for sheet_name, rows in sheet_data_json.items():
+                if not rows:
+                    continue
+                headers = list(rows[0].keys())
+                lines = [f"# {sheet_name}", "|".join(headers)]
+                for row in rows:
+                    values = [str(row.get(h, "") or "").strip().replace("\n", "\\n").replace("\r", "") for h in headers]
+                    lines.append("|".join(values))
+                prompt_buffer.append("\n".join(lines))
+            
+            persona.prompt = "\n\n".join(prompt_buffer)
+            mensagens_sucesso.append("Planilha de sistema atualizada.")
+
+        # 2. Aplicar alterações na Planilha RAG
+        if payload.alteracoes_rag and persona.spreadsheet_rag_id:
+            alteracoes_rag_dict = [a.model_dump() for a in payload.alteracoes_rag]
+            await sheets_service.apply_feedback_to_sheet(persona.spreadsheet_rag_id, alteracoes_rag_dict)
+            
+            # Resincroniza o RAG (usa await)
+            await run_sync_sheet(persona.id, current_user.id, persona.spreadsheet_rag_id, "rag")
+            mensagens_sucesso.append("Planilha RAG atualizada e embeddings regerados.")
+
+        # 3. Substituir o JSON do fluxo
+        if payload.novo_workflow:
+            persona.workflow_json = payload.novo_workflow
+            mensagens_sucesso.append("Novo fluxo visual salvo com sucesso.")
+
         db.add(persona)
         await db.commit()
 
-        return {"message": "Planilha atualizada e sincronizada com sucesso! A IA já está usando as novas regras."}
+        if not mensagens_sucesso:
+            return {"message": "Nenhuma alteração foi solicitada ou aplicável."}
+
+        return {"message": " ".join(mensagens_sucesso)}
     except Exception as e:
         await db.rollback()
+        logger.error(f"Erro ao aplicar feedback: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

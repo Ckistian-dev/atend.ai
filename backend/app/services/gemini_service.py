@@ -699,7 +699,7 @@ class GeminiService:
                     f"- *Empatia e Tom:* Se o cliente parecer frustrado, use palavras de acolhimento natural ('Poxa, que situação...', 'Vixi, vamos resolver isso agora').\n"
                     f"- *Formatação WhatsApp (ESTRITO):* Use APENAS a syntax do WhatsApp: *negrito* para destaques importantes, _itálico_ para ênfase e ~tachado~ se necessário. JAMAIS use ** para negrito ou para qualquer outra finalidade.\n"
                     f"- *Parágrafos Curtos:* No WhatsApp, pessoas usam parágrafos curtíssimos. No máximo 2-3 linhas por parágrafo. Evite listas com marcadores (bullets) ou negrito excessivo.\n"
-                    f"- *Banalidade Controlada:* Use uma linguagem que uma pessoa real usaria. Menos 'Sinto muito pelo transtorno' e mais 'Putz, que chato. Deixa eu ver o que consigo fazer'.\n"
+                    f"- *Banalidade Controlada:* Use uma linguagem que uma pessoa real usaria. Menos 'Sinto muito pelo transtorno' e mais 'Poxa, que chato. Deixa eu ver o que consigo fazer'.\n"
                     f"- *Proibido Repetir Nomes:* Use o nome do cliente APENAS se fizer sentido na frase. JAMAIS comece toda resposta com o nome dele.\n"
                     f"- *Interação com Mídia:* Se o usuário mandar uma imagem ou áudio, comente algo sobre o conteúdo de forma casual, como uma pessoa faria ('Vi o arquivo aqui...', 'Pelo áudio que você mandou, entendi que...').\n"
                     f"- *Parágrafos Únicos ou Duplos:* Tente responder tudo em UM ou DOIS parágrafos no máximo. Evite quebrar a resposta em várias mensagens curtas.\n\n"
@@ -1026,7 +1026,8 @@ class GeminiService:
         rag_context: str,
         current_instructions: str,
         db: AsyncSession,
-        user: models.User
+        user: models.User,
+        current_workflow: Optional[dict] = None
     ) -> dict:
         """
         Analisa um atendimento com base no feedback humano e sugere correções nas instruções.
@@ -1036,31 +1037,49 @@ class GeminiService:
             "Sua missão é analisar uma conversa em que a IA cometeu um erro ou teve um desempenho subótimo, "
             "com base no feedback fornecido por um supervisor humano.\n\n"
             "DIRETRIZES RÍGIDAS PARA CRIAÇÃO DAS REGRAS E FLUXOS:\n"
-            "1. IMPERATIVO: Comece as instruções sempre com verbos no imperativo (ex: 'Sempre ofereça', 'Nunca forneça', 'Confirme').\n"
-            "2. GENÉRICO E ESCALÁVEL: A regra deve servir para situações futuras similares, não apenas para o caso isolado da conversa.\n"
-            "3. SEM EXEMPLOS: Não inclua falas literais ou exemplos de diálogos na regra gerada. Foque no comportamento e na lógica.\n"
-            "4. FOCO NA SOLUÇÃO: A melhoria deve resolver exatamente o ponto levantado no feedback.\n\n"
-            "COMO FUNCIONA A PLANILHA DO SISTEMA:\n"
-            "Você receberá as INSTRUÇÕES ATUAIS. Elas refletem a planilha lida pelo sistema, dividida por abas (ex: '# Persona', '# Fluxo', '# Regras') "
-            "e colunas separadas por '|'. A primeira coluna é a Categoria/Etapa e a segunda é a Diretriz ou Comando esperado.\n\n"
+            "1. IMPERATIVO: Comece as instruções sempre com verbos no imperativo.\n"
+            "2. GENÉRICO E ESCALÁVEL: A regra deve servir para situações futuras similares.\n"
+            "3. SEM EXEMPLOS: Não inclua falas literais num diálogo. Foque no comportamento.\n"
+            "4. FOCO NA SOLUÇÃO: A melhoria deve resolver exatamente o ponto levantado.\n\n"
+            "SISTEMA DE CONFIGURAÇÃO DO BOT:\n"
+            "O bot possui 3 pilares configuráveis:\n"
+            "A) PLANILHA DE SISTEMA (INSTRUÇÕES): Abas (ex '# Regras') com colunas (Categoria | Diretriz).\n"
+            "B) PLANILHA DE RAG (BASE DE CONHECIMENTO): Ex: '# Preços', '# FAQ'.\n"
+            "C) FLUXO VISUAL (WORKFLOW): Um JSON do React Flow com 'nodes' (etapas) e 'edges' (condições de avanço).\n\n"
+            "COMO EDITAR O FLUXO VISUAL (WORKFLOW):\n"
+            "Se o feedback exigir novos caminhos conversacionais, regras estruturais de fases ou novos passos obrigatórios, você PODE e DEVE alterar o 'novo_workflow'.\n"
+            "- Nodes (Nós/Etapas): Objeto contendo 'id' único (str, evite espaços), 'type': 'custom', 'position': {x: int, y: int}, e 'data': {'label': 'Título Curtíssimo', 'description': 'O que a IA deve saber/fazer nessa fase'}.\n"
+            "- Edges (Transições): Objeto conectando nodes. CRÍTICO: Você DEVE incluir 'sourceHandle' e 'targetHandle' em CADA edge. "
+            "Cada node tem 4 pontos de conexão. IDs de saída (sourceHandle): 's-top', 's-bot', 's-left', 's-right'. IDs de entrada (targetHandle): 't-top', 't-bot', 't-left', 't-right'. "
+            "Para um fluxo de cima para baixo, use sourceHandle: 's-bot' e targetHandle: 't-top'. Para fluxo da esquerda para direita, use 's-right' e 't-left'. Isso garante que as setas saiam do lugar certo! "
+            "Ex: {'id': 'e1-2', 'source': '1', 'target': '2', 'sourceHandle': 's-bot', 'targetHandle': 't-top', 'type': 'customEdge', 'data': {'label': '...'}}.\n"
+            "- Posição Visual: Organize a árvore de forma hierárquica e limpa. "
+            "Para passos sequenciais (um embaixo do outro), mantenha o 'x' e adicione +400 no 'y'. "
+            "Se houver ramificações (duas opções saindo do mesmo node), mantenha o 'y' igual mas separe o 'x' (ex: um em x-500 e o outro em x+500). Os cards têm cerca de 300px de largura, então deixe bastante espaço!\n"
+            "- Consistência: NUNCA crie edges que conectem 'source' ou 'target' não listados nos 'nodes'.\n"
+            "- Manipulação: Você pode adicionar, deletar, renomear ou reconectar os nodes como desejar para formar uma árvore ou funil perfeito. Se não houver fluxo prévio, você tem total liberdade para criar um funil do zero (Saudação -> Qualificação -> Venda -> Pós).\n\n"
             "TAREFA:\n"
-            "Proponha SUBSTITUIR uma linha existente que causou o problema, ou ADICIONAR uma nova linha caso o comportamento não exista hoje.\n"
-            "MUITO IMPORTANTE: Quando for SUBSTITUIR uma linha, o seu 'valor_novo' deve conter o texto COMPLETO da célula. Ou seja, mantenha as regras anteriores daquela mesma linha que não sofreram alteração e apenas modifique/adicione a parte necessária.\n"
+            "Proponha alterações NA PLANILHA DE SISTEMA, NA PLANILHA DE RAG, e se necessário, PROPOR O FLUXO INTEIRO novamente.\n"
+            "Para as planilhas, 'valor_novo' deve conter o texto completo. Para o fluxo visual, retorne o subconjunto 'nodes' e 'edges' integralmente.\n\n"
             "Retorne ESTRITAMENTE em formato JSON:\n"
             "{\n"
-            '  "analise_geral": "Uma breve explicação do que a IA fez de errado e por que.",\n'
+            '  "analise_geral": "Breve explicação do que a IA fez de errado e como as mudanças o corrigem.",\n'
             '  "alteracoes_planilha": [\n'
             '    {\n'
-            '      "aba": "Nome exato da aba onde a mudança ocorrerá (sem hashtag, ex: Persona, Fluxo, Regras)",\n'
-            '      "coluna_1": "Nome exato da Categoria/Etapa da primeira coluna como está hoje",\n'
-            '      "valor_antigo": "O texto EXATO e COMPLETO de como está hoje na segunda coluna (ou null se for adicionar)",\n'
-            '      "valor_novo": "A nova diretriz COMPLETA para essa linha (incluindo o que não mudou)",\n'
+            '      "aba": "Ex: Regras",\n'
+            '      "coluna_1": "Categoria",\n'
+            '      "valor_antigo": "Texto EXATO antigo ou null",\n'
+            '      "valor_novo": "Sempre a diretriz de fato completa",\n'
             '      "acao": "substituir" ou "adicionar",\n'
-            '      "motivo": "Por que esta regra resolve o problema"\n'
+            '      "motivo": "Por que esta regra resolve..."\n'
             '    }\n'
-            "  ]\n"
+            '  ],\n'
+            '  "alteracoes_rag": [ ... ],\n'
+            '  "novo_workflow": { "nodes": [{"id": "...", "type": "custom", "position": {"x": 0, "y": 0}, "data": {"label": "...", "description": "..."}}], "edges": [{"id": "...", "source": "...", "target": "...", "sourceHandle": "s-bot", "targetHandle": "t-top", "type": "customEdge", "data": {"label": "..."}}] } // só emita esta chave se de fato ocorreu uma modificação necessária no fluxo\n'
             "}"
         )
+
+        wf_str = json.dumps(current_workflow, ensure_ascii=False, indent=2) if current_workflow else "Nenhum fluxo visual mapeado atualmente na persona. Sinta-se livre para criar o funil do zero se o feedback solicitar abordagens em etapas."
 
         prompt_text = (
             f"### FEEDBACK DO SUPERVISOR HUMANO\n"
@@ -1069,9 +1088,11 @@ class GeminiService:
             f"{history_str}\n\n"
             f"### CONTEXTO DA BASE DE CONHECIMENTO (RAG) DA SESSÃO\n"
             f"{rag_context if rag_context else 'Nenhum contexto RAG acionado.'}\n\n"
-            f"### INSTRUÇÕES ATUAIS (SYSTEM PROMPT)\n"
+            f"### INSTRUÇÕES ATUAIS DA (PLANILHA DE SISTEMA)\n"
             f"{current_instructions}\n\n"
-            f"Analise e gere as alterações da planilha em formato JSON."
+            f"### FLUXO VISUAL ATUAL (WORKFLOW JSON)\n"
+            f"{wf_str}\n\n"
+            f"Analise o contexto e gere as atualizações necessárias ESTRITAMENTE em formato JSON perfeitamente válido."
         )
 
         try:
@@ -1085,8 +1106,7 @@ class GeminiService:
         except Exception as e:
             logger.error(f"Erro ao analisar feedback com IA: {e}")
             return {
-                "analise_geral": f"Falha na IA ao analisar: {str(e)}",
-                "alteracoes_planilha": []
+                "analise_geral": f"Falha na IA ao analisar: {str(e)}"
             }
 
 _gemini_service_instance = None

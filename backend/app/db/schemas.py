@@ -11,6 +11,7 @@ class ConfigBase(BaseModel):
     prompt: Optional[str] = None
     notification_active: Optional[bool] = False
     notification_destination: Optional[str] = None
+    notification_round_robin_index: Optional[int] = 0
     available_hours: Optional[Dict[str, Any]] = None
     is_calendar_active: Optional[bool] = False
     google_calendar_credentials: Optional[Dict[str, Any]] = None
@@ -51,6 +52,7 @@ class AtendimentoUpdate(BaseModel):
     active_persona_id: Optional[int] = None
     resumo: Optional[str] = None
     observacoes: Optional[str] = None
+    notificacao_contato: Optional[str] = None
     conversa: Optional[Any] = None
     nome_contato: Optional[str] = None
     tags: Optional[List[Dict[str, str]]] = None
@@ -63,6 +65,7 @@ class AtendimentoCreate(BaseModel):
     active_persona_id: Optional[int] = None
     resumo: Optional[str] = None
     observacoes: Optional[str] = None
+    notificacao_contato: Optional[str] = None
     tags: Optional[List[Dict[str, str]]] = Field(default_factory=list)
     # Campos opcionais para iniciar com um template
     template_name: Optional[str] = None
@@ -79,6 +82,7 @@ class Atendimento(BaseModel):
     status: str
     resumo: Optional[str] = None
     observacoes: Optional[str] = None
+    notificacao_contato: Optional[str] = None
     conversa: Optional[str] = "[]"
     created_at: datetime
     bulk_template_name: Optional[str] = None

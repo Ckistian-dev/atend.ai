@@ -52,7 +52,7 @@ const previewNodeTypes = {
         };
 
         return (
-            <div className="relative min-w-[240px] sm:min-w-[280px] pointer-events-none w-full h-full shadow-xl shadow-blue-900/5 rounded-2xl sm:rounded-[2rem] bg-white/90 backdrop-blur-md border border-white/20 node-card">
+            <div className="relative min-w-[240px] sm:min-w-[280px] pointer-events-none w-full shadow-xl shadow-blue-900/5 rounded-2xl sm:rounded-[2rem] bg-white/90 backdrop-blur-md border border-white/20 node-card">
                 {/* 8 Handles for Preview (Visible if connected) */}
                 <Handle type="target" position={Position.Top} id="t-top" className={isHandleConnected('t-top') ? connectedHandleStyle : "opacity-0"} />
                 <Handle type="source" position={Position.Top} id="s-top" className={isHandleConnected('s-top') ? connectedHandleStyle : "opacity-0"} />
@@ -63,7 +63,7 @@ const previewNodeTypes = {
                 <Handle type="target" position={Position.Right} id="t-right" className={isHandleConnected('t-right') ? connectedHandleStyle : "opacity-0"} />
                 <Handle type="source" position={Position.Right} id="s-right" className={isHandleConnected('s-right') ? connectedHandleStyle : "opacity-0"} />
 
-                <div className="px-4 py-4 sm:px-6 sm:py-5 flex flex-col gap-2 h-full w-full">
+                <div className="px-4 py-4 sm:px-6 sm:py-5 flex flex-col gap-2 w-full">
                     <div className="flex items-center gap-2 mb-1">
                         <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-600/10 flex items-center justify-center text-blue-600">
                             <Sparkles size={14} className="sm:hidden" />
@@ -244,7 +244,7 @@ export const WorkflowEditorModal = ({ isOpen, onClose, initialWorkflow, onSave, 
                         minHeight={120} 
                         handleStyle={{ width: 10, height: 10, borderRadius: 5, border: '2px solid white' }}
                     />
-                    <div className={`relative group w-full h-full min-w-[240px] sm:min-w-[280px] min-h-[120px] shadow-2xl rounded-2xl sm:rounded-[2.2rem] bg-white border-2 transition-all ${selected ? 'border-blue-600 scale-[1.02] shadow-blue-200/50' : 'border-slate-50 shadow-slate-200/50'}`}>
+                    <div className={`relative group w-full min-w-[240px] sm:min-w-[280px] min-h-[120px] shadow-2xl rounded-2xl sm:rounded-[2.2rem] bg-white border-2 transition-all ${selected ? 'border-blue-600 scale-[1.02] shadow-blue-200/50' : 'border-slate-50 shadow-slate-200/50'}`}>
                         {/* Multiple Handles */}
                         <Handle type="target" position={Position.Top} id="t-top" className={isHandleConnected('t-top') ? connectedHandleStyle : unconnectedHandleStyleHorizontal} />
                         <Handle type="source" position={Position.Top} id="s-top" className={isHandleConnected('s-top') ? connectedHandleStyle : unconnectedHandleStyleHorizontal} />
@@ -288,14 +288,14 @@ export const WorkflowEditorModal = ({ isOpen, onClose, initialWorkflow, onSave, 
                             </button>
                         </div>
                         
-                        <div className="px-4 sm:px-5 py-3 sm:py-4 flex-1 overflow-hidden rounded-b-2xl sm:rounded-b-[2.2rem]">
+                        <div className="px-4 sm:px-5 py-3 sm:py-4 flex-1 rounded-b-2xl sm:rounded-b-[2.2rem]">
                             {isEditingDesc ? (
                                 <textarea 
                                     autoFocus
                                     value={data.description || ''} 
                                     onChange={onChangeDesc} 
                                     onBlur={() => setIsEditingDesc(false)}
-                                    className="nodrag w-full h-full min-h-[60px] text-[12px] sm:text-[13px] text-slate-600 font-medium leading-relaxed resize-none focus:outline-none bg-white border border-blue-100 rounded-lg p-2"
+                                    className="nodrag w-full min-h-[100px] text-[12px] sm:text-[13px] text-slate-600 font-medium leading-relaxed focus:outline-none bg-white border border-blue-100 rounded-lg p-2"
                                     placeholder="Descreva aqui o que a IA deve fazer..."
                                 />
                             ) : (

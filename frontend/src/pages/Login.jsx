@@ -46,13 +46,10 @@ function Login() {
   };
 
   return (
-    <>
+    <div className="min-h-screen relative bg-[#f8f9ff] flex items-center justify-center p-4 sm:p-6 font-sans selection:bg-blue-100">
       {loading && (
         <PageLoader fullScreen message="Autenticando" subMessage="Verificando suas credenciais com segurança..." />
       )}
-
-
-      <div className="min-h-screen bg-[#f8f9ff] flex items-center justify-center p-4 sm:p-6 font-sans selection:bg-blue-100">
         <div className="grid grid-cols-1 min-[900px]:grid-cols-[5fr_7fr] w-full max-w-[1000px] bg-white rounded-[2rem] overflow-hidden shadow-[0_24px_60px_-15px_rgba(37,99,235,0.14),0_8px_16px_-4px_rgba(11,28,48,0.06)] animate-fade-in-up">
 
           {/* ── LEFT PANEL (Desktop Only) ── */}
@@ -221,9 +218,8 @@ function Login() {
             </div>
           </div>
 
-        </div>
       </div>
-    </>
+    </div>
   );
 }
 

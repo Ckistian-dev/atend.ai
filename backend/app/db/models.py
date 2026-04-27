@@ -42,6 +42,7 @@ class Config(Base):
     prompt: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="Contexto fixo gerado a partir das abas de sistema")
     notification_active: Mapped[bool] = mapped_column(default=False, nullable=False, server_default="false", comment="Ativar notificações via ProspectAI")
     notification_destination: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="ID/JID do contato ou grupo para receber notificações")
+    notification_round_robin_index: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     
     available_hours: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Horários de disponibilidade semanal")
@@ -82,6 +83,7 @@ class Atendimento(Base):
     conversa: Mapped[Optional[str]] = mapped_column(Text, default="[]")
     resumo: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="")
     observacoes: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="")
+    notificacao_contato: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="Destino de notificação alocado para este atendimento via round-robin")
     bulk_template_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     bulk_template_params: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     tags: Mapped[Optional[List[Dict[str, str]]]] = mapped_column(JSONB, nullable=True, default=list)

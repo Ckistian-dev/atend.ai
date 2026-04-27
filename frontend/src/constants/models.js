@@ -9,4 +9,4 @@ export const LLM_MODELS = [
     { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview' },
 ];
 
-export const DEFAULT_MODEL = 'gemini-2.5-flash';
+export const DEFAULT_MODEL = 'gemini-3.1-flash-lite-preview';
