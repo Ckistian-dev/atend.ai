@@ -8,11 +8,11 @@ const ChatPlaceholder = () => (
             <div className="w-24 h-24 rounded-[2.5rem] bg-indigo-50/50 flex items-center justify-center mb-8 shadow-inner border border-indigo-100/50 group-hover:scale-110 transition-all duration-500">
                 <MessageSquareText size={42} className="text-indigo-600 drop-shadow-sm" />
             </div>
-            
+
             <h2 className="text-[22px] font-black tracking-tight text-slate-800 leading-tight mb-4">
-                Redesenhamoa o<br />Atendimento Manual
+                Redesenhando o<br />Atendimento Manual
             </h2>
-            
+
             <div className="w-12 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full mb-6 opacity-40 group-hover:w-20 transition-all duration-500"></div>
 
             <p className="text-[14px] font-medium text-slate-400 leading-relaxed text-center px-4">
