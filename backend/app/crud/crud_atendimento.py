@@ -439,6 +439,23 @@ async def get_dashboard_data(
     )
     recent_activity = recent_activity_query.scalars().first()
 
+    # --- NOVO: Gráfico de Barras (Atendimentos por Número de Notificação) ---
+    notificacao_counts_query = await db.execute(
+        select(models.Atendimento.notificacao_contato, func.count(models.Atendimento.id))
+        .where(
+            models.Atendimento.user_id == user_id,
+            models.Atendimento.created_at.between(start_date, end_date),
+            models.Atendimento.notificacao_contato != None,
+            models.Atendimento.notificacao_contato != ""
+        )
+        .group_by(models.Atendimento.notificacao_contato)
+        .order_by(func.count(models.Atendimento.id).desc())
+    )
+    atendimentos_por_notificacao = [
+        {"name": contato.split('@')[0] if contato else "Não Definido", "value": count}
+        for contato, count in notificacao_counts_query.all()
+    ]
+
     dashboard_data = {
         "stats": {
             "totalAtendimentos": {
@@ -468,7 +485,8 @@ async def get_dashboard_data(
         },
         "charts": {
             "atendimentosPorSituacao": atendimentos_por_situacao,
-            "contatosPorDia": contatos_por_dia
+            "contatosPorDia": contatos_por_dia,
+            "atendimentosPorNotificacao": atendimentos_por_notificacao
         },
         # Adiciona a atividade recente ao payload. Retorna como uma lista para manter
         # a compatibilidade com o frontend que espera `recentActivity[0]`.

@@ -19,7 +19,7 @@ import {
     Calendar as CalendarIcon, Lightbulb, Zap, ArrowRight, BarChart3,
     AlertTriangle, FileDown, Target, Activity, Clock, Users, Star,
     TrendingDown, CheckCircle2, XCircle, Sparkles, LayoutGrid, Radio,
-    PieChart as PieIcon, BarChart2, Brain, ChevronUp, ChevronDown, Minus, Info
+    PieChart as PieIcon, BarChart2, Brain, ChevronUp, ChevronDown, Minus, Info, Bell
 } from 'lucide-react';
 registerLocale('pt-BR', ptBR);
 
@@ -727,11 +727,12 @@ const StatCard = ({ icon, label, value, gradient, delay = 0 }) => {
 
 // ─── DATE RANGE FILTER ────────────────────────────────────────────────────────
 const DateRangeFilter = ({ onDateChange }) => {
-    const [active, setActive] = useState('30d');
+    const [active, setActive] = useState('1d');
     const [customRange, setCustomRange] = useState([subDays(new Date(), 30), new Date()]);
     const [showPicker, setShowPicker] = useState(false);
 
     const ranges = {
+        '1d': { label: 'Hoje' },
         '7d': { label: '7 D' },
         '30d': { label: '30 D' },
         'this_month': { label: 'Este Mês' },
@@ -747,7 +748,7 @@ const DateRangeFilter = ({ onDateChange }) => {
         } else if (key === 'custom') {
             setShowPicker(s => !s); return;
         } else {
-            const days = { '7d': 7, '30d': 30 };
+            const days = { '1d': 1, '7d': 7, '30d': 30 };
             start = subDays(end, days[key]); setShowPicker(false);
         }
         onDateChange(start, end);
@@ -793,7 +794,7 @@ const Dashboard = () => {
     const [data, setData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    const [dateRange, setDateRange] = useState({ startDate: subDays(new Date(), 30), endDate: new Date() });
+    const [dateRange, setDateRange] = useState({ startDate: subDays(new Date(), 1), endDate: new Date() });
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState(null);
     const [analysisError, setAnalysisError] = useState('');
@@ -814,7 +815,7 @@ const Dashboard = () => {
         } finally { setIsLoading(false); }
     }, []);
 
-    useEffect(() => { fetchData(subDays(new Date(), 29), new Date()); }, [fetchData]);
+    useEffect(() => { fetchData(subDays(new Date(), 1), new Date()); }, [fetchData]);
 
     const handleDateChange = (startDate, endDate) => {
         setDateRange({ startDate, endDate }); fetchData(startDate, endDate);
@@ -1000,6 +1001,42 @@ const Dashboard = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Novo Gráfico: Atendimentos por Número de Notificação */}
+                    {data.charts.atendimentosPorNotificacao?.length > 0 && (
+                        <div className="bg-white rounded-[32px] p-6 sm:p-8 shadow-xl shadow-slate-100 border border-slate-100/50" style={{ animation: 'fade-in-up 0.6s ease backwards 0.6s' }}>
+                            <div className="flex items-center gap-3 mb-8">
+                                <div className="p-2.5 bg-amber-50 rounded-2xl">
+                                    <Bell size={18} className="text-amber-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-slate-800 font-bold text-lg tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Atendimentos por Número de Notificação</h3>
+                                    <p className="text-slate-400 text-xs mt-0.5">Distribuição de atendimentos por destino de alerta</p>
+                                </div>
+                            </div>
+                            <div className="h-[500px] mt-4">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={data.charts.atendimentosPorNotificacao} margin={{ top: 5, right: 30, left: 20, bottom: 60 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                        <XAxis
+                                            dataKey="name"
+                                            tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }}
+                                            axisLine={false}
+                                            tickLine={false}
+                                            interval={0}
+                                        />
+                                        <YAxis tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                                        <Tooltip content={<CustomTooltip />} />
+                                        <Bar dataKey="value" name="Atendimentos" radius={[8, 8, 0, 0]}>
+                                            {data.charts.atendimentosPorNotificacao.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={CHART_PALETTE[index % CHART_PALETTE.length]} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    )}
 
                     {/* AI Analyzer Area */}
                     <div style={{ animation: 'fade-in-up 0.7s ease backwards 0.6s' }}>
