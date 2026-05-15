@@ -510,8 +510,8 @@ async def get_atendimentos_para_processar(db: AsyncSession) -> List[models.Atend
     Esta é uma consulta otimizada em massa (bulk query) que o agent_processor.py usa.
     """
     try:
-        # Define o tempo limite (10 segundos atrás)
-        tempo_limite = datetime.now(timezone.utc) - timedelta(seconds=10)
+        # Define o tempo limite (20 segundos atrás)
+        tempo_limite = datetime.now(timezone.utc) - timedelta(seconds=20)
         
         # Cria a consulta
         stmt = (

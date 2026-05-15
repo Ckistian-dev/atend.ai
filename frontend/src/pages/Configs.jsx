@@ -106,7 +106,8 @@ const initialFormData = {
     ai_model: DEFAULT_MODEL,
     temperature: 0.5,
     top_p: 0.95,
-    top_k: 40
+    top_k: 40,
+    human_corrections: false
 };
 
 
@@ -206,7 +207,8 @@ function Configs() {
             ai_model: config.ai_model || DEFAULT_MODEL,
             temperature: config.temperature ?? 0.5,
             top_p: config.top_p ?? 0.95,
-            top_k: config.top_k ?? 40
+            top_k: config.top_k ?? 40,
+            human_corrections: config.human_corrections || false
         });
 
         // Parse Schedule
@@ -329,7 +331,8 @@ function Configs() {
             ai_model: formData.ai_model,
             temperature: formData.temperature,
             top_p: formData.top_p,
-            top_k: formData.top_k
+            top_k: formData.top_k,
+            human_corrections: formData.human_corrections
         };
         try {
             let updatedConfig;
@@ -1287,6 +1290,27 @@ function Configs() {
                                                             className={inputClass}
                                                         />
                                                         <p className="mt-2 text-[10px] font-bold text-slate-400 uppercase">Limita vocabulário (Padrão: 40)</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="pt-6 border-t border-slate-100">
+                                                    <div className="flex items-center justify-between p-6 bg-blue-50/30 rounded-3xl border border-blue-100/50">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-blue-600 shadow-sm">
+                                                                <Zap size={22} />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Correções Humana Spontâneas</h4>
+                                                                <p className="text-[11px] font-medium text-slate-500 max-w-sm mt-0.5">Permite que a IA simule erros de digitação e envie correções para parecer mais humana.</p>
+                                                            </div>
+                                                        </div>
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => setFormData(p => ({ ...p, human_corrections: !p.human_corrections }))} 
+                                                            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${formData.human_corrections ? 'bg-blue-600' : 'bg-slate-200'}`}
+                                                        >
+                                                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${formData.human_corrections ? 'translate-x-6' : 'translate-x-1'}`} />
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>

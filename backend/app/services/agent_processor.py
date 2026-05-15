@@ -150,7 +150,9 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
 
         # --- ETAPA 4: EXECUÇÃO DAS AÇÕES (ENVIO DE MENSAGEM/ARQUIVO) ---
         # A resposta da IA é processada e as ações correspondentes (enviar texto, enviar arquivo) são executadas.
-        message_to_send = ia_response.get("mensagem_para_enviar")
+        mensagens_ia = ia_response.get("mensagens")
+        message_to_send_fallback = ia_response.get("mensagem_para_enviar")
+        
         intended_status_after_send = ia_response.get("nova_situacao", "Aguardando Resposta")
         intended_resumo = ia_response.get("resumo", "")
         contact_name_from_ia = ia_response.get("nome_contato")
@@ -160,38 +162,84 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
         data_agendamento = ia_response.get("data_agendamento")
         
         # Extração dos dados do anexo, se a IA solicitou um.
-        arquivos_anexos = ia_response.get("arquivos_anexos") # <-- Alterado para o plural
+        arquivos_anexos = ia_response.get("arquivos_anexos")
+        correcao_humana = ia_response.get("correcao_humana")
+        fonte_confiavel = ia_response.get("fonte_confiavel", True)
+        
         sent_messages_info = []
         media_sent = False
 
+        # --- VALIDACAO DE INTEGRIDADE (Hallucination Prevention) ---
+        if not fonte_confiavel:
+            logger.warning(f"Agente: IA sinalizou baixa confiança (fonte_confiavel=False) para Atendimento {atendimento_id}. Procedendo com cautela.")
+            # Opcional: Poderia forçar 'Atendente Chamado' aqui se a confiança for crucial
+            # intended_status_after_send = "Atendente Chamado"
+
+        # Prepara a lista de partes a enviar
+        message_parts = []
+        if mensagens_ia and isinstance(mensagens_ia, list):
+            message_parts = [str(m).strip() for m in mensagens_ia if m and str(m).strip()]
+        elif message_to_send_fallback and isinstance(message_to_send_fallback, str):
+            # Fallback para o formato antigo de string única
+            cleaned = message_to_send_fallback.strip().replace('\\n', '\n').replace('\\', '')
+            message_parts = [p.strip() for p in cleaned.split('\n\n') if p.strip()]
+
         # --- LÓGICA DE ENVIO DE MENSAGEM DE TEXTO ---
-        if message_to_send and isinstance(message_to_send, str) and message_to_send.strip():
-            # Limpa e divide a mensagem em parágrafos para enviá-las separadamente, melhorando a legibilidade no WhatsApp.
-            message_to_send_cleaned = message_to_send.strip().replace('\\n', '\n').replace('\\', '')
-            message_parts = [part.strip() for part in message_to_send_cleaned.split('\n\n') if part.strip()]
+        if message_parts:
 
             for i, part in enumerate(message_parts):
                 try:
+                    # --- SAFEGUARD: Validar links/IDs alucinados no corpo do texto ---
+                    # Se o texto contiver padrões de ID do Drive que não estão na lista de anexos, removemos ou alertamos
+                    if "ID_DO_" in part.upper() or "ID_AQUI" in part.upper():
+                        logger.warning(f"Agente: Texto contém placeholder de ID detectado. Limpando parte da mensagem.")
+                        part = re.sub(r"\[?ID_DO_[^\]\s]+\]?", "", part, flags=re.IGNORECASE).strip()
+
+                    # 2. Simulação de Digitação Variável (Humanização)
+                    # Velocidade varia entre 0.10 e 0.20 segundos por caractere
+                    chars_per_sec = random.uniform(0.10, 0.20)
+                    typing_delay = min(max(len(part) * chars_per_sec, 2.5), 15.0)
+                    
+                    logger.info(f"Agente: Simulando digitação ({chars_per_sec:.3f}s/char) por {typing_delay:.1f}s para parte {i+1}/{len(message_parts)}...")
+                    await asyncio.sleep(typing_delay)
+
                     logger.info(f"Agente: Enviando texto {i+1}/{len(message_parts)}...")
-                    # Envia cada parte da mensagem.
                     sent_info = await whatsapp_service.send_text_message(user, atendimento_contato_num_log, part)
                     
-                    # Registra a mensagem enviada no histórico.
                     sent_messages_info.append({
                         "id": sent_info.get('id') or f"text_{uuid.uuid4()}",
                         "content": part,
                         "timestamp": int(datetime.now(timezone.utc).timestamp()),
                         "status": "sent"
                     })
-                    if i < len(message_parts) - 1: await asyncio.sleep(random.uniform(2, 4))
+
+                    # Se for a última bolha e houver uma "correção humana" configurada e solicitada
+                    if i == len(message_parts) - 1 and correcao_humana and persona_config.human_corrections:
+                        # Pequeno delay antes da correção
+                        await asyncio.sleep(random.uniform(1.5, 3.0))
+                        err_text = correcao_humana.get("erro")
+                        corr_text = correcao_humana.get("correcao")
+                        
+                        if err_text and corr_text:
+                            logger.info(f"Agente: Enviando correção espontânea: {corr_text}")
+                            corr_sent = await whatsapp_service.send_text_message(user, atendimento_contato_num_log, corr_text)
+                            sent_messages_info.append({
+                                "id": corr_sent.get('id') or f"corr_{uuid.uuid4()}",
+                                "content": corr_text,
+                                "timestamp": int(datetime.now(timezone.utc).timestamp()),
+                                "status": "sent",
+                                "is_correction": True
+                            })
+
+                    if i < len(message_parts) - 1: 
+                        await asyncio.sleep(random.uniform(2.5, 5.0))
                 except Exception as send_err:
-                    # Em caso de falha no envio, o status é atualizado para refletir o erro.
                     logger.error(f"Agente: Erro envio texto: {send_err}")
                     intended_status_after_send = "Falha no Envio"
                     break
         
         # Se a IA decidiu não enviar nada (nem mídia, nem texto), apenas registra essa decisão.
-        elif not arquivos_anexos and not message_to_send:
+        elif not arquivos_anexos and not message_parts:
              logger.info(f"Agente: IA decidiu não enviar nada.")
         # --- LÓGICA DE ENVIO DE MÍDIA (ARQUIVO DO GOOGLE DRIVE) ---
         # Agora iteramos sobre uma lista de arquivos

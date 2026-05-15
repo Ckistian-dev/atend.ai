@@ -55,6 +55,7 @@ class Config(Base):
     temperature: Mapped[float] = mapped_column(default=0.5, server_default="0.5")
     top_p: Mapped[float] = mapped_column(default=0.95, server_default="0.95")
     top_k: Mapped[int] = mapped_column(default=40, server_default="40")
+    human_corrections: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
 
     owner: Mapped["User"] = relationship(back_populates="configs", foreign_keys=[user_id])
     vectors: Mapped[List["KnowledgeVector"]] = relationship(back_populates="config", cascade="all, delete-orphan")

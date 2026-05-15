@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Wand2, X as XIcon, Loader2, Sparkles, Check, Network, Maximize2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../api/axiosConfig';
-import { WorkflowPreview } from '../configs/WorkflowEditor';
+import { WorkflowPreview, WorkflowEditorModal } from '../configs/WorkflowEditor';
 
 const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId }) => {
     const [feedbackText, setFeedbackText] = useState('');
@@ -16,6 +16,7 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId }) => {
     const [applyWorkflow, setApplyWorkflow] = useState(true);
     const [showWorkflowPreview, setShowWorkflowPreview] = useState(true);
     const [isFullScreenPreviewOpen, setIsFullScreenPreviewOpen] = useState(false);
+    const [isWorkflowEditorOpen, setIsWorkflowEditorOpen] = useState(false);
 
     // Limpa os estados sempre que o modal é fechado ou aberto
     useEffect(() => {
@@ -28,6 +29,7 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId }) => {
             setApplyWorkflow(true);
             setShowWorkflowPreview(true);
             setIsFullScreenPreviewOpen(false);
+            setIsWorkflowEditorOpen(false);
         }
     }, [isOpen]);
 
@@ -49,7 +51,7 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId }) => {
 
             const res = await api.post(endpoint, {
                 feedback: feedbackText
-            }, { timeout: 600000 });
+            }, { timeout: 1200000 });
             setFeedbackAnalysis(res.data);
             setSelectedPlanilha(res.data.alteracoes_planilha?.map((_, i) => i) || []);
             setSelectedRag(res.data.alteracoes_rag?.map((_, i) => i) || []);
@@ -328,17 +330,17 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId }) => {
                                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Preview do Novo Fluxo</span>
                                                 </div>
                                                 <button
-                                                    onClick={() => setIsFullScreenPreviewOpen(true)}
+                                                    onClick={() => setIsWorkflowEditorOpen(true)}
                                                     className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-blue-600 border border-blue-100 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
                                                 >
-                                                    <Maximize2 size={12} />
-                                                    Ver Detalhes
+                                                    <Network size={12} />
+                                                    Editar e Interagir
                                                 </button>
                                             </div>
 
                                             <div
                                                 className="relative cursor-pointer overflow-hidden"
-                                                onClick={() => setIsFullScreenPreviewOpen(true)}
+                                                onClick={() => setIsWorkflowEditorOpen(true)}
                                             >
                                                 <div className="h-[300px] w-full bg-slate-50/10 pointer-events-none">
                                                     <WorkflowPreview workflowJson={feedbackAnalysis.novo_workflow} />
@@ -346,15 +348,15 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId }) => {
                                                 {/* Overlay de Hover */}
                                                 <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                                                     <div className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 scale-95 group-hover:scale-100 transition-all duration-300">
-                                                        <Maximize2 size={16} className="text-blue-600" />
-                                                        <span className="text-[11px] font-black uppercase tracking-widest text-blue-600">Clique para ampliar</span>
+                                                        <Sparkles size={16} className="text-blue-600" />
+                                                        <span className="text-[11px] font-black uppercase tracking-widest text-blue-600">Abrir Editor Interativo</span>
                                                     </div>
                                                 </div>
                                             </div>
 
                                             <div className="p-3 bg-blue-50/30 border-t border-slate-50">
                                                 <p className="text-[10px] font-medium text-blue-600/60 text-center">
-                                                    Exibição simplificada. Clique na imagem para abrir em tela cheia.
+                                                    Exibição simplificada. Clique para abrir o editor e ver os detalhes de cada etapa.
                                                 </p>
                                             </div>
                                         </div>
@@ -362,37 +364,20 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId }) => {
                                 </div>
                             )}
 
-                            {/* Modal de Preview em Tela Cheia */}
-                            {isFullScreenPreviewOpen && (
-                                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 backdrop-blur-xl p-4 sm:p-10 animate-fade-in" onClick={() => setIsFullScreenPreviewOpen(false)}>
-                                    <div className="bg-white w-full h-full rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden border border-white/20 animate-fade-in-up-fast" onClick={e => e.stopPropagation()}>
-                                        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-200">
-                                                    <Network size={24} />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-xl font-black tracking-tight text-slate-800 uppercase">Arquitetura Proposta</h3>
-                                                    <p className="text-[13px] font-medium text-slate-400">Analise detalhadamente o novo funil lógico gerado pela IA.</p>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => setIsFullScreenPreviewOpen(false)}
-                                                className="w-14 h-14 flex items-center justify-center rounded-2xl bg-white text-slate-400 hover:bg-slate-900 hover:text-white shadow-sm border border-slate-100 transition-all"
-                                            >
-                                                <XIcon size={28} />
-                                            </button>
-                                        </div>
-                                        <div className="flex-1 relative bg-slate-50/30">
-                                            <WorkflowPreview workflowJson={feedbackAnalysis.novo_workflow} />
-                                        </div>
-                                        <div className="p-6 bg-slate-900 text-center">
-                                            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
-                                                Toque fora da área branca ou no botão X para retornar à análise
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
+                            {/* Modal de Editor de Fluxo Interativo */}
+                            {isWorkflowEditorOpen && (
+                                <WorkflowEditorModal
+                                    isOpen={isWorkflowEditorOpen}
+                                    onClose={() => setIsWorkflowEditorOpen(false)}
+                                    initialWorkflow={feedbackAnalysis.novo_workflow}
+                                    onSave={(updatedWorkflow) => {
+                                        setFeedbackAnalysis({
+                                            ...feedbackAnalysis,
+                                            novo_workflow: updatedWorkflow
+                                        });
+                                        toast.success("Alterações no fluxo aplicadas à revisão!");
+                                    }}
+                                />
                             )}
 
                             <div className="flex justify-between items-center bg-slate-50 -mx-8 -mb-8 p-8 mt-10">

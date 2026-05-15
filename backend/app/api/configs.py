@@ -57,11 +57,12 @@ def format_sheet_to_csv_system(sheet_name: str, rows: List[Dict[str, Any]]) -> s
         return ""
     
     headers = list(rows[0].keys())
-    lines = [f"# {sheet_name}", "|".join(headers)]
+    # Adiciona cabeçalhos e a linha separadora do Markdown para garantir dados estruturados
+    lines = [f"# {sheet_name}", "| " + " | ".join(headers) + " |", "| " + " | ".join(["---"] * len(headers)) + " |"]
     
     for row in rows:
         values = [str(row.get(h, "") or "").strip().replace("\n", "\\n").replace("\r", "") for h in headers]
-        lines.append("|".join(values))
+        lines.append("| " + " | ".join(values) + " |")
         
     return "\n".join(lines)
 
@@ -82,7 +83,12 @@ def format_row_to_csv_rag(sheet_name: str, row: Dict[str, Any]) -> str:
     if not headers:
         return ""
     
-    return f"# {sheet_name}\n" + "|".join(headers) + "\n" + "|".join(values)
+    # Formata como uma tabela Markdown de uma linha para garantir leitura estruturada no RAG
+    header_line = "| " + " | ".join(headers) + " |"
+    separator_line = "| " + " | ".join(["---"] * len(headers)) + " |"
+    value_line = "| " + " | ".join(values) + " |"
+    
+    return f"# {sheet_name}\n{header_line}\n{separator_line}\n{value_line}"
 
 def flatten_drive_tree(node: Dict[str, Any], path: str = "") -> List[str]:
     """Recursivamente achata a árvore de arquivos em linhas de texto estruturado."""
@@ -111,7 +117,10 @@ def flatten_drive_tree(node: Dict[str, Any], path: str = "") -> List[str]:
                 values.append(val_str)
         
         if headers:
-            lines.append(f"# DRIVE\n" + "|".join(headers) + "\n" + "|".join(values))
+            header_line = "| " + " | ".join(headers) + " |"
+            separator_line = "| " + " | ".join(["---"] * len(headers)) + " |"
+            value_line = "| " + " | ".join(values) + " |"
+            lines.append(f"# DRIVE\n{header_line}\n{separator_line}\n{value_line}")
         
     for sub in node.get("subpastas", []):
         lines.extend(flatten_drive_tree(sub, current_path))
@@ -418,186 +427,52 @@ def _extract_file_name_from_drive_index(content: str) -> str:
 
 async def run_sync_drive(config_id: int, user_id: int, folder_id: str) -> int:
     """
-    Sincronização incremental do Drive:
-    - Adiciona vetores apenas para arquivos NOVOS (não existentes no RAG)
-    - Remove vetores de arquivos que foram DELETADOS do Drive
-    - Compara por nome de arquivo
+    Sincronização simplificada do Drive:
+    - Lista arquivos e pastas.
+    - Gera vetores de índice (nome/id) para o RAG.
+    - Sem análise de conteúdo via IA (apenas metadados).
     """
-    logger.info(f"Iniciando sincronização incremental de Drive (Config: {config_id}, User: {user_id})")
+    logger.info(f"Iniciando sincronização simplificada de Drive (Config: {config_id}, User: {user_id})")
     
     async with SessionLocal() as db:
         try:
-            db_config = await crud_config.get_config(db=db, config_id=config_id, user_id=user_id)
-            if not db_config:
-                logger.error("Configuração não encontrada para o sync do Drive.")
-                raise Exception("Configuração não encontrada.")
-
-            user = await db.get(models.User, user_id)
-            if not user:
-                logger.error("Usuário não encontrado para o sync do Drive.")
-                raise Exception("Usuário não encontrado.")
-
             drive_service = get_drive_service()
             gemini_service = get_gemini_service()
             
-            # ── 1. Lista arquivos atuais do Drive ──────────────────────────────
+            # 1. Lista arquivos atuais do Drive
             drive_data = await drive_service.list_files_in_folder(folder_id)
             files_tree = drive_data.get("tree", {})
-
-            def extract_files_flat(node: Dict[str, Any], current_path: str = "") -> List[Dict[str, Any]]:
-                files = []
-                node_name = node.get("nome", "Raiz")
-                path = f"{current_path} > {node_name}" if current_path else node_name
-                for f in node.get("arquivos", []):
-                    files.append({
-                        "id": f.get("id"),
-                        "name": f.get("nome"),
-                        "mimeType": f.get("mimeType", ""),
-                        "path": path
-                    })
-                for sub in node.get("subpastas", []):
-                    files.extend(extract_files_flat(sub, path))
-                return files
-
-            drive_files = extract_files_flat(files_tree)
-            drive_file_names = {f["name"] for f in drive_files if f.get("name")}
-
-            # ── 2. Busca os vetores existentes no RAG para este Drive ───────────
-            stmt_existing = select(models.KnowledgeVector).where(
-                models.KnowledgeVector.config_id == db_config.id,
-                models.KnowledgeVector.origin.in_(["drive", "drive_content"])
-            )
-            result_existing = await db.execute(stmt_existing)
-            existing_vectors = result_existing.scalars().all()
-
-            # Mapeia nome de arquivo -> ids de vetores no RAG
-            rag_file_vectors: Dict[str, List[int]] = {}
-            for vec in existing_vectors:
-                file_name = ""
-                if vec.origin == "drive_content":
-                    file_name = _extract_file_name_from_drive_content(vec.content)
-                elif vec.origin == "drive":
-                    file_name = _extract_file_name_from_drive_index(vec.content)
-                if file_name:
-                    rag_file_vectors.setdefault(file_name, []).append(vec.id)
-
-            rag_file_names = set(rag_file_vectors.keys())
-
-            logger.info(
-                f"Drive sync incremental — Drive: {len(drive_file_names)} arquivos, "
-                f"RAG existente: {len(rag_file_names)} arquivos indexados."
-            )
-
-            # ── 3. Deletar vetores de arquivos removidos do Drive ──────────────
-            files_to_delete = rag_file_names - drive_file_names
-            deleted_count = 0
-            if files_to_delete:
-                ids_to_delete = []
-                for fname in files_to_delete:
-                    ids_to_delete.extend(rag_file_vectors[fname])
-                if ids_to_delete:
-                    await db.execute(
-                        delete(models.KnowledgeVector).where(
-                            models.KnowledgeVector.id.in_(ids_to_delete)
-                        )
-                    )
-                    deleted_count = len(ids_to_delete)
-                    logger.info(
-                        f"Drive sync — Removidos {deleted_count} vetores de {len(files_to_delete)} "
-                        f"arquivo(s) deletados do Drive: {files_to_delete}"
-                    )
-
-            # ── 4. Indexar apenas arquivos NOVOS ──────────────────────────────
-            files_to_add = drive_file_names - rag_file_names
-            new_drive_files = [f for f in drive_files if f.get("name") in files_to_add]
-
-            logger.info(f"Drive sync — {len(new_drive_files)} arquivo(s) novo(s) para indexar.")
-
+            
+            # 2. Gera as linhas de índice usando a função auxiliar flatten_drive_tree
+            index_lines = flatten_drive_tree(files_tree)
+            
             contextos_buffer = []
-            added_count = 0
+            if index_lines:
+                # Gera os embeddings chamando a API do Gemini
+                embeddings = await gemini_service.generate_embeddings_batch(index_lines)
+                
+                for line, embedding in zip(index_lines, embeddings):
+                    if embedding:
+                        contextos_buffer.append(models.KnowledgeVector(
+                            config_id=config_id,
+                            content=line,
+                            origin="drive",
+                            embedding=embedding
+                        ))
 
-            if new_drive_files:
-                # 4a. Gera embeddings de índice (localização/nome)
-                # Reconstrói a árvore achatada apenas para os arquivos novos
-                def build_index_lines_for_files(all_files: List[Dict[str, Any]], target_names: set) -> List[str]:
-                    lines = []
-                    for f in all_files:
-                        if f.get("name") not in target_names:
-                            continue
-                        row_data = {
-                            "Categorias": f.get("path", ""),
-                            "Arquivo": f.get("name"),
-                            "Tipo": "",
-                            "ID": f.get("id")
-                        }
-                        headers = []
-                        values = []
-                        for key, val in row_data.items():
-                            if val:
-                                val_str = str(val).strip().replace("\n", "\\n").replace("\r", "")
-                                headers.append(key)
-                                values.append(val_str)
-                        if headers:
-                            lines.append("# DRIVE\n" + "|".join(headers) + "\n" + "|".join(values))
-                    return lines
-
-                new_index_lines = build_index_lines_for_files(new_drive_files, files_to_add)
-
-                if new_index_lines:
-                    embeddings = await gemini_service.generate_embeddings_batch(new_index_lines)
-                    for line, embedding in zip(new_index_lines, embeddings):
-                        if embedding:
-                            contextos_buffer.append(models.KnowledgeVector(
-                                config_id=db_config.id,
-                                content=line,
-                                origin="drive",
-                                embedding=embedding
-                            ))
-
-                # 4b. Extrai e indexa conteúdo rico dos arquivos novos suportados
-                supported_mimes = [
-                    'application/pdf', 'image/jpeg', 'image/png',
-                    'image/webp', 'text/plain', 'text/csv'
-                ]
-                extracted_texts = []
-
-                for file_info in new_drive_files:
-                    mime = file_info.get("mimeType", "")
-                    if any(supported in mime for supported in supported_mimes):
-                        file_bytes = drive_service.download_file_bytes(file_info["id"])
-                        if file_bytes:
-                            content_text = await gemini_service.extract_document_content(
-                                file_bytes, mime, db, user
-                            )
-                            if content_text:
-                                formatted_content = (
-                                    f"# CONTEÚDO DO ARQUIVO: {file_info['name']}\n{content_text}"
-                                )
-                                extracted_texts.append(formatted_content)
-
-                if extracted_texts:
-                    content_embeddings = await gemini_service.generate_embeddings_batch(extracted_texts)
-                    for text, embedding in zip(extracted_texts, content_embeddings):
-                        if embedding:
-                            contextos_buffer.append(models.KnowledgeVector(
-                                config_id=db_config.id,
-                                content=text,
-                                origin="drive_content",
-                                embedding=embedding
-                            ))
-
-                added_count = len(contextos_buffer)
-
-            if contextos_buffer:
-                db.add_all(contextos_buffer)
-
+            # 3. Limpa vetores anteriores do Drive e salva os novos
+            async with db.begin():
+                await db.execute(delete(models.KnowledgeVector).where(
+                    models.KnowledgeVector.config_id == config_id,
+                    models.KnowledgeVector.origin.in_(["drive", "drive_content"])
+                ))
+                
+                if contextos_buffer:
+                    db.add_all(contextos_buffer)
+            
             await db.commit()
-            logger.info(
-                f"Sincronização incremental do Drive concluída! "
-                f"+{added_count} vetores adicionados, "
-                f"-{deleted_count} vetores removidos."
-            )
-            return added_count
+            logger.info(f"Sincronização simplificada do Drive concluída! {len(contextos_buffer)} arquivos indexados.")
+            return len(contextos_buffer)
 
         except Exception as e:
             logger.error(f"Erro na sincronização do Drive: {e}", exc_info=True)

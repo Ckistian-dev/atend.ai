@@ -7,7 +7,6 @@ import pytz
 import re
 from typing import Optional, List, Dict, Any
 from collections.abc import Set
-import numpy as np
 from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -76,7 +75,7 @@ class GeminiService:
             current_key = self.api_keys[self.current_key_index]
             
             # Instanciação limpa: o SDK gerencia v1/v1beta automaticamente
-            self.client = genai.Client(api_key=current_key, http_options=types.HttpOptions(timeout=600000))
+            self.client = genai.Client(api_key=current_key, http_options=types.HttpOptions(timeout=1200000))
             
             logger.info(f"✅ Cliente Gemini inicializado (chave índice {self.current_key_index}).")
         except Exception as e:
@@ -298,25 +297,24 @@ class GeminiService:
         
         # Lógica para Áudio (Transcrição)
         if 'audio' in mime_type or 'mpeg' in mime_type or 'ogg' in mime_type:
-            task_text = "Sua única tarefa é transcrever o áudio a seguir. Retorne apenas o texto transcrito, sem adicionar nenhuma outra palavra, introdução ou formatação."
-            prompt_contents = [task_text, media_part]
+            system_instruction = "Sua única tarefa é transcrever o áudio a seguir. Retorne apenas o texto transcrito, sem adicionar nenhuma outra palavra, introdução ou formatação."
+            prompt_contents = ["## TAREFA\nTranscreva o áudio.", media_part]
             
         # Lógica para Imagem/Documento (Análise Visual)
         else:
-            system_instruction = "Você é um especialista em análise visual e interpretação de conteúdo."
+            system_instruction = (
+                "Você é um especialista em análise visual e interpretação de conteúdo.\n\n"
+                "## INSTRUÇÃO DE ANÁLISE\n"
+                "Analise a mídia fornecida e descreva seu conteúdo de forma abrangente e detalhada. Capture todos os aspectos importantes para que a IA de conversação compreenda o contexto completo.\n\n"
+                "1. *Descrição Geral:* Inicie com uma descrição global do que a mídia apresenta.\n"
+                "2. *Detalhes Visuais:* Descreva elementos principais, cores, ambiente, pessoas, objetos, texto visível e detalhes pertinentes ao contexto da conversa.\n"
+                "3. *Extração de Dados:* Extraia dados estruturados como nomes, endereços, datas e valores. **Caso existam tabelas ou listas de preços, utilize estritamente a sintaxe de tabela Markdown (| Categoria | Valor |).**\n"
+                "4. *Contexto e Intenção:* Infira a intenção do usuário ao enviar a mídia com base no histórico.\n"
+                "5. *Formato da Resposta:* Forneça um texto claro e bem estruturado. Utilize marcadores para listas. Proibido dialogar, forneça apenas a análise."
+            )
             
             history_str = self._format_history_optimized(db_history, include_timestamps=True)
-            
-            prompt_text = (
-                f"## HISTÓRICO RECENTE\n{history_str}\n\n"
-                "## INSTRUÇÃO DE ANÁLISE\n"
-                "Analise a mídia fornecida (imagem, documento ou vídeo) e descreva seu conteúdo de forma abrangente e detalhada. O objetivo é fornecer um resumo completo que capture todos os aspectos importantes para que a IA de conversação possa entender o contexto sem precisar 'ver' a mídia.\n\n"
-                "1. *Descrição Geral:* Comece com uma descrição geral do que a mídia mostra (ex: 'Foto de uma piscina em um jardim', 'Documento de orçamento', 'Vídeo curto mostrando o funcionamento de um produto').\n"
-                "2. *Detalhes Visuais (para imagens/vídeos):* Descreva os elementos principais, cores, ambiente, pessoas, objetos, texto visível, e qualquer detalhe que pareça relevante para a conversa.\n"
-                "3. *Extração de Dados (se aplicável):* Se a mídia contiver dados estruturados (como tabelas, listas, preços, nomes, endereços, datas, valores em um comprovante), extraia-os de forma clara.\n"
-                "4. *Contexto e Intenção:* Com base no histórico da conversa, tente inferir a intenção do usuário ao enviar a mídia. O que ele quer mostrar ou perguntar?\n"
-                "5. *Formato da Resposta:* Retorne um texto claro e bem estruturado. Use bullet points (*) para listas, se ajudar na clareza. Não converse, apenas forneça a análise."
-            )
+            prompt_text = f"## HISTÓRICO RECENTE\n{history_str}\n\n## TAREFA\nAnalise a mídia enviada."
             
             # Ordem: Prompt de texto primeiro, Mídia depois (ou vice-versa, Gemini entende ambos)
             prompt_contents = [prompt_text, media_part]
@@ -396,42 +394,7 @@ class GeminiService:
         
         return all_embeddings
 
-    async def extract_document_content(self, file_bytes: bytes, mime_type: str, db: AsyncSession, user: models.User) -> str:
-        """Extrai o texto e descreve imagens de um documento/arquivo para indexação RAG."""
-        try:
-            # Evitar arquivos excessivamente grandes
-            if len(file_bytes) > 15 * 1024 * 1024:
-                logger.warning(f"Arquivo ignorado por ser muito grande para indexação: {len(file_bytes)} bytes")
-                return ""
-
-            media_part = types.Part.from_bytes(data=file_bytes, mime_type=mime_type)
-            prompt_contents = [
-                "Você é um especialista em extração de dados. Analise o arquivo (documento ou imagem) e extraia todo o conteúdo útil para uma base de conhecimento de uma IA de atendimento.\n"
-                "RESUMA as informações para que fiquem fáceis, diretas de entender e otimizadas para RAG (busca vetorial), ignorando dados irrelevantes.\n"
-                "MUITO IMPORTANTE: A saída DEVE ser estritamente formatada em 'linhas' onde o Tópico e a Descrição são separados por um pipe '|', sem criar marcações de tabelas markdown (sem ---).\n"
-                "Siga exatamente este padrão:\n"
-                "Tópico ou Contexto da Informação|Descrição resumida, contendo apenas a essência dos dados e características úteis.\n"
-                "Exemplo:\n"
-                "Resumo Geral|Este documento trata do manual de montagem e especificações técnicas da Cadeira XYZ.\n"
-                "Especificações Técnicas|Suporta 120kg, estrutura metálica, tecido respirável, cor preta.\n"
-                "Se for uma imagem, descreva os detalhes visuais relevantes ou extraia os textos (OCR) seguindo esse mesmo padrão 'Tópico|Dado'.",
-                media_part
-            ]
-            
-            # Usamos o _generate_with_retry para deduzir tokens na tabela de forma unificada
-            response = await self._generate_with_retry(
-                prompt=prompt_contents, 
-                db=db, 
-                user=user, 
-                is_media=True
-            )
-            
-            return response.text.strip()
-        except Exception as e:
-            logger.error(f"Erro ao extrair conteúdo do documento: {e}")
-            return ""
-
-    async def _retrieve_rag_context(self, db: AsyncSession, config_id: int, query_text: str) -> str:
+    async def _retrieve_rag_context(self, db: AsyncSession, config_id: int, query_text: str, limit: int = 10) -> str:
         """Busca contexto relevante na base vetorial (PGVector) usando similaridade de cosseno."""
         if not query_text: return ""
         
@@ -441,7 +404,7 @@ class GeminiService:
         if not query_embedding:
             logger.warning("Falha ao gerar embedding da query. Retornando vazio.")
             return ""
-
+ 
         # 2. Busca diversificada por Origem (Abas e Drive)
         # Identifica todas as origens distintas (ex: 'Preços', 'FAQ', 'drive') para este config
         stmt_origins = select(models.KnowledgeVector.origin).where(
@@ -453,14 +416,14 @@ class GeminiService:
         
         final_vectors = []
         
-        # Para cada origem encontrada (cada aba e o drive), busca os 10 mais relevantes
+        # Para cada origem encontrada (cada aba e o drive), busca os 'limit' mais relevantes
         for origin in origins:
             stmt_origin = select(models.KnowledgeVector).where(
                 models.KnowledgeVector.config_id == config_id,
                 models.KnowledgeVector.origin == origin
             ).order_by(
                 models.KnowledgeVector.embedding.cosine_distance(query_embedding)
-            ).limit(10)
+            ).limit(limit)
             
             result_origin = await db.execute(stmt_origin)
             vectors = result_origin.scalars().all()
@@ -565,7 +528,7 @@ class GeminiService:
         if not nodes:
             return ""
             
-        lines = ["# Fluxo de Atendimento e Condições", "Etapa ou Estado|Ação/Instrução Esperada|Condição para Avançar"]
+        lines = ["# Fluxo de Atendimento e Condições", "| Etapa ou Estado | Ação/Instrução Esperada | Condição para Avançar |", "|---|---|---|"]
         
         for node_id, node in nodes.items():
             etapa = node.get('data', {}).get('label', 'Etapa').replace('\n', ' ')
@@ -580,7 +543,7 @@ class GeminiService:
                     proximos.append(f"Se '{condicao}' -> Ir para [{target_node.get('data', {}).get('label', '')}]")
             
             proximo_str = " | ".join(proximos) if proximos else "Fim do fluxo"
-            lines.append(f"{etapa}|{acao}|{proximo_str}")
+            lines.append(f"| {etapa} | {acao} | {proximo_str} |")
             
         return "\n".join(lines) + "\n\n"
 
@@ -599,7 +562,7 @@ class GeminiService:
         for attempt in range(max_retries):
             try:
                 # 1. Coleta de Contexto
-                system_instruction = persona.prompt or "Você é um assistente útil."
+                persona_prompt = persona.prompt or "Você é um assistente útil."
                 
                 # Busca tags disponíveis e atuais para o prompt
                 available_tags = await crud_atendimento.get_all_user_tags(db, user.id)
@@ -655,80 +618,81 @@ class GeminiService:
                     
                     hours_text = " | ".join(hours_summary) if hours_summary else "Não configurado"
 
-                    calendar_context = f"\n# DISPONIBILIDADE DE AGENDA\nHorários de Trabalho|{hours_text}\n"
+                    calendar_context = f"\n# DISPONIBILIDADE DE AGENDA\n| Item | Descrição |\n|---|---|\n| Horários de Trabalho | {hours_text} |\n"
                     calendar_context += booked_events_str
-                    calendar_context += "Se o cliente demonstrar interesse em agendar, verifique a disponibilidade real (horários de trabalho vs ocupados) e proponha um horário livre. Se confirmado, use a ação 'agendar_reuniao' no JSON." + "\n"
+                    calendar_context += "Se o cliente demonstrar interesse em agendar, verifique a disponibilidade real (horários de trabalho vs ocupados) e proponha um horário livre. Se confirmado, use a ação 'agendar_reuniao' no JSON.\n"
 
                 # --- Contexto do Fluxo Visual ---
                 workflow_context = self._format_workflow_to_markdown(persona.workflow_json)
 
-                # 2. Montagem do Prompt (Texto Estruturado)
-                # --- Partes condicionais de agendamento ---
+                # 2. Montagem da System Instruction (Regras, Contexto e Formato)
+                # --- Partes condicionais para otimização de tokens ---
+                _rag_sec = f"# CONTEXTO (RAG)\n{rag_context}\n\n" if rag_context else ""
+                _workflow_sec = f"{workflow_context}" if persona.workflow_json else ""
+                _calendar_sec = f"{calendar_context}" if persona.is_calendar_active else ""
+                
+                _tags_rule = f"# TAGS DISPONÍVEIS\n{' | '.join(available_tags_names)}\n\n" if available_tags_names else ""
+                _tags_json = '  "tags_sugeridas": ["Tag1"],\n' if available_tags_names else ""
+
+                _drive_rule = "3. *ARQUIVOS:* Use apenas IDs Reais da lista do Drive. Proibido inventar.\n" if persona.drive_id else ""
+                _drive_json = '  "arquivos_anexos": [{ "nome_exato": "Nome", "id_arquivo": "ID", "tipo_midia": "image|video|document" }],\n' if persona.drive_id else ""
+
                 _sched_rule = (
-                    "9. *Agendamento:* Se o cliente confirmar um horário, VOCÊ DEVE PEDIR O E-MAIL DELE para enviar o convite. "
-                    "Somente quando tiver o horário E o e-mail, retorne 'agendar_reuniao' em `acao_agenda`, a data/hora ISO em `data_agendamento` e o e-mail em `email_cliente`.\n\n"
+                    "4. *AGENDAMENTO:* Solicite o e-mail do cliente ao confirmar um horário. "
+                    "Retorne acao_agenda, data_agendamento e email_cliente no JSON apenas após obter o horário e o e-mail.\n"
                     if persona.is_calendar_active else ""
                 )
-                _sched_json = (
-                    '  "email_cliente": "Email extraído or null",\n'
-                    '  "acao_agenda": "agendar_reuniao" | null,\n'
-                    '  "data_agendamento": "YYYY-MM-DDTHH:MM:SS" | null,\n'
-                    if persona.is_calendar_active else ""
+                _sched_json = '  "email_cliente": "Email", "acao_agenda": "Ação", "data_agendamento": "ISO",\n' if persona.is_calendar_active else ""
+
+                _corr_rule = "- *CORREÇÃO HUMANA:* Caso ativado, você pode ocasionalmente simular um erro de digitação em um balão e enviar a correção no balão seguinte para conferir naturalidade.\n" if persona.human_corrections else ""
+                _corr_json = '  "correcao_humana": { "erro": "...", "correcao": "*" },\n' if persona.human_corrections else ""
+
+                system_instruction = (
+                    f"{persona_prompt}\n\n"
+                    f"{_rag_sec}{_workflow_sec}{_tags_rule}{_calendar_sec}"
+                    f"# DIRETRIZES DE HUMANIZAÇÃO (CRÍTICO)\n"
+                    f"- *Ausência de Corporatiquês:* Elimine termos formais excessivos. Seja direto e objetivo.\n"
+                    f"- *NÃO SE REPITA:* Analise o histórico e evite duplicidade de informações ou ações já realizadas.\n"
+                    f"- *Continuidade Real:* Mantenha a fluidez de uma conversa contínua. Ignore apresentações se já houver interação prévia.\n"
+                    f"- *Zero Saudações Repetidas:* Omita cumprimentos se o histórico recente já os contiver.\n"
+                    f"- *Espelhamento de Estilo:* Adapte o nível de formalidade, uso de emojis e pontuação ao estilo demonstrado pelo cliente.\n"
+                    f"- *Interjeições Naturais:* É encorajado o uso de interjeições curtas (ex: 'Entendi!', 'Hum...', 'Certo.') para conferir naturalidade.\n"
+                    f"- *Formatação WhatsApp:* Utilize estritamente a sintaxe do WhatsApp (*negrito*, _itálico_, ~tachado~).\n"
+                    f"- *Separação de Bolhas:* Divida a resposta no array 'mensagens'. Cada item é um balão separado.\n"
+                    f"- *Linguagem Natural:* Priorize expressões cotidianas em vez de frases prontas.\n"
+                    f"{_corr_rule}\n"
+                    f"# REGRAS DE EXECUÇÃO E INTEGRIDADE (CRÍTICO)\n"
+                    f"1. *ADMITIR IGNORÂNCIA:* CASO A INFORMAÇÃO SOLICITADA NÃO ESTEJA PRESENTE NO CONTEXTO (RAG) OU NO FLUXO, INFORME QUE NÃO POSSUI O DADO E OFEREÇA AJUDA COM O QUE ESTÁ DISPONÍVEL. PROIBIDO INVENTAR DADOS TÉCNICOS, PREÇOS OU CONDIÇÕES.\n"
+                    f"2. *FONTE DE VERDADE:* Baseie-se prioritariamente no contexto fornecido.\n"
+                    f"{_drive_rule}{_sched_rule}"
+                    f"# SITUAÇÕES DO ATENDIMENTO (campo 'nova_situacao')\n"
+                    f"- *Aguardando Resposta:* Use quando a conversa deve continuar e você aguarda um retorno do cliente.\n"
+                    f"- *Atendente Chamado:* Use se o cliente solicitar falar com um humano ou se você não puder ajudar com as informações disponíveis.\n"
+                    f"- *Concluído:* Use quando o objetivo do atendimento for alcançado ou a conversa for finalizada.\n\n"
+                    f"# FORMATO DE RESPOSTA (JSON OBRIGATÓRIO)\n"
+                    f"Retorne APENAS o JSON. OMITA campos vazios ou nulos para economizar tokens.\n"
+                    f"{{\n"
+                    f'  "mensagens": ["Balão 1", "Balão 2"],\n'
+                    f"{_corr_json}{_sched_json}{_tags_json}{_drive_json}"
+                    f'  "fonte_confiavel": true,\n'
+                    f'  "nova_situacao": "Aguardando Resposta",\n'
+                    f'  "nome_contato": "Nome",\n'
+                    f'  "resumo": "Resumo curto"\n'
+                    f"}}"
                 )
 
+                # --- 3. Montagem do Prompt (Histórico e Tarefa) ---
                 prompt_text = (
-                    f"# CONTEXTO (RAG)\n{rag_context}\n\n"
                     f"# DATA E HORA ATUAL\n{datetime_context}\n"
-                    f"# HISTÓRICO\n{history_str}\n\n"
-                    f"{workflow_context}"
                     f"# DADOS DO CLIENTE\n"
-                    f"Nome: {whatsapp.nome_contato or 'Não identificado'}\n"
-                    f"{calendar_context}"
-                    f"Tags Atuais|{', '.join(current_tags_names) if current_tags_names else 'Nenhuma'}\n"
-                    f"Status Atendente|{'online' if user.atendente_online else 'offline'}\n\n"
-                    f"# TAGS DISPONÍVEIS\n"
-                    f"{' | '.join(available_tags_names) if available_tags_names else 'Nenhuma'}\n\n"
-                    f"# DIRETRIZES DE HUMANIZAÇÃO (CRÍTICO)\n"
-                    f"- *Zero 'Corporatiquês':* PROIBIDO começar frases com 'Ótimo', 'Excelente', 'Perfeito', 'Entendido', 'Compreendo'. Isso denuncia que você é um robô. Vá direto ao ponto.\n"
-                    f"- *NÃO SE REPITA (REGRA CRÍTICA):* Analise o histórico. É PROIBIDO repetir informações, perguntas, ações ou parafrasear o que o usuário disse. Se você já deu uma informação, não a dê novamente.\n"
-                    f"- *Continuidade Real:* Trate o histórico como uma conversa contínua de WhatsApp. Se já houver mensagens anteriores, JAMAIS use 'Olá' ou apresentações novamente. Aja como se tivesse respondido há 1 minuto.\n"
-                    f"- *Zero Saudações Repetidas:* Se já houve um cumprimento no histórico recente, NÃO inicie a resposta com 'Olá', 'Oi', 'Bom dia', etc. Continue a conversa diretamente.\n"
-                    f"- *Conexão Lógica:* Use conectivos de conversa real ('Então...', 'Nesse caso...', 'Ah, sobre isso...', 'Olha...', 'Bom...').\n"
-                    f"- *Espelhamento de Estilo (Mirroring):* Se o cliente usa gírias ou abreviações (vc, tbm, blz), você pode usar TAMBÉM, de forma leve, para criar conexão. Se ele for formal, seja educado mas não robótico.\n"
-                    f"- *Variação de Resposta:* Evite que todas as frases comecem da mesma forma. Varie a estrutura das sentenças.\n"
-                    f"- *Empatia e Tom:* Se o cliente parecer frustrado, use palavras de acolhimento natural ('Poxa, que situação...', 'Vixi, vamos resolver isso agora').\n"
-                    f"- *Formatação WhatsApp (ESTRITO):* Use APENAS a syntax do WhatsApp: *negrito* para destaques importantes, _itálico_ para ênfase e ~tachado~ se necessário. JAMAIS use ** para negrito ou para qualquer outra finalidade.\n"
-                    f"- *Parágrafos Curtos:* No WhatsApp, pessoas usam parágrafos curtíssimos. No máximo 2-3 linhas por parágrafo. Evite listas com marcadores (bullets) ou negrito excessivo.\n"
-                    f"- *Banalidade Controlada:* Use uma linguagem que uma pessoa real usaria. Menos 'Sinto muito pelo transtorno' e mais 'Poxa, que chato. Deixa eu ver o que consigo fazer'.\n"
-                    f"- *Proibido Repetir Nomes:* Use o nome do cliente APENAS se fizer sentido na frase. JAMAIS comece toda resposta com o nome dele.\n"
-                    f"- *Interação com Mídia:* Se o usuário mandar uma imagem ou áudio, comente algo sobre o conteúdo de forma casual, como uma pessoa faria ('Vi o arquivo aqui...', 'Pelo áudio que você mandou, entendi que...').\n"
-                    f"- *Parágrafos Únicos ou Duplos:* Tente responder tudo em UM ou DOIS parágrafos no máximo. Evite quebrar a resposta em várias mensagens curtas.\n\n"
+                    f"| Campo | Valor |\n"
+                    f"|---|---|\n"
+                    f"| Nome | {whatsapp.nome_contato or 'Não identificado'} |\n"
+                    f"| Tags Atuais | {', '.join(current_tags_names) if current_tags_names else 'Nenhuma'} |\n"
+                    f"| Status Atendente | {'online' if user.atendente_online else 'offline'} |\n\n"
+                    f"# HISTÓRICO\n{history_str}\n\n"
                     f"# TAREFA\n"
-                    f"Responda ao último 'User' agindo estritamente como a persona definida.\n\n"
-                    f"# REGRAS DE EXECUÇÃO\n"
-                    f"1. *Fonte de Verdade:* Use prioritariamente o CONTEXTO (RAG). Se não encontrar, use conhecimento geral sensato, mas evite alucinar dados técnicos.\n"
-                    f"2. *Arquivos:* Se o cliente pedir mídia, VERIFIQUE a lista '# DRIVE'. Se o arquivo estiver lá, use o ID EXATO. Se NÃO estiver, NÃO invente um ID e NÃO envie o arquivo. *PROIBIDO* usar IDs fictícios ou placeholders.\n"
-                    f"3. *Encaminhamento:* Tente resolver ao máximo. Insista na resolução antes de sugerir um humano. Antes de encaminhar, SEMPRE pergunte se o cliente deseja falar com um atendente. Só mude `nova_situacao` para 'Atendente Chamado' após a confirmação explícita do cliente.\n"
-                    f"4. *Comunicação:* Seja direto e use *negrito* para destaques (syntax do WhatsApp). A regra de NÃO REPETIR é a mais importante de todas.\n"
-                    f"5. **Fluxo:** O sistema envia o texto PRIMEIRO e os arquivos DEPOIS. Considere isso na sua resposta.\n"
-                    f"6. **Tags:** Analise a conversa e veja se alguma tag disponível se aplica. Retorne apenas o nome das tags em `tags_sugeridas` para adicionar (ou null).\n"
-                    f"7. *Capacidade de Visão:* Você TEM a capacidade de ver e analisar imagens, vídeos, áudios e documentos (PDFs) enviados pelo usuário. Se o histórico mostrar '[Imagem/Doc Transcrito]', trate como se tivesse visto o arquivo original.\n"
-                    f"8. *Solicitar Nome:* Se o nome do cliente estiver 'Não identificado', pergunte o nome dele logo no início da interação.\n\n"
-                    f"{_sched_rule}"
-                    f"# FORMATO DE RESPOSTA (JSON OBRIGATÓRIO)\n"
-                    f"Retorne APENAS um JSON válido, sem blocos de código (```json).\n"
-                    f"IMPORTANTE: Omita completamente qualquer campo cujo valor seria null. Não inclua a chave no JSON se o valor for nulo.\n"
-                    f"{{\n"
-                    f'  "mensagem_para_enviar": "Texto da resposta aqui",\n'
-                    f'  "nova_situacao": "Aguardando Resposta" | "Atendente Chamado" | "Concluído",\n'
-                    f'  "nome_contato": "Nome extraído (omitir se não identificado)",\n'
-                    f"{_sched_json}"
-                    f'  "tags_sugeridas": ["Tag1", "Tag2"] (omitir se nenhuma se aplicar),\n'
-                    f'  "resumo": "Resumo curto da conversa inteira para CRM",\n'
-                    f'  "arquivos_anexos": [\n'
-                    f'    {{ "nome_exato": "nome.pdf", "id_arquivo": "COPIAR_ID_DA_TABELA_DRIVE", "tipo_midia": "image" }}\n'
-                    f'  ] (omitir se nenhum arquivo for enviado)\n'
-                    f"}}"
+                    f"Responda ao último 'User' seguindo estritamente as instruções do sistema."
                 )
                 
                 response = await self._generate_with_retry(prompt_text, db, user, system_instruction=system_instruction, atendimento_id=whatsapp.id, persona=persona)
@@ -769,22 +733,23 @@ class GeminiService:
             history_str = self._format_history_optimized(conversation_history_db, include_timestamps=True)
             datetime_context = self._get_datetime_context(user)
 
+            system_instruction = (
+                "Você é um assistente especialista em reengajamento. Analise o histórico e decida se deve enviar um follow-up.\n\n"
+                "## REGRAS\n"
+                "1. *DECISÃO DE ENVIO:* A única condição para omitir o envio é a solicitação explícita do cliente para interrupção do contato. Nos demais casos, prossiga com o follow-up.\n"
+                "2. *EXECUÇÃO:* Utilize a mensagem configurada como base, ajustando-a para garantir naturalidade. Utilize formatação de negrito para destaque.\n"
+                "3. *SAUDAÇÕES:* Evite cumprimentar o usuário caso já existam saudações prévias no histórico.\n"
+                "4. *FORMATO:* Retorne estritamente um JSON válido contendo a ação decidida e a respectiva mensagem."
+            )
+
             prompt_text = (
-                f"## TAREFA: FOLLOW-UP\n"
-                f"Você é um assistente especialista em reengajamento. Analise o histórico e decida se deve enviar um follow-up.\n\n"
                 f"## CONTEXTO TEMPORAL\n{datetime_context}\n\n"
                 f"## DADOS\nNome Contato: {whatsapp.nome_contato}\n\n"
                 f"## HISTÓRICO RECENTE\n{history_str}\n\n"
-                f"## REGRAS\n"
-                f"1. *DECISÃO DE ENVIO:* A única condição para NÃO enviar mensagem é se o cliente pediu explicitamente para parar ou não ser mais contatado. Em todos os outros casos, você DEVE enviar o follow-up.\n"
-                f"2. Se decidir enviar: Use a mensagem da configuração como base, adaptando levemente para naturalidade. Utilize a formatação do WhatsApp (*negrito* para destaque).\n"
-                f"3. Não cumprimente novamente se já houver cumprimento no histórico.\n"
-                f"4. Retorne APENAS um JSON válido. Exemplo de formatos:\n"
-                f"   - Para enviar: {{ \"action\": \"send\", \"mensagem_para_enviar\": \"texto...\" }}\n"
-                f"   - Para não enviar: {{ \"action\": \"skip\", \"mensagem_para_enviar\": null }}\n"
+                f"## TAREFA\nAnalise o histórico e decida sobre o envio do follow-up."
             )
             
-            response = await self._generate_with_retry(prompt_text, db, user, atendimento_id=whatsapp.id, persona=whatsapp.active_persona)
+            response = await self._generate_with_retry(prompt_text, db, user, system_instruction=system_instruction, atendimento_id=whatsapp.id, persona=whatsapp.active_persona)
             
             return self._parse_json_response(response.text)
 
@@ -866,16 +831,21 @@ class GeminiService:
         for at in atendimentos:
             status_counts[at.status] = status_counts.get(at.status, 0) + 1
         
-        stats_table = "Métrica|Valor\n"
-        stats_table += f"Total de Atendimentos|{total}\n"
+        stats_table = "| Métrica | Valor |\n"
+        stats_table += "|---|---|\n"
+        stats_table += f"| Total de Atendimentos | {total} |\n"
         for st, count in status_counts.items():
-            stats_table += f"Status {st}|{count}"
+            stats_table += f"| Status {st} | {count} |\n"
         
         # 3. Formatação compacta de TODOS os atendimentos (Tabular)
         # Limitamos a 150 atendimentos por segurança de contexto
         sorted_atendimentos = sorted(atendimentos, key=lambda x: x.updated_at, reverse=True)[:150]
         
-        rows = ["WhatsApp|Criado em|Atualizado em|Contato|Status|Tags|Resumo CRM|Histórico (Compacto)"]
+        headers = ["WhatsApp", "Criado em", "Atualizado em", "Contato", "Status", "Tags", "Resumo CRM", "Histórico (Compacto)"]
+        rows = [
+            "| " + " | ".join(headers) + " |",
+            "| " + " | ".join(["---"] * len(headers)) + " |"
+        ]
         for at in sorted_atendimentos:
             conversa_compacta = ""
             try:
@@ -895,7 +865,7 @@ class GeminiService:
             created_str = at.created_at.strftime("%H:%M %d/%m/%y") if at.created_at else "N/I"
             updated_str = at.updated_at.strftime("%H:%M %d/%m/%y") if at.updated_at else "N/I"
             
-            row = f"{at.whatsapp}|{created_str}|{updated_str}|{at.nome_contato or 'N/I'}|{at.status}|{tags_str}|{resumo_limpo}|{conversa_compacta}"
+            row = f"| {at.whatsapp} | {created_str} | {updated_str} | {at.nome_contato or 'N/I'} | {at.status} | {tags_str} | {resumo_limpo} | {conversa_compacta} |"
             rows.append(row)
 
         atendimentos_table = "\n".join(rows)
@@ -916,38 +886,26 @@ class GeminiService:
             f"Você decide QUAIS módulos usar e em QUE ORDEM, dependendo do que os dados revelam.\n"
             f"Use os componentes mais adequados para cada tipo de informação.\n\n"
             f"### CATÁLOGO DE COMPONENTES DISPONÍVEIS:\n\n"
-            f"**1. hero_stat** - Use para destacar UMA métrica principal de impacto.\n"
-            f'{{"tipo": "hero_stat", "valor": "51", "label": "contatos em março", "descricao": "Frase de contexto curta.", "tendencia": "alta/baixa/neutro"}}\n\n'
-            f"**2. metric_grid** - Use para exibir até 4 KPIs calculados por você em grade.\n"
-            f'{{"tipo": "metric_grid", "titulo": "KPIs do Período", "metricas": [{{"label": "Taxa de Conversão", "valor": "32%", "icone": "percent", "cor": "verde/vermelho/amarelo/azul/roxo"}}, ...]}}\n\n'
-            f"**3. pie_chart** - Use para distribuições proporcionais (ex: motivos de perda, origem dos clientes).\n"
-            f'{{"tipo": "pie_chart", "titulo": "Título do Gráfico", "descricao": "Contexto breve.", "dados": [{{"name": "Categoria", "value": 42}}, ...]}}\n\n'
-            f"**4. bar_chart** - Use para comparações e rankings (ex: top produtos, top tags, equipamentos por demanda).\n"
-            f'{{"tipo": "bar_chart", "titulo": "Título", "descricao": "Contexto.", "eixo_x": "Nome do eixo X", "dados": [{{"name": "Item", "value": 15}}, ...]}}\n\n'
-            f"**5. friction_cards** - Use para listar os principais gargalos/fricções com nível de impacto.\n"
-            f'{{"tipo": "friction_cards", "titulo": "Pontos de Fricção", "itens": [{{"area": "Nome da área", "observacoes": "Explicação detalhada citando números de contato.", "impacto": "Alto/Médio/Baixo", "contatos_exemplo": ["5511999990001", "5511999990002"]}}, ...]}}\n\n'
-            f"**6. insight_cards** - Use para sugestões estratégicas e ações recomendadas.\n"
-            f'{{"tipo": "insight_cards", "titulo": "Insights Estratégicos", "itens": [{{"titulo": "Título da Sugestão", "descricao": "Detalhe acionável.", "prioridade": "alta/media/baixa", "icone": "trending/alert/lightbulb/target/zap"}}, ...]}}\n\n'
-            f"**7. text_section** - Use para diagnósticos narrativos, contextos e próximos passos.\n"
-            f'{{"tipo": "text_section", "titulo": "Título da Seção", "conteudo": "Parágrafo completo com análise narrativa.", "estilo": "diagnostico/estrategia/conclusao"}}\n\n'
-            f"**8. timeline_events** - Use para mostrar eventos ou atendimentos notáveis em ordem cronológica.\n"
-            f'{{"tipo": "timeline_events", "titulo": "Atendimentos em Destaque", "eventos": [{{"whatsapp": "5511999990001", "data": "15/03/26", "titulo": "Título do evento", "descricao": "O que aconteceu.", "tipo": "oportunidade/perda/alerta/sucesso"}}, ...]}}\n\n'
+            f"**1. hero_stat** - Destaque para uma métrica principal de impacto. Requer valor, label, descrição e tendência.\n"
+            f"**2. metric_grid** - Grade para exibição de múltiplos KPIs. Requer título e lista de métricas com label, valor, ícone e cor.\n"
+            f"**3. pie_chart** - Gráfico para distribuições proporcionais. Requer título, descrição e lista de dados com nome e valor.\n"
+            f"**4. bar_chart** - Gráfico para comparações e rankings. Requer título, descrição, identificação do eixo X e lista de dados.\n"
+            f"**5. friction_cards** - Listagem de gargalos e pontos de atrito. Requer área, observações técnicas detalhadas, nível de impacto e lista de contatos afetados.\n"
+            f"**6. insight_cards** - Sugestões estratégicas e ações recomendadas. Requer título, descrição acionável, prioridade e ícone representativo.\n"
+            f"**7. text_section** - Seção para diagnósticos narrativos e conclusões. Requer título, conteúdo analítico e estilo da seção.\n"
+            f"**8. timeline_events** - Registro cronológico de eventos notáveis. Requer título e lista de eventos com identificador, data, descrição e tipo.\n\n"
             f"### REGRAS DE USO:\n"
-            f"1. Inclua SEMPRE ao menos 1 módulo 'hero_stat' ou 'metric_grid' respondendo à pergunta diretamente.\n"
-            f"2. Se os dados permitirem um gráfico relevante, inclua-o. Calcule os valores com base nos atendimentos fornecidos.\n"
-            f"3. Para análises de conversão, inclua 'friction_cards'. Para análises de performance, inclua 'metric_grid'.\n"
-            f"4. Inclua SEMPRE um 'insight_cards' com pelo menos 2 sugestões acionáveis.\n"
-            f"5. Termine com um 'text_section' de estilo 'conclusao'.\n"
-            f"6. Máximo de 6 módulos por resposta para manter a objetividade.\n\n"
+            f"1. Inclua obrigatoriamente componentes de destaque (hero_stat ou metric_grid) que respondam à pergunta inicial.\n"
+            f"2. Utilize representações gráficas sempre que os dados permitirem cálculos de proporção ou comparação.\n"
+            f"3. Priorize o uso de cartões de fricção para análises de conversão e grades de métricas para performance.\n"
+            f"4. Forneça sempre sugestões estratégicas acionáveis via cartões de insight.\n"
+            f"5. Finalize o relatório com uma seção de texto conclusiva.\n"
+            f"6. Limite a resposta a no máximo seis componentes para garantir a objetividade.\n\n"
             f"### FORMATO FINAL DO JSON:\n"
             f'{{\n'
-            f'  "resposta_direta": "Resposta objetiva à pergunta do usuário.",\n'
+            f'  "resposta_direta": Resposta objetiva à pergunta,\n'
             f'  "modulos": [\n'
-            f'    {{"tipo": "hero_stat", ...}},\n'
-            f'    {{"tipo": "pie_chart", ...}},\n'
-            f'    {{"tipo": "friction_cards", ...}},\n'
-            f'    {{"tipo": "insight_cards", ...}},\n'
-            f'    {{"tipo": "text_section", ...}}\n'
+            f'    {{ Lista de componentes selecionados }}\n'
             f'  ]\n'
             f'}}'
         )
@@ -991,11 +949,11 @@ class GeminiService:
                 f"Atue como um Especialista em Engenharia de Prompt e Estrategista de Vendas.\n"
                 f"Seu objetivo é escrever um 'System Prompt' (Persona) para um assistente de WhatsApp que deve parecer 100% humano.\n\n"
                 f"DIRETRIZES PARA O PROMPT GERADO:\n"
-                f"1. TOM E ESTILO: A linguagem deve ser natural, amigável e típica de WhatsApp (mensagens curtas, uso de emojis, sem formalismo excessivo). Proibido usar frases como 'em que posso ajudar hoje?' ou termos robóticos. Proibido admitir que é uma IA.\n"
-                f"2. ABERTURA OBRIGATÓRIA: O assistente deve sempre iniciar a primeira interação dizendo: 'Olá! Sou o [Nome] da [Nome da Empresa]. Com quem eu falo?' para obter o nome do cliente.\n"
-                f"3. CRIATIVIDADE EM PRODUTOS/PREÇOS: Se a descrição da empresa não fornecer uma lista detalhada, a IA deve inventar produtos, serviços e preços condizentes com o nicho, apresentando-os com total naturalidade e autoridade, como se fizessem parte do catálogo oficial.\n"
-                f"4. FLUXO DE CONVERSA: O atendimento deve ser focado em entender a necessidade do cliente, oferecer as opções geradas e conduzir para o fechamento ou agendamento, dependendo do nicho.\n"
-                f"5. REGRAS: Nunca quebrar o personagem. Se o cliente perguntar algo muito fora do escopo, o assistente deve contornar de forma humana (ex: 'vou confirmar essa informação com o financeiro').\n\n"
+                f"1. TOM E ESTILO: Adote linguagem natural e amigável típica de aplicativos de mensagens instantâneas. Evite formalismos excessivos ou padrões de atendimento robótico. Proibido admitir a natureza de inteligência artificial.\n"
+                f"2. ABERTURA OBRIGATÓRIA: Inicie a primeira interação identificando-se pelo nome e representando a empresa, solicitando em seguida o nome do contato para personalização do atendimento.\n"
+                f"3. GESTÃO DE CATÁLOGO: Caso a descrição da empresa seja incompleta, infira produtos, serviços e valores pertinentes ao nicho de mercado, apresentando-os com autoridade e naturalidade.\n"
+                f"4. FLUXO DE CONVERSA: Priorize a compreensão das necessidades do cliente para oferecer soluções adequadas e conduzir ao fechamento ou agendamento.\n"
+                f"5. REGRAS: Mantenha a consistência da persona integralmente. Contorne solicitações fora de escopo com respostas humanas e plausíveis.\n\n"
                 f"Informações para basear a criação:\n{company_description}\n\n"
                 f"Retorne APENAS o texto do system prompt gerado, sem introduções, sem formatação markdown (```) e pronto para uso."
             )
@@ -1037,45 +995,42 @@ class GeminiService:
             "Sua missão é analisar uma conversa em que a IA cometeu um erro ou teve um desempenho subótimo, "
             "com base no feedback fornecido por um supervisor humano.\n\n"
             "DIRETRIZES RÍGIDAS PARA CRIAÇÃO DAS REGRAS E FLUXOS:\n"
-            "1. IMPERATIVO: Comece as instruções sempre com verbos no imperativo.\n"
-            "2. GENÉRICO E ESCALÁVEL: A regra deve servir para situações futuras similares.\n"
-            "3. SEM EXEMPLOS: Não inclua falas literais num diálogo. Foque no comportamento.\n"
-            "4. FOCO NA SOLUÇÃO: A melhoria deve resolver exatamente o ponto levantado.\n\n"
+            "1. IMPERATIVO: Utilize verbos no imperativo para iniciar as instruções.\n"
+            "2. GENÉRICO E ESCALÁVEL: Elabore regras aplicáveis a situações futuras análogas.\n"
+            "3. SEM EXEMPLOS: Proibido incluir falas literais ou diálogos. Foque estritamente no comportamento e lógica.\n"
+            "4. FOCO NA SOLUÇÃO: Resolva pontualmente o problema identificado no feedback.\n\n"
             "SISTEMA DE CONFIGURAÇÃO DO BOT:\n"
-            "O bot possui 3 pilares configuráveis:\n"
-            "A) PLANILHA DE SISTEMA (INSTRUÇÕES): Abas (ex '# Regras') com colunas (Categoria | Diretriz).\n"
-            "B) PLANILHA DE RAG (BASE DE CONHECIMENTO): Ex: '# Preços', '# FAQ'.\n"
-            "C) FLUXO VISUAL (WORKFLOW): Um JSON do React Flow com 'nodes' (etapas) e 'edges' (condições de avanço).\n\n"
-            "COMO EDITAR O FLUXO VISUAL (WORKFLOW):\n"
-            "Se o feedback exigir novos caminhos conversacionais, regras estruturais de fases ou novos passos obrigatórios, você PODE e DEVE alterar o 'novo_workflow'.\n"
-            "- Nodes (Nós/Etapas): Objeto contendo 'id' único (str, evite espaços), 'type': 'custom', 'position': {x: int, y: int}, e 'data': {'label': 'Título Curtíssimo', 'description': 'O que a IA deve saber/fazer nessa fase'}.\n"
-            "- Edges (Transições): Objeto conectando nodes. CRÍTICO: Você DEVE incluir 'sourceHandle' e 'targetHandle' em CADA edge. "
-            "Cada node tem 4 pontos de conexão. IDs de saída (sourceHandle): 's-top', 's-bot', 's-left', 's-right'. IDs de entrada (targetHandle): 't-top', 't-bot', 't-left', 't-right'. "
-            "Para um fluxo de cima para baixo, use sourceHandle: 's-bot' e targetHandle: 't-top'. Para fluxo da esquerda para direita, use 's-right' e 't-left'. Isso garante que as setas saiam do lugar certo! "
-            "Ex: {'id': 'e1-2', 'source': '1', 'target': '2', 'sourceHandle': 's-bot', 'targetHandle': 't-top', 'type': 'customEdge', 'data': {'label': '...'}}.\n"
-            "- Posição Visual: Organize a árvore de forma hierárquica e limpa. "
-            "Para passos sequenciais (um embaixo do outro), mantenha o 'x' e adicione +400 no 'y'. "
-            "Se houver ramificações (duas opções saindo do mesmo node), mantenha o 'y' igual mas separe o 'x' (ex: um em x-500 e o outro em x+500). Os cards têm cerca de 300px de largura, então deixe bastante espaço!\n"
-            "- Consistência: NUNCA crie edges que conectem 'source' ou 'target' não listados nos 'nodes'.\n"
-            "- Manipulação: Você pode adicionar, deletar, renomear ou reconectar os nodes como desejar para formar uma árvore ou funil perfeito. Se não houver fluxo prévio, você tem total liberdade para criar um funil do zero (Saudação -> Qualificação -> Venda -> Pós).\n\n"
+            "O bot opera com três pilares configuráveis:\n"
+            "A) PLANILHA DE SISTEMA (INSTRUÇÕES): Organizada em abas com colunas para Categoria e Diretriz.\n"
+            "B) PLANILHA DE RAG (BASE DE CONHECIMENTO): Armazena dados técnicos e informações de suporte.\n"
+            "C) FLUXO VISUAL (WORKFLOW): Estrutura JSON que define estados (nodes) e transições (edges).\n\n"
+            "EDIÇÃO DO FLUXO VISUAL (WORKFLOW):\n"
+            "Altere o novo_workflow caso o feedback exija mudanças na estrutura da conversa.\n"
+            "- Nodes (Etapas): Devem possuir identificador único sem espaços, tipo customizado, coordenadas de posição e dados contendo título e descrição da fase.\n"
+            "- Edges (Transições): Devem conectar os nodes obrigatoriamente através de sourceHandle e targetHandle. "
+            "Utilize os conectores direcionais disponíveis (top, bot, left, right) prefixados por s- para saída e t- para entrada. "
+            "Configure os conectores de modo a manter uma visualização lógica e organizada.\n"
+            "- Posição Visual: Organize os elementos de forma hierárquica. Mantenha distanciamento adequado entre os cartões para evitar sobreposição visual.\n"
+            "- Consistência: Verifique se todos os IDs de origem e destino nas transições existem na lista de nós.\n"
+            "- Manipulação: Adicione, remova ou reconecte etapas conforme necessário para otimizar o funil de atendimento.\n\n"
             "TAREFA:\n"
-            "Proponha alterações NA PLANILHA DE SISTEMA, NA PLANILHA DE RAG, e se necessário, PROPOR O FLUXO INTEIRO novamente.\n"
-            "Para as planilhas, 'valor_novo' deve conter o texto completo. Para o fluxo visual, retorne o subconjunto 'nodes' e 'edges' integralmente.\n\n"
+            "Proponha atualizações na PLANILHA DE SISTEMA, na PLANILHA DE RAG e, se necessário, no FLUXO VISUAL.\n"
+            "Assegure que as novas diretrizes sejam completas, tecnicamente precisas e que valor_novo contenha o texto integral da regra.\n\n"
             "Retorne ESTRITAMENTE em formato JSON:\n"
             "{\n"
-            '  "analise_geral": "Breve explicação do que a IA fez de errado e como as mudanças o corrigem.",\n'
+            '  "analise_geral": Explicação do erro e da solução proposta,\n'
             '  "alteracoes_planilha": [\n'
             '    {\n'
-            '      "aba": "Ex: Regras",\n'
-            '      "coluna_1": "Categoria",\n'
-            '      "valor_antigo": "Texto EXATO antigo ou null",\n'
-            '      "valor_novo": "Sempre a diretriz de fato completa",\n'
-            '      "acao": "substituir" ou "adicionar",\n'
-            '      "motivo": "Por que esta regra resolve..."\n'
+            '      "aba": Identificação da aba,\n'
+            '      "coluna_1": Cabeçalho da coluna,\n'
+            '      "valor_antigo": Conteúdo anterior,\n'
+            '      "valor_novo": Nova diretriz lógica,\n'
+            '      "acao": substituir ou adicionar,\n'
+            '      "motivo": Justificativa técnica\n'
             '    }\n'
             '  ],\n'
-            '  "alteracoes_rag": [ ... ],\n'
-            '  "novo_workflow": { "nodes": [{"id": "...", "type": "custom", "position": {"x": 0, "y": 0}, "data": {"label": "...", "description": "..."}}], "edges": [{"id": "...", "source": "...", "target": "...", "sourceHandle": "s-bot", "targetHandle": "t-top", "type": "customEdge", "data": {"label": "..."}}] } // só emita esta chave se de fato ocorreu uma modificação necessária no fluxo\n'
+            '  "alteracoes_rag": [ Lista de mudanças na base de conhecimento ],\n'
+            '  "novo_workflow": { "nodes": [ Estrutura de nós ], "edges": [ Estrutura de conexões ] }\n'
             "}"
         )
 

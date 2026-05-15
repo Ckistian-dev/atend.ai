@@ -15,6 +15,7 @@ class ConfigBase(BaseModel):
     available_hours: Optional[Dict[str, Any]] = None
     is_calendar_active: Optional[bool] = False
     google_calendar_credentials: Optional[Dict[str, Any]] = None
+    human_corrections: Optional[bool] = False
     workflow_json: Optional[Dict[str, Any]] = None
     ai_model: Optional[str] = "gemini-2.5-flash"
     temperature: Optional[float] = 0.5
