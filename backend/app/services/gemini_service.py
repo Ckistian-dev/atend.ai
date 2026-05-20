@@ -1044,9 +1044,9 @@ class GeminiService:
             "Assegure que as novas diretrizes sejam completas e tecnicamente precisas.\n\n"
             "Retorne ESTRITAMENTE em formato JSON:\n"
             "{\n"
-            '  "analise_geral": Explicação do erro e da solução proposta,\n'
-            '  "alteracoes_planilha": [ ... ],\n'
-            '  "alteracoes_rag": [ ... ],\n'
+            '  "analise_geral": "Explicação do erro e da solução proposta",\n'
+            '  "alteracoes_planilha": [ { "acao": "adicionar|modificar|remover", "aba": "Nome da Aba", "coluna_1": "Categoria", "valor_antigo": "Texto antigo (ou null)", "valor_novo": "Nova regra" } ],\n'
+            '  "alteracoes_rag": [ { "acao": "adicionar|modificar|remover", "aba": "Nome da Aba", "coluna_1": "Categoria", "valor_antigo": "Texto antigo (ou null)", "valor_novo": "Novo conhecimento" } ],\n'
             '  "novo_workflow": { "nodes": [], "edges": [] } ou null\n'
             "}"
         )

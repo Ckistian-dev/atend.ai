@@ -216,7 +216,7 @@ function Mensagens() {
 
     const [searchTerm, setSearchTerm] = useState('');
     // --- ALTERADO: inicializa sem filtros se vier de um ID específico da URL ---
-    const [activeFilters, setActiveFilters] = useState(() => initialAtendimentoId ? [] : ['Atendente Chamado']);
+    const [activeFilters, setActiveFilters] = useState(() => initialAtendimentoId ? [] : ['Atendente Chamado', 'Concluído', 'Ignorar Contato', 'Aguardando Envio']);
     const [activeButtonGroup, setActiveButtonGroup] = useState(() => initialAtendimentoId ? null : 'atendimentos');
 
     // --- NOVO: Estado para o termo de busca com debounce ---
@@ -1091,10 +1091,7 @@ function Mensagens() {
 
     // --- NOVA FUNÇÃO: Alterna um filtro na lista de filtros ativos ---
     const toggleFilter = (groupName) => {
-        const filterGroups = {
-            atendimentos: ['Atendente Chamado'],
-            bot_ia: ['Mensagem Recebida', 'Aguardando Resposta', 'Gerando Resposta', 'Aguardando Envio'],
-        };
+        const iaStatuses = ['Aguardando Resposta', 'Gerando Resposta', 'Mensagem Recebida'];
 
         // Se o botão clicado já está ativo, desativa tudo
         if (activeButtonGroup === groupName) {
@@ -1103,7 +1100,14 @@ function Mensagens() {
         } else {
             // Se outro botão está ativo ou nenhum está, ativa o novo
             setActiveButtonGroup(groupName);
-            setActiveFilters(filterGroups[groupName]);
+            if (groupName === 'bot_ia') {
+                setActiveFilters([...iaStatuses, 'Aguardando Envio']);
+            } else if (groupName === 'atendimentos') {
+                const atendimentosStatuses = statusOptions
+                    .map(opt => opt.nome)
+                    .filter(name => !iaStatuses.includes(name));
+                setActiveFilters(atendimentosStatuses.length > 0 ? atendimentosStatuses : ['Atendente Chamado', 'Concluído', 'Ignorar Contato', 'Aguardando Envio']);
+            }
         }
     };
 
@@ -1138,7 +1142,11 @@ function Mensagens() {
 
     const handleSwitchToAtendimentos = () => {
         setActiveButtonGroup('atendimentos');
-        setActiveFilters(['Atendente Chamado']);
+        const iaStatuses = ['Aguardando Resposta', 'Gerando Resposta', 'Mensagem Recebida'];
+        const atendimentosStatuses = statusOptions
+            .map(opt => opt.nome)
+            .filter(name => !iaStatuses.includes(name));
+        setActiveFilters(atendimentosStatuses.length > 0 ? atendimentosStatuses : ['Atendente Chamado', 'Concluído', 'Ignorar Contato', 'Aguardando Envio']);
         setStatusFilters(null);
         setTagFilters(null);
     };

@@ -17026,3 +17026,16 @@ Responda ao último 'User' seguindo estritamente as instruções do sistema.
   "resumo": "Cliente deseja conhecer as linhas de produtos. Téo iniciou a qualificação perguntando sobre o ambiente de instalação."
 }
 ============================================================
+
+==================== PROMPT ENVIADO PARA IA ATENDIMENTO 11870 [2026-05-20 12:01:06] ====================
+--- SYSTEM INSTRUCTION ---
+Sua única tarefa é transcrever o áudio a seguir. Retorne apenas o texto transcrito, sem adicionar nenhuma outra palavra, introdução ou formatação.
+------------------------------
+[TEXTO]: ## TAREFA
+Transcreva o áudio.
+[MÍDIA/OBJETO]: <class 'google.genai.types.Part'>
+============================================================
+
+==================== RESPOSTA DA IA [2026-05-20 12:01:16] ====================
+Testando um, dois, três. Tá me ouvindo? Alô.
+============================================================
