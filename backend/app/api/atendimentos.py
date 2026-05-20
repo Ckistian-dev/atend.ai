@@ -1099,6 +1099,11 @@ async def analyze_feedback(
         conversa_list = json.loads(db_atendimento.conversa or "[]")
     except: pass
 
+    # Otimização: Limitar o histórico para as últimas 50 mensagens para evitar tokens excessivos e timeout
+    if len(conversa_list) > 50:
+        logger.info(f"Truncando histórico de {len(conversa_list)} para as últimas 50 mensagens para análise.")
+        conversa_list = conversa_list[-50:]
+
     history_str = gemini_service._format_history_optimized(conversa_list, include_timestamps=False)
     
     # Extrai as últimas mensagens para tentar pegar o contexto do RAG que foi usado
@@ -1114,16 +1119,25 @@ async def analyze_feedback(
 
     rag_context = await gemini_service._retrieve_rag_context(db, persona.id, rag_query)
 
-    analysis = await gemini_service.analyze_conversation_feedback(
-        feedback=payload.feedback,
-        history_str=history_str,
-        rag_context=rag_context,
-        current_instructions=persona.prompt or "",
-        current_workflow=persona.workflow_json,
-        db=db,
-        user=current_user
-    )
+    logger.info(f"Solicitando análise de feedback para Atendimento {atendimento_id} ao Gemini...")
+    try:
+        analysis = await gemini_service.analyze_conversation_feedback(
+            feedback=payload.feedback,
+            history_str=history_str,
+            rag_context=rag_context,
+            current_instructions=persona.prompt or "",
+            current_workflow=persona.workflow_json,
+            db=db,
+            user=current_user,
+            atendimento_id=atendimento_id # Novo argumento para log
+        )
+        logger.info(f"Análise de feedback para Atendimento {atendimento_id} concluída com sucesso.")
+    except Exception as e:
+        logger.error(f"Erro crítico durante analyze_feedback no Atendimento {atendimento_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Erro na análise de IA: {str(e)}")
+
     return analysis
+
 
 class AlteracaoPlanilha(schemas.BaseModel):
     aba: str

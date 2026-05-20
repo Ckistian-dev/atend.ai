@@ -5,7 +5,8 @@ import PageLoader from '../components/common/PageLoader';
 
 import {
     BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
-    Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
+    Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell,
+    AreaChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
 import { subDays, startOfMonth, endOfMonth, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -73,10 +74,11 @@ const IMPACTO_CONFIG = {
 };
 
 const TIMELINE_CONFIG = {
-    oportunidade: { icon: <Star size={12} />, bg: 'bg-emerald-500', ring: 'ring-emerald-200' },
-    sucesso: { icon: <CheckCircle2 size={12} />, bg: 'bg-blue-500', ring: 'ring-blue-200' },
-    alerta: { icon: <AlertTriangle size={12} />, bg: 'bg-amber-500', ring: 'ring-amber-200' },
-    perda: { icon: <XCircle size={12} />, bg: 'bg-red-500', ring: 'ring-red-200' },
+    oportunidade: { icon: <Star size={14} />, bg: 'bg-emerald-500', ring: 'ring-emerald-200' },
+    sucesso: { icon: <CheckCircle2 size={14} />, bg: 'bg-blue-500', ring: 'ring-blue-200' },
+    alerta: { icon: <AlertTriangle size={14} />, bg: 'bg-amber-500', ring: 'ring-amber-200' },
+    perda: { icon: <XCircle size={14} />, bg: 'bg-red-500', ring: 'ring-red-200' },
+    info: { icon: <Info size={14} />, bg: 'bg-indigo-500', ring: 'ring-indigo-200' },
 };
 
 const ESTILO_CONFIG = {
@@ -288,21 +290,31 @@ const FrictionCardsModule = ({ modulo }) => (
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {(modulo.itens || []).map((item, i) => {
+                const isShortImpact = item.impacto && (item.impacto === 'Alto' || item.impacto === 'Médio' || item.impacto === 'Baixo');
                 const cfg = IMPACTO_CONFIG[item.impacto] || IMPACTO_CONFIG['Baixo'];
+                const rawExemplos = item.contatos_exemplo || item.ids_exemplo;
+                const exemplosArray = Array.isArray(rawExemplos) ? rawExemplos : (rawExemplos ? [rawExemplos] : []);
+
                 return (
                     <div key={i} className="group rounded-[20px] p-5 bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-300">
-                        <div className="flex items-start justify-between gap-4 mb-3">
-                            <h4 className="text-slate-800 font-bold text-sm leading-tight flex-1">{item.area}</h4>
-                            <span className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${cfg.pill} shadow-sm`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} animate-pulse`} />
-                                {item.impacto}
+                        <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+                            <h4 className="text-slate-800 font-bold text-sm leading-tight flex-1 min-w-[60%]">{item.area}</h4>
+                            <span className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${cfg.pill} shadow-sm max-w-full`}>
+                                <span className={`w-1.5 h-1.5 flex-shrink-0 rounded-full ${cfg.dot} animate-pulse`} />
+                                <span className="truncate">{isShortImpact ? item.impacto : 'Atenção'}</span>
                             </span>
                         </div>
-                        <p className="text-slate-500 text-xs leading-relaxed font-medium mb-4">{item.observacoes}</p>
-                        {(item.contatos_exemplo?.length > 0 || item.ids_exemplo?.length > 0) && (
+                        <p className="text-slate-500 text-xs leading-relaxed font-medium mb-3">{item.observacoes}</p>
+                        {!isShortImpact && item.impacto && (
+                            <div className="text-slate-600 text-xs leading-relaxed font-medium mb-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                                <span className="font-bold text-slate-700 block mb-1">Impacto Esperado:</span>
+                                {item.impacto}
+                            </div>
+                        )}
+                        {exemplosArray.length > 0 && (
                             <div className="flex flex-wrap gap-1.5 pt-3 border-t border-slate-200/50">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Exemplos:</span>
-                                {(item.contatos_exemplo || item.ids_exemplo || []).map((contato, idx) => (
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1 mt-0.5">Exemplos:</span>
+                                {exemplosArray.map((contato, idx) => (
                                     <span key={idx} className="text-[10px] font-bold px-2 py-0.5 bg-white border border-slate-200 rounded-lg text-slate-600 shadow-sm">
                                         {contato}
                                     </span>
@@ -368,34 +380,54 @@ const TextSectionModule = ({ modulo }) => {
 
 // 8. Timeline Events
 const TimelineEventsModule = ({ modulo }) => (
-    <div className="rounded-2xl bg-white p-6" style={{ boxShadow: '0 2px 16px rgba(15,23,42,0.06)' }}>
-        <div className="flex items-center gap-2 mb-6">
-            <Radio size={17} className="text-teal-500" />
-            <h3 className="text-slate-700 font-semibold" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo || 'Destaque do Período'}</h3>
+    <div className="rounded-[24px] bg-white p-6 sm:p-8 shadow-xl shadow-slate-100 border border-slate-100/50">
+        <div className="flex items-center gap-2.5 mb-8">
+            <div className="p-2 bg-indigo-50 rounded-lg">
+                <Radio size={18} className="text-indigo-600" />
+            </div>
+            <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                {modulo.titulo || 'Destaque do Período'}
+            </h3>
         </div>
-        <div className="relative pl-6">
-            <div className="absolute left-2 top-0 bottom-0 w-px bg-gray-200" />
-            <div className="flex flex-col gap-4">
+        <div className="relative pl-4 sm:pl-8">
+            <div className="absolute left-[7px] sm:left-[15px] top-2 bottom-2 w-[2px] bg-gradient-to-b from-indigo-100 via-slate-200 to-transparent rounded-full" />
+            <div className="flex flex-col gap-6">
                 {(modulo.eventos || []).map((ev, i) => {
-                    const cfg = TIMELINE_CONFIG[ev.tipo] || TIMELINE_CONFIG.alerta;
+                    let tipo = ev.tipo;
+                    if (!tipo || !TIMELINE_CONFIG[tipo]) {
+                        const str = ((ev.titulo || '') + ' ' + (ev.descricao || '')).toLowerCase();
+                        if (str.includes('sucesso') || str.includes('concluído')) tipo = 'sucesso';
+                        else if (str.includes('perda') || str.includes('falha')) tipo = 'perda';
+                        else if (str.includes('oportunidade')) tipo = 'oportunidade';
+                        else tipo = 'info';
+                    }
+                    const cfg = TIMELINE_CONFIG[tipo];
                     return (
                         <div key={i} className="relative group">
-                            <div className={`absolute -left-[19px] top-1.5 w-4 h-4 rounded-full ${cfg.bg} ring-2 ring-white ring-offset-1 ${cfg.ring} flex items-center justify-center text-white transition-transform group-hover:scale-110`}>
+                            <div className={`absolute -left-[25px] sm:-left-[33px] top-1 w-7 h-7 rounded-full ${cfg.bg} ring-4 ring-white shadow-md flex items-center justify-center text-white transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6 z-10`}>
                                 {cfg.icon}
                             </div>
-                            <div className="bg-gray-50 rounded-xl border border-gray-200 p-3.5 hover:border-gray-300 hover:shadow-sm transition-all ml-2">
-                                <div className="flex items-start justify-between gap-2 mb-1">
-                                    <h4 className="text-gray-800 font-semibold text-sm">{ev.titulo}</h4>
-                                    <div className="flex items-center gap-2 flex-shrink-0">
-                                        {ev.data && <span className="text-gray-400 text-xs">{ev.data}</span>}
+                            <div className="bg-white rounded-[20px] p-5 border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 hover:border-slate-200 transition-all duration-300 ml-2 sm:ml-4">
+                                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
+                                    <div className="flex-1">
+                                        {ev.titulo && <h4 className="text-slate-800 font-bold text-sm tracking-tight mb-1.5 leading-tight">{ev.titulo}</h4>}
+                                        {ev.descricao && <p className="text-slate-600 text-xs leading-relaxed font-medium">{ev.descricao}</p>}
+                                        {!ev.titulo && !ev.descricao && <p className="text-slate-400 text-xs italic">Evento sem descrição</p>}
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                        {ev.data && (
+                                            <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-100">
+                                                <Clock size={12} className="text-slate-400" />
+                                                {ev.data}
+                                            </span>
+                                        )}
                                         {(ev.whatsapp || ev.id) && (
-                                            <span className="text-xs font-mono px-1.5 py-0.5 bg-white border border-gray-200 rounded text-gray-500">
-                                                {ev.whatsapp || `#${ev.id}`}
+                                            <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-1.5 rounded-xl border border-indigo-100/50 uppercase tracking-widest shadow-sm">
+                                                {ev.whatsapp ? `WA: ${ev.whatsapp}` : `#${ev.id}`}
                                             </span>
                                         )}
                                     </div>
                                 </div>
-                                <p className="text-gray-500 text-xs leading-relaxed">{ev.descricao}</p>
                             </div>
                         </div>
                     );
@@ -404,6 +436,301 @@ const TimelineEventsModule = ({ modulo }) => (
         </div>
     </div>
 );
+
+// 9. Line Chart
+const LineChartModule = ({ modulo }) => {
+    if (!modulo.dados?.length) return null;
+    return (
+        <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
+            <div className="flex items-center gap-2.5 mb-6">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                    <TrendingUp size={18} className="text-blue-600" />
+                </div>
+                <div>
+                    <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo}</h3>
+                    {modulo.descricao && <p className="text-slate-400 text-xs mt-0.5">{modulo.descricao}</p>}
+                </div>
+            </div>
+            <div className="h-64 sm:h-72 mt-4 -ml-6 sm:ml-0">
+                <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={modulo.dados} margin={{ top: 5, right: 10, left: 10, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#fff', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                    </LineChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+};
+
+// 10. Area Chart
+const AreaChartModule = ({ modulo }) => {
+    if (!modulo.dados?.length) return null;
+    return (
+        <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
+            <div className="flex items-center gap-2.5 mb-6">
+                <div className="p-2 bg-indigo-50 rounded-lg">
+                    <Activity size={18} className="text-indigo-600" />
+                </div>
+                <div>
+                    <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo}</h3>
+                    {modulo.descricao && <p className="text-slate-400 text-xs mt-0.5">{modulo.descricao}</p>}
+                </div>
+            </div>
+            <div className="h-64 sm:h-72 mt-4 -ml-6 sm:ml-0">
+                <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={modulo.dados} margin={{ top: 5, right: 10, left: 10, bottom: 20 }}>
+                        <defs>
+                            <linearGradient id="areaColor" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Area type="monotone" dataKey="value" stroke="#6366f1" fillOpacity={1} fill="url(#areaColor)" strokeWidth={3} />
+                    </AreaChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+};
+
+// 11. Radar Chart
+const RadarChartModule = ({ modulo }) => {
+    if (!modulo.categorias?.length) return null;
+    return (
+        <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
+            <div className="flex items-center gap-2.5 mb-6">
+                <div className="p-2 bg-teal-50 rounded-lg">
+                    <Target size={18} className="text-teal-600" />
+                </div>
+                <div>
+                    <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo}</h3>
+                    {modulo.descricao && <p className="text-slate-400 text-xs mt-0.5">{modulo.descricao}</p>}
+                </div>
+            </div>
+            <div className="h-64 sm:h-80 w-full flex justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={modulo.categorias}>
+                        <PolarGrid stroke="#f1f5f9" />
+                        <PolarAngleAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }} />
+                        <PolarRadiusAxis angle={30} domain={[0, modulo.categorias[0]?.fullMark || 100]} tick={false} axisLine={false} />
+                        <Radar name={modulo.titulo} dataKey="value" stroke="#14b8a6" fill="#14b8a6" fillOpacity={0.4} strokeWidth={2} />
+                        <Tooltip />
+                    </RadarChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+};
+
+// 12. Progress List
+const ProgressListModule = ({ modulo }) => {
+    if (!modulo.itens?.length) return null;
+    return (
+        <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
+            <div className="flex items-center gap-2.5 mb-6">
+                <div className="p-2 bg-cyan-50 rounded-lg">
+                    <BarChart3 size={18} className="text-cyan-600" />
+                </div>
+                <div>
+                    <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo}</h3>
+                    {modulo.descricao && <p className="text-slate-400 text-xs mt-0.5">{modulo.descricao}</p>}
+                </div>
+            </div>
+            <div className="flex flex-col gap-4">
+                {modulo.itens.map((item, i) => (
+                    <div key={i} className="flex flex-col gap-1.5">
+                        <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
+                            <span>{item.label}</span>
+                            <span>{item.valor_texto || `${item.progresso}%`}</span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                            <div className="bg-cyan-500 h-2.5 rounded-full transition-all duration-1000" style={{ width: `${item.progresso}%` }}></div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+// 13. SWOT Analysis
+const SwotAnalysisModule = ({ modulo }) => {
+    return (
+        <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
+            <div className="flex items-center gap-2.5 mb-6">
+                <div className="p-2 bg-slate-100 rounded-lg">
+                    <LayoutGrid size={18} className="text-slate-700" />
+                </div>
+                <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo || "Análise SWOT"}</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-100">
+                    <h4 className="text-emerald-800 font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><CheckCircle2 size={16} /> Forças</h4>
+                    <ul className="list-disc pl-5 space-y-1 text-emerald-700 text-sm font-medium">
+                        {(modulo.forcas || []).map((f, i) => <li key={i}>{f}</li>)}
+                    </ul>
+                </div>
+                <div className="p-4 rounded-xl bg-rose-50 border border-rose-100">
+                    <h4 className="text-rose-800 font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><AlertTriangle size={16} /> Fraquezas</h4>
+                    <ul className="list-disc pl-5 space-y-1 text-rose-700 text-sm font-medium">
+                        {(modulo.fraquezas || []).map((f, i) => <li key={i}>{f}</li>)}
+                    </ul>
+                </div>
+                <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
+                    <h4 className="text-blue-800 font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><Lightbulb size={16} /> Oportunidades</h4>
+                    <ul className="list-disc pl-5 space-y-1 text-blue-700 text-sm font-medium">
+                        {(modulo.oportunidades || []).map((f, i) => <li key={i}>{f}</li>)}
+                    </ul>
+                </div>
+                <div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
+                    <h4 className="text-amber-800 font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><Zap size={16} /> Ameaças</h4>
+                    <ul className="list-disc pl-5 space-y-1 text-amber-700 text-sm font-medium">
+                        {(modulo.ameacas || []).map((f, i) => <li key={i}>{f}</li>)}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// 14. Sentiment Meter
+const SentimentMeterModule = ({ modulo }) => {
+    return (
+        <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
+            <div className="flex items-center gap-2.5 mb-6">
+                <div className="p-2 bg-pink-50 rounded-lg">
+                    <Star size={18} className="text-pink-600" />
+                </div>
+                <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo || "Análise de Sentimento"}</h3>
+            </div>
+            <div className="flex items-center justify-between gap-2 mb-2 text-xs font-bold uppercase tracking-widest">
+                <span className="text-emerald-500">Positivo {modulo.positivo}%</span>
+                <span className="text-slate-400">Neutro {modulo.neutro}%</span>
+                <span className="text-rose-500">Negativo {modulo.negativo}%</span>
+            </div>
+            <div className="w-full h-4 flex rounded-full overflow-hidden mb-4 bg-slate-100">
+                <div className="bg-emerald-500 h-full transition-all" style={{ width: `${modulo.positivo}%` }}></div>
+                <div className="bg-slate-300 h-full transition-all" style={{ width: `${modulo.neutro}%` }}></div>
+                <div className="bg-rose-500 h-full transition-all" style={{ width: `${modulo.negativo}%` }}></div>
+            </div>
+            {modulo.resumo && <p className="text-slate-600 text-sm text-center font-medium bg-slate-50 p-3 rounded-xl border border-slate-100">{modulo.resumo}</p>}
+        </div>
+    );
+};
+
+// 15. Action Steps
+const ActionStepsModule = ({ modulo }) => {
+    return (
+        <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
+            <div className="flex items-center gap-2.5 mb-6">
+                <div className="p-2 bg-orange-50 rounded-lg">
+                    <ArrowRight size={18} className="text-orange-600" />
+                </div>
+                <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo || "Plano de Ação"}</h3>
+            </div>
+            <div className="flex flex-col gap-4">
+                {(modulo.passos || []).map((passo, i) => (
+                    <div key={i} className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex-shrink-0 flex items-center justify-center font-black text-sm shadow-md">
+                            {passo.numero || (i + 1)}
+                        </div>
+                        <div className="flex-1 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <h4 className="text-slate-800 font-bold text-sm mb-1">{passo.titulo}</h4>
+                            <p className="text-slate-600 text-xs font-medium leading-relaxed">{passo.descricao}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+// 16. Highlight Quotes
+const HighlightQuotesModule = ({ modulo }) => {
+    return (
+        <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
+            <div className="flex items-center gap-2.5 mb-6">
+                <div className="p-2 bg-fuchsia-50 rounded-lg">
+                    <Star size={18} className="text-fuchsia-600" />
+                </div>
+                <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo || "Citações Destacadas"}</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(modulo.citacoes || []).map((cita, i) => (
+                    <div key={i} className="p-5 bg-white border border-fuchsia-100 rounded-[20px] shadow-sm relative">
+                        <div className="text-fuchsia-200 text-4xl font-serif absolute top-3 left-3 opacity-50">"</div>
+                        <p className="text-slate-700 italic font-medium text-sm mb-3 relative z-10 pl-4">"{cita.texto}"</p>
+                        <div className="flex justify-between items-end">
+                            <span className="text-slate-900 font-bold text-xs">— {cita.autor}</span>
+                            {cita.contexto && <span className="text-[10px] text-fuchsia-600 bg-fuchsia-50 px-2 py-1 rounded-md">{cita.contexto}</span>}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+// 17. Comparative Table
+const ComparativeTableModule = ({ modulo }) => {
+    return (
+        <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50 overflow-x-auto">
+            <div className="flex items-center gap-2.5 mb-6">
+                <div className="p-2 bg-indigo-50 rounded-lg">
+                    <LayoutGrid size={18} className="text-indigo-600" />
+                </div>
+                <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo || "Comparativo"}</h3>
+            </div>
+            <div className="w-full overflow-x-auto">
+                <table className="w-full min-w-[500px] text-left border-collapse">
+                    <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold text-xs uppercase tracking-wider">
+                            {(modulo.colunas || []).map((col, i) => <th key={i} className="p-3 whitespace-nowrap">{col}</th>)}
+                        </tr>
+                    </thead>
+                    <tbody className="text-sm font-medium text-slate-700">
+                        {(modulo.linhas || []).map((linha, i) => (
+                            <tr key={i} className="border-b border-slate-100 hover:bg-slate-50/50">
+                                {linha.map((celula, j) => <td key={j} className="p-3">{celula}</td>)}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};
+
+// 18. Key Value List
+const KeyValueListModule = ({ modulo }) => {
+    return (
+        <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
+            <div className="flex items-center gap-2.5 mb-6">
+                <div className="p-2 bg-emerald-50 rounded-lg">
+                    <Info size={18} className="text-emerald-600" />
+                </div>
+                <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo || "Detalhes"}</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {(modulo.itens || []).map((item, i) => (
+                    <div key={i} className="flex justify-between items-center p-4 rounded-xl bg-slate-50 border border-slate-100">
+                        <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">{item.chave}</span>
+                        <span className="text-slate-900 font-black text-sm bg-white px-3 py-1 rounded-lg shadow-sm border border-slate-200">{item.valor}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 
 // ─── RENDERIZADOR DINÂMICO ────────────────────────────────────────────────────
 const ModuleRenderer = ({ modulo, index }) => {
@@ -429,6 +756,16 @@ const ModuleRenderer = ({ modulo, index }) => {
             case 'insight_cards': return <InsightCardsModule modulo={modulo} />;
             case 'text_section': return <TextSectionModule modulo={modulo} />;
             case 'timeline_events': return <TimelineEventsModule modulo={modulo} />;
+            case 'line_chart': return <LineChartModule modulo={modulo} />;
+            case 'area_chart': return <AreaChartModule modulo={modulo} />;
+            case 'radar_chart': return <RadarChartModule modulo={modulo} />;
+            case 'progress_list': return <ProgressListModule modulo={modulo} />;
+            case 'swot_analysis': return <SwotAnalysisModule modulo={modulo} />;
+            case 'sentiment_meter': return <SentimentMeterModule modulo={modulo} />;
+            case 'action_steps': return <ActionStepsModule modulo={modulo} />;
+            case 'highlight_quotes': return <HighlightQuotesModule modulo={modulo} />;
+            case 'comparative_table': return <ComparativeTableModule modulo={modulo} />;
+            case 'key_value_list': return <KeyValueListModule modulo={modulo} />;
             default:
                 return (
                     <div className="rounded-2xl p-4" style={{ background: 'rgba(248,250,255,0.8)' }}>
@@ -648,7 +985,7 @@ const AIAnalyzer = ({ onAnalyze, isLoading, analysis, error }) => {
 
             {/* Loading placeholder */}
             {isLoading && (
-                <div className="py-16 flex flex-col items-center justify-center gap-6 animate-pulse">
+                <div className="py-16 flex flex-col items-center justify-center gap-6 animate-pulse h-[600px]">
                     <div className="relative">
                         <div className="w-16 h-16 rounded-3xl bg-blue-50 flex items-center justify-center">
                             <Brain size={32} className="text-blue-600" />

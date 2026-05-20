@@ -5,6 +5,7 @@ import json
 import asyncio
 import pytz
 import re
+import os
 from typing import Optional, List, Dict, Any
 from collections.abc import Set
 from datetime import datetime, timezone
@@ -37,36 +38,39 @@ class GeminiService:
             raise ValueError("A lista de GOOGLE_API_KEYS não pode estar vazia.")
             
         self.current_key_index = 0
-        # TABELA DE PREÇOS (NORMALIZADA PARA GEMINI 2.5 FLASH)
-        # Referência: Gemini 2.5 Flash (Input $0.30, Output $2.50 por 1M tokens)
-        # Os multiplicadores transformam tokens em "Unidades de Custo Flash (Input)"
-        self.model_pricing = {
-            "gemini-2.5-flash": {
-                "input": 1.0,
-                "output": 2.50 / 0.30  # ~8.33
-            },
-            "gemini-2.5-flash-lite": {
-                "input": 0.10 / 0.30,  # ~0.33
-                "output": 0.40 / 0.30   # ~1.33
-            },
-            "gemini-2.5-pro": {
-                "input": 1.25 / 0.30,  # ~4.17
-                "output": 10.00 / 0.30  # ~33.33
-            },
-            "gemini-3.1-pro-preview": {
-                "input": 2.00 / 0.30,  # ~6.67
-                "output": 12.00 / 0.30  # ~40.0
-            },
-            "gemini-3.1-flash-lite-preview": {
-                "input": 0.25 / 0.30,  # ~0.83
-                "output": 1.50 / 0.30   # ~5.0
-            },
-            "gemini-3-flash-preview": {
-                "input": 0.50 / 0.30,  # ~1.67
-                "output": 3.00 / 0.30   # ~10.0
-            }
-        }
         
+        # Carregar tabela de preços do arquivo models.js (Duplicado no Backend)
+        self.model_pricing = {}
+        try:
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            models_js_path = os.path.normpath(os.path.join(current_dir, "../constants/models.js"))
+            
+            with open(models_js_path, "r", encoding="utf-8") as f:
+                content = f.read()
+                
+            match = re.search(r'export const LLM_MODELS = (\[.*?\]);', content, re.DOTALL)
+            if match:
+                models_data = json.loads(match.group(1))
+                base_flash = 0.30 # Gemini 2.5 Flash Input Text
+                
+                for model in models_data:
+                    m_id = model["id"]
+                    pricing = model.get("pricing", {})
+                    
+                    self.model_pricing[m_id] = {
+                        "input_text": pricing.get("input_text", 0.30) / base_flash,
+                        "input_audio": pricing.get("input_audio", 0.30) / base_flash,
+                        "output": pricing.get("output", 2.50) / base_flash
+                    }
+                logger.info(f"✅ Tabela de preços carregada de models.js: {len(self.model_pricing)} modelos.")
+            else:
+                raise ValueError("Array LLM_MODELS não encontrado em models.js")
+        except Exception as e:
+            logger.error(f"🚨 Erro ao ler tabela de preços do models.js: {e}")
+            # Fallback seguro
+            self.model_pricing = {
+                "gemini-2.5-flash": { "input_text": 1.0, "input_audio": 1.0 / 0.30, "output": 2.50 / 0.30 }
+            }
         self._initialize_model()
 
     def _initialize_model(self):
@@ -110,6 +114,7 @@ class GeminiService:
         db: AsyncSession, 
         user: models.User, 
         is_media: bool = False,
+        media_type: str = "text",
         system_instruction: Optional[str] = None,
         atendimento_id: Optional[int] = None,
         persona: Optional[models.Config] = None
@@ -145,7 +150,8 @@ class GeminiService:
         # --- DEBUG: PRINT PROMPT ---
         try:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            debug_msg = f"\n{'='*20} PROMPT ENVIADO PARA IA [{timestamp}] {'='*20}\n"
+            at_str = f" ATENDIMENTO {atendimento_id}" if atendimento_id else ""
+            debug_msg = f"\n{'='*20} PROMPT ENVIADO PARA IA{at_str} [{timestamp}] {'='*20}\n"
             
             if system_instruction:
                 debug_msg += f"--- SYSTEM INSTRUCTION ---\n{system_instruction}\n{'-'*30}\n"
@@ -207,10 +213,14 @@ class GeminiService:
                         output_tokens = usage_metadata.candidates_token_count
                         
                         # Recupera multiplicadores para o modelo usado
-                        pricing = self.model_pricing.get(model_name, self.model_pricing["gemini-2.5-flash"])
+                        pricing = self.model_pricing.get(model_name, self.model_pricing.get("gemini-2.5-flash", {"input_text": 1.0, "input_audio": 3.33, "output": 8.33}))
+                        
+                        # Determina se é áudio ou texto
+                        input_multiplier = pricing.get("input_audio", pricing.get("input_text", 1.0)) if media_type == "audio" else pricing.get("input_text", 1.0)
+                        output_multiplier = pricing.get("output", 8.33)
                         
                         # Calcula o custo equivalente em "tokens de input do Gemini 2.5 Flash"
-                        equivalent_total_tokens = (input_tokens * pricing["input"]) + (output_tokens * pricing["output"])
+                        equivalent_total_tokens = (input_tokens * input_multiplier) + (output_tokens * output_multiplier)
                         
                         # Arredonda para o inteiro mais próximo para dedução
                         tokens_to_deduct = round(equivalent_total_tokens)
@@ -320,10 +330,15 @@ class GeminiService:
             prompt_contents = [prompt_text, media_part]
 
         # --- 3. CHAMADA À API ---
+        media_type_arg = "audio" if ('audio' in mime_type or 'mpeg' in mime_type or 'ogg' in mime_type) else "image"
+        
         try:
             # Passamos a lista (texto + mídia) para o método que criamos anteriormente
             # O _generate_with_retry já está preparado para receber 'prompt' como string OU lista
-            response = await self._generate_with_retry(prompt_contents, db, user, is_media=True, system_instruction=system_instruction, atendimento_id=atendimento_id, persona=persona)
+            response = await self._generate_with_retry(
+                prompt_contents, db, user, is_media=True, media_type=media_type_arg, 
+                system_instruction=system_instruction, atendimento_id=atendimento_id, persona=persona
+            )
             
             transcription = response.text.strip()
             logger.info(f"Transcrição/Análise gerada: '{transcription[:100]}...'")
@@ -886,14 +901,25 @@ class GeminiService:
             f"Você decide QUAIS módulos usar e em QUE ORDEM, dependendo do que os dados revelam.\n"
             f"Use os componentes mais adequados para cada tipo de informação.\n\n"
             f"### CATÁLOGO DE COMPONENTES DISPONÍVEIS:\n\n"
-            f"**1. hero_stat** - Destaque para uma métrica principal de impacto. Requer valor, label, descrição e tendência.\n"
-            f"**2. metric_grid** - Grade para exibição de múltiplos KPIs. Requer título e lista de métricas com label, valor, ícone e cor.\n"
-            f"**3. pie_chart** - Gráfico para distribuições proporcionais. Requer título, descrição e lista de dados com nome e valor.\n"
-            f"**4. bar_chart** - Gráfico para comparações e rankings. Requer título, descrição, identificação do eixo X e lista de dados.\n"
-            f"**5. friction_cards** - Listagem de gargalos e pontos de atrito. Requer área, observações técnicas detalhadas, nível de impacto e lista de contatos afetados.\n"
-            f"**6. insight_cards** - Sugestões estratégicas e ações recomendadas. Requer título, descrição acionável, prioridade e ícone representativo.\n"
-            f"**7. text_section** - Seção para diagnósticos narrativos e conclusões. Requer título, conteúdo analítico e estilo da seção.\n"
-            f"**8. timeline_events** - Registro cronológico de eventos notáveis. Requer título e lista de eventos com identificador, data, descrição e tipo.\n\n"
+            f"Cada módulo selecionado DEVE ter a propriedade 'tipo' indicando qual componente renderizar.\n\n"
+            f"**1. tipo: 'hero_stat'** - Destaque para uma métrica principal de impacto. Requer valor, label, descricao e tendencia (alta/baixa/neutro).\n"
+            f"**2. tipo: 'metric_grid'** - Grade para exibição de múltiplos KPIs. Requer titulo e lista de metricas com label, valor, icone e cor.\n"
+            f"**3. tipo: 'pie_chart'** - Gráfico para distribuições proporcionais. Requer titulo, descricao e lista de dados com name e value.\n"
+            f"**4. tipo: 'bar_chart'** - Gráfico para comparações e rankings. Requer titulo, descricao, eixo_x e lista de dados com name e value.\n"
+            f"**5. tipo: 'friction_cards'** - Listagem de gargalos e pontos de atrito. Requer titulo e lista de itens com area, observacoes, impacto (OBRIGATORIAMENTE 'Alto', 'Médio' ou 'Baixo') e contatos_exemplo.\n"
+            f"**6. tipo: 'insight_cards'** - Sugestões estratégicas e ações recomendadas. Requer titulo e lista de itens com titulo, descricao, prioridade e icone.\n"
+            f"**7. tipo: 'text_section'** - Seção para diagnósticos narrativos e conclusões. Requer titulo, conteudo e estilo.\n"
+            f"**8. tipo: 'timeline_events'** - Registro cronológico de eventos notáveis. Requer titulo e lista de eventos com id, data, descricao e tipo.\n"
+            f"**9. tipo: 'line_chart'** - Gráfico de linha para evolução temporal. Requer titulo, descricao e lista de dados com name e value.\n"
+            f"**10. tipo: 'area_chart'** - Gráfico de área para volume ao longo do tempo. Requer titulo, descricao e lista de dados com name e value.\n"
+            f"**11. tipo: 'radar_chart'** - Gráfico de radar para múltiplas dimensões (ex: habilidades, qualidade). Requer titulo, descricao e lista de categorias com name, value e fullMark (valor máximo).\n"
+            f"**12. tipo: 'progress_list'** - Lista de itens com barra de progresso. Requer titulo, descricao e lista de itens com label, progresso (0-100) e valor_texto.\n"
+            f"**13. tipo: 'swot_analysis'** - Matriz SWOT. Requer titulo e listas de strings para forcas, fraquezas, oportunidades e ameacas.\n"
+            f"**14. tipo: 'sentiment_meter'** - Medidor de sentimento geral. Requer titulo, porcentagens de positivo, neutro, negativo e um resumo string.\n"
+            f"**15. tipo: 'action_steps'** - Passo a passo numerado para plano de ação. Requer titulo e lista de passos com numero, titulo e descricao.\n"
+            f"**16. tipo: 'highlight_quotes'** - Citações destacadas de clientes. Requer titulo e lista de citacoes com autor, texto e contexto.\n"
+            f"**17. tipo: 'comparative_table'** - Tabela de comparação. Requer titulo, lista de colunas (strings) e matriz de linhas (lista de listas de strings).\n"
+            f"**18. tipo: 'key_value_list'** - Lista de propriedades chave/valor detalhada. Requer titulo e lista de itens com chave e valor.\n\n"
             f"### REGRAS DE USO:\n"
             f"1. Inclua obrigatoriamente componentes de destaque (hero_stat ou metric_grid) que respondam à pergunta inicial.\n"
             f"2. Utilize representações gráficas sempre que os dados permitirem cálculos de proporção ou comparação.\n"
@@ -903,9 +929,12 @@ class GeminiService:
             f"6. Limite a resposta a no máximo seis componentes para garantir a objetividade.\n\n"
             f"### FORMATO FINAL DO JSON:\n"
             f'{{\n'
-            f'  "resposta_direta": Resposta objetiva à pergunta,\n'
+            f'  "resposta_direta": "Resposta objetiva à pergunta",\n'
             f'  "modulos": [\n'
-            f'    {{ Lista de componentes selecionados }}\n'
+            f'    {{\n'
+            f'      "tipo": "nome_do_componente",\n'
+            f'      "...": "campos requeridos pelo componente"\n'
+            f'    }}\n'
             f'  ]\n'
             f'}}'
         )
@@ -985,7 +1014,8 @@ class GeminiService:
         current_instructions: str,
         db: AsyncSession,
         user: models.User,
-        current_workflow: Optional[dict] = None
+        current_workflow: Optional[dict] = None,
+        atendimento_id: Optional[int] = None
     ) -> dict:
         """
         Analisa um atendimento com base no feedback humano e sugere correções nas instruções.
@@ -1005,36 +1035,23 @@ class GeminiService:
             "B) PLANILHA DE RAG (BASE DE CONHECIMENTO): Armazena dados técnicos e informações de suporte.\n"
             "C) FLUXO VISUAL (WORKFLOW): Estrutura JSON que define estados (nodes) e transições (edges).\n\n"
             "EDIÇÃO DO FLUXO VISUAL (WORKFLOW):\n"
-            "Altere o novo_workflow caso o feedback exija mudanças na estrutura da conversa.\n"
-            "- Nodes (Etapas): Devem possuir identificador único sem espaços, tipo customizado, coordenadas de posição e dados contendo título e descrição da fase.\n"
-            "- Edges (Transições): Devem conectar os nodes obrigatoriamente através de sourceHandle e targetHandle. "
-            "Utilize os conectores direcionais disponíveis (top, bot, left, right) prefixados por s- para saída e t- para entrada. "
-            "Configure os conectores de modo a manter uma visualização lógica e organizada.\n"
-            "- Posição Visual: Organize os elementos de forma hierárquica. Mantenha distanciamento adequado entre os cartões para evitar sobreposição visual.\n"
-            "- Consistência: Verifique se todos os IDs de origem e destino nas transições existem na lista de nós.\n"
-            "- Manipulação: Adicione, remova ou reconecte etapas conforme necessário para otimizar o funil de atendimento.\n\n"
+            "Altere o novo_workflow APENAS caso o feedback exija mudanças estruturais profundas na conversa.\n"
+            "Caso contrário, retorne novo_workflow como null.\n"
+            "- Nodes (Etapas): Devem possuir identificador único sem espaços.\n"
+            "- Edges (Transições): Devem conectar os nodes obrigatoriamente através de sourceHandle e targetHandle.\n\n"
             "TAREFA:\n"
             "Proponha atualizações na PLANILHA DE SISTEMA, na PLANILHA DE RAG e, se necessário, no FLUXO VISUAL.\n"
-            "Assegure que as novas diretrizes sejam completas, tecnicamente precisas e que valor_novo contenha o texto integral da regra.\n\n"
+            "Assegure que as novas diretrizes sejam completas e tecnicamente precisas.\n\n"
             "Retorne ESTRITAMENTE em formato JSON:\n"
             "{\n"
             '  "analise_geral": Explicação do erro e da solução proposta,\n'
-            '  "alteracoes_planilha": [\n'
-            '    {\n'
-            '      "aba": Identificação da aba,\n'
-            '      "coluna_1": Cabeçalho da coluna,\n'
-            '      "valor_antigo": Conteúdo anterior,\n'
-            '      "valor_novo": Nova diretriz lógica,\n'
-            '      "acao": substituir ou adicionar,\n'
-            '      "motivo": Justificativa técnica\n'
-            '    }\n'
-            '  ],\n'
-            '  "alteracoes_rag": [ Lista de mudanças na base de conhecimento ],\n'
-            '  "novo_workflow": { "nodes": [ Estrutura de nós ], "edges": [ Estrutura de conexões ] }\n'
+            '  "alteracoes_planilha": [ ... ],\n'
+            '  "alteracoes_rag": [ ... ],\n'
+            '  "novo_workflow": { "nodes": [], "edges": [] } ou null\n'
             "}"
         )
 
-        wf_str = json.dumps(current_workflow, ensure_ascii=False, indent=2) if current_workflow else "Nenhum fluxo visual mapeado atualmente na persona. Sinta-se livre para criar o funil do zero se o feedback solicitar abordagens em etapas."
+        wf_str = json.dumps(current_workflow, ensure_ascii=False, indent=2) if current_workflow else "Nenhum fluxo visual mapeado atualmente."
 
         prompt_text = (
             f"### FEEDBACK DO SUPERVISOR HUMANO\n"
@@ -1043,11 +1060,11 @@ class GeminiService:
             f"{history_str}\n\n"
             f"### CONTEXTO DA BASE DE CONHECIMENTO (RAG) DA SESSÃO\n"
             f"{rag_context if rag_context else 'Nenhum contexto RAG acionado.'}\n\n"
-            f"### INSTRUÇÕES ATUAIS DA (PLANILHA DE SISTEMA)\n"
+            f"### INSTRUÇÕES ATUAIS\n"
             f"{current_instructions}\n\n"
-            f"### FLUXO VISUAL ATUAL (WORKFLOW JSON)\n"
+            f"### FLUXO VISUAL ATUAL\n"
             f"{wf_str}\n\n"
-            f"Analise o contexto e gere as atualizações necessárias ESTRITAMENTE em formato JSON perfeitamente válido."
+            f"Analise o contexto e gere as atualizações necessárias ESTRITAMENTE em formato JSON perfeitamente válido. Seja objetivo para evitar latência."
         )
 
         try:
@@ -1055,9 +1072,11 @@ class GeminiService:
                 prompt=prompt_text,
                 db=db,
                 user=user,
-                system_instruction=system_instruction
+                system_instruction=system_instruction,
+                atendimento_id=atendimento_id
             )
             return self._parse_json_response(response.text)
+
         except Exception as e:
             logger.error(f"Erro ao analisar feedback com IA: {e}")
             return {

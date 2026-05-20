@@ -1,4 +1,4 @@
-// src/constants/models.js
+// backend/app/constants/models.js
 
 export const LLM_MODELS = [
     { "id": "gemini-3.5-flash", "name": "Gemini 3.5 Flash", "pricing": { "input_text": 1.50, "input_audio": 1.50, "output": 9.00 } },

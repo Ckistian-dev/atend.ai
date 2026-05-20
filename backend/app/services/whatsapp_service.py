@@ -11,6 +11,7 @@ from app.services.security import decrypt_token
 from app.db import models
 import subprocess
 import mimetypes
+import io
 
 logger = logging.getLogger(__name__)
 
@@ -185,6 +186,33 @@ class WhatsAppService:
                 raise MessageSendError(f"WBP: Erro inesperado envio: {e}") from e
         raise MessageSendError(f"WBP: Falha no envio para {clean_to_number} após {max_retries} tentativas. Último erro: {last_exception}")
 
+    def _guess_mimetype_from_bytes(self, file_bytes: bytes) -> Optional[str]:
+        """Tenta adivinhar o mimetype a partir dos bytes iniciais (magic numbers)."""
+        if not file_bytes:
+            return None
+        
+        # Assinaturas comuns
+        if file_bytes.startswith(b'\xff\xd8\xff'):
+            return 'image/jpeg'
+        if file_bytes.startswith(b'\x89PNG\r\n\x1a\n'):
+            return 'image/png'
+        if file_bytes.startswith(b'GIF87a') or file_bytes.startswith(b'GIF89a'):
+            return 'image/gif'
+        if file_bytes.startswith(b'%PDF'):
+            return 'application/pdf'
+        if file_bytes.startswith(b'ID3') or file_bytes.startswith(b'\xff\xfb') or file_bytes.startswith(b'\xff\xf3') or file_bytes.startswith(b'\xff\xf2'):
+            return 'audio/mpeg'
+        if file_bytes.startswith(b'OggS'):
+            return 'audio/ogg'
+        if file_bytes.startswith(b'RIFF') and len(file_bytes) > 12 and file_bytes[8:12] == b'WAVE':
+            return 'audio/wav'
+        if file_bytes.startswith(b'RIFF') and len(file_bytes) > 12 and file_bytes[8:12] == b'AVI ':
+            return 'video/x-msvideo'
+        if file_bytes.startswith(b'\x00\x00\x00\x18ftyp') or file_bytes.startswith(b'\x00\x00\x00\x20ftyp'):
+            return 'video/mp4'
+        
+        return None
+
     async def _upload_media_official(
         self, 
         phone_number_id: str, 
@@ -241,19 +269,56 @@ class WhatsAppService:
         elif media_type == 'image':
             logger.info(f"WBP: Processando imagem ({filename}, {mimetype}) para garantir orientação e compatibilidade.")
             try:
+                # Tenta adivinhar o mimetype real se for genérico
+                if mimetype in ['application/octet-stream', None]:
+                    detected_mime = self._guess_mimetype_from_bytes(file_bytes)
+                    if detected_mime:
+                        logger.info(f"WBP: Mimetype detectado via bytes: {detected_mime}")
+                        mimetype = detected_mime
+                        final_mimetype = detected_mime
+
                 with tempfile.TemporaryDirectory() as temp_dir:
-                    input_ext = os.path.splitext(filename)[1] or '.bin'
-                    input_path = os.path.join(temp_dir, f"{uuid.uuid4()}{input_ext}")
+                    input_ext = os.path.splitext(filename)[1]
+                    if not input_ext:
+                        # Se não tem extensão, usa uma baseada no mimetype detectado ou .tmp
+                        if 'jpeg' in mimetype or 'jpg' in mimetype: input_ext = '.jpg'
+                        elif 'png' in mimetype: input_ext = '.png'
+                        else: input_ext = '.tmp'
                     
-                    # Saída agora é .jpeg
+                    input_path = os.path.join(temp_dir, f"{uuid.uuid4()}{input_ext}")
                     output_path = os.path.join(temp_dir, f"{uuid.uuid4()}.jpeg")
                     
                     with open(input_path, "wb") as f:
                         f.write(file_bytes)
                     
                     # Processamento de imagem: preserva orientação e converte para JPEG
-                    command = ["ffmpeg", "-y", "-autorotate", "-i", input_path, "-pix_fmt", "yuvj420p", "-q:v", "2", output_path]
-                    await asyncio.to_thread(subprocess.run, command, capture_output=True, check=True, text=True, encoding='utf-8')
+                    # Adicionado: -f image2 se for um arquivo sem extensão clara para ajudar o ffmpeg
+                    command = ["ffmpeg", "-y"]
+                    if input_ext == '.tmp':
+                        # Se não sabemos o formato, tentamos forçar o probe
+                        command.extend(["-f", "image2pipe" if mimetype == 'application/octet-stream' else "image2"])
+                    
+                    command.extend(["-autorotate", "-i", input_path, "-pix_fmt", "yuvj420p", "-q:v", "2", output_path])
+                    
+                    logger.debug(f"WBP: Rodando FFmpeg para imagem: {' '.join(command)}")
+                    
+                    # Removido text=True e encoding para evitar problemas com outputs binários inesperados no stderr
+                    process = await asyncio.to_thread(
+                        subprocess.run, 
+                        command, 
+                        capture_output=True, 
+                        check=False # Check=False para tratar o erro manualmente
+                    )
+                    
+                    if process.returncode != 0:
+                        stderr = process.stderr.decode('utf-8', errors='ignore')
+                        logger.error(f"WBP: FFmpeg falhou (code {process.returncode}). Stderr: {stderr}")
+                        
+                        # Se o FFmpeg falhar e não soubermos se é imagem, tentamos enviar como documento
+                        if 'image' not in (mimetype or ''):
+                            logger.warning("WBP: Arquivo não parece ser uma imagem válida. Alterando tipo para 'document'.")
+                            return await self._upload_media_official(phone_number_id, access_token, file_bytes, mimetype or 'application/octet-stream', filename, 'document')
+                        raise subprocess.CalledProcessError(process.returncode, command, output=process.stdout, stderr=process.stderr)
                     
                     with open(output_path, "rb") as f:
                         converted_bytes = f.read()
@@ -268,11 +333,16 @@ class WhatsAppService:
                     logger.info(f"WBP: Conversão para JPEG concluída ({len(final_file_bytes)} bytes).")
 
             except Exception as conv_e:
-                logger.error(f"WBP: Falha CRÍTICA na conversão para JPEG: {conv_e}", exc_info=True)
-                logger.warning("WBP: Tentando enviar imagem original (pode falhar)...")
+                logger.error(f"WBP: Falha na conversão para JPEG: {conv_e}")
+                logger.warning("WBP: Tentando enviar mídia original como backup...")
                 final_file_bytes = file_bytes
-                final_mimetype = mimetype
+                final_mimetype = mimetype or 'application/octet-stream'
                 final_filename = filename
+                
+                # Se falhou como imagem e o mimetype é suspeito, tentamos forçar 'document' no upload real
+                if media_type == 'image' and final_mimetype == 'application/octet-stream':
+                     logger.warning("WBP: Forçando 'document' para o upload de fallback para evitar erro 400 da Meta.")
+                     media_type = 'document'
         # --- FIM DA LÓGICA DE CONVERSÃO ---
         
         url = f"{self.wbp_graph_url_base}/{self.wbp_api_version}/{phone_number_id}/media"
@@ -479,11 +549,19 @@ class WhatsAppService:
                 media_type = 'document'
 
         # Tenta adivinhar o mimetype se não for fornecido
-        if not mimetype:
-            mimetype, _ = mimetypes.guess_type(filename)
-            if not mimetype:
-                mimetype = 'application/octet-stream' # Fallback
-                logger.warning(f"Não foi possível adivinhar o mimetype de {filename}, usando {mimetype}.")
+        if not mimetype or mimetype == 'application/octet-stream':
+            # Tenta via extensão primeiro
+            guessed_mime, _ = mimetypes.guess_type(filename)
+            if guessed_mime:
+                mimetype = guessed_mime
+            else:
+                # Tenta via bytes se a extensão falhar
+                mimetype = self._guess_mimetype_from_bytes(file_bytes)
+                if not mimetype:
+                    mimetype = 'application/octet-stream' # Fallback
+                    logger.warning(f"Não foi possível adivinhar o mimetype de {filename}, usando {mimetype}.")
+                else:
+                    logger.info(f"Mimetype adivinhado via bytes para {filename}: {mimetype}")
 
         try:
             if not user.wbp_phone_number_id:
