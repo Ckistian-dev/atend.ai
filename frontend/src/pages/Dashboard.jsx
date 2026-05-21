@@ -1064,12 +1064,11 @@ const StatCard = ({ icon, label, value, gradient, delay = 0 }) => {
 
 // ─── DATE RANGE FILTER ────────────────────────────────────────────────────────
 const DateRangeFilter = ({ onDateChange }) => {
-    const [active, setActive] = useState('1d');
+    const [active, setActive] = useState('7d');
     const [customRange, setCustomRange] = useState([subDays(new Date(), 30), new Date()]);
     const [showPicker, setShowPicker] = useState(false);
 
     const ranges = {
-        '1d': { label: 'Hoje' },
         '7d': { label: '7 D' },
         '30d': { label: '30 D' },
         'this_month': { label: 'Este Mês' },
@@ -1085,7 +1084,7 @@ const DateRangeFilter = ({ onDateChange }) => {
         } else if (key === 'custom') {
             setShowPicker(s => !s); return;
         } else {
-            const days = { '1d': 1, '7d': 7, '30d': 30 };
+            const days = { '7d': 7, '30d': 30 };
             start = subDays(end, days[key]); setShowPicker(false);
         }
         onDateChange(start, end);
@@ -1131,7 +1130,7 @@ const Dashboard = () => {
     const [data, setData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
-    const [dateRange, setDateRange] = useState({ startDate: subDays(new Date(), 1), endDate: new Date() });
+    const [dateRange, setDateRange] = useState({ startDate: subDays(new Date(), 7), endDate: new Date() });
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState(null);
     const [analysisError, setAnalysisError] = useState('');
@@ -1152,7 +1151,7 @@ const Dashboard = () => {
         } finally { setIsLoading(false); }
     }, []);
 
-    useEffect(() => { fetchData(subDays(new Date(), 1), new Date()); }, [fetchData]);
+    useEffect(() => { fetchData(subDays(new Date(), 7), new Date()); }, [fetchData]);
 
     const handleDateChange = (startDate, endDate) => {
         setDateRange({ startDate, endDate }); fetchData(startDate, endDate);

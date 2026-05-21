@@ -79,7 +79,7 @@ const AudioPlayer = ({ atendimentoId, mediaId, transcription, isAssistant }) => 
         // --- ALTERADO: Adicionada a ref ao container principal e min-width para evitar colapso ---
         <div
             ref={playerRef}
-            className="space-y-2 p-1 rounded-xl transition-all duration-300 min-w-[260px] md:min-w-[300px] bg-white/50 backdrop-blur-sm shadow-sm"
+            className="space-y-2 p-1 rounded-xl transition-all duration-300 min-w-[200px] w-full max-w-[260px] md:max-w-[300px] bg-white/50 backdrop-blur-sm shadow-sm"
         >
             <div className="w-full h-11 flex items-center">
                 {loadState === 'loading' || loadState === 'idle' ? (
@@ -102,7 +102,7 @@ const AudioPlayer = ({ atendimentoId, mediaId, transcription, isAssistant }) => 
 
             {transcription && (
                 <div className={`pt-2 border-t ${isAssistant ? 'border-white/10' : 'border-slate-200/60'}`}>
-                    <p className={`text-[13px] leading-relaxed font-medium italic ${isAssistant ? 'text-white/90' : 'text-slate-600'}`}>
+                    <p className={`text-[13px] leading-relaxed font-medium italic break-words ${isAssistant ? 'text-white/90' : 'text-slate-600'}`}>
                         "{transcription}"
                     </p>
                 </div>

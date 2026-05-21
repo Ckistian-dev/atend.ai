@@ -75,17 +75,17 @@ const VideoDisplayer = ({ atendimentoId, mediaId, caption }) => {
     );
 
     return (
-        <div ref={displayerRef} className="space-y-3 w-[280px] sm:w-[320px] md:w-[360px]">
+        <div ref={displayerRef} className="space-y-3 w-full max-w-[220px] sm:max-w-[280px] md:max-w-[360px]">
             <div className="relative aspect-[4/3] bg-black/5 rounded-[1.5rem] overflow-hidden shadow-2xl shadow-blue-900/5 cursor-pointer group border border-white/10" onClick={openModal}>
                 {(loadState === 'loading' || loadState === 'idle') && <MediaSkeleton />}
-                
+
                 {loadState === 'error' && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 text-red-300">
                         <AlertCircle size={24} />
                         <span className="text-[10px] font-black uppercase mt-2">Falha no carregamento</span>
                     </div>
                 )}
-                
+
                 {loadState === 'loaded' && videoSrc && (
                     <>
                         <video src={videoSrc} muted playsInline className="w-full h-full object-cover" />
@@ -106,11 +106,11 @@ const VideoDisplayer = ({ atendimentoId, mediaId, caption }) => {
             )}
 
             {isModalOpen && videoSrc && (
-                <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-2xl flex items-center justify-center z-[9999] p-4 md:p-10" onClick={closeModal}>
-                    <button onClick={closeModal} className="absolute top-10 right-10 w-12 h-12 flex items-center justify-center rounded-3xl bg-white/10 text-white hover:bg-white/20 transition-all">
+                <div className="fixed inset-[-25px] backdrop-blur-3xl bg-white/5 flex items-center justify-center z-[9999] p-4 sm:p-8" onClick={closeModal}>
+                    <button onClick={closeModal} className="absolute top-4 right-4 sm:top-8 sm:right-8 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-2xl sm:rounded-3xl bg-white/10 text-white hover:bg-white/20 transition-all z-[10000]">
                         <X size={24} />
                     </button>
-                    <video src={videoSrc} controls autoPlay className="max-w-full max-h-full rounded-3xl shadow-2xl shadow-black/50" onClick={(e) => e.stopPropagation()} />
+                    <video src={videoSrc} controls autoPlay className="max-w-[95vw] max-h-[90vh] rounded-2xl sm:rounded-3xl shadow-2xl shadow-black/50" onClick={(e) => e.stopPropagation()} />
                 </div>
             )}
         </div>

@@ -1274,48 +1274,48 @@ function Mensagens() {
 
             {/* --- MODIFICADO: Layout principal agora é flex horizontal --- */}
             {/* MAIN: JANELA DE CHAT (THE LOFT) */}
-            <main className={`${selectedAtendimento ? 'flex' : 'hidden md:flex'} flex-1 min-h-0 relative h-full`}>
+            <main className={`${selectedAtendimento ? 'flex' : 'hidden md:flex'} flex-1 min-w-0 min-h-0 relative h-full w-full max-w-full`}>
                 {selectedAtendimento ? (
-                    <div className="flex-1 flex min-h-0">
+                    <div className="flex-1 flex min-w-0 min-h-0 w-full max-w-full">
                         {/* THE CHAT CARD */}
-                        <div className="chat-center-card">
-                            <header className="chat-header-editorial flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
-                                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                        <div className="chat-center-card min-w-0 w-full max-w-full">
+                            <header className="chat-header-editorial flex items-center justify-between px-3 sm:px-6 py-2 sm:py-4 border-b border-white/40">
+                                <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
                                     {/* Botão de Voltar Mobile */}
                                     <button
                                         onClick={() => setSelectedAtendimento(null)}
-                                        className="md:hidden p-2 -ml-2 text-slate-400 hover:text-blue-600 transition-colors"
+                                        className="md:hidden p-1.5 -ml-1 text-slate-400 hover:text-blue-600 transition-colors shrink-0"
                                     >
                                         <ChevronLeft size={24} />
                                     </button>
 
-                                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 executive-title text-base sm:text-lg shrink-0">
+                                    <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 executive-title text-sm sm:text-lg shrink-0">
                                         {(selectedAtendimento.nome_contato || selectedAtendimento.whatsapp || '??').substring(0, 2).toUpperCase()}
                                     </div>
-                                    <div className="min-w-0 flex-1">
-                                        <h2 className="executive-title text-base sm:text-lg text-slate-900 leading-tight truncate">
+                                    <div className="min-w-0 flex-1 flex flex-col justify-center">
+                                        <h2 className="executive-title text-sm sm:text-lg text-slate-900 leading-tight truncate">
                                             {selectedAtendimento.nome_contato || selectedAtendimento.whatsapp}
                                         </h2>
-                                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1">
+                                        <div className="flex items-center gap-2 mt-0.5 sm:mt-1 overflow-x-auto no-scrollbar w-full mask-fade-right pr-4">
                                             <div className="flex items-center gap-1.5 shrink-0">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                                <p className="editorial-label text-[8px] sm:text-[9px]">Atendimento Ativo</p>
+                                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
+                                                <p className="editorial-label text-[8px] sm:text-[9px] whitespace-nowrap">Atendimento Ativo</p>
                                             </div>
 
                                             {/* HEADER TAGS */}
                                             {selectedAtendimento.tags && selectedAtendimento.tags.length > 0 && (
-                                                <div className="flex flex-wrap items-center gap-1.5 pt-0.5 sm:pt-0 sm:pl-3 sm:border-l border-slate-200">
+                                                <div className="flex items-center gap-1.5 pl-2 sm:pl-3 border-l border-slate-200 shrink-0">
                                                     {selectedAtendimento.tags.map((tag, idx) => (
                                                         <span
                                                             key={idx}
-                                                            className="px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md border shadow-sm flex items-center gap-1 transition-all hover:scale-105"
+                                                            className="px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md border shadow-sm flex items-center gap-1 transition-all shrink-0 whitespace-nowrap"
                                                             style={{
                                                                 backgroundColor: `${tag.color}10`,
                                                                 color: tag.color,
                                                                 borderColor: `${tag.color}30`
                                                             }}
                                                         >
-                                                            <div className="w-1 h-1 rounded-full" style={{ backgroundColor: tag.color }} />
+                                                            <div className="w-1 h-1 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
                                                             {tag.name}
                                                         </span>
                                                     ))}
@@ -1325,15 +1325,15 @@ function Mensagens() {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-1 text-slate-400">
-                                    <button onClick={() => setIsFeedbackModalOpen(true)} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white hover:text-blue-600 transition-all" title="IA Training">
-                                        <Wand2 size={20} />
+                                <div className="flex items-center gap-0 sm:gap-1 text-slate-400 shrink-0 ml-2">
+                                    <button onClick={() => setIsFeedbackModalOpen(true)} className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl hover:bg-white hover:text-blue-600 transition-all" title="IA Training">
+                                        <Wand2 size={18} className="sm:w-5 sm:h-5" />
                                     </button>
-                                    <button onClick={handleExportConversation} className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white hover:text-blue-600 transition-all" title="Exportar Log">
+                                    <button onClick={handleExportConversation} className="hidden sm:flex w-10 h-10 items-center justify-center rounded-xl hover:bg-white hover:text-blue-600 transition-all" title="Exportar Log">
                                         <Download size={20} />
                                     </button>
-                                    <button onClick={() => setIsProfileSidebarOpen(prev => !prev)} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${isProfileSidebarOpen ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'hover:bg-white hover:text-blue-600'}`} title="Dashboard de Lead">
-                                        <MoreVertical size={20} />
+                                    <button onClick={() => setIsProfileSidebarOpen(prev => !prev)} className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl transition-all ${isProfileSidebarOpen ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'hover:bg-white hover:text-blue-600'}`} title="Dashboard de Lead">
+                                        <MoreVertical size={18} className="sm:w-5 sm:h-5" />
                                     </button>
                                 </div>
                             </header>
