@@ -460,18 +460,18 @@ async def run_sync_drive(config_id: int, user_id: int, folder_id: str) -> int:
                             embedding=embedding
                         ))
 
-            # 3. Limpa vetores anteriores do Drive e salva os novos
-            async with db.begin():
-                await db.execute(delete(models.KnowledgeVector).where(
-                    models.KnowledgeVector.config_id == config_id,
-                    models.KnowledgeVector.origin.in_(["drive", "drive_content"])
-                ))
-                
-                if contextos_buffer:
-                    db.add_all(contextos_buffer)
+            # 3. Hard reset: limpa TODOS os vetores anteriores do Drive e salva os novos
+            logger.info(f"Drive sync: deletando vetores anteriores (origin='drive' e 'drive_content') para config_id={config_id}...")
+            await db.execute(delete(models.KnowledgeVector).where(
+                models.KnowledgeVector.config_id == config_id,
+                models.KnowledgeVector.origin.in_(["drive", "drive_content"])
+            ))
+            
+            if contextos_buffer:
+                db.add_all(contextos_buffer)
             
             await db.commit()
-            logger.info(f"Sincronização simplificada do Drive concluída! {len(contextos_buffer)} arquivos indexados.")
+            logger.info(f"Drive sync (hard reset) concluída! {len(contextos_buffer)} vetores novos indexados.")
             return len(contextos_buffer)
 
         except Exception as e:

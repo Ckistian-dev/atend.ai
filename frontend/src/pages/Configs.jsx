@@ -520,11 +520,7 @@ function Configs() {
             // Atualiza o form data localmente
             setFormData(prev => ({ ...prev, arquivos_drive_json: null }));
 
-            if (filesCount === 0) {
-                toast.success('Nenhum arquivo novo para sincronizar. Tudo já está atualizado!');
-            } else {
-                toast.success(`Sincronização concluída! ${filesCount} vetores adicionados ao RAG.`);
-            }
+            toast.success(`Sincronização (hard reset) concluída! ${filesCount} vetores regenerados no RAG.`);
         } catch (err) {
             setError(err.response?.data?.detail || 'Falha ao sincronizar Drive. Verifique o ID e o compartilhamento.');
         } finally {

@@ -353,24 +353,44 @@ class GeminiService:
         Gera embedding usando o modelo gemini-embedding-001.
         Força 768 dimensões para compatibilidade e eficiência.
         """
-        try:
-            # Usando RETRIEVAL_QUERY para otimizar a busca pela pergunta
-            embed_config = types.EmbedContentConfig(
-                task_type="RETRIEVAL_QUERY",
-                output_dimensionality=768
-            )
+        initial_key_index = self.current_key_index
+        max_attempts_per_key = 2
+        
+        embed_config = types.EmbedContentConfig(
+            task_type="RETRIEVAL_QUERY",
+            output_dimensionality=768
+        )
 
-            response = await self.client.aio.models.embed_content(
-                model="gemini-embedding-001",
-                contents=text,
-                config=embed_config
-            )
-            if response.embeddings:
-                return response.embeddings[0].values
-            return []
-        except Exception as e:
-            logger.error(f"Erro ao gerar embedding: {e}")
-            return []
+        while True:
+            for attempt in range(max_attempts_per_key):
+                try:
+                    response = await self.client.aio.models.embed_content(
+                        model="gemini-embedding-001",
+                        contents=text,
+                        config=embed_config
+                    )
+                    if response.embeddings:
+                        return response.embeddings[0].values
+                    return []
+                except Exception as e:
+                    error_str = str(e).lower()
+                    if "429" in error_str or "resource exhausted" in error_str or "quota" in error_str:
+                        logger.warning(
+                            f"Quota da API excedida (429) ao gerar embedding com a chave {self.current_key_index}. Rotacionando..."
+                        )
+                        break  # Sai do loop for para rotacionar a chave
+                    elif "blocked" in error_str or "invalid argument" in error_str:
+                        logger.error(f"Erro não recuperável na geração de embedding (bloqueio/argumento): {e}")
+                        return []
+                    else:
+                        logger.error(f"Erro inesperado na geração de embedding: {e}. Tentativa {attempt + 1}.")
+                        await asyncio.sleep(2)
+            
+            # Rotaciona a chave se saiu do loop
+            new_key_index = self._rotate_key()
+            if new_key_index == initial_key_index:
+                logger.critical(f"Todas as {len(self.api_keys)} chaves de API falharam ao gerar embedding.")
+                return []
 
     async def generate_embeddings_batch(self, texts: List[str], batch_size: int = 100) -> List[List[float]]:
         """
@@ -388,26 +408,55 @@ class GeminiService:
         # Mantemos o particionamento (batch) para evitar limites de payload muito grandes na API.
         for i in range(0, len(texts), batch_size):
             batch = texts[i:i + batch_size]
-            try:
-                response = await self.client.aio.models.embed_content(
-                    model="gemini-embedding-001",
-                    contents=batch,
-                    config=embed_config
-                )
-                
-                if response.embeddings:
-                    # Extrai os valores de cada embedding retornado, mantendo a ordem
-                    batch_embeddings = [e.values for e in response.embeddings]
-                    all_embeddings.extend(batch_embeddings)
-                else:
-                    logger.warning(f"Batch {i} retornou sem embeddings.")
-                    all_embeddings.extend([[] for _ in batch])
+            initial_key_index = self.current_key_index
+            max_attempts_per_key = 2
+            success = False
+            batch_embeddings = []
 
-            except Exception as e:
-                logger.error(f"Erro ao gerar embeddings em lote (índice {i}): {e}")
-                all_embeddings.extend([[] for _ in batch])
+            while not success:
+                for attempt in range(max_attempts_per_key):
+                    try:
+                        response = await self.client.aio.models.embed_content(
+                            model="gemini-embedding-001",
+                            contents=batch,
+                            config=embed_config
+                        )
+                        if response.embeddings:
+                            batch_embeddings = [e.values for e in response.embeddings]
+                        else:
+                            logger.warning(f"Batch {i} retornou sem embeddings.")
+                            batch_embeddings = [[] for _ in batch]
+                        success = True
+                        break
+                    except Exception as e:
+                        error_str = str(e).lower()
+                        if "429" in error_str or "resource exhausted" in error_str or "quota" in error_str:
+                            logger.warning(
+                                f"Quota da API excedida (429) ao gerar batch embeddings com a chave {self.current_key_index}. Rotacionando..."
+                            )
+                            break  # Sai do loop for para rotacionar a chave
+                        elif "blocked" in error_str or "invalid argument" in error_str:
+                            logger.error(f"Erro não recuperável na geração de batch embeddings (bloqueio/argumento): {e}")
+                            batch_embeddings = [[] for _ in batch]
+                            success = True
+                            break
+                        else:
+                            logger.error(f"Erro inesperado na geração de batch embeddings: {e}. Tentativa {attempt + 1}.")
+                            await asyncio.sleep(2)
+                
+                if success:
+                    break
+
+                new_key_index = self._rotate_key()
+                if new_key_index == initial_key_index:
+                    logger.critical(f"Todas as {len(self.api_keys)} chaves de API falharam ao gerar batch embeddings.")
+                    batch_embeddings = [[] for _ in batch]
+                    break
+
+            all_embeddings.extend(batch_embeddings)
         
         return all_embeddings
+
 
     async def _retrieve_rag_context(self, db: AsyncSession, config_id: int, query_text: str, limit: int = 10) -> str:
         """Busca contexto relevante na base vetorial (PGVector) usando similaridade de cosseno."""

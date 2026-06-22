@@ -176,6 +176,60 @@ class ProspectService:
                 db.add(atendimento)
                 await db.commit()
 
+            # --- LÓGICA DE GERAÇÃO AUTOMÁTICA DE TAGS DE REDIRECIONAMENTO ---
+            try:
+                # Busca o nome correspondente ao target_destination
+                dest_name = None
+                try:
+                    available_dests = await self.list_destinations(db, user)
+                    for d in available_dests:
+                        d_jid = d.get("remoteJid") or d.get("id")
+                        if d_jid == target_destination:
+                            dest_name = d.get("name") or d.get("subject")
+                            break
+                except Exception as lookup_err:
+                    logger.error(f"ProspectService: Erro ao buscar contatos do ProspectAI para obter nome: {lookup_err}")
+
+                # Fallback se não encontrar o nome
+                if not dest_name:
+                    dest_name = target_destination.split('@')[0] if '@' in target_destination else target_destination
+
+                dest_name = dest_name.strip()
+
+                # Busca todas as tags do usuário no banco para ver se o nome da tag já existe
+                from app.crud import crud_atendimento
+                all_tags = await crud_atendimento.get_all_user_tags(db, user.id)
+                
+                # Procura por uma tag com o mesmo nome (ignorando maiúsculas/minúsculas)
+                existing_tag = None
+                for t in all_tags:
+                    if t.get("name", "").lower() == dest_name.lower():
+                        existing_tag = t
+                        break
+
+                if existing_tag:
+                    # Se já existe, usamos a tag com a cor e nome já cadastrados (assim se o usuário mudou a cor, a integração respeita)
+                    tag_to_add = existing_tag
+                else:
+                    # Se não existe, cria com uma cor aleatória
+                    premium_colors = ["#144cd1", "#f0ad60", "#e5da61", "#5fd395", "#d569dd", "#3b82f6", "#ef4444", "#10b981", "#8b5cf6", "#f59e0b"]
+                    import random
+                    chosen_color = random.choice(premium_colors)
+                    tag_to_add = {"name": dest_name, "color": chosen_color}
+
+                # Atualiza as tags do atendimento
+                current_tags = list(atendimento.tags) if atendimento.tags else []
+                current_names = {t.get("name", "").lower() for t in current_tags if isinstance(t, dict)}
+
+                if dest_name.lower() not in current_names:
+                    current_tags.append(tag_to_add)
+                    atendimento.tags = current_tags
+                    db.add(atendimento)
+                    await db.commit()
+                    logger.info(f"ProspectService: Tag '{dest_name}' adicionada com sucesso ao atendimento ID {atendimento.id}")
+            except Exception as tag_err:
+                logger.error(f"ProspectService: Erro ao gerenciar tag de redirecionamento no atendimento ID {atendimento.id}: {tag_err}", exc_info=True)
+
         title = "🚀 *Novo Chamado!*" if is_new_status else "📩 *Nova Mensagem (Pendente)*"
         message = f"{title}\n\n*Cliente:* {atendimento.nome_contato or atendimento.whatsapp}\n*WhatsApp:* {atendimento.whatsapp}\n"
         if atendimento.resumo:
