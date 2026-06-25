@@ -525,6 +525,25 @@ function Mensagens() {
         setLimit(hasPopoverFilters ? 20 : 20);
     }, [activeButtonGroup, debouncedSearchTerm, statusFilters, tagFilters, timeStart, timeEnd]);
 
+    // Sincroniza activeFilters com todas as situações (menos as de IA) quando as opções de status são carregadas
+    useEffect(() => {
+        if (statusOptions.length > 0 && activeButtonGroup === 'atendimentos') {
+            const iaStatuses = ['Aguardando Resposta', 'Gerando Resposta', 'Mensagem Recebida'];
+            const atendimentosStatuses = statusOptions
+                .map(opt => opt.nome)
+                .filter(name => !iaStatuses.includes(name));
+            
+            // Só atualiza se a lista de filtros ativos calculada for diferente da atual para evitar loops
+            const hasDifference = 
+                activeFilters.length !== atendimentosStatuses.length ||
+                !activeFilters.every(status => atendimentosStatuses.includes(status));
+
+            if (hasDifference) {
+                setActiveFilters(atendimentosStatuses);
+            }
+        }
+    }, [statusOptions, activeButtonGroup, activeFilters]);
+
     useEffect(() => {
         if (!Array.isArray(mensagens)) {
             setFilteredAtendimentos([]);

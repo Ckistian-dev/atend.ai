@@ -677,7 +677,27 @@ class GeminiService:
                     if persona.available_hours:
                         for day, intervals in persona.available_hours.items():
                             if intervals:
-                                intervals_str = ", ".join([f"{i.get('start')}-{i.get('end')}" for i in intervals])
+                                if isinstance(intervals, str):
+                                    intervals_str = intervals
+                                elif isinstance(intervals, list):
+                                    formatted_intervals = []
+                                    for i in intervals:
+                                        if isinstance(i, dict):
+                                            start = i.get('start')
+                                            end = i.get('end')
+                                            if start and end:
+                                                formatted_intervals.append(f"{start}-{end}")
+                                            elif start:
+                                                formatted_intervals.append(start)
+                                            elif end:
+                                                formatted_intervals.append(end)
+                                        elif isinstance(i, str):
+                                            formatted_intervals.append(i)
+                                        else:
+                                            formatted_intervals.append(str(i))
+                                    intervals_str = ", ".join(formatted_intervals)
+                                else:
+                                    intervals_str = str(intervals)
                                 hours_summary.append(f"{day}: {intervals_str}")
                     
                     hours_text = " | ".join(hours_summary) if hours_summary else "Não configurado"
