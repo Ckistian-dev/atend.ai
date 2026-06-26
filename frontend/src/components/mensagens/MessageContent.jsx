@@ -115,6 +115,7 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
                             atendimentoId={atendimentoId}
                             mediaId={msg.media_id}
                             caption={msg.caption || null}
+                            filename={isAssistant ? msg.filename : null}
                         />
                     </div>
                 );
@@ -127,6 +128,7 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
                             atendimentoId={atendimentoId}
                             mediaId={msg.media_id}
                             caption={msg.caption || null}
+                            filename={isAssistant ? msg.filename : null}
                         />
                     </div>
                 );

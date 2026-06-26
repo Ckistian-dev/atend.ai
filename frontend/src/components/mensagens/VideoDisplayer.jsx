@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, Play, AlertCircle, X } from 'lucide-react';
+import { Loader2, Play, AlertCircle, X, Film as FilmIcon } from 'lucide-react';
 import api from '../../api/axiosConfig';
 import { formatWhatsAppText } from '../../utils/formatters';
 
-const VideoDisplayer = ({ atendimentoId, mediaId, caption }) => {
+const VideoDisplayer = ({ atendimentoId, mediaId, caption, filename }) => {
     const [videoSrc, setVideoSrc] = useState(null);
     const [loadState, setLoadState] = useState('idle'); // 'idle', 'loading', 'loaded', 'error'
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -76,6 +76,14 @@ const VideoDisplayer = ({ atendimentoId, mediaId, caption }) => {
 
     return (
         <div ref={displayerRef} className="space-y-3 w-full max-w-[220px] sm:max-w-[280px] md:max-w-[360px]">
+            {filename && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white max-w-full select-all">
+                    <FilmIcon size={14} className="text-white/80 flex-shrink-0" />
+                    <span className="text-[11px] font-bold truncate" title={filename}>
+                        {filename}
+                    </span>
+                </div>
+            )}
             <div className="relative aspect-[4/3] bg-black/5 rounded-[1.5rem] overflow-hidden shadow-2xl shadow-blue-900/5 cursor-pointer group border border-white/10" onClick={openModal}>
                 {(loadState === 'loading' || loadState === 'idle') && <MediaSkeleton />}
 
@@ -110,7 +118,15 @@ const VideoDisplayer = ({ atendimentoId, mediaId, caption }) => {
                     <button onClick={closeModal} className="absolute top-4 right-4 sm:top-8 sm:right-8 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-2xl sm:rounded-3xl bg-white/10 text-white hover:bg-white/20 transition-all z-[10000]">
                         <X size={24} />
                     </button>
-                    <video src={videoSrc} controls autoPlay className="max-w-[95vw] max-h-[90vh] rounded-2xl sm:rounded-3xl shadow-2xl shadow-black/50" onClick={(e) => e.stopPropagation()} />
+                    <div className="flex flex-col items-center gap-4 max-w-[95vw]" onClick={(e) => e.stopPropagation()}>
+                        <video src={videoSrc} controls autoPlay className="max-h-[80vh] rounded-2xl sm:rounded-3xl shadow-2xl shadow-black/50" />
+                        {filename && (
+                            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 text-white">
+                                <FilmIcon size={16} className="text-white/80" />
+                                <span className="text-sm font-black tracking-wide truncate max-w-xs sm:max-w-md">{filename}</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>

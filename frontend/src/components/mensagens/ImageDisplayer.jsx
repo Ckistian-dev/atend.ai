@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, X, AlertCircle } from 'lucide-react';
+import { Loader2, X, AlertCircle, Image as ImageIcon } from 'lucide-react';
 import api from '../../api/axiosConfig';
 import { formatWhatsAppText } from '../../utils/formatters';
 
-const ImageDisplayer = ({ atendimentoId, mediaId, caption }) => {
+const ImageDisplayer = ({ atendimentoId, mediaId, caption, filename }) => {
     const [imageSrc, setImageSrc] = useState(null);
     const [loadState, setLoadState] = useState('idle'); // 'idle', 'loading', 'loaded', 'error'
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -76,6 +76,14 @@ const ImageDisplayer = ({ atendimentoId, mediaId, caption }) => {
 
     return (
         <div ref={displayerRef} className="space-y-3 w-full max-w-[220px] sm:max-w-[280px] md:max-w-[360px]">
+            {filename && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white max-w-full select-all">
+                    <ImageIcon size={14} className="text-white/80 flex-shrink-0" />
+                    <span className="text-[11px] font-bold truncate" title={filename}>
+                        {filename}
+                    </span>
+                </div>
+            )}
             <div className="relative aspect-[4/3] bg-black/5 rounded-[1.5rem] overflow-hidden shadow-2xl shadow-blue-900/5 group border border-white/10">
                 {(loadState === 'loading' || loadState === 'idle') && <MediaSkeleton />}
 
@@ -108,7 +116,15 @@ const ImageDisplayer = ({ atendimentoId, mediaId, caption }) => {
                     <button onClick={closeModal} className="absolute top-4 right-4 sm:top-8 sm:right-8 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-2xl sm:rounded-3xl bg-white/10 text-white hover:bg-white/20 transition-all">
                         <X size={24} />
                     </button>
-                    <img src={imageSrc} alt="Visualização" className="max-w-[95vw] max-h-[90vh] object-contain rounded-2xl sm:rounded-3xl shadow-2xl shadow-black/50" onClick={(e) => e.stopPropagation()} />
+                    <div className="flex flex-col items-center gap-4 max-w-[95vw]" onClick={(e) => e.stopPropagation()}>
+                        <img src={imageSrc} alt="Visualização" className="max-h-[80vh] object-contain rounded-2xl sm:rounded-3xl shadow-2xl shadow-black/50" />
+                        {filename && (
+                            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 text-white">
+                                <ImageIcon size={16} className="text-white/80" />
+                                <span className="text-sm font-black tracking-wide truncate max-w-xs sm:max-w-md">{filename}</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
