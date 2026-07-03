@@ -550,13 +550,14 @@ async def run_agent_cycle():
     """
     Executa um ciclo completo de verificação e processamento do agente.
     Esta função é o ponto de entrada principal para o loop do agente, que é executado periodicamente.
+    As tarefas de processamento são disparadas em background (create_task), portanto o ciclo retorna
+    imediatamente — sem bloquear enquanto a IA gera resposta ou os delays de digitação correm.
+    O status 'Gerando Resposta' garante que ciclos seguintes não dupliquem o processamento.
     """
-    # Log de início do ciclo.
     logger.info("Agente (Ciclo Otimizado): Iniciando ciclo...")
     
     # Dicionário para garantir que cada atendimento seja processado apenas uma vez por ciclo, evitando duplicidade.
     atendimentos_para_processar: Dict[int, models.Atendimento] = {}
-    all_processing_tasks = []
 
     async with SessionLocal() as db:
         try:
@@ -566,30 +567,21 @@ async def run_agent_cycle():
             if atendimentos_msg_recebida:
                 logger.info(f"Agente (Ciclo): {len(atendimentos_msg_recebida)} atendimentos (Mensagem Recebida) encontrados.")
                 for at in atendimentos_msg_recebida:
-                    # Pula empresas sem tokens
-                    if at.company and at.company.tokens is not None and at.company.tokens <= 0:
-                        continue
-
                     # Adiciona o atendimento ao dicionário, garantindo que não haja duplicatas.
                     if at.id not in atendimentos_para_processar:
                         atendimentos_para_processar[at.id] = at
 
-            # 2. Monta a lista de tarefas de processamento assíncrono.
+            # 2. Dispara cada atendimento como uma task independente em background.
+            #    O ciclo retorna imediatamente; cada task roda no event loop de forma autônoma.
             if atendimentos_para_processar:
-                logger.info(f"Agente (Ciclo): Total de {len(atendimentos_para_processar)} atendimentos únicos para processar.")
+                logger.info(f"Agente (Ciclo): Disparando {len(atendimentos_para_processar)} tarefa(s) em background.")
                 for at in atendimentos_para_processar.values():
                     if at.company:
-                        # Para cada atendimento, cria uma tarefa para chamar `process_single_atendimento`.
-                        all_processing_tasks.append(process_single_atendimento(at.id, at.company))
+                        asyncio.create_task(process_single_atendimento(at.id, at.company))
                     else:
                         logger.warning(f"Agente (Ciclo): Atendimento {at.id} sem empresa carregada.")
-            
-            # 3. Executa todas as tarefas de processamento em paralelo.
-            if all_processing_tasks:
-                logger.info(f"Agente (Ciclo): Executando {len(all_processing_tasks)} tarefas.")
-                await asyncio.gather(*all_processing_tasks)
             else:
                 logger.info("Agente (Ciclo): Nenhum atendimento para processar.")
 
         except Exception as cycle_err:
-            logger.error(f"Agente (Ciclo): Erro CRÍTICO no loop principal: {cycle_err}", exc_info=True)
+            logger.error(f"Agente (Ciclo): Erro CRÍTICO no loop principal: {cycle_err}", exc_info=True)

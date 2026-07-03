@@ -83,7 +83,7 @@ class GeminiService:
             current_key = self.api_keys[self.current_key_index]
             
             # Instanciação limpa: o SDK gerencia v1/v1beta automaticamente
-            self.client = genai.Client(api_key=current_key, http_options=types.HttpOptions(timeout=1200000))
+            self.client = genai.Client(api_key=current_key, http_options=types.HttpOptions(timeout=120000))
             
             logger.info(f"✅ Cliente Gemini inicializado (chave índice {self.current_key_index}).")
         except Exception as e:
@@ -189,10 +189,14 @@ class GeminiService:
                     
                     # --- MUDANÇA PRINCIPAL: Chamada Assíncrona Nativa (.aio) ---
                     # Não precisa mais de run_in_executor
-                    response = await self.client.aio.models.generate_content(
-                        model=model_name,
-                        contents=prompt,
-                        config=gen_config
+                    # Timeout de 300s via asyncio — acomoda modelos mais lentos/poderosos
+                    response = await asyncio.wait_for(
+                        self.client.aio.models.generate_content(
+                            model=model_name,
+                            contents=prompt,
+                            config=gen_config
+                        ),
+                        timeout=300.0
                     )
                     
                     # --- DEBUG: LOG RESPONSE ---
@@ -266,6 +270,12 @@ class GeminiService:
 
                 # Captura erros do novo SDK (geralmente ServerError ou ClientError)
                 # O erro 429 (Quota) agora geralmente vem como um ClientError com status 429
+                except asyncio.TimeoutError:
+                    logger.error(
+                        f"Timeout (90s) na chamada Gemini (chave {self.current_key_index}, "
+                        f"tentativa {attempt + 1}/{max_attempts_per_key}). Tentando novamente..."
+                    )
+                    await asyncio.sleep(2)
                 except Exception as e:
                     error_str = str(e).lower()
                     

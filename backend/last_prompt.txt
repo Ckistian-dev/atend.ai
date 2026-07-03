@@ -28135,3 +28135,108 @@ Com base no histórico, a usuária **Simone** está em contato com a empresa **T
 *   **Estilo:** Contemporâneo/Minimalista.
 *   **Finalidade provável:** Revestimento de parede interna.
 ============================================================
+
+==================== PROMPT ENVIADO PARA IA ATENDIMENTO 15359 [2026-07-03 14:08:06] ====================
+--- SYSTEM INSTRUCTION ---
+Você é um especialista em análise visual e interpretação de conteúdo.
+
+## INSTRUÇÃO DE ANÁLISE
+Analise a mídia fornecida e descreva seu conteúdo de forma abrangente e detalhada. Capture todos os aspectos importantes para que a IA de conversação compreenda o contexto completo.
+
+1. *Descrição Geral:* Inicie com uma descrição global do que a mídia apresenta.
+2. *Detalhes Visuais:* Descreva elementos principais, cores, ambiente, pessoas, objetos, texto visível e detalhes pertinentes ao contexto da conversa.
+3. *Extração de Dados:* Extraia dados estruturados como nomes, endereços, datas e valores. **Caso existam tabelas ou listas de preços, utilize estritamente a sintaxe de tabela Markdown (| Categoria | Valor |).**
+4. *Contexto e Intenção:* Infira a intenção do usuário ao enviar a mídia com base no histórico.
+5. *Formato da Resposta:* Forneça um texto claro e bem estruturado. Utilize marcadores para listas. Proibido dialogar, forneça apenas a análise.
+------------------------------
+[TEXTO]: ## HISTÓRICO RECENTE
+User [2026-07-03 14:07:47 UTC]: Bom dia
+
+## TAREFA
+Analise a mídia enviada.
+[MÍDIA/OBJETO]: <class 'google.genai.types.Part'>
+============================================================
+
+==================== RESPOSTA DA IA [2026-07-03 14:08:09] ====================
+### 1. Descrição Geral
+A imagem é uma peça publicitária da empresa "São Jorge Locadora de Máquinas". O foco central é a divulgação de um serviço de locação de plataformas articuladas, destacando a capacidade do equipamento de alcançar locais de difícil acesso.
+
+### 2. Detalhes Visuais
+*   **Elemento Principal:** Uma plataforma articulada da marca Genie, modelo Z-45/25, na cor azul, posicionada no lado esquerdo da imagem.
+*   **Cores:** Predomínio de tons de azul (máquina), laranja (texto e logo) e fundo cinza claro com padrões geométricos sutis.
+*   **Texto:**
+    *   "PARA OS LUGARES ALTOS QUE VOCÊ NÃO ALCANÇA..." (em destaque no topo).
+    *   "A PLATAFORMA ARTICULADA CHEGA LÁ!" (dentro de um retângulo laranja).
+    *   "SÃO JORGE LOCADORA DE MÁQUINAS" (na parte inferior).
+*   **Logotipo:** Um círculo contendo a silhueta de São Jorge montado em um cavalo, em tons de laranja e preto.
+*   **Elementos Adicionais:** Três pontos (laranja, laranja, preto) no canto superior direito, sugerindo um estilo de carrossel de redes sociais.
+
+### 3. Extração de Dados
+| Categoria | Informação |
+| :--- | :--- |
+| **Empresa** | São Jorge Locadora de Máquinas |
+| **Equipamento** | Plataforma Articulada |
+| **Modelo** | Genie Z-45/25 |
+
+### 4. Contexto e Intenção
+A intenção do usuário ao enviar esta imagem é, provavelmente, obter informações sobre a locação do equipamento, verificar a disponibilidade do serviço ou iniciar uma cotação com a empresa mencionada, aproveitando o contato estabelecido no histórico.
+============================================================
+
+==================== PROMPT ENVIADO PARA IA ATENDIMENTO 15360 [2026-07-03 14:17:10] ====================
+--- SYSTEM INSTRUCTION ---
+Você é um especialista em análise visual e interpretação de conteúdo.
+
+## INSTRUÇÃO DE ANÁLISE
+Analise a mídia fornecida e descreva seu conteúdo de forma abrangente e detalhada. Capture todos os aspectos importantes para que a IA de conversação compreenda o contexto completo.
+
+1. *Descrição Geral:* Inicie com uma descrição global do que a mídia apresenta.
+2. *Detalhes Visuais:* Descreva elementos principais, cores, ambiente, pessoas, objetos, texto visível e detalhes pertinentes ao contexto da conversa.
+3. *Extração de Dados:* Extraia dados estruturados como nomes, endereços, datas e valores. **Caso existam tabelas ou listas de preços, utilize estritamente a sintaxe de tabela Markdown (| Categoria | Valor |).**
+4. *Contexto e Intenção:* Infira a intenção do usuário ao enviar a mídia com base no histórico.
+5. *Formato da Resposta:* Forneça um texto claro e bem estruturado. Utilize marcadores para listas. Proibido dialogar, forneça apenas a análise.
+------------------------------
+[TEXTO]: ## HISTÓRICO RECENTE
+User [2026-07-03 14:13:29 UTC]: Bom dia!! Gostaria de pedir um orçamento
+User [2026-07-03 14:16:04 UTC]: Quero colocar o painel ripado em pvc na minha parede do quarto. Construir um lambri ripado, minha intenção e ajudar a barra a umidade na parede. Estamos reformando a parede e eu vi que pode ajudar, além de dar um aspecto bonito
+User [2026-07-03 14:16:15 UTC]: me chamo Daniele, acha que funciona?
+
+## TAREFA
+Analise a mídia enviada.
+[MÍDIA/OBJETO]: <class 'google.genai.types.Part'>
+============================================================
+
+==================== RESPOSTA DA IA [2026-07-03 14:17:18] ====================
+### 1. Descrição Geral
+A imagem apresenta um ambiente interno residencial, especificamente uma sala de estar com decoração moderna e clean. O destaque visual é a aplicação de um **lambri ripado** em tom amadeirado (terracota/mel) que reveste a metade inferior das paredes, criando um contraste com a parte superior pintada de branco.
+
+### 2. Detalhes Visuais
+*   **Revestimento (Lambri):** Painel com textura ripada vertical, instalado de forma horizontal ao longo de toda a extensão visível da parede, servindo como um rodameio alto ou meia-parede.
+*   **Mobiliário:**
+    *   Um sofá modular grande na cor branca, decorado com almofadas em tons de branco, cinza e uma almofada central com estampa geométrica em azul e branco.
+    *   Duas mesas de centro circulares de madeira clara em diferentes alturas.
+    *   Uma cadeira ou banco de madeira amarela no canto inferior esquerdo.
+*   **Decoração:**
+    *   Um quadro retangular centralizado acima do sofá, retratando uma onça-pintada em um ambiente natural.
+    *   Objetos decorativos sobre as mesas, incluindo livros pretos, um vaso com galhos secos e pequenos recipientes.
+    *   Presença de folhagem verde (planta) no canto esquerdo.
+*   **Cores e Ambiente:** Predomínio de tons neutros (branco e cinza) equilibrados pelo calor da madeira do painel e das mesas. A iluminação é clara e uniforme, sugerindo um ambiente arejado.
+
+### 3. Extração de Dados
+| Categoria | Detalhe Extraído |
+| :--- | :--- |
+| **Cliente** | Daniele |
+| **Produto de Interesse** | Painel ripado em PVC (estilo lambri) |
+| **Local de Instalação** | Parede do quarto |
+| **Objetivo Principal** | Estética e barreira contra umidade |
+| **Data da Solicitação** | 03/07/2026 |
+
+### 4. Contexto e Intenção
+A usuária, Daniele, enviou a imagem como **referência estética** do que deseja implementar em seu quarto. Sua intenção é dupla:
+1.  **Estética:** Adotar o design de "lambri ripado" para modernizar o ambiente, conforme exemplificado na foto.
+2.  **Funcional:** Utilizar o material (PVC) como uma solução técnica para lidar com problemas de umidade na parede durante uma reforma. Ela busca a validação de um especialista sobre a eficácia do PVC para este fim específico e solicita um orçamento para a execução do projeto.
+
+### 5. Formato da Resposta
+*   Análise técnica da imagem concluída.
+*   Dados estruturados conforme a solicitação.
+*   Contexto identificado com base no histórico de mensagens.
+============================================================

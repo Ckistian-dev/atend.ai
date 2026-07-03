@@ -1211,6 +1211,36 @@ function Atendimentos() {
     const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || '');
     const [sortOrder, setSortOrder] = useState(searchParams.get('sort_order') || 'desc');
 
+    // --- NOVO: Flag para colaborador com distribuição ativa ---
+    const [isDistributionCollaborator, setIsDistributionCollaborator] = useState(false);
+    const distributionInitialized = useRef(false);
+    // Bloqueio do fetch principal até o perfil do usuário estar pronto
+    const [isAuthReady, setIsAuthReady] = useState(false);
+
+    // Pre-fetch do perfil do usuário para aplicar filtros ANTES do primeiro carregamento de dados
+    useEffect(() => {
+        const initAuth = async () => {
+            try {
+                const userRes = await api.get('/auth/me');
+                const fetchedUser = userRes.data;
+                const isCollab =
+                    fetchedUser.role !== 'admin' &&
+                    fetchedUser.role !== 'superadmin' &&
+                    fetchedUser.participates_distribution === true;
+                setIsDistributionCollaborator(isCollab);
+                if (isCollab && fetchedUser.name && !distributionInitialized.current) {
+                    distributionInitialized.current = true;
+                    setSelectedTags([fetchedUser.name]);
+                }
+            } catch (e) {
+                // Ignora — o fetchData principal também busca o usuário e tratará erros
+            } finally {
+                setIsAuthReady(true);
+            }
+        };
+        initAuth();
+    }, []); // Roda apenas uma vez na montagem
+
     // Debounce para searchTerm
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -1290,7 +1320,8 @@ function Atendimentos() {
             setTotalPages(Math.ceil(atendimentosRes.data.total / pageSize));
             setAllTags(tagsRes.data);
             setPersonas(personasRes.data);
-            setUserData(userRes.data);
+            const fetchedUser = userRes.data;
+            setUserData(fetchedUser);
 
             // Garante que 'Aguardando Envio' esteja nas opções para permitir alteração manual no modal
             let sOptions = situationsRes.data || [];
@@ -1298,6 +1329,13 @@ function Atendimentos() {
                 sOptions = [...sOptions, { nome: 'Aguardando Envio', cor: '#9333ea' }];
             }
             setStatusOptions(sOptions);
+
+            // Atualiza a flag de colaborador (garante consistência após reloads)
+            const isCollab =
+                fetchedUser.role !== 'admin' &&
+                fetchedUser.role !== 'superadmin' &&
+                fetchedUser.participates_distribution === true;
+            setIsDistributionCollaborator(isCollab);
 
 
             // CORREÇÃO: Só atualiza a URL se o componente ainda estiver montado.
@@ -1320,7 +1358,10 @@ function Atendimentos() {
 
     // --- CORREÇÃO DE POLLING (COM PAUSA EM SEGUNDO PLANO) ---
     useEffect(() => {
-        const isMountedRef = { current: true }; // Usamos um objeto ref para que o valor seja mutável e persistente.
+        // Aguarda o perfil do usuário estar pronto para evitar piscar de dados sem filtro
+        if (!isAuthReady) return;
+
+        const isMountedRef = { current: true };
         let timeoutId;
 
         const poll = async () => {
@@ -1362,7 +1403,8 @@ function Atendimentos() {
             clearTimeout(timeoutId);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [fetchData]);
+    }, [fetchData, isAuthReady]);
+
 
 
     const getPersonaNameById = (id) => {
@@ -1712,16 +1754,24 @@ function Atendimentos() {
                             <div className="relative w-full md:w-auto">
                                 <button
                                     onClick={() => setIsFilterOpen(!isFilterOpen)}
-                                    className={`flex items-center justify-center gap-2.5 px-6 h-14 md:h-16 w-full md:w-auto rounded-2xl font-bold transition-all border ${isFilterOpen || selectedStatus || selectedTag || timeStart || timeEnd
-                                        ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200'
-                                        : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'
+                                    className={`flex items-center justify-center gap-2.5 px-6 h-14 md:h-16 w-full md:w-auto rounded-2xl font-bold transition-all border ${
+                                        // Para colaboradores de distribuição, o filtro de tag é silencioso
+                                        isFilterOpen || selectedStatus?.length > 0 || timeStart || timeEnd
+                                            ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200'
+                                            : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'
                                         }`}
                                 >
                                     <ListFilter size={20} />
                                     <span className="text-[13px] uppercase tracking-widest whitespace-nowrap">Filtros</span>
-                                    {((selectedStatus && selectedStatus.length > 0) || (selectedTags && selectedTags.length > 0) || timeStart || timeEnd) && (
+                                    {/* Badge: ignora o filtro de tag auto-aplicado para colaboradores */}
+                                    {(!isDistributionCollaborator && ((selectedStatus && selectedStatus.length > 0) || (selectedTags && selectedTags.length > 0) || timeStart || timeEnd)) && (
                                         <div className="w-5 h-5 bg-white text-blue-600 rounded-full flex items-center justify-center text-[10px] font-black animate-pulse">
                                             {(selectedStatus ? selectedStatus.length : 0) + (selectedTags ? selectedTags.length : 0) + (timeStart || timeEnd ? 1 : 0)}
+                                        </div>
+                                    )}
+                                    {(isDistributionCollaborator && (selectedStatus?.length > 0 || timeStart || timeEnd)) && (
+                                        <div className="w-5 h-5 bg-white text-blue-600 rounded-full flex items-center justify-center text-[10px] font-black animate-pulse">
+                                            {(selectedStatus ? selectedStatus.length : 0) + (timeStart || timeEnd ? 1 : 0)}
                                         </div>
                                     )}
                                 </button>
@@ -1772,16 +1822,25 @@ function Atendimentos() {
                             </div>
                         </div>
 
-                        {/* Active Filters Row */}
-                        {((selectedStatus && selectedStatus.length > 0) || (selectedTags && selectedTags.length > 0) || timeStart || timeEnd) && (
+                        {/* Active Filters Row — ocultado para colaboradores se só tiver o filtro de tag automático */}
+                        {(() => {
+                            const hasExtraStatus = selectedStatus && selectedStatus.length > 0;
+                            const hasExtraTags = selectedTags && selectedTags.length > 0;
+                            const hasTime = timeStart || timeEnd;
+                            // Para colaboradores, só mostra a row se houver filtros ALÉM do tag automático
+                            const showRow = isDistributionCollaborator
+                                ? (hasExtraStatus || hasTime)
+                                : (hasExtraStatus || hasExtraTags || hasTime);
+                            if (!showRow) return null;
+                            return (
                             <div className="flex flex-wrap gap-2.5 items-center pt-2 animate-fade-in text-left">
                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Filtros ativos:</span>
                                 {selectedStatus && selectedStatus.map(status => (
                                     <span key={status} className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl border border-blue-100 shadow-sm transition-all hover:bg-blue-100/50">
                                         <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                                         Situação: {status}
-                                        <button 
-                                            onClick={() => { setSelectedStatus(selectedStatus.filter(s => s !== status)); setCurrentPage(1); }} 
+                                        <button
+                                            onClick={() => { setSelectedStatus(selectedStatus.filter(s => s !== status)); setCurrentPage(1); }}
                                             className="hover:bg-blue-200 text-blue-800 rounded-full p-0.5 transition-colors"
                                             title="Remover filtro de situação"
                                         >
@@ -1789,7 +1848,8 @@ function Atendimentos() {
                                         </button>
                                     </span>
                                 ))}
-                                {selectedTags && selectedTags.map(tag => (
+                                {/* Tags: para colaboradores, oculta o tag do próprio nome (auto-aplicado) */}
+                                {selectedTags && selectedTags.filter(tag => isDistributionCollaborator ? tag !== userData?.name : true).map(tag => (
                                     <span key={tag} className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-purple-50 text-purple-700 text-xs font-bold rounded-xl border border-purple-100 shadow-sm transition-all hover:bg-purple-100/50">
                                         <span className="w-1.5 h-1.5 rounded-full bg-purple-600" />
                                         Tag: {tag}
@@ -1841,7 +1901,9 @@ function Atendimentos() {
                                     Limpar Tudo
                                 </button>
                             </div>
-                        )}
+                            );
+                        })()}
+
                     </div>
                 </div>
 

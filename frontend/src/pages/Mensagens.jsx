@@ -222,6 +222,43 @@ function Mensagens() {
     const [activeFilters, setActiveFilters] = useState(() => initialAtendimentoId ? [] : ['Atendente Chamado', 'Concluído', 'Ignorar Contato', 'Aguardando Envio']);
     const [activeButtonGroup, setActiveButtonGroup] = useState(() => initialAtendimentoId ? null : 'atendimentos');
 
+    // --- NOVO: Flag para colaborador com distribuição ativa ---
+    // Será derivada após o currentUser ser carregado
+    const [isDistributionCollaborator, setIsDistributionCollaborator] = useState(false);
+    const distributionInitialized = useRef(false);
+    // Bloqueio do fetch principal até o perfil do usuário estar pronto
+    const [isAuthReady, setIsAuthReady] = useState(false);
+
+    // Pre-fetch do perfil do usuário para aplicar filtros ANTES do primeiro carregamento de dados
+    useEffect(() => {
+        const initAuth = async () => {
+            try {
+                const userRes = await api.get('/auth/me');
+                const fetchedUser = userRes.data;
+                const isCollab =
+                    fetchedUser.role !== 'admin' &&
+                    fetchedUser.role !== 'superadmin' &&
+                    fetchedUser.participates_distribution === true;
+                setIsDistributionCollaborator(isCollab);
+                if (isCollab && !distributionInitialized.current) {
+                    distributionInitialized.current = true;
+                    // Força modo Atendimentos sem IA e aplica filtro de tag com o nome
+                    setActiveButtonGroup(null);
+                    setActiveFilters([]);
+                    setStatusFilters([]);
+                    if (fetchedUser.name) {
+                        setTagFilters([fetchedUser.name]);
+                    }
+                }
+            } catch (e) {
+                // Ignora — o fetchData principal também busca o usuário e tratará erros
+            } finally {
+                setIsAuthReady(true);
+            }
+        };
+        initAuth();
+    }, []); // Roda apenas uma vez na montagem
+
     // --- NOVO: Estado para o termo de busca com debounce ---
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
@@ -339,7 +376,8 @@ function Mensagens() {
                 api.get('/configs/situations'),
                 api.get('/atendimentos/tags') // Busca todas as tags
             ]);
-            setCurrentUser(userRes.data);
+            const fetchedUser = userRes.data;
+            setCurrentUser(fetchedUser);
             setPersonas(personasRes.data);
 
             // Garante que 'Aguardando Envio' esteja nas opções para alteração manual
@@ -349,6 +387,13 @@ function Mensagens() {
             }
             setStatusOptions(sOptions);
             setAllTags(tagsRes.data);
+
+            // Atualiza flag de colaborador (sem reaplicar filtros — já foram aplicados no pre-fetch)
+            const isCollab =
+                fetchedUser.role !== 'admin' &&
+                fetchedUser.role !== 'superadmin' &&
+                fetchedUser.participates_distribution === true;
+            setIsDistributionCollaborator(isCollab);
 
             const serverData = atendimentosRes.data;
             if (serverData && Array.isArray(serverData.items)) {
@@ -407,6 +452,9 @@ function Mensagens() {
 
     // --- Efeito: Polling Seguro (COM PAUSA EM SEGUNDO PLANO) ---
     useEffect(() => {
+        // Aguarda o perfil do usuário estar pronto para evitar piscar de dados sem filtro
+        if (!isAuthReady) return;
+
         let isMounted = true;
         let timeoutId;
 
@@ -435,7 +483,7 @@ function Mensagens() {
             clearTimeout(timeoutId);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [fetchData]);
+    }, [fetchData, isAuthReady]);
 
     // --- NOVO: Polling de Background para Notificações e Título ---
     useEffect(() => {
@@ -542,6 +590,9 @@ function Mensagens() {
 
     // Sincroniza activeFilters com todas as situações (menos as de IA) quando as opções de status são carregadas
     useEffect(() => {
+        // Se for colaborador com distribuição, não mexe nos filtros (são controlados pelo nome)
+        if (isDistributionCollaborator) return;
+
         if (statusOptions.length > 0 && activeButtonGroup === 'atendimentos') {
             const iaStatuses = ['Aguardando Resposta', 'Gerando Resposta', 'Mensagem Recebida'];
             const atendimentosStatuses = statusOptions
@@ -557,7 +608,7 @@ function Mensagens() {
                 setActiveFilters(atendimentosStatuses);
             }
         }
-    }, [statusOptions, activeButtonGroup, activeFilters]);
+    }, [statusOptions, activeButtonGroup, activeFilters, isDistributionCollaborator]);
 
     useEffect(() => {
         if (!Array.isArray(mensagens)) {
@@ -1256,8 +1307,18 @@ function Mensagens() {
                             activeButtonGroup={activeButtonGroup}
                             toggleFilter={toggleFilter}
                             onFilterIconClick={() => setIsFilterPopoverOpen(prev => !prev)}
-                            hasActiveFilters={(statusFilters && statusFilters.length > 0) || (tagFilters && tagFilters.length > 0) || !!timeStart || !!timeEnd}
-                            activeFiltersCount={(statusFilters ? statusFilters.length : 0) + (tagFilters ? tagFilters.length : 0) + (timeStart || timeEnd ? 1 : 0)}
+                            hasActiveFilters={
+                                // Para colaboradores de distribuição, o filtro de tag é silencioso (não exibe badge)
+                                isDistributionCollaborator
+                                    ? ((statusFilters && statusFilters.length > 0) || !!timeStart || !!timeEnd)
+                                    : ((statusFilters && statusFilters.length > 0) || (tagFilters && tagFilters.length > 0) || !!timeStart || !!timeEnd)
+                            }
+                            activeFiltersCount={
+                                isDistributionCollaborator
+                                    ? ((statusFilters ? statusFilters.length : 0) + (timeStart || timeEnd ? 1 : 0))
+                                    : ((statusFilters ? statusFilters.length : 0) + (tagFilters ? tagFilters.length : 0) + (timeStart || timeEnd ? 1 : 0))
+                            }
+                            hideIAButton={isDistributionCollaborator}
                         />
                         <FilterPopover
                             isOpen={isFilterPopoverOpen}

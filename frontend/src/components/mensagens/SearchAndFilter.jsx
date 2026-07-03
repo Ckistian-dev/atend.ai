@@ -1,7 +1,7 @@
 import React from 'react';
 import { Search, Users, Bot, Filter } from 'lucide-react';
 
-const SearchAndFilter = ({ searchTerm, setSearchTerm, activeButtonGroup, toggleFilter, onFilterIconClick, hasActiveFilters, activeFiltersCount }) => {
+const SearchAndFilter = ({ searchTerm, setSearchTerm, activeButtonGroup, toggleFilter, onFilterIconClick, hasActiveFilters, activeFiltersCount, hideIAButton }) => {
     return (
         <div className="flex-shrink-0 p-4 pb-4 flex flex-col gap-6">
             {/* BARRA DE BUSCA PREMIUM */}
@@ -28,29 +28,31 @@ const SearchAndFilter = ({ searchTerm, setSearchTerm, activeButtonGroup, toggleF
                 </button>
             </div>
 
-            {/* SEGMENTED CONTROL (TETHO STYLE) */}
-            <div className="flex p-1.5 bg-slate-100/50 rounded-2xl gap-1">
-                <button
-                    onClick={() => toggleFilter('atendimentos')}
-                    className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${activeButtonGroup === 'atendimentos'
-                        ? 'bg-white text-blue-600 shadow-xl shadow-slate-200/50'
-                        : 'text-slate-400 hover:text-slate-600'
-                        }`}
-                >
-                    <Users size={14} />
-                    Atendimentos
-                </button>
-                <button
-                    onClick={() => toggleFilter('bot_ia')}
-                    className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${activeButtonGroup === 'bot_ia'
-                        ? 'bg-white text-blue-600 shadow-xl shadow-slate-200/50'
-                        : 'text-slate-400 hover:text-slate-600'
-                        }`}
-                >
-                    <Bot size={14} />
-                    IA
-                </button>
-            </div>
+            {/* SEGMENTED CONTROL — ocultado inteiramente para colaboradores de distribuição */}
+            {!hideIAButton && (
+                <div className="flex p-1.5 bg-slate-100/50 rounded-2xl gap-1">
+                    <button
+                        onClick={() => toggleFilter('atendimentos')}
+                        className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${activeButtonGroup === 'atendimentos'
+                            ? 'bg-white text-blue-600 shadow-xl shadow-slate-200/50'
+                            : 'text-slate-400 hover:text-slate-600'
+                            }`}
+                    >
+                        <Users size={14} />
+                        Atendimentos
+                    </button>
+                    <button
+                        onClick={() => toggleFilter('bot_ia')}
+                        className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${activeButtonGroup === 'bot_ia'
+                            ? 'bg-white text-blue-600 shadow-xl shadow-slate-200/50'
+                            : 'text-slate-400 hover:text-slate-600'
+                            }`}
+                    >
+                        <Bot size={14} />
+                        IA
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
