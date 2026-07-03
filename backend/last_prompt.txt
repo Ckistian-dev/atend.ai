@@ -28240,3 +28240,54 @@ A usuária, Daniele, enviou a imagem como **referência estética** do que desej
 *   Dados estruturados conforme a solicitação.
 *   Contexto identificado com base no histórico de mensagens.
 ============================================================
+
+==================== PROMPT ENVIADO PARA IA ATENDIMENTO 15354 [2026-07-03 14:56:35] ====================
+--- SYSTEM INSTRUCTION ---
+Você é um especialista em análise visual e interpretação de conteúdo.
+
+## INSTRUÇÃO DE ANÁLISE
+Analise a mídia fornecida e descreva seu conteúdo de forma abrangente e detalhada. Capture todos os aspectos importantes para que a IA de conversação compreenda o contexto completo.
+
+1. *Descrição Geral:* Inicie com uma descrição global do que a mídia apresenta.
+2. *Detalhes Visuais:* Descreva elementos principais, cores, ambiente, pessoas, objetos, texto visível e detalhes pertinentes ao contexto da conversa.
+3. *Extração de Dados:* Extraia dados estruturados como nomes, endereços, datas e valores. **Caso existam tabelas ou listas de preços, utilize estritamente a sintaxe de tabela Markdown (| Categoria | Valor |).**
+4. *Contexto e Intenção:* Infira a intenção do usuário ao enviar a mídia com base no histórico.
+5. *Formato da Resposta:* Forneça um texto claro e bem estruturado. Utilize marcadores para listas. Proibido dialogar, forneça apenas a análise.
+------------------------------
+[TEXTO]: ## HISTÓRICO RECENTE
+User [2026-07-03 11:30:36 UTC]: Bom dia!
+User [2026-07-03 11:30:46 UTC]: QUero um atendente imediatamente!
+User [2026-07-03 11:32:08 UTC]: Olá!
+User [2026-07-03 11:32:40 UTC]: Quero um Atendente IMEDIATAMENTE
+User [2026-07-03 11:33:26 UTC]: Cristian
+User [2026-07-03 11:33:29 UTC]: Quero um atendnete
+User [2026-07-03 11:40:09 UTC]: pode transferir agora
+
+## TAREFA
+Analise a mídia enviada.
+[MÍDIA/OBJETO]: <class 'google.genai.types.Part'>
+============================================================
+
+==================== RESPOSTA DA IA [2026-07-03 14:56:40] ====================
+### 1. Descrição Geral
+A mídia enviada consiste em um arquivo PDF contendo o "Manual do Proprietário" da **Prati Empreendimentos**, referente ao **Residencial Ducale**, Torre 03, 4º Pavimento, unidade "Apartamento Personalizado Final 03". O documento é um guia técnico detalhado que apresenta as plantas de arquitetura, elétrica, hidráulica, gás e ar-condicionado, além de vistas detalhadas das instalações internas para orientação de reformas e manutenção.
+
+### 2. Detalhes Visuais
+*   **Conteúdo:** O documento é composto por 14 páginas que incluem plantas baixas técnicas e vistas de paredes com marcações de tubulações, pontos elétricos e áreas de reforço.
+*   **Elementos Técnicos:** As plantas utilizam legendas codificadas por cores e símbolos para identificar alvenaria, dry-wall, pilares, pontos de luz, tomadas, registros, drenos e tubulações de gás.
+*   **Avisos de Segurança:** Há alertas recorrentes sobre a proibição de perfurações em áreas de "shafts" e zonas de tubulação, recomendando o uso de limitadores de broca (profundidade máxima de 2 cm) e a consulta prévia às vistas de instalações antes de qualquer intervenção nas paredes.
+*   **Identificação:** O apartamento possui uma área total de 54,62 m².
+
+### 3. Extração de Dados
+| Categoria | Detalhe |
+| :--- | :--- |
+| **Empreendimento** | Residencial Ducale |
+| **Construtora** | Prati Empreendimentos |
+| **Localização** | Toledo | PR |
+| **Unidade** | Torre 03, 4º Pavimento, Final 03 |
+| **Área Total** | 54,62 m² |
+| **Ano do Manual** | 2025 |
+
+### 4. Contexto e Intenção
+Com base no histórico de mensagens, onde o usuário solicita repetidamente um atendente de forma urgente, a intenção ao enviar este documento é provavelmente **solicitar suporte técnico ou esclarecimentos sobre a estrutura do imóvel**. O usuário pode estar enfrentando dificuldades com a planta, precisando de orientações para instalação de móveis ou reparos, e busca um canal de atendimento humano para interpretar as informações contidas no manual ou resolver um problema específico relacionado à unidade.
+============================================================

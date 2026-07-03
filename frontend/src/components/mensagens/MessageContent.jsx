@@ -45,6 +45,11 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
         }
     }
 
+    // Remove o prefixo interno "[Imagem/Doc Transcrito]: " da exibição visual
+    if (displayText && displayText.startsWith('[Imagem/Doc Transcrito]:')) {
+        displayText = displayText.replace(/^\[Imagem\/Doc Transcrito\]:\s*/, '');
+    }
+
     const renderQuotedMsg = () => {
         let quoted = msg.quoted_msg;
         let content = msg.content || '';
