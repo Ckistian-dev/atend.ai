@@ -45,9 +45,9 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
         }
     }
 
-    // Remove o prefixo interno "[Imagem/Doc Transcrito]: " da exibição visual
+    // Oculta descrições geradas pela IA — só exibe legendas reais do usuário (msg.caption)
     if (displayText && displayText.startsWith('[Imagem/Doc Transcrito]:')) {
-        displayText = displayText.replace(/^\[Imagem\/Doc Transcrito\]:\s*/, '');
+        displayText = null;
     }
 
     const renderQuotedMsg = () => {
