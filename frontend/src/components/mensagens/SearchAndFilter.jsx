@@ -1,7 +1,7 @@
 import React from 'react';
 import { Search, Users, Bot, Filter } from 'lucide-react';
 
-const SearchAndFilter = ({ searchTerm, setSearchTerm, activeButtonGroup, toggleFilter, onFilterIconClick, hasActiveFilters }) => {
+const SearchAndFilter = ({ searchTerm, setSearchTerm, activeButtonGroup, toggleFilter, onFilterIconClick, hasActiveFilters, activeFiltersCount }) => {
     return (
         <div className="flex-shrink-0 p-4 pb-4 flex flex-col gap-6">
             {/* BARRA DE BUSCA PREMIUM */}
@@ -20,8 +20,10 @@ const SearchAndFilter = ({ searchTerm, setSearchTerm, activeButtonGroup, toggleF
                         }`}
                 >
                     <Filter size={18} />
-                    {hasActiveFilters && (
-                        <span className="absolute -top-1 -right-1 block h-3 w-3 rounded-full bg-blue-400 ring-2 ring-white animate-pulse" />
+                    {hasActiveFilters && activeFiltersCount > 0 && (
+                        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white text-blue-600 rounded-full flex items-center justify-center text-[10px] font-black shadow-md border border-slate-100 animate-pulse">
+                            {activeFiltersCount}
+                        </div>
                     )}
                 </button>
             </div>

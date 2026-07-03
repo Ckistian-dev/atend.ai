@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { CSSTransition, SwitchTransition } from 'react-transition-group';
-import { Ticket, User as UserIcon, AlertCircle, Zap, Activity, UserCheck, UserX, Menu } from 'lucide-react';
+import { Ticket, User as UserIcon, AlertCircle, Zap, Activity, Menu } from 'lucide-react';
 import api from '../api/axiosConfig';
 
 /* ─────────────────────────────────────────
@@ -81,6 +81,22 @@ const CountUp = ({ end, duration = 1200 }) => {
   return <>{new Intl.NumberFormat('pt-BR').format(count)}</>;
 };
 
+const getUserColor = (profileColor, nameOrEmail) => {
+  if (profileColor && profileColor.trim() !== '') return profileColor;
+  if (!nameOrEmail) return '#3b82f6';
+  const colors = [
+    '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', 
+    '#ef4444', '#f97316', '#f59e0b', '#10b981', '#14b8a6', 
+    '#0ea5e9', '#64748b'
+  ];
+  let hash = 0;
+  for (let i = 0; i < nameOrEmail.length; i++) {
+    hash = nameOrEmail.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+};
+
 /* ─────────────────────────────────────────
    MAIN COMPONENT
    ───────────────────────────────────────── */
@@ -157,18 +173,6 @@ const Header = ({ setIsMobileMenuOpen }) => {
     }
   };
 
-  const handleToggleAttendant = async () => {
-    if (!user) return;
-    const orig = user.atendente_online;
-    setUser((u) => ({ ...u, atendente_online: !orig }));
-    try {
-      await api.put('/users/me', { atendente_online: !orig });
-    } catch {
-      setUser((u) => ({ ...u, atendente_online: orig }));
-      setError(true);
-    }
-  };
-
   /* ── Render ── */
   const renderContent = () => {
     if (loading) return (
@@ -233,41 +237,35 @@ const Header = ({ setIsMobileMenuOpen }) => {
             </button>
           </div>
 
-          {/* Right Side: Tokens & User Status */}
+          {/* Right Side: Tokens & User Info */}
           <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
             {/* Token chip */}
             <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 bg-blue-50/50 rounded-full ring-1 ring-blue-100 transition-all hover:bg-blue-50" title="Tokens restantes">
               <Ticket size={14} className="text-blue-600" />
               <span className="text-[13px] font-bold text-slate-900">
-                {user?.tokens !== undefined && user?.tokens !== null
-                  ? <CountUp end={user.tokens} />
-                  : '—'}
+                {(() => {
+                  const t = user?.company?.tokens ?? user?.tokens;
+                  return t !== undefined && t !== null ? <CountUp end={t} /> : '—';
+                })()}
               </span>
               <span className="hidden lg:inline text-[10px] uppercase font-bold text-slate-400 tracking-wider">tokens</span>
             </div>
 
             <div className="hidden md:block w-px h-5 bg-slate-200" />
 
-            {/* Attendant status */}
+            {/* User info chip (read-only, no toggle) */}
             {user ? (
-              <button
-                onClick={handleToggleAttendant}
-                id="header-attendant-toggle-btn"
-                className={`
-                  flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-full font-bold transition-all duration-200
-                  ${user.atendente_online
-                    ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 shadow-sm shadow-emerald-100'
-                    : 'bg-slate-50 text-slate-500 ring-1 ring-slate-200'}
-                  hover:scale-105 active:scale-95
-                `}
-                title={`Você está ${user.atendente_online ? 'Online' : 'Offline'}. Clique para alterar.`}
+              <div
+                id="header-user-info"
+                className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-full bg-slate-50 ring-1 ring-slate-200"
+                title={user.email}
               >
-                <div className={`w-1.5 h-1.5 rounded-full ${user.atendente_online ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                <div className="shrink-0">
-                  {user.atendente_online ? <UserCheck size={14} /> : <UserX size={14} />}
+                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                  style={{ backgroundColor: getUserColor(user.profile_color, user.name || user.email) }}>
+                  {(user.name || user.email)?.[0]?.toUpperCase()}
                 </div>
-                <span className="text-xs max-w-[120px] truncate hidden md:inline">{user.email}</span>
-              </button>
+                <span className="text-xs font-semibold text-slate-700 hidden md:inline">{user.name || user.email}</span>
+              </div>
             ) : (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full ring-1 ring-slate-100">
                 <UserIcon size={14} className="text-slate-400" />

@@ -56,7 +56,7 @@ async def login_for_access_token(
             access_token = security.create_access_token(
                 data={"sub": admin_email}, expires_delta=access_token_expires
             )
-            return {"access_token": access_token, "token_type": "bearer", "is_admin": True}
+            return {"access_token": access_token, "token_type": "bearer", "is_admin": True, "is_superuser": True}
         else:
             # FALHA: Email de admin, mas senha incorreta.
             # Levanta exceção imediatamente para não tentar buscar no banco de dados.
@@ -86,23 +86,12 @@ async def login_for_access_token(
     access_token = security.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "is_admin": user.role == "admin", "is_superuser": False}
 
 @router.get("/me", response_model=User, summary="Obter dados do utilizador logado")
 async def read_users_me(current_user: models.User = Depends(get_current_active_user)):
     """
-    Retorna os detalhes completos do utilizador atualmente autenticado,
-    indicando se o Google está conectado.
+    Retorna os detalhes completos do utilizador atualmente autenticado.
     """
-    # Define valores padrão para campos obrigatórios que podem estar nulos no banco
-    if getattr(current_user, "tokens", None) is None:
-        current_user.tokens = 0
-    if getattr(current_user, "agent_running", None) is None:
-        current_user.agent_running = False
-    if getattr(current_user, "atendente_online", None) is None:
-        current_user.atendente_online = False
-    if getattr(current_user, "followup_active", None) is None:
-        current_user.followup_active = False
-
-    user_schema = User.from_orm(current_user)
+    user_schema = User.model_validate(current_user)
     return user_schema

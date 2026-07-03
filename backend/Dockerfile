@@ -9,7 +9,7 @@ ENV PYTHONUNBUFFERED 1
 
 # Instala dependências do sistema
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc libpq-dev ffmpeg \
+    && apt-get install -y --no-install-recommends gcc libpq-dev ffmpeg postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # --- MUDANÇA AQUI ---

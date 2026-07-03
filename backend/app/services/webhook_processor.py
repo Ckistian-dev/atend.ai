@@ -11,12 +11,11 @@ from app.crud import crud_user, crud_atendimento, crud_config
 from app.db import models, schemas
 from app.services.whatsapp_service import get_whatsapp_service, format_whatsapp_number
 from app.services.gemini_service import get_gemini_service
-from app.services.prospect_service import get_prospect_service
 from app.services.security import decrypt_token
 
 logger = logging.getLogger(__name__)
 
-async def _process_single_message(message_data: Dict[str, Any], user: models.User, phone_number_id: str):
+async def _process_single_message(message_data: Dict[str, Any], company: models.Company, phone_number_id: str):
     """
     Processa UMA ÚNICA mensagem do webhook.
     """
@@ -41,7 +40,7 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
 
         # --- Etapa 1: Obter ou Criar Atendimento (Mantido igual) ---
         async with SessionLocal() as db_session:
-            result = await crud_atendimento.get_or_create_atendimento_by_number(db=db_session, number=cleaned_sender_number, user=user)
+            result = await crud_atendimento.get_or_create_atendimento_by_number(db=db_session, number=cleaned_sender_number, company=company)
             if not result:
                 return
 
@@ -178,17 +177,17 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
         if media_info_gemini:
             try:
                 async with SessionLocal() as db_gemini_ctx:
-                    # Precisamos buscar o usuário nesta sessão para que o decremento de tokens funcione
-                    user_for_gemini = await db_gemini_ctx.get(models.User, user.id)
+                    # Precisamos buscar a empresa nesta sessão para que o decremento de tokens funcione
+                    company_for_gemini = await db_gemini_ctx.get(models.Company, company.id)
                     
-                    if not user_for_gemini:
-                        raise ValueError("Usuário não encontrado para sessão Gemini")
+                    if not company_for_gemini:
+                        raise ValueError("Empresa não encontrada para sessão Gemini")
 
                     # Busca configurações do atendimento
                     stmt = select(models.Atendimento).where(models.Atendimento.id == atendimento_id).options(joinedload(models.Atendimento.active_persona))
                     atendimento_ctx = (await db_gemini_ctx.execute(stmt)).scalar_one()
                     
-                    persona = atendimento_ctx.active_persona or await crud_config.get_config(db_gemini_ctx, user.default_persona_id, user.id)
+                    persona = atendimento_ctx.active_persona or await crud_config.get_config(db_gemini_ctx, company_for_gemini.default_persona_id, company_for_gemini.id)
 
                     # Chama o serviço atualizado
                     analysis_result = await gemini_service.transcribe_and_analyze_media(
@@ -196,7 +195,7 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
                         db_history=json.loads(atendimento_ctx.conversa or "[]"),
                         persona=persona,
                         db=db_gemini_ctx,
-                        user=user_for_gemini,
+                        company=company_for_gemini,
                         atendimento_id=atendimento_id
                     )
                 
@@ -241,27 +240,7 @@ async def _process_single_message(message_data: Dict[str, Any], user: models.Use
                             atend.updated_at = datetime.now(timezone.utc)
                             logger.info(f"WBP Webhook: Msg {msg_id_wamid} salva.")
 
-            # --- NOTIFICAÇÃO PROSPECT AI (Fora da transação de salvamento) ---
-            # Se o atendimento está em 'Atendente Chamado', notifica nova mensagem
-            if atendimento_id:
-                logger.info(f"WBP Webhook: Verificando se deve notificar ProspectAI para Atendimento {atendimento_id}")
-                async with SessionLocal() as db_notify:
-                    at_notify = await db_notify.get(models.Atendimento, atendimento_id, options=[joinedload(models.Atendimento.active_persona)])
-                    if at_notify and at_notify.status and at_notify.status.strip() == "Atendente Chamado":
-                        logger.info(f"WBP Webhook: Detectada nova mensagem em atendimento pendente ({atendimento_id}). Status atual: {at_notify.status}. Disparando...")
-                        try:
-                            user_notify = await db_notify.get(models.User, user.id)
-                            persona_notify = at_notify.active_persona
-                            if not persona_notify and user_notify.default_persona_id:
-                                persona_notify = await db_notify.get(models.Config, user_notify.default_persona_id)
-                            
-                            if persona_notify:
-                                prospect_service = get_prospect_service()
-                                await prospect_service.notify_atendente_if_needed(
-                                    db_notify, user_notify, at_notify, persona_notify, is_new_status=False
-                                )
-                        except Exception as notify_err:
-                            logger.error(f"WBP Webhook: Erro ao disparar notificação ProspectAI: {notify_err}")
+
 
     except Exception as e:
         logger.error(f"WBP Webhook: Erro processamento single msg {msg_id_wamid}: {e}", exc_info=True)
@@ -284,12 +263,22 @@ async def process_official_message_task(value_payload: dict): # Recebe 'value'
             logger.error("WBP Webhook (Worker): phone_number_id não encontrado no payload 'value'.")
             return
 
-        user: Optional[models.User] = None
-        async with SessionLocal() as db_read_user:
-            user = await crud_user.get_user_by_wbp_phone_number_id(db_read_user, phone_number_id=phone_number_id)
+        company: Optional[models.Company] = None
+        async with SessionLocal() as db_read:
+            result = await db_read.execute(
+                select(models.Company)
+                .where(models.Company.wbp_phone_number_id == phone_number_id)
+                .options(joinedload(models.Company.users))
+            )
+            company = result.scalars().first()
 
+        if not company:
+            logger.warning(f"WBP Webhook (Worker): Empresa não encontrada para wbp_phone_number_id {phone_number_id}")
+            return
+            
+        user = company.users[0] if company.users else None
         if not user:
-            logger.warning(f"WBP Webhook (Worker): Usuário não encontrado para wbp_phone_number_id {phone_number_id}")
+            logger.warning(f"WBP Webhook (Worker): Nenhum usuário encontrado para a empresa {company.name} (ID: {company.id})")
             return
         user_id_log = user.id
 
@@ -297,7 +286,7 @@ async def process_official_message_task(value_payload: dict): # Recebe 'value'
             # Chama a função isolada para cada mensagem.
             # O `await` aqui garante que as mensagens de um mesmo webhook sejam processadas sequencialmente,
             # o que é mais seguro para evitar race conditions no mesmo atendimento.
-            await _process_single_message(message_data, user, phone_number_id)
+            await _process_single_message(message_data, company, phone_number_id)
 
     except Exception as e:
         logger.error(f"WBP Webhook (Worker): ERRO CRÍTICO GERAL no processamento do 'value' (User: {user_id_log}): {e}", exc_info=True)
@@ -321,13 +310,23 @@ async def process_official_status_task(value_payload: dict):
             logger.warning("WBP Webhook (Status): Payload de status incompleto (sem phone_number_id ou statuses).")
             return
 
-        # --- SESSÃO 1: Obter Usuário ---
-        user: Optional[models.User] = None
-        async with SessionLocal() as db_read_user:
-            user = await crud_user.get_user_by_wbp_phone_number_id(db_read_user, phone_number_id=phone_number_id)
+        # --- SESSÃO 1: Obter Empresa ---
+        company: Optional[models.Company] = None
+        async with SessionLocal() as db_read:
+            result = await db_read.execute(
+                select(models.Company)
+                .where(models.Company.wbp_phone_number_id == phone_number_id)
+                .options(joinedload(models.Company.users))
+            )
+            company = result.scalars().first()
 
+        if not company:
+            logger.warning(f"WBP Webhook (Status): Empresa não encontrada para wbp_phone_number_id {phone_number_id}")
+            return
+            
+        user = company.users[0] if company.users else None
         if not user:
-            logger.warning(f"WBP Webhook (Status): Usuário não encontrado para wbp_phone_number_id {phone_number_id}")
+            logger.warning(f"WBP Webhook (Status): Nenhum usuário encontrado para a empresa {company.name} (ID: {company.id})")
             return
         user_id_log = user.id
 
@@ -350,14 +349,14 @@ async def process_official_status_task(value_payload: dict):
                         # 1. Encontrar Contato (Precisamos do contato para achar o atendimento)
                         stmt_atendimento = select(models.Atendimento).where(
                             models.Atendimento.whatsapp == cleaned_recipient_number,
-                            models.Atendimento.user_id == user.id
+                            models.Atendimento.company_id == company.id
                         )
                         
                         atendimento_result = await db_update.execute(stmt_atendimento)
                         atendimento = atendimento_result.scalar_one_or_none()
                         
                         if not atendimento:
-                            logger.warning(f"WBP Webhook (Status): Msg {msg_id_wamid} status {status}. Atendimento para {cleaned_recipient_number} (User {user.id}) não encontrado.")
+                            logger.warning(f"WBP Webhook (Status): Msg {msg_id_wamid} status {status}. Atendimento para {cleaned_recipient_number} (Company {company.id}) não encontrado.")
                             continue
                         
                         atendimento_id_log = atendimento.id # Para log

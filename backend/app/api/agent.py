@@ -12,11 +12,14 @@ async def start_agent(
     current_user: models.User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
-    if current_user.agent_running:
+    if not current_user.company:
+        raise HTTPException(status_code=400, detail="Usuário não possui uma empresa associada.")
+        
+    if current_user.company.agent_running:
         raise HTTPException(status_code=400, detail="O agente já está em execução.")
 
-    current_user.agent_running = True
-    db.add(current_user)
+    current_user.company.agent_running = True
+    db.add(current_user.company)
     await db.commit()
 
     return {"status": "success", "message": "Agente de atendimento iniciado em segundo plano."}
@@ -26,14 +29,19 @@ async def stop_agent(
     current_user: models.User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
-    current_user.agent_running = False
-    db.add(current_user)
+    if not current_user.company:
+        raise HTTPException(status_code=400, detail="Usuário não possui uma empresa associada.")
+        
+    current_user.company.agent_running = False
+    db.add(current_user.company)
     await db.commit()
     return {"status": "success", "message": "Sinal de parada enviado ao agente."}
 
 @router.get("/status", summary="Verificar o status do agente")
-def get_agent_status(current_user: models.User = Depends(get_current_active_user)):
+async def get_agent_status(current_user: models.User = Depends(get_current_active_user)):
     # O status em memória (agent_status) reflete o estado real do processo.
-    # O status no banco (current_user.agent_running) reflete o estado desejado.
+    # O status no banco (current_user.company.agent_running) reflete o estado desejado.
     # Em condições normais, eles devem ser iguais. Usamos o do banco como fonte principal.
-    return {"status": "running" if current_user.agent_running else "stopped"}
+    if not current_user.company:
+        return {"status": "stopped"}
+    return {"status": "running" if current_user.company.agent_running else "stopped"}

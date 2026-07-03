@@ -12,22 +12,22 @@ from app.services.whatsapp_service import format_whatsapp_number
 
 logger = logging.getLogger(__name__)
 
-async def get_atendimento(db: AsyncSession, atendimento_id: int, user_id: int) -> Optional[models.Atendimento]:
+async def get_atendimento(db: AsyncSession, atendimento_id: int, company_id: int) -> Optional[models.Atendimento]:
     """Busca um atendimento específico pelo ID, carregando relacionamentos."""
     result = await db.execute(
         select(models.Atendimento)
-        .where(models.Atendimento.id == atendimento_id, models.Atendimento.user_id == user_id)
+        .where(models.Atendimento.id == atendimento_id, models.Atendimento.company_id == company_id)
         .options(
             joinedload(models.Atendimento.active_persona) # Carrega a persona ativa também
         )
     )
     return result.scalars().first()
 
-async def get_atendimentos_by_user(db: AsyncSession, user_id: int) -> List[models.Atendimento]:
-    """Lista todos os atendimentos de um usuário."""
+async def get_atendimentos_by_user(db: AsyncSession, company_id: int) -> List[models.Atendimento]:
+    """Lista todos os atendimentos de uma empresa."""
     result = await db.execute(
         select(models.Atendimento)
-        .where(models.Atendimento.user_id == user_id)
+        .where(models.Atendimento.company_id == company_id)
         .options(
             joinedload(models.Atendimento.active_persona)
         )
@@ -35,7 +35,85 @@ async def get_atendimentos_by_user(db: AsyncSession, user_id: int) -> List[model
     )
     return result.scalars().all()
 
-async def create_atendimento(db: AsyncSession, atendimento_in: schemas.AtendimentoCreate, user_id: int) -> models.Atendimento:
+async def distribute_atendimento(db: AsyncSession, atendimento: models.Atendimento):
+    """
+    Distribui o atendimento igualitariamente entre os usuários da mesma empresa
+    que participam da distribuição de contatos, tagueando o atendimento.
+    """
+    company_id = atendimento.company_id
+    if not company_id:
+        return
+
+    # 1. Buscar usuários que participam da distribuição
+    stmt_users = select(models.User).where(
+        models.User.company_id == company_id,
+        models.User.participates_distribution == True
+    )
+    res_users = await db.execute(stmt_users)
+    candidates = res_users.scalars().all()
+    if not candidates:
+        logger.info(f"Nenhum usuário configurado para distribuição de contatos na empresa {company_id}.")
+        return
+
+    # 2. Verificar se o atendimento já possui a tag de algum dos candidatos
+    current_tags = atendimento.tags or []
+    # Garantir que current_tags é uma lista
+    if not isinstance(current_tags, list):
+        try:
+            current_tags = json.loads(current_tags) if isinstance(current_tags, str) else list(current_tags)
+        except:
+            current_tags = []
+
+    # Mapear nomes/emails dos candidatos para verificar
+    candidate_identifiers = set()
+    for u in candidates:
+        if u.name:
+            candidate_identifiers.add(u.name.strip().lower())
+        if u.email:
+            candidate_identifiers.add(u.email.strip().lower())
+
+    # Remover None se houver
+    candidate_identifiers.discard(None)
+
+    has_agent_tag = False
+    for tag in current_tags:
+        if isinstance(tag, dict) and tag.get("name"):
+            tag_name_lower = str(tag.get("name")).strip().lower()
+            if tag_name_lower in candidate_identifiers:
+                has_agent_tag = True
+                break
+
+    if has_agent_tag:
+        logger.info(f"Atendimento {atendimento.id} já possui tag de agente associado. Pulando distribuição.")
+        return
+
+    # 3. Distribuição igualitária: contar atendimentos de cada candidato
+    user_counts = []
+    for u in candidates:
+        name_to_check = u.name if u.name else u.email
+        stmt_count = select(func.count(models.Atendimento.id)).where(
+            models.Atendimento.company_id == company_id,
+            models.Atendimento.tags.cast(JSONB).contains([{"name": name_to_check}])
+        )
+        count_res = await db.execute(stmt_count)
+        count = count_res.scalar() or 0
+        user_counts.append((count, u))
+
+    # Ordenar por count ascendente e depois por ID do usuário
+    user_counts.sort(key=lambda x: (x[0], x[1].id))
+    selected_user = user_counts[0][1]
+
+    # 4. Adicionar a tag
+    selected_name = selected_user.name if selected_user.name else selected_user.email
+    selected_color = selected_user.profile_color or "#3b82f6"
+
+    # Criar tag com base no nome do usuário (fallback para email) e cor
+    new_tag = {"name": selected_name, "color": selected_color}
+    current_tags.append(new_tag)
+    atendimento.tags = current_tags
+    logger.info(f"Atendimento {atendimento.id} distribuído para o usuário {selected_name} (Cor: {selected_color}).")
+
+async def create_atendimento(db: AsyncSession, atendimento_in: schemas.AtendimentoCreate, company_id: int) -> models.Atendimento:
     """
     Cria um novo atendimento e carrega seus relacionamentos para evitar erros de lazy-loading.
     Não faz commit.
@@ -45,10 +123,13 @@ async def create_atendimento(db: AsyncSession, atendimento_in: schemas.Atendimen
 
     db_atendimento = models.Atendimento(
         **create_data,
-        user_id=user_id
+        company_id=company_id
     )
     db.add(db_atendimento)
     await db.flush() # Envia o objeto para o banco para obter um ID e valores padrão.
+
+    if db_atendimento.status == "Atendente Chamado":
+        await distribute_atendimento(db, db_atendimento)
 
     # Recarrega o objeto e seu relacionamento 'active_persona' explicitamente.
     # Isso é crucial para que a resposta da API possa ser serializada sem erros de I/O (lazy loading).
@@ -59,6 +140,7 @@ async def create_atendimento(db: AsyncSession, atendimento_in: schemas.Atendimen
 
 async def update_atendimento(db: AsyncSession, db_atendimento: models.Atendimento, atendimento_in: schemas.AtendimentoUpdate) -> models.Atendimento:
     """Atualiza os dados de um atendimento. Não faz commit."""
+    old_status = db_atendimento.status
     update_data = atendimento_in.model_dump(exclude_unset=True)
     
     for field, value in update_data.items():
@@ -103,19 +185,23 @@ async def update_atendimento(db: AsyncSession, db_atendimento: models.Atendiment
 
     db_atendimento.updated_at = datetime.now(timezone.utc)
     db.add(db_atendimento)
+
+    if db_atendimento.status == "Atendente Chamado" and old_status != "Atendente Chamado":
+        await distribute_atendimento(db, db_atendimento)
+
     return db_atendimento
 
 
 async def add_message_to_conversa(
     db: AsyncSession,
     atendimento_id: int,
-    user_id: int,
+    company_id: int,
     message: schemas.FormattedMessage # Usando o schema definido
 ) -> Optional[models.Atendimento]:
     """Adiciona uma mensagem formatada à conversa de um atendimento existente."""
-    db_atendimento = await get_atendimento(db, atendimento_id=atendimento_id, user_id=user_id)
+    db_atendimento = await get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
     if not db_atendimento:
-        logger.warning(f"Tentativa de adicionar mensagem a atendimento inexistente ou não pertencente ao user: ID {atendimento_id}, User {user_id}")
+        logger.warning(f"Tentativa de adicionar mensagem a atendimento inexistente ou não pertencente à empresa: ID {atendimento_id}, Empresa {company_id}")
         return None
 
     try:
@@ -149,7 +235,7 @@ async def add_message_to_conversa(
         return None
 
 
-async def get_or_create_atendimento_by_number(db: AsyncSession, number: str, user: models.User) -> Optional[Tuple[models.Atendimento, bool]]:
+async def get_or_create_atendimento_by_number(db: AsyncSession, number: str, company: models.Company) -> Optional[Tuple[models.Atendimento, bool]]:
     """Busca ou cria um atendimento. Faz commit internamente."""
     formatted_number = format_whatsapp_number(number)
 
@@ -158,7 +244,7 @@ async def get_or_create_atendimento_by_number(db: AsyncSession, number: str, use
         select(models.Atendimento)
         .where(
             models.Atendimento.whatsapp == formatted_number,
-            models.Atendimento.user_id == user.id,
+            models.Atendimento.company_id == company.id,
         )
         .order_by(models.Atendimento.created_at.desc())
         .options(joinedload(models.Atendimento.active_persona)) # Carrega relacionamentos
@@ -170,14 +256,14 @@ async def get_or_create_atendimento_by_number(db: AsyncSession, number: str, use
         return existing_atendimento, False # Retorna o existente e False (não foi criado)
 
     # 3. Criar Novo Atendimento (se nenhum ativo foi encontrado)
-    if not user.default_persona_id:
-        logger.error(f"Usuário {user.id} não tem persona padrão configurada. Não é possível criar novo atendimento para {formatted_number}.")
+    if not company.default_persona_id:
+        logger.error(f"Empresa {company.id} não tem persona padrão configurada. Não é possível criar novo atendimento para {formatted_number}.")
         return None # Retorna None se não puder criar
 
     logger.info(f"Nenhum atendimento ativo encontrado para {formatted_number}. Criando novo atendimento...")
     new_atendimento = models.Atendimento(
-        whatsapp=formatted_number, user_id=user.id,
-        active_persona_id=user.default_persona_id, status="Mensagem Recebida" # Status inicial
+        whatsapp=formatted_number, company_id=company.id,
+        active_persona_id=company.default_persona_id, status="Mensagem Recebida" # Status inicial
     )
     db.add(new_atendimento)
     try:
@@ -185,28 +271,28 @@ async def get_or_create_atendimento_by_number(db: AsyncSession, number: str, use
         await db.refresh(new_atendimento)
         logger.info(f"Novo atendimento criado (ID: {new_atendimento.id}) para o contato ({formatted_number}).")
         # Recarrega com relacionamentos após criar
-        return await get_atendimento(db, new_atendimento.id, user.id), True # Retorna o novo e True (foi criado)
+        return await get_atendimento(db, new_atendimento.id, company.id), True # Retorna o novo e True (foi criado)
     except Exception as e:
         await db.rollback()
         logger.error(f"Erro ao criar novo atendimento para {number}: {e}", exc_info=True)
         return None # Falha ao criar
 
 
-async def delete_atendimento(db: AsyncSession, atendimento_id: int, user_id: int) -> Optional[models.Atendimento]:
+async def delete_atendimento(db: AsyncSession, atendimento_id: int, company_id: int) -> Optional[models.Atendimento]:
     """Busca e prepara um atendimento para exclusão. Não faz commit."""
-    db_atendimento = await get_atendimento(db, atendimento_id=atendimento_id, user_id=user_id)
+    db_atendimento = await get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
     if db_atendimento:
         await db.delete(db_atendimento)
         # O commit deve ser feito na rota que chamou
     return db_atendimento
 
 
-async def get_all_user_tags(db: AsyncSession, user_id: int) -> List[Dict[str, str]]:
-    """Busca todas as tags únicas de todos os atendimentos de um usuário."""
+async def get_all_user_tags(db: AsyncSession, company_id: int) -> List[Dict[str, str]]:
+    """Busca todas as tags únicas de todos os atendimentos de uma empresa."""
     try:
         # Esta query extrai o array de tags de cada atendimento
         query = select(models.Atendimento.tags).where(
-            models.Atendimento.user_id == user_id,
+            models.Atendimento.company_id == company_id,
             models.Atendimento.tags != None,  # Ignora atendimentos sem tags
             func.jsonb_array_length(models.Atendimento.tags.cast(JSONB)) > 0 # Ignora arrays vazios
         )
@@ -223,13 +309,13 @@ async def get_all_user_tags(db: AsyncSession, user_id: int) -> List[Dict[str, st
         
         return list(unique_tags.values())
     except Exception as e:
-        logger.error(f"Erro ao buscar tags para o usuário {user_id}: {e}", exc_info=True)
+        logger.error(f"Erro ao buscar tags para a empresa {company_id}: {e}", exc_info=True)
         return []
 
-async def get_atendimentos_no_periodo(db: AsyncSession, user_id: int, start_date: datetime, end_date: datetime) -> List[models.Atendimento]:
-    """Busca todos os atendimentos de um usuário dentro de um período de datas."""
+async def get_atendimentos_no_periodo(db: AsyncSession, company_id: int, start_date: datetime, end_date: datetime) -> List[models.Atendimento]:
+    """Busca todos os atendimentos de uma empresa dentro de um período de datas."""
     query = select(models.Atendimento).where(
-        models.Atendimento.user_id == user_id,
+        models.Atendimento.company_id == company_id,
         models.Atendimento.created_at.between(start_date, end_date)
     )
     result = await db.execute(query)
@@ -238,7 +324,7 @@ async def get_atendimentos_no_periodo(db: AsyncSession, user_id: int, start_date
 
 async def get_dashboard_data(
     db: AsyncSession, 
-    user_id: int, 
+    company_id: int, 
     start_date: datetime, 
     end_date: datetime
 ) -> Dict[str, Any]:
@@ -248,7 +334,7 @@ async def get_dashboard_data(
 
     # --- 1. Métricas para os Cards ---
     base_query = select(models.Atendimento).where(
-        models.Atendimento.user_id == user_id,
+        models.Atendimento.company_id == company_id,
         models.Atendimento.created_at.between(start_date, end_date),
         models.Atendimento.status != 'Ignorar Contato' # Exclui o status
     )
@@ -276,7 +362,7 @@ async def get_dashboard_data(
     status_counts_query = await db.execute(
         select(models.Atendimento.status, func.count(models.Atendimento.id))
         .where(
-            models.Atendimento.user_id == user_id,
+            models.Atendimento.company_id == company_id,
             models.Atendimento.created_at.between(start_date, end_date),
             models.Atendimento.status != 'Ignorar Contato' # Exclui o status
         )
@@ -301,7 +387,7 @@ async def get_dashboard_data(
             func.sum(models.Atendimento.token_usage).label('tokens'),
             *status_filters
         ).where(
-            models.Atendimento.user_id == user_id,
+            models.Atendimento.company_id == company_id,
             models.Atendimento.created_at.between(start_date, end_date),
             models.Atendimento.status != 'Ignorar Contato' # Exclui o status
         )
@@ -339,7 +425,7 @@ async def get_dashboard_data(
     
     # --- 4. Consumo de Tokens (Real) ---
     # Busca o total de tokens consumidos no período usando a tabela de histórico
-    total_tokens_periodo = await crud_user.get_token_usage_in_period(db, user_id, start_date, end_date)
+    total_tokens_periodo = await crud_user.get_token_usage_in_period(db, company_id, start_date, end_date)
     
     # Calcula a média por atendimento
     consumo_medio_tokens = (total_tokens_periodo / total_atendimentos) if total_atendimentos > 0 else 0
@@ -348,7 +434,7 @@ async def get_dashboard_data(
     atendimentos_com_tempo_query = await db.execute(
         select(models.Atendimento.created_at, models.Atendimento.updated_at, models.Atendimento.conversa)
         .where(
-            models.Atendimento.user_id == user_id,
+            models.Atendimento.company_id == company_id,
             models.Atendimento.created_at.between(start_date, end_date),
             models.Atendimento.status != 'Ignorar Contato'
         )
@@ -431,7 +517,7 @@ async def get_dashboard_data(
     recent_activity_query = await db.execute(
         select(models.Atendimento)
         .where(
-            models.Atendimento.user_id == user_id,
+            models.Atendimento.company_id == company_id,
             models.Atendimento.created_at.between(start_date, end_date)
         )
         .order_by(models.Atendimento.updated_at.desc())
@@ -439,22 +525,7 @@ async def get_dashboard_data(
     )
     recent_activity = recent_activity_query.scalars().first()
 
-    # --- NOVO: Gráfico de Barras (Atendimentos por Número de Notificação) ---
-    notificacao_counts_query = await db.execute(
-        select(models.Atendimento.notificacao_contato, func.count(models.Atendimento.id))
-        .where(
-            models.Atendimento.user_id == user_id,
-            models.Atendimento.created_at.between(start_date, end_date),
-            models.Atendimento.notificacao_contato != None,
-            models.Atendimento.notificacao_contato != ""
-        )
-        .group_by(models.Atendimento.notificacao_contato)
-        .order_by(func.count(models.Atendimento.id).desc())
-    )
-    atendimentos_por_notificacao = [
-        {"name": contato.split('@')[0] if contato else "Não Definido", "value": count}
-        for contato, count in notificacao_counts_query.all()
-    ]
+
 
     dashboard_data = {
         "stats": {
@@ -485,8 +556,7 @@ async def get_dashboard_data(
         },
         "charts": {
             "atendimentosPorSituacao": atendimentos_por_situacao,
-            "contatosPorDia": contatos_por_dia,
-            "atendimentosPorNotificacao": atendimentos_por_notificacao
+            "contatosPorDia": contatos_por_dia
         },
         # Adiciona a atividade recente ao payload. Retorna como uma lista para manter
         # a compatibilidade com o frontend que espera `recentActivity[0]`.
@@ -516,9 +586,10 @@ async def get_atendimentos_para_processar(db: AsyncSession) -> List[models.Atend
         # Cria a consulta
         stmt = (
             select(models.Atendimento)
-            .join(models.User, models.Atendimento.user_id == models.User.id)
+            .options(joinedload(models.Atendimento.company))
+            .join(models.Company, models.Atendimento.company_id == models.Company.id)
             .where(
-                models.User.agent_running == True, # Filtra por usuários com agente ativo
+                models.Company.agent_running == True, # Filtra por empresas com agente ativo
                 models.Atendimento.status == "Mensagem Recebida",
                 models.Atendimento.updated_at < tempo_limite
             )
@@ -533,14 +604,14 @@ async def get_atendimentos_para_processar(db: AsyncSession) -> List[models.Atend
         logger.error(f"Erro ao buscar atendimentos para processar (em massa): {e}", exc_info=True)
         return []
 
-async def get_atendimentos_for_followup(db: AsyncSession, user_id: int, earliest_time: datetime, latest_time: datetime) -> list[models.Atendimento]:
+async def get_atendimentos_for_followup(db: AsyncSession, company_id: int, earliest_time: datetime, latest_time: datetime) -> list[models.Atendimento]:
     """
-    Busca atendimentos de um usuário em 'Aguardando Resposta' dentro da janela de tempo para follow-up.
+    Busca atendimentos de uma empresa em 'Aguardando Resposta' dentro da janela de tempo para follow-up.
     """
     stmt = (
         select(models.Atendimento)
         .where(
-            models.Atendimento.user_id == user_id,
+            models.Atendimento.company_id == company_id,
             models.Atendimento.status == "Aguardando Resposta",
             models.Atendimento.updated_at < earliest_time,
             models.Atendimento.updated_at > latest_time
@@ -550,13 +621,13 @@ async def get_atendimentos_for_followup(db: AsyncSession, user_id: int, earliest
     result = await db.execute(stmt)
     return result.scalars().unique().all()
 
-async def get_atendimentos_by_status_and_inactivity(db: AsyncSession, user_id: int, status: str, days_inactive: int) -> List[models.Atendimento]:
-    """Busca atendimentos com um status específico que não foram atualizados há X dias."""
+async def get_atendimentos_by_status_and_inactivity(db: AsyncSession, company_id: int, status: str, days_inactive: int) -> List[models.Atendimento]:
+    """Busca atendimentos com um status específico que não foram atualizados há X dias por empresa."""
     limit_date = datetime.now(timezone.utc) - timedelta(days=days_inactive)
     stmt = (
         select(models.Atendimento)
         .where(
-            models.Atendimento.user_id == user_id,
+            models.Atendimento.company_id == company_id,
             models.Atendimento.status == status,
             models.Atendimento.updated_at < limit_date
         )

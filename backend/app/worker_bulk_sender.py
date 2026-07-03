@@ -42,13 +42,13 @@ async def process_bulk_queue():
         templates_cache = {}
 
         for at in items:
-            # Carrega o dono do atendimento para usar as credenciais WBP
-            owner_res = await db.execute(select(models.User).where(models.User.id == at.user_id))
-            user = owner_res.scalar_one_or_none()
+            # Carrega a empresa do atendimento para usar as credenciais WBP
+            company_res = await db.execute(select(models.Company).where(models.Company.id == at.company_id))
+            company = company_res.scalar_one_or_none()
             
-            if not user or not at.bulk_template_name:
+            if not company or not at.bulk_template_name:
                 at.status = "Erro no Disparo"
-                logger.error(f"Worker-Bulk: Atendimento {at.id} sem usuário ou template.")
+                logger.error(f"Worker-Bulk: Atendimento {at.id} sem empresa ou template.")
                 db.add(at)
                 continue
 
@@ -67,11 +67,13 @@ async def process_bulk_queue():
                                     param['text'] = param['text'].replace('{nome}', nome_contato)
 
                 send_result = await whatsapp_service.send_template_message(
-                    user=user,
+                    company=company,
                     number=at.whatsapp,
                     template_name=at.bulk_template_name,
                     language_code="pt_BR", # Pode ser parametrizado se necessário
-                    components=components_to_send
+                    components=components_to_send,
+                    db=db,
+                    atendimento_id=at.id
                 )
                 
                 # --- LOG CONVERSA: Salva a mensagem no histórico ---
@@ -94,14 +96,14 @@ async def process_bulk_queue():
 
                 try:
                     # Busca a definição do template para montar o texto real (reutiliza cache se disponível)
-                    if user.wbp_business_account_id:
-                        if user.wbp_business_account_id not in templates_cache:
-                            templates_cache[user.wbp_business_account_id] = await whatsapp_service.get_templates_official(
-                                business_account_id=user.wbp_business_account_id,
+                    if company.wbp_business_account_id:
+                        if company.wbp_business_account_id not in templates_cache:
+                            templates_cache[company.wbp_business_account_id] = await whatsapp_service.get_templates_official(
+                                business_account_id=company.wbp_business_account_id,
                                 access_token=settings.WBP_ACCESS_TOKEN
                             )
                         
-                        templates = templates_cache[user.wbp_business_account_id]
+                        templates = templates_cache[company.wbp_business_account_id]
                         target_template = next((t for t in templates if t['name'] == at.bulk_template_name), None)
 
                         if target_template:
@@ -165,8 +167,15 @@ async def process_bulk_queue():
 async def main():
     logger.info("--- INICIANDO WORKER DE DISPAROS (BULK SENDER) ---")
     while True:
-        await process_bulk_queue()
-        await asyncio.sleep(15) # Verifica a fila a cada 15 segundos
+        try:
+            await process_bulk_queue()
+            await asyncio.sleep(15) # Verifica a fila a cada 15 segundos
+        except Exception as e:
+            logger.error(f"Worker-Bulk: Erro crítico no loop principal: {e}. Tentando novamente em 15 segundos...", exc_info=True)
+            await asyncio.sleep(15)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Worker-Bulk: Recebido sinal de parada. Desligando...")

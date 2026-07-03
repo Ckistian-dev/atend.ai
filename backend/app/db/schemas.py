@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 
@@ -15,7 +15,6 @@ class ConfigBase(BaseModel):
     available_hours: Optional[Dict[str, Any]] = None
     is_calendar_active: Optional[bool] = False
     google_calendar_credentials: Optional[Dict[str, Any]] = None
-    human_corrections: Optional[bool] = False
     workflow_json: Optional[Dict[str, Any]] = None
     ai_model: Optional[str] = "gemini-2.5-flash"
     temperature: Optional[float] = 0.5
@@ -44,7 +43,7 @@ class ConfigUpdate(BaseModel):
 
 class Config(ConfigBase):
     id: int
-    user_id: int
+    company_id: int
     model_config = {"from_attributes": True}
 
 # --- Schemas de Atendimento ---
@@ -78,7 +77,7 @@ class AtendimentoCreate(BaseModel):
 
 class Atendimento(BaseModel):
     id: int
-    user_id: int
+    company_id: int
     active_persona_id: Optional[int] = None
     status: str
     resumo: Optional[str] = None
@@ -101,53 +100,89 @@ class AtendimentoPage(BaseModel):
     items: List[Atendimento]
     model_config = {"from_attributes": True}
 
+# --- Schemas de Empresa ---
+class CompanyBase(BaseModel):
+    name: str
+    wbp_phone_number_id: Optional[str] = None
+    wbp_business_account_id: Optional[str] = None
+    agent_running: Optional[bool] = False
+    atendente_online: Optional[bool] = False
+    tokens: Optional[int] = 0
+    default_persona_id: Optional[int] = None
+    prospect_token: Optional[str] = None
+    followup_active: Optional[bool] = False
+    followup_config: Optional[Dict[str, Any]] = None
+
+class CompanyCreate(CompanyBase):
+    pass
+
+class CompanyUpdate(BaseModel):
+    name: Optional[str] = None
+    wbp_phone_number_id: Optional[str] = None
+    wbp_business_account_id: Optional[str] = None
+    agent_running: Optional[bool] = None
+    atendente_online: Optional[bool] = None
+    tokens: Optional[int] = None
+    default_persona_id: Optional[int] = None
+    prospect_token: Optional[str] = None
+    followup_active: Optional[bool] = None
+    followup_config: Optional[Dict[str, Any]] = None
+
+class Company(CompanyBase):
+    id: int
+    model_config = {"from_attributes": True}
+
 # --- Schemas de Usuário ---
 class UserBase(BaseModel):
     email: EmailStr
+    name: Optional[str] = None
+    participates_distribution: Optional[bool] = False
+    profile_color: Optional[str] = "#3b82f6"
 
 class UserCreate(UserBase):
     password: str
 
 class UserCreateByAdmin(UserCreate):
-    tokens: Optional[int] = 0
-    default_persona_id: Optional[int] = None
-    agent_running: Optional[bool] = False
-    atendente_online: Optional[bool] = False
-    followup_active: Optional[bool] = False
-    followup_config: Optional[Dict[str, Any]] = None
-    wbp_phone_number_id: Optional[str] = Field(None, description="ID do Número de Telefone na WhatsApp Business Platform")
-    wbp_business_account_id: Optional[str] = Field(None, description="ID da Conta do WhatsApp Business na Meta")
+    role: Optional[str] = "user"
+    company_id: Optional[int] = None
+    permissions: Optional[Dict[str, Any]] = None
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
-    tokens: Optional[int] = None
-    default_persona_id: Optional[int] = None
-    agent_running: Optional[bool] = None
-    atendente_online: Optional[bool] = None
+    name: Optional[str] = None
+    role: Optional[str] = None
+    company_id: Optional[int] = None
+    password: Optional[str] = Field(None, description="Definir uma nova senha para o usuário")
+    permissions: Optional[Dict[str, Any]] = None
+    participates_distribution: Optional[bool] = None
+    profile_color: Optional[str] = None
     followup_active: Optional[bool] = None
     followup_config: Optional[Dict[str, Any]] = None
-    wbp_phone_number_id: Optional[str] = Field(None, description="ID do Número de Telefone na WhatsApp Business Platform")
-    wbp_business_account_id: Optional[str] = Field(None, description="ID da Conta do WhatsApp Business na Meta")
-    password: Optional[str] = Field(None, description="Definir uma nova senha para o usuário")
 
 class User(UserBase):
     id: int
-    tokens: int
+    role: str
+    company_id: Optional[int] = None
     is_superuser: bool = False
-    agent_running: bool
-    atendente_online: bool
-    default_persona_id: Optional[int] = None
-    followup_active: bool
-    followup_config: Optional[Dict[str, Any]] = None
-    wbp_phone_number_id: Optional[str] = None
-    wbp_business_account_id: Optional[str] = None
+    company: Optional[Company] = None
+    permissions: Optional[Dict[str, Any]] = None
+    participates_distribution: Optional[bool] = False
+    profile_color: Optional[str] = None
     model_config = {"from_attributes": True}
+
+    @field_validator("participates_distribution", mode="before")
+    @classmethod
+    def default_participates_distribution(cls, v):
+        if v is None:
+            return False
+        return v
 
 # --- Schemas de Token ---
 class Token(BaseModel):
     access_token: str
     token_type: str
     is_admin: bool = False
+    is_superuser: bool = False
 
 class TokenData(BaseModel):
     email: Optional[str] = None

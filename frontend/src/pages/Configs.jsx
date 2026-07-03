@@ -4,12 +4,12 @@ import toast from 'react-hot-toast';
 import {
     Plus, Save, Trash2, FileText, ChevronRight, Loader2,
     Link as LinkIcon, Star, CheckCircle, Folder, Copy, Share2, Database, ExternalLink, Bell, RefreshCw, Check,
-    Calendar, Clock, X,
+    Calendar, Clock, X, HelpCircle,
     Search, User, Users, Info, Network, Maximize2, Cpu, Sliders, Zap, Bot, ChevronLeft, Wand2
 } from 'lucide-react';
 import { WorkflowPreview, WorkflowEditorModal } from '../components/configs/WorkflowEditor';
 import FeedbackModal from '../components/mensagens/FeedbackModal';
-import { LLM_MODELS, DEFAULT_MODEL } from '../constants/models';
+import { LLM_MODELS, DEFAULT_MODEL } from '../constants/models.json';
 import PageLoader from '../components/common/PageLoader';
 
 
@@ -106,8 +106,7 @@ const initialFormData = {
     ai_model: DEFAULT_MODEL,
     temperature: 0.5,
     top_p: 0.95,
-    top_k: 40,
-    human_corrections: false
+    top_k: 40
 };
 
 
@@ -124,15 +123,13 @@ function Configs() {
 
     // Estados Sheets
     const [spreadsheetId, setSpreadsheetId] = useState(''); // System
+    const [showSystemHelp, setShowSystemHelp] = useState(false);
+    const [showRagHelp, setShowRagHelp] = useState(false);
+    const [showDriveHelp, setShowDriveHelp] = useState(false); // System
     const [spreadsheetRagId, setSpreadsheetRagId] = useState(''); // RAG
 
     // Estados Drive (Novo)
     const [driveFolderId, setDriveFolderId] = useState('');
-
-    // Estados Notificações (Novo)
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [destinations, setDestinations] = useState([]);
-    const [destSearchTerm, setDestSearchTerm] = useState('');
 
     // Estados Agenda
     const [schedule, setSchedule] = useState({});
@@ -153,7 +150,6 @@ function Configs() {
         { id: 'rag', label: 'Conhecimento', icon: Database },
         { id: 'drive', label: 'Arquivos', icon: Folder },
         { id: 'fluxo', label: 'Fluxo', icon: Network },
-        { id: 'notifications', label: 'Alertas', icon: Bell },
         { id: 'agenda', label: 'Agenda', icon: Calendar }
     ], []);
 
@@ -207,8 +203,7 @@ function Configs() {
             ai_model: config.ai_model || DEFAULT_MODEL,
             temperature: config.temperature ?? 0.5,
             top_p: config.top_p ?? 0.95,
-            top_k: config.top_k ?? 40,
-            human_corrections: config.human_corrections || false
+            top_k: config.top_k ?? 40
         });
 
         // Parse Schedule
@@ -237,9 +232,6 @@ function Configs() {
         // Verifica se o destino salvo está na lista (se não estiver e tiver valor, ativa modo manual)
         // Isso será feito após carregar os destinos, ou assumimos manual se não for vazio
 
-        // setDestSearchTerm('');
-        setDestSearchTerm('');
-
         // No mobile, após selecionar, vamos para o formulário
         setMobileView('form');
         setActiveTab('ia');
@@ -259,7 +251,6 @@ function Configs() {
         setSpreadsheetId('');
         setSpreadsheetRagId('');
         setDriveFolderId('');
-        setDestSearchTerm('');
         const defaultSchedule = {};
         ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'].forEach(day => {
             defaultSchedule[day] = { active: false, blocks: [{ start: '09:00', end: '18:00' }] };
@@ -331,8 +322,7 @@ function Configs() {
             ai_model: formData.ai_model,
             temperature: formData.temperature,
             top_p: formData.top_p,
-            top_k: formData.top_k,
-            human_corrections: formData.human_corrections
+            top_k: formData.top_k
         };
         try {
             let updatedConfig;
@@ -443,10 +433,15 @@ function Configs() {
     };
 
     const handleSetDefault = async (configId) => {
-        if (userData?.default_persona_id === configId) return;
+        const currentDefault = userData?.company?.default_persona_id;
+        if (currentDefault === configId) return;
         try {
-            await api.put('/users/me', { default_persona_id: configId });
-            await fetchData();
+            await api.post(`/configs/${configId}/set-default`);
+            // Atualiza o estado local imediatamente para a estrela refletir sem precisar recarregar
+            setUserData(prev => prev ? {
+                ...prev,
+                company: prev.company ? { ...prev.company, default_persona_id: configId } : prev.company
+            } : prev);
         } catch (err) {
             setError('Erro ao definir a configuração padrão.');
         }
@@ -528,74 +523,6 @@ function Configs() {
         }
     };
 
-    // --- Fetch Destinations (ProspectAI) ---
-    const fetchDestinations = async () => {
-        try {
-            const response = await api.get('/configs/destinations');
-            const data = response.data.destinations || response.data;
-            setDestinations(Array.isArray(data) ? data : []);
-        } catch (err) {
-            console.error("Erro ao buscar destinos:", err);
-            toast.error("Não foi possível carregar a lista de contatos do ProspectAI.");
-        }
-    };
-
-    const manualJid = useMemo(() => {
-        let digits = destSearchTerm.replace(/\D/g, '');
-        if (digits.length >= 10) {
-            if (!digits.startsWith('55')) digits = `55${digits}`;
-            // Normaliza para remover o nono dígito se necessário
-            const normalized = normalizeJid(`${digits}@s.whatsapp.net`);
-            return normalized;
-        }
-        return null;
-    }, [destSearchTerm]);
-
-    const filteredDestinations = useMemo(() => {
-        const term = destSearchTerm.toLowerCase().trim();
-        const termDigits = term.replace(/\D/g, '');
-
-        // 1. Remove duplicados por remoteJid e ordena alfabeticamente
-        const uniqueMap = new Map();
-        destinations.forEach(d => {
-            const jid = d.remoteJid || d.id;
-            if (jid && !uniqueMap.has(jid)) {
-                uniqueMap.set(jid, { ...d, remoteJid: jid });
-            }
-        });
-
-        const uniqueList = Array.from(uniqueMap.values()).sort((a, b) => {
-            const nameA = (a.name || a.subject || 'Sem nome').toLowerCase();
-            const nameB = (b.name || b.subject || 'Sem nome').toLowerCase();
-            return nameA.localeCompare(nameB);
-        });
-
-        if (!term) return uniqueList;
-
-        return uniqueList.filter(dest => {
-            const name = (dest.name || dest.subject || '').toLowerCase();
-            const fullJid = (dest.remoteJid || '').toLowerCase();
-
-            if (name.includes(term)) return true;
-
-            const jidPrefix = fullJid.split('@')[0];
-
-            // Se o termo de busca parece um número, tenta busca normalizada (sem nono dígito)
-            if (termDigits.length >= 8) {
-                const normalizedJid = normalizeJid(jidPrefix);
-                // Se o termo tem 10 ou 11 dígitos, assumimos que é DD + número e adicionamos 55 para normalizar
-                let searchVal = termDigits;
-                if (termDigits.length === 10 || termDigits.length === 11) {
-                    searchVal = termDigits.startsWith('55') ? termDigits : `55${termDigits}`;
-                }
-                const normalizedTerm = normalizeJid(searchVal);
-                if (normalizedJid.includes(normalizedTerm)) return true;
-            }
-
-            return term.includes('@') ? fullJid.includes(term) : jidPrefix.includes(term);
-        });
-    }, [destinations, destSearchTerm]);
-
     const extractId = (value) => {
         if (!value) return "";
         const sheetMatch = value.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
@@ -605,6 +532,21 @@ function Configs() {
         return value;
     };
 
+    const handleSpreadsheetIdChange = (e) => {
+        const val = extractId(e.target.value);
+        setSpreadsheetId(val);
+    };
+
+    const handleSpreadsheetRagIdChange = (e) => {
+        const val = extractId(e.target.value);
+        setSpreadsheetRagId(val);
+    };
+
+    const handleDriveFolderIdChange = (e) => {
+        const val = extractId(e.target.value);
+        setDriveFolderId(val);
+    };
+
     const openResource = (id, type) => {
         if (!id) return;
         const baseUrl = type === 'drive'
@@ -612,13 +554,6 @@ function Configs() {
             : 'https://docs.google.com/spreadsheets/d/';
         window.open(`${baseUrl}${id}`, '_blank');
     };
-
-    // Carrega destinos quando a aba de notificações é aberta
-    useEffect(() => {
-        if (activeTab === 'notifications') {
-            fetchDestinations();
-        }
-    }, [activeTab]);
 
 
     const labelClass = "block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1";
@@ -662,7 +597,7 @@ function Configs() {
                             ) : (
                                 <ul className="space-y-2 sm:space-y-3 overflow-y-auto custom-scrollbar flex-1 pr-1">
                                     {configs.map(config => {
-                                        const isDefault = userData?.default_persona_id === config.id;
+                                        const isDefault = userData?.company?.default_persona_id === config.id;
                                         const isSelected = selectedConfig?.id === config.id;
                                         return (
                                             <li key={config.id} className="persona-card group">
@@ -780,45 +715,110 @@ function Configs() {
                                 {/* CONTEÚDO ABA: SYSTEM (INSTRUÇÕES) */}
                                 {activeTab === 'system' && (
                                     <div className="animate-fade-in space-y-8 overflow-y-scroll custom-scrollbar">
-                                        {!selectedConfig?.spreadsheet_id ? (
-                                            <div className="p-10 bg-blue-50/50 border border-blue-100/50 rounded-[2.5rem] shadow-sm flex flex-col items-center text-center gap-6">
-                                                <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center text-blue-600 shadow-xl shadow-blue-100">
-                                                    <FileText size={32} />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Configure o Cérebro da Operação</h3>
-                                                    <p className="text-sm text-slate-500 max-w-md mx-auto">Conecte sua conta do Google para gerar automaticamente a planilha de diretrizes e personalidade desta persona.</p>
-                                                </div>
-                                                <button type="button" onClick={() => handleProvision('system')} disabled={isSyncing || !selectedConfig?.id} className="flex items-center gap-3 bg-white text-slate-700 font-bold px-8 py-4 rounded-3xl border border-slate-200 hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-50 shadow-sm hover:shadow-xl hover:shadow-blue-100">
-                                                    {isSyncing ? <Loader2 className="animate-spin" size={20} /> : (
-                                                        <>
-                                                            <img src="https://img.icons8.com/color/24/000000/google-logo.png" alt="Google" className="w-5 h-5" />
-                                                            Gerar Matriz de Instruções
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="p-8 bg-slate-50/50 rounded-[2rem] border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
-                                                <div className="flex items-center gap-5">
-                                                    <div className="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center text-green-600">
-                                                        <CheckCircle size={28} />
+                                        {/* Status / Configuração da Planilha */}
+                                        <div className="bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
+                                            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${spreadsheetId ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
+                                                        <FileText size={24} />
                                                     </div>
                                                     <div>
-                                                        <h3 className="font-black text-slate-900 leading-tight">Matriz de Instruções Ativa</h3>
-                                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Conectado via Google Sheets</p>
+                                                        <h3 className="font-black text-slate-900 leading-tight">
+                                                            {spreadsheetId ? 'Matriz de Instruções Ativa' : 'Matriz de Instruções'}
+                                                        </h3>
+                                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                                            {spreadsheetId ? 'Conectado via Google Sheets' : 'Não configurada'}
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-                                                    <button type="button" onClick={() => openResource(selectedConfig.spreadsheet_id, 'sheet')} className="w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl sm:rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
-                                                        <ExternalLink size={18} /> Ver Planilha
+                                                <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                                                    {/* Input ID da planilha (Mais Largo) */}
+                                                    <input
+                                                        type="text"
+                                                        value={spreadsheetId}
+                                                        onChange={handleSpreadsheetIdChange}
+                                                        placeholder="Cole o link ou ID da planilha..."
+                                                        className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-xs h-[38px] flex-grow sm:flex-initial sm:w-[360px]"
+                                                    />
+
+                                                    {/* Botão de ajuda "?" */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowSystemHelp(!showSystemHelp)}
+                                                        className={`rounded-xl border transition-all text-xs font-black flex items-center justify-center h-[38px] w-[38px] shrink-0 ${showSystemHelp ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                                                        title="Ajuda para compartilhar"
+                                                    >
+                                                        <HelpCircle size={18} />
                                                     </button>
-                                                    <button type="button" onClick={() => handleSyncSheet('system')} disabled={isSyncing} className="w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 bg-blue-600 text-white font-black py-3 px-8 rounded-xl sm:rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:bg-slate-300 text-sm">
-                                                        {isSyncing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Sincronizar
-                                                    </button>
+
+                                                    {spreadsheetId && (
+                                                        <>
+                                                            {/* Botão Ver Planilha */}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => openResource(spreadsheetId, 'sheet')}
+                                                                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-xs h-[38px]"
+                                                            >
+                                                                <ExternalLink size={15} /> Ver Planilha
+                                                            </button>
+
+                                                            {/* Botão Sincronizar */}
+                                                            <button
+                                                                type="button"
+                                                                disabled={isSyncing}
+                                                                onClick={() => handleSyncSheet('system')}
+                                                                className="flex items-center justify-center gap-1.5 bg-blue-600 text-white font-black py-2 px-5 rounded-xl shadow-md hover:bg-blue-700 transition-all disabled:bg-slate-300 disabled:opacity-50 text-xs h-[38px]"
+                                                            >
+                                                                {isSyncing ? <Loader2 className="animate-spin" size={15} /> : <RefreshCw size={15} />} Sincronizar
+                                                            </button>
+                                                        </>
+                                                    )}
+
+                                                    {/* Botão Gerar Automático (caso não exista ID configurado) */}
+                                                    {!spreadsheetId && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleProvision('system')}
+                                                            disabled={isSyncing || !selectedConfig?.id}
+                                                            className="flex items-center justify-center gap-2 bg-white text-slate-700 font-bold px-4 py-2 rounded-xl border border-slate-200 hover:border-blue-300 hover:text-blue-600 transition-all disabled:opacity-50 shadow-sm text-xs h-[38px]"
+                                                        >
+                                                            {isSyncing ? <Loader2 className="animate-spin" size={15} /> : (
+                                                                <>
+                                                                    <img src="https://img.icons8.com/color/24/000000/google-logo.png" alt="Google" className="w-4 h-4" />
+                                                                    Gerar
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
-                                        )}
+
+                                            {/* Ajuda para anexar a planilha (Colapsável) */}
+                                            {showSystemHelp && (
+                                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-3.5 animate-fade-in">
+                                                    <h4 className="text-[11px] font-black text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <Info size={14} className="text-blue-500" /> Como Compartilhar a Planilha de Instruções com a IA?
+                                                    </h4>
+                                                    <ol className="text-xs text-slate-600 space-y-2 list-decimal list-inside font-medium leading-relaxed">
+                                                        <li>
+                                                            Copie o e-mail do robô integrador:
+                                                            <div className="mt-1.5 flex items-center gap-2 max-w-md">
+                                                                <code className="bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-[10px] select-all font-mono break-all flex-1">
+                                                                    {BOT_EMAIL}
+                                                                </code>
+                                                                <button type="button" onClick={handleCopyEmail} className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-500 transition-colors shrink-0" title="Copiar e-mail">
+                                                                    <Copy size={13} />
+                                                                </button>
+                                                            </div>
+                                                        </li>
+                                                        <li>Abra o documento no Google Sheets.</li>
+                                                        <li>Clique no botão <strong>Compartilhar</strong> no canto superior direito.</li>
+                                                        <li>Adicione o e-mail copiado acima e defina a permissão como <strong>Editor</strong>.</li>
+                                                        <li>Clique em <strong>Enviar</strong> para concluir.</li>
+                                                    </ol>
+                                                </div>
+                                            )}
+                                        </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">
@@ -838,6 +838,28 @@ function Configs() {
                                                 </p>
                                             </div>
                                         </div>
+
+                                        {spreadsheetId && (
+                                            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-4 sm:p-6 overflow-hidden">
+                                                <div className="flex items-center justify-between mb-4 px-2">
+                                                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                                        <FileText size={14} className="text-green-500" /> Pré-visualização da Planilha de Instruções
+                                                    </h4>
+                                                    <span className="text-[10px] text-slate-400 font-bold bg-green-50 text-green-700 px-2.5 py-1 rounded-full">Google Sheets</span>
+                                                </div>
+                                                <div className="w-full h-[450px] rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 relative">
+                                                    <iframe
+                                                        src={`https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit?usp=drivesdk&rm=minimal`}
+                                                        className="w-full h-full border-none"
+                                                        allowFullScreen
+                                                        title="Planilha de Instruções"
+                                                    />
+                                                </div>
+                                                <p className="text-[11px] text-slate-400 font-medium mt-2 px-2">
+                                                    *Caso a planilha não apareça, certifique-se de estar conectado à sua conta Google com acesso ao documento.
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
@@ -874,45 +896,110 @@ function Configs() {
                                 {/* CONTEÚDO ABA: RAG (CONHECIMENTO) */}
                                 {activeTab === 'rag' && (
                                     <div className="animate-fade-in space-y-8 overflow-y-scroll custom-scrollbar">
-                                        {!selectedConfig?.spreadsheet_rag_id ? (
-                                            <div className="p-10 bg-indigo-50/50 border border-indigo-100/50 rounded-[2.5rem] shadow-sm flex flex-col items-center text-center gap-6">
-                                                <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center text-indigo-600 shadow-xl shadow-indigo-100">
-                                                    <Database size={32} />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Construa sua Base de Dados</h3>
-                                                    <p className="text-sm text-slate-500 max-w-md mx-auto">Armazene catálogos, FAQs e documentos técnicos. A IA consultará estes dados em milissegundos.</p>
-                                                </div>
-                                                <button type="button" onClick={() => handleProvision('rag')} disabled={isSyncing || !selectedConfig?.id} className="flex items-center gap-3 bg-white text-slate-700 font-bold px-8 py-4 rounded-3xl border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all disabled:opacity-50 shadow-sm hover:shadow-xl hover:shadow-indigo-100">
-                                                    {isSyncing ? <Loader2 className="animate-spin" size={20} /> : (
-                                                        <>
-                                                            <img src="https://img.icons8.com/color/24/000000/google-logo.png" alt="Google" className="w-5 h-5" />
-                                                            Gerar Base de Conhecimento
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="p-8 bg-slate-50/50 rounded-[2rem] border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
-                                                <div className="flex items-center gap-5">
-                                                    <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                                                        <CheckCircle size={28} />
+                                        {/* Status / Configuração da Planilha RAG */}
+                                        <div className="bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
+                                            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${spreadsheetRagId ? 'bg-indigo-50 text-indigo-600' : 'bg-blue-50 text-blue-600'}`}>
+                                                        <Database size={24} />
                                                     </div>
                                                     <div>
-                                                        <h3 className="font-black text-slate-900 leading-tight">Base de Conhecimento Ativa</h3>
-                                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Conectado ao Google Sheets</p>
+                                                        <h3 className="font-black text-slate-900 leading-tight">
+                                                            {spreadsheetRagId ? 'Base de Conhecimento Ativa' : 'Base de Conhecimento'}
+                                                        </h3>
+                                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                                            {spreadsheetRagId ? 'Conectado via Google Sheets' : 'Não configurada'}
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-                                                    <button type="button" onClick={() => openResource(selectedConfig.spreadsheet_rag_id, 'sheet')} className="w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl sm:rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
-                                                        <ExternalLink size={18} /> Ver Planilha
+                                                <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                                                    {/* Input ID da planilha (Mais Largo) */}
+                                                    <input
+                                                        type="text"
+                                                        value={spreadsheetRagId}
+                                                        onChange={handleSpreadsheetRagIdChange}
+                                                        placeholder="Cole o link ou ID da planilha..."
+                                                        className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all text-xs h-[38px] flex-grow sm:flex-initial sm:w-[360px]"
+                                                    />
+
+                                                    {/* Botão de ajuda "?" */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowRagHelp(!showRagHelp)}
+                                                        className={`rounded-xl border transition-all text-xs font-black flex items-center justify-center h-[38px] w-[38px] shrink-0 ${showRagHelp ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                                                        title="Ajuda para compartilhar"
+                                                    >
+                                                        <HelpCircle size={18} />
                                                     </button>
-                                                    <button type="button" onClick={() => handleSyncSheet('rag')} disabled={isSyncing} className="w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 bg-indigo-600 text-white font-black py-3 px-8 rounded-xl sm:rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:bg-slate-300 text-sm">
-                                                        {isSyncing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Sincronizar
-                                                    </button>
+
+                                                    {spreadsheetRagId && (
+                                                        <>
+                                                            {/* Botão Ver Planilha */}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => openResource(spreadsheetRagId, 'sheet')}
+                                                                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-xs h-[38px]"
+                                                            >
+                                                                <ExternalLink size={15} /> Ver Planilha
+                                                            </button>
+
+                                                            {/* Botão Sincronizar */}
+                                                            <button
+                                                                type="button"
+                                                                disabled={isSyncing}
+                                                                onClick={() => handleSyncSheet('rag')}
+                                                                className="flex items-center justify-center gap-1.5 bg-indigo-600 text-white font-black py-2 px-5 rounded-xl shadow-md hover:bg-indigo-700 transition-all disabled:bg-slate-300 disabled:opacity-50 text-xs h-[38px]"
+                                                            >
+                                                                {isSyncing ? <Loader2 className="animate-spin" size={15} /> : <RefreshCw size={15} />} Sincronizar
+                                                            </button>
+                                                        </>
+                                                    )}
+
+                                                    {/* Botão Gerar Automático (caso não exista ID configurado) */}
+                                                    {!spreadsheetRagId && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleProvision('rag')}
+                                                            disabled={isSyncing || !selectedConfig?.id}
+                                                            className="flex items-center justify-center gap-2 bg-white text-slate-700 font-bold px-4 py-2 rounded-xl border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all disabled:opacity-50 shadow-sm text-xs h-[38px]"
+                                                        >
+                                                            {isSyncing ? <Loader2 className="animate-spin" size={15} /> : (
+                                                                <>
+                                                                    <img src="https://img.icons8.com/color/24/000000/google-logo.png" alt="Google" className="w-4 h-4" />
+                                                                    Gerar
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
-                                        )}
+
+                                            {/* Ajuda para anexar a planilha (Colapsável) */}
+                                            {showRagHelp && (
+                                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-3.5 animate-fade-in">
+                                                    <h4 className="text-[11px] font-black text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <Info size={14} className="text-indigo-500" /> Como Compartilhar a Planilha de Conhecimento com a IA?
+                                                    </h4>
+                                                    <ol className="text-xs text-slate-600 space-y-2 list-decimal list-inside font-medium leading-relaxed">
+                                                        <li>
+                                                            Copie o e-mail do robô integrador:
+                                                            <div className="mt-1.5 flex items-center gap-2 max-w-md">
+                                                                <code className="bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-[10px] select-all font-mono break-all flex-1">
+                                                                    {BOT_EMAIL}
+                                                                </code>
+                                                                <button type="button" onClick={handleCopyEmail} className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-500 transition-colors shrink-0" title="Copiar e-mail">
+                                                                    <Copy size={13} />
+                                                                </button>
+                                                            </div>
+                                                        </li>
+                                                        <li>Abra o documento no Google Sheets.</li>
+                                                        <li>Clique no botão <strong>Compartilhar</strong> no canto superior direito.</li>
+                                                        <li>Adicione o e-mail copiado acima e defina a permissão como <strong>Editor</strong>.</li>
+                                                        <li>Clique em <strong>Enviar</strong> para concluir.</li>
+                                                    </ol>
+                                                </div>
+                                            )}
+                                        </div>
 
                                         <div className="p-8 bg-blue-50/50 rounded-[2rem] border border-blue-100/50">
                                             <h4 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-1.5 sm:gap-2">
@@ -925,51 +1012,138 @@ function Configs() {
                                                 <span className="inline-block mt-1 font-bold text-slate-900">• Manuais Técnicos de Produtos</span>
                                             </p>
                                         </div>
+
+                                        {spreadsheetRagId && (
+                                            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-4 sm:p-6 overflow-hidden">
+                                                <div className="flex items-center justify-between mb-4 px-2">
+                                                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                                        <Database size={14} className="text-indigo-500" /> Pré-visualização da Planilha de Conhecimento
+                                                    </h4>
+                                                    <span className="text-[10px] text-slate-400 font-bold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full">Google Sheets</span>
+                                                </div>
+                                                <div className="w-full h-[450px] rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 relative">
+                                                    <iframe
+                                                        src={`https://docs.google.com/spreadsheets/d/${spreadsheetRagId}/edit?usp=drivesdk&rm=minimal`}
+                                                        className="w-full h-full border-none"
+                                                        allowFullScreen
+                                                        title="Planilha de Conhecimento"
+                                                    />
+                                                </div>
+                                                <p className="text-[11px] text-slate-400 font-medium mt-2 px-2">
+                                                    *Caso a planilha não apareça, certifique-se de estar conectado à sua conta Google com acesso ao documento.
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
                                 {/* CONTEÚDO ABA: DRIVE */}
                                 {activeTab === 'drive' && (
                                     <div className="animate-fade-in space-y-8 overflow-y-scroll custom-scrollbar">
-                                        {!selectedConfig?.drive_id ? (
-                                            <div className="p-10 bg-indigo-50/50 border border-indigo-100/50 rounded-[2.5rem] shadow-sm flex flex-col items-center text-center gap-6">
-                                                <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center text-indigo-600 shadow-xl shadow-indigo-100">
-                                                    <Folder size={32} />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Repositório de Mídia</h3>
-                                                    <p className="text-sm text-slate-500 max-w-md mx-auto">Conecte uma pasta do Google Drive para que a IA envie fotos, vídeos e PDFs automaticamente.</p>
-                                                </div>
-                                                <button type="button" onClick={() => handleProvision('drive')} disabled={isSyncing || !selectedConfig?.id} className="flex items-center gap-3 bg-white text-slate-700 font-bold px-8 py-4 rounded-3xl border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all disabled:opacity-50 shadow-sm hover:shadow-xl hover:shadow-indigo-100">
-                                                    {isSyncing ? <Loader2 className="animate-spin" size={20} /> : (
-                                                        <>
-                                                            <img src="https://img.icons8.com/color/24/000000/google-logo.png" alt="Google" className="w-5 h-5" />
-                                                            Gerar Pasta no Drive
-                                                        </>
-                                                    )}
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="p-8 bg-slate-50/50 rounded-[2rem] border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
-                                                <div className="flex items-center gap-5">
-                                                    <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                                                        <CheckCircle size={28} />
+                                        {/* Status / Configuração do Drive */}
+                                        <div className="bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-sm space-y-6">
+                                            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${driveFolderId ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}`}>
+                                                        <Folder size={24} />
                                                     </div>
                                                     <div>
-                                                        <h3 className="font-black text-slate-900 leading-tight">Google Drive Conectado</h3>
-                                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Armazenamento Ativo</p>
+                                                        <h3 className="font-black text-slate-900 leading-tight">
+                                                            {driveFolderId ? 'Google Drive Conectado' : 'Google Drive'}
+                                                        </h3>
+                                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                                            {driveFolderId ? 'Armazenamento Ativo' : 'Não configurado'}
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-                                                    <button type="button" onClick={() => openResource(selectedConfig.drive_id, 'drive')} className="w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl sm:rounded-2xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-sm">
-                                                        <ExternalLink size={18} /> Abrir Pasta
+                                                <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                                                    {/* Input ID da pasta (Mais Largo) */}
+                                                    <input
+                                                        type="text"
+                                                        value={driveFolderId}
+                                                        onChange={handleDriveFolderIdChange}
+                                                        placeholder="Cole o link ou ID da pasta..."
+                                                        className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all text-xs h-[38px] flex-grow sm:flex-initial sm:w-[360px]"
+                                                    />
+
+                                                    {/* Botão de ajuda "?" */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowDriveHelp(!showDriveHelp)}
+                                                        className={`rounded-xl border transition-all text-xs font-black flex items-center justify-center h-[38px] w-[38px] shrink-0 ${showDriveHelp ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                                                        title="Ajuda para compartilhar"
+                                                    >
+                                                        <HelpCircle size={18} />
                                                     </button>
-                                                    <button type="button" onClick={handleSyncDrive} disabled={isSyncing} className="w-full sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 bg-indigo-600 text-white font-black py-3 px-8 rounded-xl sm:rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:bg-slate-300 text-sm">
-                                                        {isSyncing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />} Sincronizar
-                                                    </button>
+
+                                                    {driveFolderId && (
+                                                        <>
+                                                            {/* Botão Abrir Pasta */}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => openResource(driveFolderId, 'drive')}
+                                                                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all font-bold text-slate-600 text-xs h-[38px]"
+                                                            >
+                                                                <ExternalLink size={15} /> Abrir Pasta
+                                                            </button>
+
+                                                            {/* Botão Sincronizar */}
+                                                            <button
+                                                                type="button"
+                                                                disabled={isSyncing}
+                                                                onClick={handleSyncDrive}
+                                                                className="flex items-center justify-center gap-1.5 bg-indigo-600 text-white font-black py-2 px-5 rounded-xl shadow-md hover:bg-indigo-700 transition-all disabled:bg-slate-300 disabled:opacity-50 text-xs h-[38px]"
+                                                            >
+                                                                {isSyncing ? <Loader2 className="animate-spin" size={15} /> : <RefreshCw size={15} />} Sincronizar
+                                                            </button>
+                                                        </>
+                                                    )}
+
+                                                    {/* Botão Gerar Automático (caso não exista ID configurado) */}
+                                                    {!driveFolderId && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleProvision('drive')}
+                                                            disabled={isSyncing || !selectedConfig?.id}
+                                                            className="flex items-center justify-center gap-2 bg-white text-slate-700 font-bold px-4 py-2 rounded-xl border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all disabled:opacity-50 shadow-sm text-xs h-[38px]"
+                                                        >
+                                                            {isSyncing ? <Loader2 className="animate-spin" size={15} /> : (
+                                                                <>
+                                                                    <img src="https://img.icons8.com/color/24/000000/google-logo.png" alt="Google" className="w-4 h-4" />
+                                                                    Gerar
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
-                                        )}
+
+                                            {/* Ajuda para anexar a pasta (Colapsável) */}
+                                            {showDriveHelp && (
+                                                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-3.5 animate-fade-in">
+                                                    <h4 className="text-[11px] font-black text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <Info size={14} className="text-indigo-500" /> Como Compartilhar a Pasta do Google Drive com a IA?
+                                                    </h4>
+                                                    <ol className="text-xs text-slate-600 space-y-2 list-decimal list-inside font-medium leading-relaxed">
+                                                        <li>
+                                                            Copie o e-mail do robô integrador:
+                                                            <div className="mt-1.5 flex items-center gap-2 max-w-md">
+                                                                <code className="bg-white px-2.5 py-1 rounded-lg border border-slate-200 text-[10px] select-all font-mono break-all flex-1">
+                                                                    {BOT_EMAIL}
+                                                                </code>
+                                                                <button type="button" onClick={handleCopyEmail} className="p-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-500 transition-colors shrink-0" title="Copiar e-mail">
+                                                                    <Copy size={13} />
+                                                                </button>
+                                                            </div>
+                                                        </li>
+                                                        <li>Abra a pasta no Google Drive.</li>
+                                                        <li>Clique no botão <strong>Compartilhar</strong> no canto superior direito.</li>
+                                                        <li>Adicione o e-mail copiado acima e defina a permissão como <strong>Leitor</strong> (ou <strong>Editor</strong>).</li>
+                                                        <li>Clique em <strong>Enviar</strong> para concluir.</li>
+                                                    </ol>
+                                                </div>
+                                            )}
+                                        </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
@@ -978,7 +1152,7 @@ function Configs() {
                                                 </h4>
                                                 <p className="text-[13px] text-slate-500 font-medium leading-relaxed">
                                                     A IA utiliza o <strong>nome do arquivo</strong> para decidir o que enviar. Evite nomes genéricos como "doc1.pdf". Use nomes como "Catalogo_Verao_2025.pdf".
-                                                </p>
+                                                 </p>
                                             </div>
                                             <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
                                                 <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-1.5 sm:gap-2">
@@ -989,147 +1163,28 @@ function Configs() {
                                                 </p>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
 
-                                {/* CONTEÚDO ABA: NOTIFICAÇÕES (PROSPECT AI) */}
-                                {activeTab === 'notifications' && (
-                                    <div className="animate-fade-in space-y-8 overflow-y-scroll custom-scrollbar">
-                                        <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm">
-                                            <div className="max-w-md">
-                                                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mb-2 text-left">Monitoramento de Alertas</h3>
-                                                <p className="text-xs sm:text-sm text-slate-500 font-medium text-left">Defina para qual WhatsApp a IA deve enviar alertas</p>
-                                            </div>
-                                            <div className="flex items-center gap-3 bg-white p-2 rounded-xl sm:rounded-2xl border border-slate-100 shadow-sm w-full sm:w-auto justify-between sm:justify-start">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-3">Status Global</span>
-                                                <button type="button" onClick={() => setFormData(prev => ({ ...prev, notification_active: !prev.notification_active }))} className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all ${formData.notification_active ? 'bg-green-500' : 'bg-slate-200'}`}>
-                                                    <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform ${formData.notification_active ? 'translate-x-7' : 'translate-x-1'}`} />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div className="relative">
-                                            <label className={labelClass}>Canal de Destino (Contato ou Grupo)</label>
-                                            <div className="relative" ref={dropdownRef}>
-                                                <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
-                                                    {(formData.notification_destination || '').split(',').map(d => d.trim()).filter(Boolean).map(destId => (
-                                                        <div key={destId} className="flex items-center gap-1.5 sm:gap-2 bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm">
-                                                            {destId}
-                                                            <button type="button" onClick={() => {
-                                                                setFormData(prev => {
-                                                                    const current = (prev.notification_destination || '').split(',').map(s => s.trim()).filter(Boolean);
-                                                                    return { ...prev, notification_destination: current.filter(id => id !== destId).join(', ') };
-                                                                });
-                                                            }} className="text-blue-400 hover:text-blue-700 transition">
-                                                                <X size={14} />
-                                                            </button>
-                                                        </div>
-                                                    ))}
+                                        {driveFolderId && (
+                                            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-4 sm:p-6 overflow-hidden">
+                                                <div className="flex items-center justify-between mb-4 px-2">
+                                                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                                        <Folder size={14} className="text-blue-500" /> Visualizador do Google Drive
+                                                    </h4>
+                                                    <span className="text-[10px] text-slate-400 font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full">Google Drive</span>
                                                 </div>
-
-                                                <input
-                                                    type="text"
-                                                    placeholder="Pesquisar contatos para adicionar à fila..."
-                                                    value={destSearchTerm}
-                                                    onChange={(e) => {
-                                                        setDestSearchTerm(e.target.value);
-                                                        setIsDropdownOpen(true);
-                                                    }}
-                                                    onFocus={() => setIsDropdownOpen(true)}
-                                                    className={`${inputClass} pl-12 h-16 text-lg`}
-                                                />
-
-                                                {/* Dropdown de Destinos (Premium Style) */}
-                                                {isDropdownOpen && (
-                                                    <div className="absolute z-20 mt-3 w-full bg-white border border-slate-100 rounded-[2rem] shadow-2xl max-h-[400px] overflow-y-auto custom-scrollbar p-3">
-                                                        {/* OPÇÃO DE ADICIONAR MANUALMENTE */}
-                                                        {manualJid && !filteredDestinations.some(d => normalizeJid(d.remoteJid) === manualJid) && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setFormData(prev => {
-                                                                        let current = (prev.notification_destination || '').split(',').map(s => s.trim()).filter(Boolean);
-                                                                        if (!current.includes(manualJid)) {
-                                                                            current.push(manualJid);
-                                                                        }
-                                                                        return { ...prev, notification_destination: current.join(', ') };
-                                                                    });
-                                                                    setDestSearchTerm('');
-                                                                }}
-                                                                className="w-full flex items-center gap-4 p-4 rounded-2xl transition-all bg-blue-600 text-white hover:bg-blue-700 mb-3 shadow-lg shadow-blue-100"
-                                                            >
-                                                                <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                                                                    <Plus size={24} />
-                                                                </div>
-                                                                <div className="flex-grow text-left">
-                                                                    <p className="text-[13px] font-black uppercase tracking-tight">Adicionar Número Manual</p>
-                                                                    <p className="text-[10px] font-bold opacity-80">{manualJid}</p>
-                                                                </div>
-                                                                <ChevronRight size={20} />
-                                                            </button>
-                                                        )}
-
-                                                        {filteredDestinations.map(dest => {
-                                                            const isGroup = dest.remoteJid?.endsWith('@g.us');
-                                                            const normalizedDest = normalizeJid(dest.remoteJid);
-                                                            const currentDests = (formData.notification_destination || '').split(',').map(s => s.trim()).filter(Boolean);
-                                                            const isSelected = currentDests.includes(normalizedDest);
-
-                                                            return (
-                                                                <button
-                                                                    key={dest.id}
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        const normalized = normalizeJid(dest.remoteJid);
-                                                                        setFormData(prev => {
-                                                                            let current = (prev.notification_destination || '').split(',').map(s => s.trim()).filter(Boolean);
-                                                                            if (current.includes(normalized)) {
-                                                                                current = current.filter(id => id !== normalized);
-                                                                            } else {
-                                                                                current.push(normalized);
-                                                                            }
-                                                                            return { ...prev, notification_destination: current.join(', ') };
-                                                                        });
-                                                                        setDestSearchTerm('');
-                                                                    }}
-                                                                    className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all hover:bg-slate-50 mb-1 ${isSelected ? 'bg-blue-50/50 border border-blue-100' : 'border border-transparent'}`}
-                                                                >
-                                                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${isGroup ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}`}>
-                                                                        {isGroup ? <Users size={24} /> : <User size={24} />}
-                                                                    </div>
-                                                                    <div className="flex-grow min-w-0 text-left">
-                                                                        <p className={`text-[13px] font-black truncate uppercase tracking-tight ${isSelected ? 'text-blue-700' : 'text-slate-800'}`}>
-                                                                            {dest.name || dest.subject || (isGroup ? "Canal Sombra" : "Operador Oculto")}
-                                                                        </p>
-                                                                        <p className="text-[10px] font-bold text-slate-400 truncate tracking-widest">{dest.remoteJid}</p>
-                                                                    </div>
-                                                                    {isSelected && <CheckCircle size={20} className="text-blue-600 flex-shrink-0" />}
-                                                                </button>
-                                                            );
-                                                        })}
-
-                                                        {filteredDestinations.length === 0 && !manualJid && (
-                                                            <div className="p-8 text-center text-slate-400">
-                                                                <Search size={32} className="mx-auto mb-3 opacity-20" />
-                                                                <p className="text-xs font-bold uppercase tracking-widest">Nenhum destino encontrado</p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
+                                                <div className="w-full h-[450px] rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 relative">
+                                                    <iframe
+                                                        src={`https://drive.google.com/embeddedfolderview?id=${driveFolderId}#grid`}
+                                                        className="w-full h-full border-none"
+                                                        allowFullScreen
+                                                        title="Pasta de Arquivos no Drive"
+                                                    />
+                                                </div>
+                                                <p className="text-[11px] text-slate-400 font-medium mt-2 px-2">
+                                                    *Caso a pasta não apareça, certifique-se de estar conectado à sua conta Google com acesso ao diretório.
+                                                </p>
                                             </div>
-                                        </div>
-
-                                        <div className="p-8 bg-blue-50/50 rounded-[2rem] border border-blue-100/50">
-                                            <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-4 flex items-center gap-1.5 sm:gap-2">
-                                                <Info size={14} /> Inteligência de Notificações
-                                            </h4>
-                                            <p className="text-[13px] text-slate-500 font-medium leading-relaxed">
-                                                A Prospect AI notificará você instantaneamente quando: <br />
-                                                <span className="inline-block mt-2 font-bold text-slate-900">• Um cliente demonstrar interesse crítico de compra</span><br />
-                                                <span className="inline-block mt-1 font-bold text-slate-900">• Houver uma pergunta técnica que a IA não conseguiu resolver</span><br />
-                                                <span className="inline-block mt-1 font-bold text-slate-900">• O atendimento for transferido para um consultor humano</span>
-                                            </p>
-                                        </div>
+                                        )}
                                     </div>
                                 )}
 
@@ -1286,27 +1341,6 @@ function Configs() {
                                                             className={inputClass}
                                                         />
                                                         <p className="mt-2 text-[10px] font-bold text-slate-400 uppercase">Limita vocabulário (Padrão: 40)</p>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="pt-6 border-t border-slate-100">
-                                                    <div className="flex items-center justify-between p-6 bg-blue-50/30 rounded-3xl border border-blue-100/50">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-blue-600 shadow-sm">
-                                                                <Zap size={22} />
-                                                            </div>
-                                                            <div>
-                                                                <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Correções Humana Spontâneas</h4>
-                                                                <p className="text-[11px] font-medium text-slate-500 max-w-sm mt-0.5">Permite que a IA simule erros de digitação e envie correções para parecer mais humana.</p>
-                                                            </div>
-                                                        </div>
-                                                        <button 
-                                                            type="button" 
-                                                            onClick={() => setFormData(p => ({ ...p, human_corrections: !p.human_corrections }))} 
-                                                            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${formData.human_corrections ? 'bg-blue-600' : 'bg-slate-200'}`}
-                                                        >
-                                                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${formData.human_corrections ? 'translate-x-6' : 'translate-x-1'}`} />
-                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>

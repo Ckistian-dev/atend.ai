@@ -51,7 +51,7 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
 
         // SEMPRE tenta limpar o prefixo do displayText para evitar exibição duplicada
         if (content.startsWith('[Mensagem Referenciada]:')) {
-            const regex = /\[Mensagem Referenciada\]: "(.*)"\n?([\s\S]*)/;
+            const regex = /^\[Mensagem Referenciada\]:\s*"([\s\S]*?)"\r?\n?([\s\S]*)/;
             const match = content.match(regex);
             if (match) {
                 // Se não tínhamos o objeto estruturado, usamos o que extraímos do texto
@@ -117,6 +117,11 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
                             caption={msg.caption || null}
                             filename={isAssistant ? msg.filename : null}
                         />
+                        {displayText && (
+                            <p className={`text-[15px] leading-relaxed font-medium mt-3 ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
+                                {formatWhatsAppText(displayText)}
+                            </p>
+                        )}
                     </div>
                 );
 
@@ -130,6 +135,11 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
                             caption={msg.caption || null}
                             filename={isAssistant ? msg.filename : null}
                         />
+                        {displayText && (
+                            <p className={`text-[15px] leading-relaxed font-medium mt-3 ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
+                                {formatWhatsAppText(displayText)}
+                            </p>
+                        )}
                     </div>
                 );
 
@@ -173,6 +183,11 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
                                 {formatWhatsAppText(msg.caption)}
                             </p>
                         )}
+                        {displayText && (
+                            <p className={`text-[15px] leading-relaxed font-medium mt-2 ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
+                                {formatWhatsAppText(displayText)}
+                            </p>
+                        )}
                     </div>
                 );
 
@@ -190,12 +205,15 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
             case 'text':
             default:
                 const defaultText = displayText || (msg.media_id ? `[Mídia não suportada: ${type}]` : '');
+                const hasContent = !!defaultText;
                 return (
                     <div className="flex flex-col">
                         {quotedView}
-                        <p className={`text-[15px] leading-relaxed font-medium ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
-                            {formatWhatsAppText(defaultText) || '[Vazio]'}
-                        </p>
+                        {(hasContent || !quotedView) && (
+                            <p className={`text-[15px] leading-relaxed font-medium ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
+                                {formatWhatsAppText(defaultText) || '[Vazio]'}
+                            </p>
+                        )}
                     </div>
                 );
         }

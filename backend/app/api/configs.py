@@ -1,8 +1,8 @@
 # app/api/configs.py
 
-from fastapi import APIRouter, Depends, HTTPException, status, Body, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, Body, BackgroundTasks, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, or_
 from typing import List, Dict, Any, Optional
 import logging
 import os
@@ -21,12 +21,49 @@ from app.crud import crud_config, crud_user
 from app.api.dependencies import get_current_active_user
 from app.services.google_sheets_service import GoogleSheetsService
 from app.services.google_drive_service import get_drive_service
-from app.services.gemini_service import GeminiService, get_gemini_service
-from app.services.prospect_service import get_prospect_service
 from app.services.google_calendar_service import get_google_calendar_service
+from app.services.gemini_service import GeminiService, get_gemini_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+def get_drive_webhook_url() -> str:
+    """Retorna a URL pública de webhook para receber notificações do Google Drive/Sheets."""
+    if not settings.WBP_WEBHOOK_URL:
+        logger.warning("get_drive_webhook_url: WBP_WEBHOOK_URL não configurado.")
+        return ""
+    # Constrói a URL substituindo o endpoint do WhatsApp pelo de drive-webhook
+    base_url = settings.WBP_WEBHOOK_URL.split("/api/v1/webhook")[0]
+    return f"{base_url}/api/v1/configs/drive-webhook"
+
+async def setup_drive_watch(config_id: int, resource_id: str, resource_type: str):
+    """
+    Tenta registrar um webhook/watch no Google Drive para o arquivo ou pasta.
+    Silencia erros se falhar (por exemplo, se o domínio do webhook não estiver verificado).
+    """
+    webhook_url = get_drive_webhook_url()
+    if not webhook_url:
+        logger.warning("setup_drive_watch: Impossível obter webhook_url.")
+        return
+        
+    try:
+        drive_service = get_drive_service()
+        if not drive_service or not drive_service.service:
+            logger.warning("setup_drive_watch: Serviço do Google Drive não inicializado.")
+            return
+            
+        # Formato do channel_id: atendai-watch-{config_id}-{resource_type}
+        # resource_type pode ser 'system', 'rag' ou 'drive'
+        channel_id = f"atendai-watch-{config_id}-{resource_type}"
+        
+        logger.info(f"setup_drive_watch: Registrando watch para o ID '{resource_id}' (tipo: {resource_type}) na URL: {webhook_url}")
+        
+        # Chama a API de watch
+        drive_service.watch_file(file_id=resource_id, channel_id=channel_id, webhook_url=webhook_url)
+        logger.info(f"setup_drive_watch: Watch registrado com sucesso para {resource_id} no canal {channel_id}.")
+    except Exception as e:
+        logger.warning(f"setup_drive_watch: Falha ao registrar watch para {resource_id} (pode requerer verificação de domínio no Google): {e}")
+
 
 SITUATIONS = [
     {"cor": "#144cd1", "nome": "Mensagem Recebida"},
@@ -129,34 +166,81 @@ def flatten_drive_tree(node: Dict[str, Any], path: str = "") -> List[str]:
 
 @router.post("/", response_model=Config, status_code=status.HTTP_201_CREATED, summary="Criar uma nova Configuração")
 async def create_config(config: ConfigCreate, db: AsyncSession = Depends(get_db), current_user: models.User = Depends(get_current_active_user)):
-    new_config = await crud_config.create_config(db=db, config=config, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    new_config = await crud_config.create_config(db=db, config=config, company_id=company_id)
     await db.commit()
     await db.refresh(new_config)
     return new_config
 
 @router.get("/", response_model=List[Config], summary="Listar todas as Configurações")
 async def read_configs(db: AsyncSession = Depends(get_db), current_user: models.User = Depends(get_current_active_user)):
-    return await crud_config.get_configs_by_user(db=db, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    return await crud_config.get_configs_by_user(db=db, company_id=company_id)
 
 @router.put("/{config_id}", response_model=Config, summary="Atualizar uma Configuração")
 async def update_config(config_id: int, config: ConfigUpdate, db: AsyncSession = Depends(get_db), current_user: models.User = Depends(get_current_active_user)):
-    db_config = await crud_config.get_config(db=db, config_id=config_id, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    db_config = await crud_config.get_config(db=db, config_id=config_id, company_id=company_id)
     if db_config is None:
         raise HTTPException(status_code=404, detail="Configuração não encontrada")
+    
+    # Guarda os IDs antigos para verificar se mudaram
+    old_sheet = db_config.spreadsheet_id
+    old_rag = db_config.spreadsheet_rag_id
+    old_drive = db_config.drive_id
+
     updated = await crud_config.update_config(db=db, db_config=db_config, config_in=config)
     await db.commit()
     await db.refresh(updated)
+    
+    # Tenta registrar o watch se algum ID mudou e não é nulo
+    if updated.spreadsheet_id and updated.spreadsheet_id != old_sheet:
+        await setup_drive_watch(updated.id, updated.spreadsheet_id, "system")
+    if updated.spreadsheet_rag_id and updated.spreadsheet_rag_id != old_rag:
+        await setup_drive_watch(updated.id, updated.spreadsheet_rag_id, "rag")
+    if updated.drive_id and updated.drive_id != old_drive:
+        await setup_drive_watch(updated.id, updated.drive_id, "drive")
+
     return updated
 
 @router.delete("/{config_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Apagar uma Configuração")
 async def delete_config(config_id: int, db: AsyncSession = Depends(get_db), current_user: models.User = Depends(get_current_active_user)):
-    if current_user.default_persona_id == config_id:
+    company_id = current_user.company_id or 0
+    default_persona_id = current_user.company.default_persona_id if current_user.company else None
+    if default_persona_id == config_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Não é possível apagar uma configuração que está definida como padrão.")
-    deleted_config = await crud_config.delete_config(db=db, config_id=config_id, user_id=current_user.id)
+    deleted_config = await crud_config.delete_config(db=db, config_id=config_id, company_id=company_id)
     if deleted_config is None:
         raise HTTPException(status_code=404, detail="Configuração não encontrada")
     await db.commit()
     return
+
+@router.post("/{config_id}/set-default", summary="Definir uma configuração como persona padrão da empresa")
+async def set_default_persona(
+    config_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """
+    Define a configuração indicada como a persona padrão da empresa do usuário logado.
+    """
+    company_id = current_user.company_id or 0
+
+    # Verifica se a config pertence à empresa
+    db_config = await crud_config.get_config(db=db, config_id=config_id, company_id=company_id)
+    if db_config is None:
+        raise HTTPException(status_code=404, detail="Configuração não encontrada")
+
+    # Atualiza a empresa
+    company = await db.get(models.Company, company_id)
+    if not company:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+
+    company.default_persona_id = config_id
+    db.add(company)
+    await db.commit()
+    await db.refresh(company)
+    return {"message": "Persona padrão atualizada com sucesso", "default_persona_id": config_id}
 
 @router.get("/google-auth-url", summary="URL de Autenticação do Google para Provisionamento")
 async def get_google_auth_url(redirect_uri: str):
@@ -179,7 +263,8 @@ async def provision_google_resource(
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(get_current_active_user)
 ):
-    db_config = await crud_config.get_config(db=db, config_id=payload.config_id, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    db_config = await crud_config.get_config(db=db, config_id=payload.config_id, company_id=company_id)
     if not db_config:
         raise HTTPException(status_code=404, detail="Configuração não encontrada.")
         
@@ -272,18 +357,22 @@ async def provision_google_resource(
 
         db.add(db_config)
         await db.commit()
+
+        # Tenta registrar o watch automático para o recurso recém-provisionado
+        await setup_drive_watch(db_config.id, new_id, payload.resource_type)
+
         return {"message": "Recurso provisionado com sucesso.", "id": new_id}
     except Exception as e:
         logger.error(f"Falha ao provisionar recurso: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Erro ao criar/partilhar o recurso no Google: {str(e)}")
 
-async def run_sync_sheet(config_id: int, user_id: int, spreadsheet_id: str, sync_type: str) -> int:
+async def run_sync_sheet(config_id: int, company_id: int, spreadsheet_id: str, sync_type: str) -> int:
     """Função síncrona para ler planilhas e gerar contexto/vetores, aguardando o término."""
-    logger.info(f"Iniciando sincronização de Planilha (Config: {config_id}, User: {user_id}, Tipo: {sync_type})")
+    logger.info(f"Iniciando sincronização de Planilha (Config: {config_id}, Empresa: {company_id}, Tipo: {sync_type})")
     
     async with SessionLocal() as db:
         try:
-            db_config = await crud_config.get_config(db=db, config_id=config_id, user_id=user_id)
+            db_config = await crud_config.get_config(db=db, config_id=config_id, company_id=company_id)
             if not db_config:
                 logger.error("Configuração não encontrada para o sync da planilha.")
                 raise Exception("Configuração não encontrada.")
@@ -363,7 +452,8 @@ async def sync_google_sheet(
     spreadsheet_id = payload.get("spreadsheet_id") # Opcional
     sync_type = payload.get("type", "system") # 'system' ou 'rag'
 
-    db_config = await crud_config.get_config(db=db, config_id=config_id, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    db_config = await crud_config.get_config(db=db, config_id=config_id, company_id=company_id)
     if not db_config:
         raise HTTPException(status_code=404, detail="Configuração não encontrada.")
     
@@ -384,8 +474,12 @@ async def sync_google_sheet(
 
     try:
         # Executa de forma síncrona aguardando a finalização
-        itens_processados = await run_sync_sheet(config_id, current_user.id, final_spreadsheet_id, sync_type)
+        company_id = current_user.company_id or 0
+        itens_processados = await run_sync_sheet(config_id, company_id, final_spreadsheet_id, sync_type)
         
+        # Tenta registrar o watch automático para manter a sincronização
+        await setup_drive_watch(config_id, final_spreadsheet_id, sync_type)
+
         return {
             "message": f"Sincronização ({sync_type.upper()}) concluída com sucesso!", 
             "sheets_found": itens_processados,
@@ -409,13 +503,16 @@ def _extract_file_name_from_drive_index(content: str) -> str:
         Categorias|Arquivo|Tipo|ID
         Pasta A > Sub|nome.pdf|PDF|1abc...
     """
-    lines = [l.strip() for l in content.strip().split("\n") if l.strip()]
-    # As linhas são: [0] '# DRIVE', [1] cabeçalhos, [2] valores
-    if len(lines) < 3:
+    data_lines = [
+        l.strip() 
+        for l in content.strip().split("\n") 
+        if l.strip() and not l.strip().startswith("#") and "---" not in l
+    ]
+    if len(data_lines) < 2:
         return ""
     try:
-        headers = lines[1].split("|")
-        values = lines[2].split("|")
+        headers = [h.strip() for h in data_lines[0].split("|") if h.strip()]
+        values = [v.strip() for v in data_lines[1].split("|") if v.strip()]
         if "Arquivo" in headers:
             idx = headers.index("Arquivo")
             if idx < len(values):
@@ -425,14 +522,14 @@ def _extract_file_name_from_drive_index(content: str) -> str:
     return ""
 
 
-async def run_sync_drive(config_id: int, user_id: int, folder_id: str) -> int:
+async def run_sync_drive(config_id: int, company_id: int, folder_id: str) -> int:
     """
     Sincronização simplificada do Drive:
     - Lista arquivos e pastas.
     - Gera vetores de índice (nome/id) para o RAG.
     - Sem análise de conteúdo via IA (apenas metadados).
     """
-    logger.info(f"Iniciando sincronização simplificada de Drive (Config: {config_id}, User: {user_id})")
+    logger.info(f"Iniciando sincronização simplificada de Drive (Config: {config_id}, Empresa: {company_id})")
     
     async with SessionLocal() as db:
         try:
@@ -493,7 +590,8 @@ async def sync_google_drive(
 
     folder_id = payload.get("drive_id")
 
-    db_config = await crud_config.get_config(db=db, config_id=config_id, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    db_config = await crud_config.get_config(db=db, config_id=config_id, company_id=company_id)
     if not db_config:
         raise HTTPException(status_code=404, detail="Configuração não encontrada.")
     
@@ -509,7 +607,11 @@ async def sync_google_drive(
 
     try:
         # Executa de forma síncrona aguardando a finalização
-        itens_processados = await run_sync_drive(config_id, current_user.id, final_folder_id)
+        company_id = current_user.company_id or 0
+        itens_processados = await run_sync_drive(config_id, company_id, final_folder_id)
+
+        # Tenta registrar o watch automático para manter a sincronização
+        await setup_drive_watch(config_id, final_folder_id, "drive")
 
         return {
             "message": "Sincronização do Google Drive concluída com sucesso!",
@@ -518,24 +620,127 @@ async def sync_google_drive(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Falha ao processar o Drive: {str(e)}")
 
+@router.post("/drive-webhook", summary="Webhook para receber notificações de alteração do Google Drive/Sheets")
+async def drive_webhook(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db)
+):
+    channel_id = request.headers.get("x-goog-channel-id")
+    resource_state = request.headers.get("x-goog-resource-state")
+    
+    logger.info(f"Drive Webhook recebido - Channel: {channel_id}, State: {resource_state}")
+    
+    if resource_state == "sync":
+        logger.info("Drive Webhook: Confirmação de registro (sync) recebida.")
+        return {"status": "ok"}
+        
+    if channel_id and channel_id.startswith("atendai-watch-"):
+        # Formato: atendai-watch-{config_id}-{resource_type}
+        parts = channel_id.replace("atendai-watch-", "").split("-")
+        if len(parts) >= 2:
+            try:
+                config_id = int(parts[0])
+                resource_type = parts[1] # 'system', 'rag' ou 'drive'
+                
+                db_config = await db.get(models.Config, config_id)
+                if db_config:
+                    company_id = db_config.company_id
+                    if resource_type == "system" and db_config.spreadsheet_id:
+                        background_tasks.add_task(
+                            run_sync_sheet, config_id, company_id, db_config.spreadsheet_id, "system"
+                        )
+                    elif resource_type == "rag" and db_config.spreadsheet_rag_id:
+                        background_tasks.add_task(
+                            run_sync_sheet, config_id, company_id, db_config.spreadsheet_rag_id, "rag"
+                        )
+                    elif resource_type == "drive" and db_config.drive_id:
+                        background_tasks.add_task(
+                            run_sync_drive, config_id, company_id, db_config.drive_id
+                        )
+                    logger.info(f"Drive Webhook: Sincronização em background iniciada para Config: {config_id}, Tipo: {resource_type}")
+                    return {"status": "sync_started"}
+            except Exception as e:
+                logger.error(f"Erro ao processar webhook do Drive: {e}", exc_info=True)
+
+    # Lógica de fallback para Google Apps Script ou requisições diretas por Query Params ou JSON Body
+    config_id_param = request.query_params.get("config_id")
+    type_param = request.query_params.get("type") # 'system', 'rag' ou 'drive'
+    spreadsheet_id_param = request.query_params.get("spreadsheet_id")
+    
+    if not config_id_param or not type_param or not spreadsheet_id_param:
+        try:
+            body = await request.json()
+            if body:
+                if not config_id_param:
+                    config_id_param = body.get("config_id")
+                if not type_param:
+                    type_param = body.get("type")
+                if not spreadsheet_id_param:
+                    spreadsheet_id_param = body.get("spreadsheet_id")
+        except Exception:
+            pass
+
+    # Se recebeu spreadsheet_id_param diretamente (ex: Apps Script)
+    if spreadsheet_id_param:
+        try:
+            # Busca todas as configs que usam essa planilha (system ou rag)
+            query = select(models.Config).where(
+                or_(
+                    models.Config.spreadsheet_id == spreadsheet_id_param,
+                    models.Config.spreadsheet_rag_id == spreadsheet_id_param
+                )
+            )
+            result = await db.execute(query)
+            configs = result.scalars().all()
+            if configs:
+                for db_config in configs:
+                    company_id = db_config.company_id
+                    if db_config.spreadsheet_id == spreadsheet_id_param:
+                        background_tasks.add_task(
+                            run_sync_sheet, db_config.id, company_id, spreadsheet_id_param, "system"
+                        )
+                    if db_config.spreadsheet_rag_id == spreadsheet_id_param:
+                        background_tasks.add_task(
+                            run_sync_sheet, db_config.id, company_id, spreadsheet_id_param, "rag"
+                        )
+                logger.info(f"Webhook por Spreadsheet ID: Sincronização em background iniciada para Planilha {spreadsheet_id_param}")
+                return {"status": "sync_started"}
+        except Exception as e:
+            logger.error(f"Erro ao processar webhook por ID de planilha: {e}", exc_info=True)
+
+    # Se recebeu config_id e type_param
+    if config_id_param and type_param:
+        try:
+            config_id = int(config_id_param)
+            db_config = await db.get(models.Config, config_id)
+            if db_config:
+                company_id = db_config.company_id
+                if type_param == "system" and db_config.spreadsheet_id:
+                    background_tasks.add_task(
+                        run_sync_sheet, config_id, company_id, db_config.spreadsheet_id, "system"
+                    )
+                elif type_param == "rag" and db_config.spreadsheet_rag_id:
+                    background_tasks.add_task(
+                        run_sync_sheet, config_id, company_id, db_config.spreadsheet_rag_id, "rag"
+                    )
+                elif type_param == "drive" and db_config.drive_id:
+                    background_tasks.add_task(
+                        run_sync_drive, config_id, company_id, db_config.drive_id
+                    )
+                logger.info(f"Webhook Direto: Sincronização em background iniciada para Config: {config_id}, Tipo: {type_param}")
+                return {"status": "sync_started"}
+        except Exception as e:
+            logger.error(f"Erro ao processar webhook direto: {e}", exc_info=True)
+            
+    return {"status": "ignored"}
+
 @router.get("/situations", response_model=List[Dict[str, str]], summary="Listar situações padrão")
 async def get_situations():
     """
     Retorna a lista padrão de situações de atendimento.
     """
     return SITUATIONS
-
-@router.get("/destinations", summary="Listar destinos para notificação (ProspectAI)")
-async def get_notification_destinations(
-    db: AsyncSession = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_user)
-):
-    """
-    Busca a lista de contatos e grupos disponíveis na API do ProspectAI.
-    """
-    service = get_prospect_service()
-    destinations = await service.list_destinations(db, current_user)
-    return destinations
 
 @router.get("/google-calendar/auth-url")
 async def get_calendar_auth_url(
@@ -563,7 +768,8 @@ async def calendar_callback(
     except (ValueError, TypeError):
         raise HTTPException(status_code=400, detail="config_id deve ser um número inteiro.")
 
-    db_config = await crud_config.get_config(db=db, config_id=config_id, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    db_config = await crud_config.get_config(db=db, config_id=config_id, company_id=company_id)
     if not db_config:
         raise HTTPException(status_code=404, detail="Configuração não encontrada.")
         
@@ -581,7 +787,8 @@ async def disconnect_calendar(
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(get_current_active_user)
 ):
-    db_config = await crud_config.get_config(db=db, config_id=config_id, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    db_config = await crud_config.get_config(db=db, config_id=config_id, company_id=company_id)
     if db_config:
         db_config.google_calendar_credentials = None
         db_config.is_calendar_active = False
@@ -599,7 +806,8 @@ async def analyze_workflow_feedback(
     current_user: models.User = Depends(get_current_active_user),
     gemini_service: GeminiService = Depends(get_gemini_service)
 ):
-    persona = await crud_config.get_config(db=db, config_id=config_id, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    persona = await crud_config.get_config(db=db, config_id=config_id, company_id=company_id)
     if not persona:
         raise HTTPException(status_code=404, detail="Configuração não encontrada")
 
@@ -625,7 +833,8 @@ async def apply_workflow_feedback(
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(get_current_active_user)
 ):
-    persona = await crud_config.get_config(db=db, config_id=config_id, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    persona = await crud_config.get_config(db=db, config_id=config_id, company_id=company_id)
     if not persona:
         raise HTTPException(status_code=404, detail="Configuração não encontrada")
 

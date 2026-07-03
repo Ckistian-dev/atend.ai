@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom'; // Importado useSearchParams
+import { useSearchParams, useOutletContext } from 'react-router-dom'; // Importado useSearchParams e useOutletContext
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import {
@@ -200,6 +200,9 @@ const getLastMessageTimestamp = (at) => {
 
 // --- COMPONENTE PRINCIPAL DA PÁGINA ---
 function Mensagens() {
+    const { userRole, userPermissions, isSuperUser } = useOutletContext() || {};
+    const hasConfigsPermission = isSuperUser || userRole === 'admin' || !userPermissions || userPermissions.configs !== false;
+
     // NOVO: Estado para ler o ID do atendimento da URL
     const [searchParams] = useSearchParams();
     const initialAtendimentoId = searchParams.get('atendimentoId');
@@ -224,8 +227,8 @@ function Mensagens() {
 
     // --- NOVOS ESTADOS PARA FILTRO DETALHADO ---
     const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
-    const [statusFilters, setStatusFilters] = useState(null); // ALTERADO: Agora é string ou null
-    const [tagFilters, setTagFilters] = useState(null); // ALTERADO: Agora é string ou null
+    const [statusFilters, setStatusFilters] = useState([]); // ALTERADO: Agora é array
+    const [tagFilters, setTagFilters] = useState([]); // ALTERADO: Agora é array
     // --- NOVO: Estados para filtro de horário ---
     const [timeStart, setTimeStart] = useState(null);
     const [timeEnd, setTimeEnd] = useState(null);
@@ -264,6 +267,18 @@ function Mensagens() {
     const [allTags, setAllTags] = useState([]);
 
     const intervalRef = useRef(null);
+    const isInitialSelectionDone = useRef(false);
+
+    const filterHash = JSON.stringify({
+        activeButtonGroup,
+        activeFilters,
+        statusFilters,
+        tagFilters,
+        debouncedSearchTerm,
+        timeStart,
+        timeEnd
+    });
+    const prevFilterHashRef = useRef(filterHash);
 
     // Armazena as filas de envio por atendimentoId
     // Ex: { 1: [item1, item2], 2: [item3] }
@@ -298,14 +313,14 @@ function Mensagens() {
 
             // --- ALTERADO: Adiciona filtros do popover (status e tags) à requisição ---
             // Usa os filtros do popover se existirem, senão, usa os filtros dos botões principais.
-            if (statusFilters) {
-                params.append('status', statusFilters);
+            if (statusFilters && statusFilters.length > 0) {
+                statusFilters.forEach(s => params.append('status', s));
             } else if (activeFilters.length > 0) {
                 activeFilters.forEach(s => params.append('status', s));
             }
 
-            if (tagFilters) {
-                params.append('tags', tagFilters);
+            if (tagFilters && tagFilters.length > 0) {
+                tagFilters.forEach(t => params.append('tags', t));
             }
 
             // --- NOVO: Adiciona filtros de horário à requisição ---
@@ -521,7 +536,7 @@ function Mensagens() {
         // Toda vez que o filtro ou o termo de busca mudar,
         // reseta o limite.
         // Se os filtros do popover estiverem ativos, o limite é 20. Senão, 20.
-        const hasPopoverFilters = !!statusFilters || !!tagFilters || !!timeStart || !!timeEnd;
+        const hasPopoverFilters = (statusFilters && statusFilters.length > 0) || (tagFilters && tagFilters.length > 0) || !!timeStart || !!timeEnd;
         setLimit(hasPopoverFilters ? 20 : 20);
     }, [activeButtonGroup, debouncedSearchTerm, statusFilters, tagFilters, timeStart, timeEnd]);
 
@@ -566,33 +581,51 @@ function Mensagens() {
         // Usa a lista ORDENADA
         setFilteredAtendimentos(sortedFiltered);
 
-        // NOVO: Lógica de seleção inicial
-        if (sortedFiltered.length > 0) {
-            if (!selectedAtendimento && initialAtendimentoId) {
-                // Tenta selecionar o atendimento do URL apenas na carga inicial
-                const found = sortedFiltered.find(at => at.id === parseInt(initialAtendimentoId, 10));
-                if (found) setSelectedAtendimento(found);
-            }
-        }
-        // --- FIM DA MODIFICAÇÃO (SELEÇÃO) ---
+        // NOVO: Lógica de seleção inicial e atualização da seleção
+        const filterChanged = prevFilterHashRef.current !== filterHash;
+        prevFilterHashRef.current = filterHash;
 
-        // Lógica para atualizar a seleção (se ainda estiver na lista filtrada)
-        // (Modificado para usar sortedFiltered)
-        else if (selectedAtendimento) {
-            const updatedSelected = sortedFiltered.find(at => at.id === selectedAtendimento.id);
-            if (updatedSelected) {
-                // Compara timestamps para evitar sobrescrever a UI com dados antigos
-                const localDate = new Date(selectedAtendimento.updated_at).getTime();
-                const serverDate = new Date(updatedSelected.updated_at).getTime();
-                if (serverDate >= localDate) {
-                    setSelectedAtendimento(updatedSelected);
+        if (sortedFiltered.length > 0) {
+            const shouldAutoSelect = !isInitialSelectionDone.current || filterChanged;
+            
+            if (shouldAutoSelect) {
+                isInitialSelectionDone.current = true;
+                // Tenta selecionar o atendimento do URL ou o último aberto salvo no localStorage
+                const targetId = initialAtendimentoId || localStorage.getItem('lastOpenedAtendimentoId');
+                let found = null;
+                if (targetId) {
+                    found = sortedFiltered.find(at => at.id === parseInt(targetId, 10));
                 }
-            } else {
-                // O item selecionado não está mais no filtro, des-seleciona (ou se o filtro mudou e ele sumiu)
-                setSelectedAtendimento(null);
+                if (found) {
+                    setSelectedAtendimento(found);
+                } else if (sortedFiltered.length > 0) {
+                    setSelectedAtendimento(sortedFiltered[0]);
+                }
+            } else if (selectedAtendimento) {
+                const updatedSelected = sortedFiltered.find(at => at.id === selectedAtendimento.id);
+                if (updatedSelected) {
+                    // Compara timestamps para evitar sobrescrever a UI com dados antigos
+                    const localDate = new Date(selectedAtendimento.updated_at).getTime();
+                    const serverDate = new Date(updatedSelected.updated_at).getTime();
+                    if (serverDate >= localDate) {
+                        setSelectedAtendimento(updatedSelected);
+                    }
+                } else {
+                    // O item selecionado não está mais no filtro, seleciona o primeiro do novo filtro
+                    setSelectedAtendimento(sortedFiltered[0]);
+                }
             }
+        } else if (selectedAtendimento) {
+            setSelectedAtendimento(null);
         }
-    }, [mensagens, selectedAtendimento]); // Remove dependências de filtro, pois a filtragem é via API
+    }, [mensagens, selectedAtendimento, filterHash]); // Remove dependências de filtro, pois a filtragem é via API
+
+    // Salva o ID do atendimento selecionado no localStorage para abrir automaticamente na próxima visita
+    useEffect(() => {
+        if (selectedAtendimento?.id) {
+            localStorage.setItem('lastOpenedAtendimentoId', selectedAtendimento.id);
+        }
+    }, [selectedAtendimento]);
 
     // --- FUNÇÃO CORRIGIDA PARA USAR AXIOS (api) ---
     const handleViewMedia = async (mediaId, type, filename) => {
@@ -1132,28 +1165,28 @@ function Mensagens() {
 
     // --- NOVAS FUNÇÕES PARA O POPOVER DE FILTRO ---
     const handleStatusFilterChange = (statusName) => {
-        // Se o status clicado já for o ativo, desativa. Senão, ativa.
-        setStatusFilters(prev => (prev === statusName ? null : statusName));
-        // Limpa o filtro de tag para garantir exclusividade
-        setTagFilters(null);
+        setStatusFilters(prev => {
+            const arr = Array.isArray(prev) ? prev : (prev ? [prev] : []);
+            return arr.includes(statusName) ? arr.filter(s => s !== statusName) : [...arr, statusName];
+        });
         // Desativa o grupo de botões principal para evitar conflito
         setActiveButtonGroup(null);
         setActiveFilters([]);
     };
 
     const handleTagFilterChange = (tagName) => {
-        // Se a tag clicada já for a ativa, desativa. Senão, ativa.
-        setTagFilters(prev => (prev === tagName ? null : tagName));
-        // Limpa o filtro de status para garantir exclusividade
-        setStatusFilters(null);
+        setTagFilters(prev => {
+            const arr = Array.isArray(prev) ? prev : (prev ? [prev] : []);
+            return arr.includes(tagName) ? arr.filter(t => t !== tagName) : [...arr, tagName];
+        });
         // Desativa o grupo de botões principal para evitar conflito
         setActiveButtonGroup(null);
         setActiveFilters([]);
     };
 
     const handleClearAllFilters = () => {
-        setStatusFilters(null);
-        setTagFilters(null);
+        setStatusFilters([]);
+        setTagFilters([]);
         // --- ALTERAÇÃO AQUI ---
         setTimeStart(null);
         setTimeEnd(null);
@@ -1223,7 +1256,8 @@ function Mensagens() {
                             activeButtonGroup={activeButtonGroup}
                             toggleFilter={toggleFilter}
                             onFilterIconClick={() => setIsFilterPopoverOpen(prev => !prev)}
-                            hasActiveFilters={!!statusFilters || !!tagFilters}
+                            hasActiveFilters={(statusFilters && statusFilters.length > 0) || (tagFilters && tagFilters.length > 0) || !!timeStart || !!timeEnd}
+                            activeFiltersCount={(statusFilters ? statusFilters.length : 0) + (tagFilters ? tagFilters.length : 0) + (timeStart || timeEnd ? 1 : 0)}
                         />
                         <FilterPopover
                             isOpen={isFilterPopoverOpen}
@@ -1345,7 +1379,16 @@ function Mensagens() {
                                 </div>
 
                                 <div className="flex items-center gap-0 sm:gap-1 text-slate-400 shrink-0 ml-2">
-                                    <button onClick={() => setIsFeedbackModalOpen(true)} className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl hover:bg-white hover:text-blue-600 transition-all" title="IA Training">
+                                    <button 
+                                        onClick={() => setIsFeedbackModalOpen(true)} 
+                                        disabled={!hasConfigsPermission}
+                                        className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl transition-all ${
+                                            hasConfigsPermission 
+                                                ? 'hover:bg-white hover:text-blue-600 text-slate-400' 
+                                                : 'opacity-40 cursor-not-allowed text-slate-300'
+                                        }`} 
+                                        title={hasConfigsPermission ? "Treinar IA" : "Sem permissão de Persona & IA"}
+                                    >
                                         <Wand2 size={18} className="sm:w-5 sm:h-5" />
                                     </button>
                                     <button onClick={handleExportConversation} className="hidden sm:flex w-10 h-10 items-center justify-center rounded-xl hover:bg-white hover:text-blue-600 transition-all" title="Exportar Log">

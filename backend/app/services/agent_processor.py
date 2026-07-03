@@ -14,7 +14,6 @@ from app.db.database import SessionLocal
 from app.crud import crud_atendimento, crud_config, crud_user
 from app.services.whatsapp_service import get_whatsapp_service, MessageSendError
 from app.services.gemini_service import get_gemini_service
-from app.services.prospect_service import get_prospect_service
 from app.services.google_calendar_service import get_google_calendar_service
 from app.services.google_drive_service import get_drive_service # <--- Import do serviço de Drive
 from app.api.configs import SITUATIONS
@@ -22,7 +21,7 @@ from app.db import models, schemas
 
 logger = logging.getLogger(__name__)
 
-async def process_single_atendimento(atendimento_id: int, user: models.User):
+async def process_single_atendimento(atendimento_id: int, company: models.Company):
     """
     Processa um único atendimento de ponta a ponta.
     Esta função é o coração do agente, orquestrando a leitura do estado atual,
@@ -30,7 +29,7 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
     É projetada para ser executada de forma assíncrona para cada atendimento.
     """
     # Log inicial para rastrear qual usuário está processando qual atendimento.
-    logger.info(f"Agente (User {user.id}): Processando atendimento ID {atendimento_id}...")
+    logger.info(f"Agente (Company {company.id}): Processando atendimento ID {atendimento_id}...")
     
     # Inicializa os serviços necessários para o processamento.
     whatsapp_service = get_whatsapp_service()
@@ -90,8 +89,8 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                 persona_config = atendimento_context.active_persona
                 # Se não houver persona específica, usa a persona padrão do usuário.
                 if not persona_config:
-                    if user.default_persona_id:
-                        persona_config = await crud_config.get_config(db_read_context, user.default_persona_id, user.id)
+                    if company.default_persona_id:
+                        persona_config = await crud_config.get_config(db_read_context, company.default_persona_id, company.id)
                 
                 # Se nenhuma persona for encontrada, o processo não pode continuar.
                 if not persona_config:
@@ -116,25 +115,113 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
             except Exception: pass
             return 
 
-        # --- ETAPA 3: GERAÇÃO DA RESPOSTA PELA IA ---
-        # Com todo o contexto preparado, a IA (Gemini) é chamada para decidir a próxima ação.
-        ia_response = None
+        # --- ETAPA 3: GERAÇÃO DA RESPOSTA PELA IA (COM RETRIES DE ID VALIDO) ---
+        # Pré-carrega os IDs do Drive válidos para esta persona para validar a resposta da IA.
+        valid_drive_file_ids = set()
+        downloaded_files = {}
         try:
-            logger.info(f"Agente: Atendimento {atendimento_id} apto para IA. Chamando Gemini...")
-            async with SessionLocal() as db_gemini_deduct:
-                user_for_gemini = await db_gemini_deduct.get(models.User, user.id)
-                
-                # A função da IA recebe o contexto do atendimento, o histórico da conversa, o contexto da persona (planilha) e a estrutura de arquivos do Drive.
-                ia_response = await gemini_service.generate_conversation_action(
-                    whatsapp=atendimento_context,
-                    conversation_history_db=conversation_history,
-                    persona=persona_config,
-                    db=db_gemini_deduct, 
-                    user=user_for_gemini
+            async with SessionLocal() as db_validate:
+                stmt = select(models.KnowledgeVector.content).where(
+                    models.KnowledgeVector.config_id == persona_config.id,
+                    models.KnowledgeVector.origin == "drive"
                 )
-            if not ia_response: raise ValueError("IA retornou vazio.")
+                res = await db_validate.execute(stmt)
+                drive_records = res.scalars().all()
+                for content in drive_records:
+                    # Filtra linhas vazias, de título (#) ou de separador (---)
+                    data_lines = [
+                        l.strip() 
+                        for l in content.strip().split("\n") 
+                        if l.strip() and not l.strip().startswith("#") and "---" not in l
+                    ]
+                    if len(data_lines) >= 2:
+                        try:
+                            headers = [h.strip() for h in data_lines[0].split("|") if h.strip()]
+                            if "ID" in headers:
+                                idx = headers.index("ID")
+                                for row_line in data_lines[1:]:
+                                    values = [v.strip() for v in row_line.split("|") if v.strip()]
+                                    if idx < len(values):
+                                        valid_drive_file_ids.add(values[idx])
+                        except Exception:
+                            pass
+        except Exception as e:
+            logger.error(f"Agente: Erro ao pre-carregar IDs válidos do Drive: {e}")
 
-        # Se a IA falhar, o status é atualizado para "Erro IA" com detalhes do erro.
+        ia_response = None
+        max_ia_attempts = 3
+        
+        try:
+            for ia_attempt in range(max_ia_attempts):
+                logger.info(f"Agente: Atendimento {atendimento_id} apto para IA. Chamando Gemini (Tentativa {ia_attempt + 1}/{max_ia_attempts})...")
+                async with SessionLocal() as db_gemini_deduct:
+                    company_for_gemini = await db_gemini_deduct.get(models.Company, company.id)
+                    
+                    ia_response = await gemini_service.generate_conversation_action(
+                        whatsapp=atendimento_context,
+                        conversation_history_db=conversation_history,
+                        persona=persona_config,
+                        db=db_gemini_deduct, 
+                        company=company_for_gemini
+                    )
+                if not ia_response:
+                    raise ValueError("IA retornou vazio.")
+
+                # Validação imediata da resposta gerada
+                arquivos_anexos = ia_response.get("arquivos_anexos")
+                invalid_found = False
+                downloaded_files.clear()
+                
+                if arquivos_anexos and isinstance(arquivos_anexos, list):
+                    for arquivo_anexo in arquivos_anexos:
+                        if not isinstance(arquivo_anexo, dict):
+                            continue
+                        file_id = arquivo_anexo.get("id_arquivo")
+                        
+                        # Verifica se é placeholder ou inválido (não cadastrado no RAG da persona)
+                        is_placeholder = not file_id or "ID_DO_" in str(file_id).upper() or "ID_AQUI" in str(file_id).upper()
+                        is_not_synced = valid_drive_file_ids and file_id not in valid_drive_file_ids
+                        
+                        if is_placeholder or is_not_synced:
+                            logger.warning(
+                                f"Agente: Tentativa {ia_attempt + 1} de resposta da IA continha ID de arquivo inválido/não sincronizado ({file_id})."
+                            )
+                            invalid_found = True
+                            break
+                        
+                        # Pré-validação de download do arquivo físico para garantir existência
+                        try:
+                            logger.info(f"Agente: Pré-verificando existência e download do arquivo {file_id} no Drive...")
+                            file_bytes = drive_service.download_file_bytes(file_id)
+                            if not file_bytes:
+                                logger.warning(f"Agente: Arquivo ID {file_id} está no banco mas falhou ao baixar do Google Drive (pode ter sido excluído).")
+                                invalid_found = True
+                                break
+                            else:
+                                downloaded_files[file_id] = file_bytes
+                        except Exception as dl_err:
+                            logger.warning(f"Agente: Falha ao baixar arquivo ID {file_id} durante validação: {dl_err}")
+                            invalid_found = True
+                            break
+                
+                if not invalid_found:
+                    # ID válido e arquivo acessível, aceita a resposta
+                    logger.info(f"Agente: Resposta da IA validada com sucesso na tentativa {ia_attempt + 1}.")
+                    break
+                else:
+                    if ia_attempt < max_ia_attempts - 1:
+                        # Pequeno delay antes de tentar novamente
+                        await asyncio.sleep(1)
+                    else:
+                        # Última tentativa: filtra e remove apenas os anexos inválidos da resposta para não quebrar a mensagem
+                        logger.warning("Agente: Limite de tentativas atingido. Removendo anexos inválidos da resposta final para evitar falhas no envio.")
+                        if "arquivos_anexos" in ia_response and isinstance(arquivos_anexos, list):
+                            ia_response["arquivos_anexos"] = [
+                                a for a in arquivos_anexos 
+                                if isinstance(a, dict) and a.get("id_arquivo") and (not valid_drive_file_ids or a.get("id_arquivo") in valid_drive_file_ids)
+                            ]
+
+        # Se a IA falhar permanentemente, o status é atualizado para "Erro IA" com detalhes do erro.
         except Exception as ia_err:
             logger.error(f"Agente: Falha GERAÇÃO IA: {ia_err}", exc_info=True)
             try:
@@ -163,7 +250,6 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
         
         # Extração dos dados do anexo, se a IA solicitou um.
         arquivos_anexos = ia_response.get("arquivos_anexos")
-        correcao_humana = ia_response.get("correcao_humana")
         fonte_confiavel = ia_response.get("fonte_confiavel", True)
         
         sent_messages_info = []
@@ -204,7 +290,7 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                     await asyncio.sleep(typing_delay)
 
                     logger.info(f"Agente: Enviando texto {i+1}/{len(message_parts)}...")
-                    sent_info = await whatsapp_service.send_text_message(user, atendimento_contato_num_log, part)
+                    sent_info = await whatsapp_service.send_text_message(company, atendimento_contato_num_log, part)
                     
                     sent_messages_info.append({
                         "id": sent_info.get('id') or f"text_{uuid.uuid4()}",
@@ -212,24 +298,6 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                         "timestamp": int(datetime.now(timezone.utc).timestamp()),
                         "status": "sent"
                     })
-
-                    # Se for a última bolha e houver uma "correção humana" configurada e solicitada
-                    if i == len(message_parts) - 1 and correcao_humana and persona_config.human_corrections:
-                        # Pequeno delay antes da correção
-                        await asyncio.sleep(random.uniform(1.5, 3.0))
-                        err_text = correcao_humana.get("erro")
-                        corr_text = correcao_humana.get("correcao")
-                        
-                        if err_text and corr_text:
-                            logger.info(f"Agente: Enviando correção espontânea: {corr_text}")
-                            corr_sent = await whatsapp_service.send_text_message(user, atendimento_contato_num_log, corr_text)
-                            sent_messages_info.append({
-                                "id": corr_sent.get('id') or f"corr_{uuid.uuid4()}",
-                                "content": corr_text,
-                                "timestamp": int(datetime.now(timezone.utc).timestamp()),
-                                "status": "sent",
-                                "is_correction": True
-                            })
 
                     if i < len(message_parts) - 1: 
                         await asyncio.sleep(random.uniform(2.5, 5.0))
@@ -256,55 +324,64 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                 if not file_id or "ID_DO_" in str(file_id).upper() or "ID_AQUI" in str(file_id).upper():
                     logger.warning(f"Agente: ID de arquivo inválido/placeholder detectado ({file_id}). Ignorando envio para evitar erro 404.")
                     continue
+
+                # --- SAFEGUARD EXTRA: Validar se o ID realmente pertence aos arquivos sincronizados desta Persona ---
+                if valid_drive_file_ids and file_id not in valid_drive_file_ids:
+                    logger.warning(f"Agente: Bloqueado envio do arquivo '{nome_arquivo}' (ID: {file_id}) porque o ID não consta nos arquivos sincronizados desta persona.")
+                    continue
                 
                 logger.info(f"Agente: IA solicitou envio de arquivo {i+1}/{len(arquivos_anexos)}: {nome_arquivo} (ID: {file_id})")
                 
-                file_bytes = None
-                max_retries = 3
-                for attempt in range(max_retries):
-                    try:
-                        # 1. Tenta baixar os bytes do arquivo do Google Drive.
-                        logger.info(f"Agente: Tentando download do Drive (ID: {file_id}, Tentativa: {attempt + 1}/{max_retries})")
-                        file_bytes = drive_service.download_file_bytes(file_id)
-                        
-                        if file_bytes:
-                            logger.info(f"Agente: Download do Drive bem-sucedido para ID {file_id}.")
-                            # 2. Envia o arquivo pelo WhatsApp.
-                            logger.info(f"Agente: Enviando mídia {nome_arquivo} via WhatsApp...")
-                            sent_info = await whatsapp_service.send_media_message(
-                                user=user,
-                                number=atendimento_contato_num_log,
-                                media_type=tipo_midia,
-                                file_bytes=file_bytes,
-                                filename=nome_arquivo,
-                                caption=None 
-                            )
-                            
-                            # 3. Registra a informação da mensagem enviada para o histórico.
-                            sent_messages_info.append({
-                                "id": sent_info.get('id') or f"media_{uuid.uuid4()}",
-                                "content": f"[Arquivo Enviado: {nome_arquivo}]",
-                                "timestamp": int(datetime.now(timezone.utc).timestamp()),
-                                "type": tipo_midia,
-                                "media_id": sent_info.get("media_id"),
-                                "filename": nome_arquivo,
-                                "status": "sent"
-                            })
-                            media_sent = True
-                            await asyncio.sleep(random.uniform(2, 4)) # Pausa entre envios.
-                            break # Sai do loop de tentativas pois o envio foi bem-sucedido.
-                        
-                        # Se file_bytes for None, o erro será capturado abaixo.
-                        raise ValueError("Download do Drive retornou vazio.")
+                # Pega os bytes do cache (já baixados e verificados na validação prévia em Etapa 3)
+                file_bytes = downloaded_files.get(file_id)
+                
+                # Se por acaso não estiver no cache (ex: fallback), faz o download
+                if not file_bytes:
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            logger.info(f"Agente: Cache de download vazio para ID {file_id}. Tentando baixar do Drive (Tentativa: {attempt + 1}/{max_retries})...")
+                            file_bytes = drive_service.download_file_bytes(file_id)
+                            if file_bytes:
+                                break
+                        except Exception as media_err:
+                            logger.warning(f"Agente: Falha na tentativa {attempt + 1} de download: {media_err}")
+                            if attempt < max_retries - 1:
+                                await asyncio.sleep(3)
+                            else:
+                                break
 
-                    except Exception as media_err:
-                        logger.warning(f"Agente: Falha na tentativa {attempt + 1} de baixar/enviar {file_id}: {media_err}")
-                        if attempt < max_retries - 1:
-                            await asyncio.sleep(3) # Espera 3 segundos antes de tentar novamente.
-                        else:
-                            logger.error(f"Agente: Falha permanente no download do Drive para ID {file_id} após {max_retries} tentativas.")
-                            intended_status_after_send = "Erro Drive"
-                            intended_resumo += f" | Falha permanente no download do arquivo {nome_arquivo} (ID: {file_id})."
+                if file_bytes:
+                    try:
+                        logger.info(f"Agente: Enviando mídia {nome_arquivo} via WhatsApp...")
+                        sent_info = await whatsapp_service.send_media_message(
+                            company=company,
+                            number=atendimento_contato_num_log,
+                            media_type=tipo_midia,
+                            file_bytes=file_bytes,
+                            filename=nome_arquivo,
+                            caption=None 
+                        )
+                        
+                        sent_messages_info.append({
+                            "id": sent_info.get('id') or f"media_{uuid.uuid4()}",
+                            "content": f"[Arquivo Enviado: {nome_arquivo}]",
+                            "timestamp": int(datetime.now(timezone.utc).timestamp()),
+                            "type": tipo_midia,
+                            "media_id": sent_info.get("media_id"),
+                            "filename": nome_arquivo,
+                            "status": "sent"
+                        })
+                        media_sent = True
+                        await asyncio.sleep(random.uniform(2, 4))
+                    except Exception as send_media_err:
+                        logger.error(f"Agente: Erro ao enviar mídia pelo WhatsApp: {send_media_err}")
+                        intended_status_after_send = "Erro Drive"
+                        intended_resumo += f" | Falha ao enviar o arquivo {nome_arquivo} (ID: {file_id}) via WhatsApp."
+                else:
+                    logger.error(f"Agente: Falha permanente ao baixar o arquivo {nome_arquivo} (ID: {file_id}).")
+                    intended_status_after_send = "Erro Drive"
+                    intended_resumo += f" | Falha permanente no download do arquivo {nome_arquivo} (ID: {file_id})."
 
         # --- LÓGICA DE AGENDAMENTO NO GOOGLE CALENDAR ---
         meeting_link = None
@@ -410,6 +487,9 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                         # Atualiza o status apenas se ele ainda for "Gerando Resposta", para evitar sobrescrever uma mudança manual.
                         if at_final.status == "Gerando Resposta":
                              at_final.status = intended_status_after_send 
+
+                        if at_final.status == "Atendente Chamado":
+                            await crud_atendimento.distribute_atendimento(db_final, at_final)
                         
                         # Salva as observações da IA, o histórico de conversa atualizado e a data de atualização.
                         at_final.resumo = intended_resumo
@@ -428,7 +508,7 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
                         if tags_sugeridas and isinstance(tags_sugeridas, list):
                             try:
                                 # Busca tags disponíveis para obter as cores corretas
-                                all_user_tags = await crud_atendimento.get_all_user_tags(db_final, user.id)
+                                all_user_tags = await crud_atendimento.get_all_user_tags(db_final, company_id=company.id)
                                 tag_map = {t['name']: t for t in all_user_tags}
                                 
                                 current_tags = list(at_final.tags) if at_final.tags else []
@@ -447,28 +527,7 @@ async def process_single_atendimento(atendimento_id: int, user: models.User):
             
             logger.info(f"Agente: Atendimento {atendimento_id} finalizado com sucesso.")
 
-            # --- NOTIFICAÇÃO PROSPECT AI (Fora da transação principal) ---
-            logger.info(f"Agente: Verificando se deve notificar ProspectAI. Status pretendido: '{intended_status_after_send}'")
-            if intended_status_after_send and intended_status_after_send.strip() == "Atendente Chamado":
-                try:
-                    async with SessionLocal() as db_notify:
-                        prospect_service = get_prospect_service()
-                        # Busca dados atualizados para a notificação
-                        at_notify = await db_notify.get(models.Atendimento, atendimento_id, options=[joinedload(models.Atendimento.active_persona)])
-                        user_notify = await db_notify.get(models.User, user.id)
-                        
-                        logger.info(f"Agente: Preparando notificação ProspectAI para Atendimento {atendimento_id} (Status: {intended_status_after_send})")
-                        if at_notify and user_notify:
-                            persona_notify = at_notify.active_persona
-                            if not persona_notify and user_notify.default_persona_id:
-                                persona_notify = await db_notify.get(models.Config, user_notify.default_persona_id)
-                            
-                            if persona_notify:
-                                await prospect_service.notify_atendente_if_needed(
-                                    db_notify, user_notify, at_notify, persona_notify, is_new_status=True
-                                )
-                except Exception as notify_err:
-                    logger.error(f"Agente: Erro ao disparar notificação ProspectAI: {notify_err}")
+
 
         except Exception as final_err:
             logger.error(f"Agente: Erro update final: {final_err}")
@@ -491,7 +550,6 @@ async def run_agent_cycle():
     """
     Executa um ciclo completo de verificação e processamento do agente.
     Esta função é o ponto de entrada principal para o loop do agente, que é executado periodicamente.
-    Ela busca por usuários ativos e, para cada um, encontra atendimentos que precisam de uma resposta.
     """
     # Log de início do ciclo.
     logger.info("Agente (Ciclo Otimizado): Iniciando ciclo...")
@@ -502,39 +560,31 @@ async def run_agent_cycle():
 
     async with SessionLocal() as db:
         try:
-            # 1. Busca todos os usuários que estão com o agente ativado.
-            active_users = await crud_user.get_users_with_agent_running(db) 
+            # 1. Busca todos os atendimentos que estão aguardando uma resposta e suas respectivas empresas
+            atendimentos_msg_recebida = await crud_atendimento.get_atendimentos_para_processar(db)
             
-            if active_users:
-                logger.info(f"Agente (Ciclo): Verificando atendimentos para {len(active_users)} usuários ativos...")
-                
-                for user in active_users:
-                    # Pula usuários que não têm mais tokens de IA.
-                    if user.tokens is not None and user.tokens <= 0:
+            if atendimentos_msg_recebida:
+                logger.info(f"Agente (Ciclo): {len(atendimentos_msg_recebida)} atendimentos (Mensagem Recebida) encontrados.")
+                for at in atendimentos_msg_recebida:
+                    # Pula empresas sem tokens
+                    if at.company and at.company.tokens is not None and at.company.tokens <= 0:
                         continue
 
-                    # 2. Busca todos os atendimentos que estão aguardando uma resposta ("Mensagem Recebida").
-                    # Esta busca é otimizada para ser feita em massa.
-                    atendimentos_msg_recebida = await crud_atendimento.get_atendimentos_para_processar(db)
-                    
-                    if atendimentos_msg_recebida:
-                        logger.info(f"Agente (Ciclo): {len(atendimentos_msg_recebida)} atendimentos (Mensagem Recebida) encontrados.")
-                        for at in atendimentos_msg_recebida:
-                            # Adiciona o atendimento ao dicionário, garantindo que não haja duplicatas.
-                            if at.id not in atendimentos_para_processar:
-                                atendimentos_para_processar[at.id] = at
+                    # Adiciona o atendimento ao dicionário, garantindo que não haja duplicatas.
+                    if at.id not in atendimentos_para_processar:
+                        atendimentos_para_processar[at.id] = at
 
-            # 3. Monta a lista de tarefas de processamento assíncrono.
+            # 2. Monta a lista de tarefas de processamento assíncrono.
             if atendimentos_para_processar:
                 logger.info(f"Agente (Ciclo): Total de {len(atendimentos_para_processar)} atendimentos únicos para processar.")
                 for at in atendimentos_para_processar.values():
-                    if at.owner:
+                    if at.company:
                         # Para cada atendimento, cria uma tarefa para chamar `process_single_atendimento`.
-                        all_processing_tasks.append(process_single_atendimento(at.id, at.owner))
+                        all_processing_tasks.append(process_single_atendimento(at.id, at.company))
                     else:
-                        logger.warning(f"Agente (Ciclo): Atendimento {at.id} sem usuário carregado.")
+                        logger.warning(f"Agente (Ciclo): Atendimento {at.id} sem empresa carregada.")
             
-            # 4. Executa todas as tarefas de processamento em paralelo.
+            # 3. Executa todas as tarefas de processamento em paralelo.
             if all_processing_tasks:
                 logger.info(f"Agente (Ciclo): Executando {len(all_processing_tasks)} tarefas.")
                 await asyncio.gather(*all_processing_tasks)

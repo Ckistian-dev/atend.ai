@@ -11,7 +11,7 @@ from collections.abc import Set
 from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, inspect
 
 
 from app.core.config import settings
@@ -39,19 +39,23 @@ class GeminiService:
             
         self.current_key_index = 0
         
-        # Carregar tabela de preços do arquivo models.js (Duplicado no Backend)
+        # Carregar tabela de preços do arquivo models.json
         self.model_pricing = {}
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            models_js_path = os.path.normpath(os.path.join(current_dir, "../constants/models.js"))
+            models_json_path = os.path.normpath(os.path.join(current_dir, "../constants/models.json"))
             
-            with open(models_js_path, "r", encoding="utf-8") as f:
-                content = f.read()
+            with open(models_json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
                 
-            match = re.search(r'export const LLM_MODELS = (\[.*?\]);', content, re.DOTALL)
-            if match:
-                models_data = json.loads(match.group(1))
-                base_flash = 0.30 # Gemini 2.5 Flash Input Text
+            models_data = data.get("LLM_MODELS", [])
+            if models_data:
+                # Busca o preço de input_text do gemini-2.5-flash como base dinamicamente
+                base_flash = 0.30
+                for model in models_data:
+                    if model.get("id") == "gemini-2.5-flash":
+                        base_flash = model.get("pricing", {}).get("input_text", 0.30)
+                        break
                 
                 for model in models_data:
                     m_id = model["id"]
@@ -62,11 +66,11 @@ class GeminiService:
                         "input_audio": pricing.get("input_audio", 0.30) / base_flash,
                         "output": pricing.get("output", 2.50) / base_flash
                     }
-                logger.info(f"✅ Tabela de preços carregada de models.js: {len(self.model_pricing)} modelos.")
+                logger.info(f"✅ Tabela de preços carregada de models.json: {len(self.model_pricing)} modelos (base: {base_flash}).")
             else:
-                raise ValueError("Array LLM_MODELS não encontrado em models.js")
+                raise ValueError("Array LLM_MODELS não encontrado em models.json")
         except Exception as e:
-            logger.error(f"🚨 Erro ao ler tabela de preços do models.js: {e}")
+            logger.error(f"🚨 Erro ao ler tabela de preços do models.json: {e}")
             # Fallback seguro
             self.model_pricing = {
                 "gemini-2.5-flash": { "input_text": 1.0, "input_audio": 1.0 / 0.30, "output": 2.50 / 0.30 }
@@ -112,7 +116,7 @@ class GeminiService:
         self, 
         prompt: Any, 
         db: AsyncSession, 
-        user: models.User, 
+        company: models.Company, 
         is_media: bool = False,
         media_type: str = "text",
         system_instruction: Optional[str] = None,
@@ -204,13 +208,15 @@ class GeminiService:
                         print(f"Erro ao salvar resposta no log: {e}")
 
                     # --- LÓGICA DE TOKEN (ODÔMETRO) ---
-                    # Extrai o uso real de tokens da resposta do Gemini
+                    # Extrai o uso real de tokens da resposta do Gemini, incluindo tokens de pensamento (thinking)
                     usage_metadata = response.usage_metadata
                     tokens_to_deduct = 0 # Inicializa com 0
 
                     if usage_metadata:
-                        input_tokens = usage_metadata.prompt_token_count
-                        output_tokens = usage_metadata.candidates_token_count
+                        input_tokens = usage_metadata.prompt_token_count or 0
+                        candidates_tokens = usage_metadata.candidates_token_count or 0
+                        thoughts_tokens = getattr(usage_metadata, "thoughts_token_count", 0) or 0
+                        output_tokens = candidates_tokens + thoughts_tokens
                         
                         # Recupera multiplicadores para o modelo usado
                         pricing = self.model_pricing.get(model_name, self.model_pricing.get("gemini-2.5-flash", {"input_text": 1.0, "input_audio": 3.33, "output": 8.33}))
@@ -226,22 +232,35 @@ class GeminiService:
                         tokens_to_deduct = round(equivalent_total_tokens)
 
                         logger.info(
-                            f"Uso de tokens (User {user.id}, Model {model_name}): "
-                            f"Input={input_tokens}, Output={output_tokens}. "
+                            f"Uso de tokens (Company {company.id}, Model {model_name}): "
+                            f"Input={input_tokens}, Output={output_tokens} (Candidates={candidates_tokens}, Thoughts={thoughts_tokens}). "
                             f"Custo Equivalente = {tokens_to_deduct} tokens."
                         )
                     else:
-                        logger.warning(f"Não foi possível obter metadados de uso de tokens para o user {user.id}.")
+                        logger.warning(f"Não foi possível obter metadados de uso de tokens para a empresa {company.id}.")
 
                     try:
                         if tokens_to_deduct > 0:
-                            logger.info(f"Sucesso na chamada à API Gemini para o utilizador {user.id}. Deduzindo {tokens_to_deduct} tokens.")
-                            await crud_user.decrement_user_tokens(db, db_user=user, usage=tokens_to_deduct, atendimento_id=atendimento_id)
-                            await db.commit()
-                            await db.refresh(user)
+                            logger.info(f"Sucesso na chamada à API Gemini para a empresa {company.id}. Deduzindo {tokens_to_deduct} tokens.")
+                            await crud_user.decrement_company_tokens(
+                                db,
+                                db_company=company,
+                                usage=tokens_to_deduct,
+                                atendimento_id=atendimento_id,
+                                token_type="gemini_inference"
+                            )
+                            if db.in_nested_transaction():
+                                await db.flush()
+                            else:
+                                await db.commit()
+                                await db.refresh(company)
                     except Exception as token_err:
-                        logger.error(f"Falha ao deduzir tokens: {token_err}", exc_info=True)
-                        await db.rollback()
+                        logger.error(f"Falha ao deduzir tokens da empresa: {token_err}", exc_info=True)
+                        if db.in_nested_transaction():
+                            # Rolls back the savepoint only
+                            await db.rollback()
+                        else:
+                            await db.rollback()
                     
                     return response
 
@@ -278,7 +297,7 @@ class GeminiService:
         db_history: List[dict], 
         persona: models.Config,
         db: AsyncSession,
-        user: models.User,
+        company: models.Company,
         atendimento_id: Optional[int] = None
     ) -> str:
         logger.info(f"Iniciando transcrição/análise para mídia do tipo {media_data.get('mime_type')}")
@@ -289,7 +308,7 @@ class GeminiService:
             mime_type = media_data.get("mime_type")
 
             if not file_bytes:
-                raise ValueError("Bytes do arquivo não encontrados em media_data")
+                raise ValueError("Bytes do arquivo não encontrados in media_data")
 
             # Cria o objeto Part nativo do novo SDK
             # Isso substitui a lógica antiga de upload ou passagem de objetos complexos
@@ -336,7 +355,7 @@ class GeminiService:
             # Passamos a lista (texto + mídia) para o método que criamos anteriormente
             # O _generate_with_retry já está preparado para receber 'prompt' como string OU lista
             response = await self._generate_with_retry(
-                prompt_contents, db, user, is_media=True, media_type=media_type_arg, 
+                prompt_contents, db, company, is_media=True, media_type=media_type_arg, 
                 system_instruction=system_instruction, atendimento_id=atendimento_id, persona=persona
             )
             
@@ -480,11 +499,13 @@ class GeminiService:
         
         final_vectors = []
         
-        # Para cada origem encontrada (cada aba e o drive), busca os 'limit' mais relevantes
+        # Para cada origem encontrada (cada aba e o drive), busca os 'limit' mais relevantes com threshold de distância
         for origin in origins:
+            threshold = 0.52 if origin == "drive" else 0.58
             stmt_origin = select(models.KnowledgeVector).where(
                 models.KnowledgeVector.config_id == config_id,
-                models.KnowledgeVector.origin == origin
+                models.KnowledgeVector.origin == origin,
+                models.KnowledgeVector.embedding.cosine_distance(query_embedding) < threshold
             ).order_by(
                 models.KnowledgeVector.embedding.cosine_distance(query_embedding)
             ).limit(limit)
@@ -531,15 +552,15 @@ class GeminiService:
 
         return formatted_text
 
-    def _get_datetime_context(self, user: models.User) -> str:
+    def _get_datetime_context(self, company: models.Company) -> str:
         """Gera o contexto de data e hora atual, incluindo dia da semana em PT-BR."""
         now_utc = datetime.now(timezone.utc)
         
         datetime_context = f"Data e Hora Atuais (UTC): {now_utc.strftime('%Y-%m-%d %H:%M:%S')} UTC\n"
 
         user_timezone_str = "America/Sao_Paulo" # Default
-        if user.followup_config and isinstance(user.followup_config, dict):
-            user_timezone_str = user.followup_config.get("timezone", "America/Sao_Paulo")
+        if company.followup_config and isinstance(company.followup_config, dict):
+            user_timezone_str = company.followup_config.get("timezone", "America/Sao_Paulo")
         
         try:
             user_tz = pytz.timezone(user_timezone_str)
@@ -550,7 +571,7 @@ class GeminiService:
             
             datetime_context += f"Data e Hora Local do Usuário ({user_timezone_str}): {now_local.strftime('%Y-%m-%d %H:%M:%S')} ({weekday_name})\n"
         except pytz.UnknownTimeZoneError:
-            logger.warning(f"Timezone desconhecida '{user_timezone_str}' para o usuário {user.id}. Usando apenas UTC.")
+            logger.warning(f"Timezone desconhecida '{user_timezone_str}' para a empresa {company.id}. Usando apenas UTC.")
             pass 
             
         return datetime_context
@@ -617,8 +638,10 @@ class GeminiService:
         conversation_history_db: List[dict],
         persona: models.Config,
         db: AsyncSession,
-        user: models.User
+        company: models.Company
     ) -> dict:
+        company_id = inspect(company).identity[0]
+        company = await db.get(models.Company, company_id)
         max_retries = 3
         last_response = None
 
@@ -629,7 +652,7 @@ class GeminiService:
                 persona_prompt = persona.prompt or "Você é um assistente útil."
                 
                 # Busca tags disponíveis e atuais para o prompt
-                available_tags = await crud_atendimento.get_all_user_tags(db, user.id)
+                available_tags = await crud_atendimento.get_all_user_tags(db, company_id=company.id)
                 available_tags_names = [t['name'] for t in available_tags]
                 
                 current_tags_names = []
@@ -640,19 +663,27 @@ class GeminiService:
                 history_str = self._format_history_optimized(conversation_history_db, include_timestamps=True)
                 
                 # --- RAG QUERY BUILDER (Foco Exponencial) ---
-                # Prioriza drasticamente as últimas mensagens para o embedding de busca.
+                # Prioriza as mensagens do usuário no histórico recente para evitar poluição
+                # com as respostas e saudações automáticas da própria IA.
                 rag_query = ""
                 if conversation_history_db:
-                    # Pega as últimas 5 mensagens (Contexto Imediato)
-                    recent_msgs = conversation_history_db[-5:]
-                    rag_query = self._format_history_optimized(recent_msgs, include_timestamps=False)
+                    recent_msgs = conversation_history_db[-6:]
+                    user_contents = [
+                        msg.get("content", "").strip() 
+                        for msg in recent_msgs 
+                        if msg.get("role") == "user" and msg.get("content")
+                    ]
+                    if user_contents:
+                        rag_query = " ".join(user_contents)
+                    else:
+                        rag_query = conversation_history_db[-1].get("content", "")
 
 
                 # Usa a query focada para buscar contexto
                 rag_context = await self._retrieve_rag_context(db, persona.id, rag_query)
 
                 # --- Contexto de Data e Hora ---
-                datetime_context = self._get_datetime_context(user)
+                datetime_context = self._get_datetime_context(company)
 
                 # --- Contexto de Agenda ---
                 calendar_context = ""
@@ -670,7 +701,7 @@ class GeminiService:
                                     booked_list.append(f"- {start}")
                                 booked_events_str = "\n# HORÁRIOS JÁ OCUPADOS (NÃO AGENDAR NESTES)\n" + "\n".join(booked_list) + "\n"
                         except Exception as cal_err:
-                            logger.error(f"Erro ao buscar agenda para prompt (User {user.id}): {cal_err}")
+                            logger.error(f"Erro ao buscar agenda para prompt (Company {company.id}): {cal_err}")
 
                     # Formata horários de trabalho de forma simples
                     hours_summary = []
@@ -678,7 +709,7 @@ class GeminiService:
                         for day, intervals in persona.available_hours.items():
                             if intervals:
                                 if isinstance(intervals, str):
-                                    intervals_str = intervals
+                                    hours_summary.append(f"{day.capitalize()}: {intervals}")
                                 elif isinstance(intervals, list):
                                     formatted_intervals = []
                                     for i in intervals:
@@ -693,12 +724,10 @@ class GeminiService:
                                                 formatted_intervals.append(end)
                                         elif isinstance(i, str):
                                             formatted_intervals.append(i)
-                                        else:
-                                            formatted_intervals.append(str(i))
-                                    intervals_str = ", ".join(formatted_intervals)
+                                    if formatted_intervals:
+                                        hours_summary.append(f"{day.capitalize()}: {', '.join(formatted_intervals)}")
                                 else:
-                                    intervals_str = str(intervals)
-                                hours_summary.append(f"{day}: {intervals_str}")
+                                    hours_summary.append(f"{day.capitalize()}: {str(intervals)}")
                     
                     hours_text = " | ".join(hours_summary) if hours_summary else "Não configurado"
 
@@ -718,7 +747,15 @@ class GeminiService:
                 _tags_rule = f"# TAGS DISPONÍVEIS\n{' | '.join(available_tags_names)}\n\n" if available_tags_names else ""
                 _tags_json = '  "tags_sugeridas": ["Tag1"],\n' if available_tags_names else ""
 
-                _drive_rule = "3. *ARQUIVOS:* Use apenas IDs Reais da lista do Drive. Proibido inventar.\n" if persona.drive_id else ""
+                _drive_rule = (
+                    "3. *REGRAS RÍGIDAS DE ENVIO DE ARQUIVOS (DRIVE):*\n"
+                    "   - Você deve incluir um arquivo em 'arquivos_anexos' APENAS se o cliente solicitou diretamente esse arquivo ou a informação contida nele (ex: catálogo, tabela de preços, contrato, foto do produto, etc).\n"
+                    "   - NÃO envie arquivos por iniciativa própria ou para complementar saudações normais/conversas genéricas.\n"
+                    "   - É terminantemente PROIBIDO adivinhar, assumir ou inventar IDs de arquivos. Utilize APENAS os IDs reais listados na tabela '# CONTEXTO (RAG)' que correspondam EXATAMENTE ao arquivo solicitado pelo cliente.\n"
+                    "   - Se o cliente solicitar um arquivo e você não encontrar o ID exato dele na seção '# CONTEXTO (RAG)', NÃO envie nada no array 'arquivos_anexos'. Em vez disso, explique de forma educada que não localizou o arquivo ou peça para ele especificar melhor para que o atendente humano o envie.\n"
+                    "   - Certifique-se de que o campo 'nome_exato' corresponda exatamente ao nome do arquivo listado na tabela (incluindo a extensão, se houver, ex: '.pdf').\n"
+                    "   - Classifique o 'tipo_midia' corretamente como 'image' (para imagens/fotos), 'video' (para vídeos) ou 'document' (para PDFs, planilhas, Word, etc).\n"
+                ) if persona.drive_id else ""
                 _drive_json = '  "arquivos_anexos": [{ "nome_exato": "Nome", "id_arquivo": "ID", "tipo_midia": "image|video|document" }],\n' if persona.drive_id else ""
 
                 _sched_rule = (
@@ -727,9 +764,6 @@ class GeminiService:
                     if persona.is_calendar_active else ""
                 )
                 _sched_json = '  "email_cliente": "Email", "acao_agenda": "Ação", "data_agendamento": "ISO",\n' if persona.is_calendar_active else ""
-
-                _corr_rule = "- *CORREÇÃO HUMANA:* Caso ativado, você pode ocasionalmente simular um erro de digitação em um balão e enviar a correção no balão seguinte para conferir naturalidade.\n" if persona.human_corrections else ""
-                _corr_json = '  "correcao_humana": { "erro": "...", "correcao": "*" },\n' if persona.human_corrections else ""
 
                 system_instruction = (
                     f"{persona_prompt}\n\n"
@@ -744,7 +778,6 @@ class GeminiService:
                     f"- *Formatação WhatsApp:* Utilize estritamente a sintaxe do WhatsApp (*negrito*, _itálico_, ~tachado~).\n"
                     f"- *Separação de Bolhas:* Divida a resposta no array 'mensagens'. Cada item é um balão separado.\n"
                     f"- *Linguagem Natural:* Priorize expressões cotidianas em vez de frases prontas.\n"
-                    f"{_corr_rule}\n"
                     f"# REGRAS DE EXECUÇÃO E INTEGRIDADE (CRÍTICO)\n"
                     f"1. *ADMITIR IGNORÂNCIA:* CASO A INFORMAÇÃO SOLICITADA NÃO ESTEJA PRESENTE NO CONTEXTO (RAG) OU NO FLUXO, INFORME QUE NÃO POSSUI O DADO E OFEREÇA AJUDA COM O QUE ESTÁ DISPONÍVEL. PROIBIDO INVENTAR DADOS TÉCNICOS, PREÇOS OU CONDIÇÕES.\n"
                     f"2. *FONTE DE VERDADE:* Baseie-se prioritariamente no contexto fornecido.\n"
@@ -757,7 +790,7 @@ class GeminiService:
                     f"Retorne APENAS o JSON. OMITA campos vazios ou nulos para economizar tokens.\n"
                     f"{{\n"
                     f'  "mensagens": ["Balão 1", "Balão 2"],\n'
-                    f"{_corr_json}{_sched_json}{_tags_json}{_drive_json}"
+                    f"{_sched_json}{_tags_json}{_drive_json}"
                     f'  "fonte_confiavel": true,\n'
                     f'  "nova_situacao": "Aguardando Resposta",\n'
                     f'  "nome_contato": "Nome",\n'
@@ -766,6 +799,7 @@ class GeminiService:
                 )
 
                 # --- 3. Montagem do Prompt (Histórico e Tarefa) ---
+                _obs_row = f"| Observações | {whatsapp.observacoes.strip()} |\n" if whatsapp.observacoes and whatsapp.observacoes.strip() else ""
                 prompt_text = (
                     f"# DATA E HORA ATUAL\n{datetime_context}\n"
                     f"# DADOS DO CLIENTE\n"
@@ -773,13 +807,13 @@ class GeminiService:
                     f"|---|---|\n"
                     f"| Nome | {whatsapp.nome_contato or 'Não identificado'} |\n"
                     f"| Tags Atuais | {', '.join(current_tags_names) if current_tags_names else 'Nenhuma'} |\n"
-                    f"| Status Atendente | {'online' if user.atendente_online else 'offline'} |\n\n"
-                    f"# HISTÓRICO\n{history_str}\n\n"
+                    f"{_obs_row}"
+                    f"\n# HISTÓRICO\n{history_str}\n\n"
                     f"# TAREFA\n"
                     f"Responda ao último 'User' seguindo estritamente as instruções do sistema."
                 )
                 
-                response = await self._generate_with_retry(prompt_text, db, user, system_instruction=system_instruction, atendimento_id=whatsapp.id, persona=persona)
+                response = await self._generate_with_retry(prompt_text, db, company, system_instruction=system_instruction, atendimento_id=whatsapp.id, persona=persona)
                 last_response = response
                 
                 return self._parse_json_response(response.text)
@@ -808,14 +842,16 @@ class GeminiService:
         whatsapp: models.Atendimento,
         conversation_history_db: List[dict],
         db: AsyncSession,
-        user: models.User
+        company: models.Company
     ) -> dict:
         """
-        Gera uma mensagem de follow-up baseada na inatividade e nas configurações do usuário.
+        Gera uma mensagem de follow-up baseada na inatividade e nas configurações da empresa.
         """
         try:
+            company_id = inspect(company).identity[0]
+            company = await db.get(models.Company, company_id)
             history_str = self._format_history_optimized(conversation_history_db, include_timestamps=True)
-            datetime_context = self._get_datetime_context(user)
+            datetime_context = self._get_datetime_context(company)
 
             system_instruction = (
                 "Você é um assistente especialista em reengajamento. Analise o histórico e decida se deve enviar um follow-up.\n\n"
@@ -833,7 +869,7 @@ class GeminiService:
                 f"## TAREFA\nAnalise o histórico e decida sobre o envio do follow-up."
             )
             
-            response = await self._generate_with_retry(prompt_text, db, user, system_instruction=system_instruction, atendimento_id=whatsapp.id, persona=whatsapp.active_persona)
+            response = await self._generate_with_retry(prompt_text, db, company, system_instruction=system_instruction, atendimento_id=whatsapp.id, persona=whatsapp.active_persona)
             
             return self._parse_json_response(response.text)
 
@@ -1017,7 +1053,7 @@ class GeminiService:
         response = await self._generate_with_retry(
             prompt_str, 
             db, 
-            user, 
+            user.company, 
             is_media=False, 
             system_instruction=system_instruction
         )
@@ -1056,7 +1092,7 @@ class GeminiService:
                 f"Retorne APENAS o texto do system prompt gerado, sem introduções, sem formatação markdown (```) e pronto para uso."
             )
         
-        response = await self._generate_with_retry(prompt_text, db, user)
+        response = await self._generate_with_retry(prompt_text, db, user.company)
         
         if fixed_instruction:
             return response.text.strip() + "\n\n" + fixed_instruction
@@ -1140,7 +1176,7 @@ class GeminiService:
             response = await self._generate_with_retry(
                 prompt=prompt_text,
                 db=db,
-                user=user,
+                company=user.company,
                 system_instruction=system_instruction,
                 atendimento_id=atendimento_id
             )

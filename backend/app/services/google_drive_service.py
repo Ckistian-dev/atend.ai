@@ -206,6 +206,101 @@ class GoogleDriveService:
             logger.error(f"Erro ao criar pasta: {e}")
             raise e
 
+    def upload_file(self, file_content_bytes: bytes, file_name: str, parent_folder_id: str, mime_type: str = 'application/octet-stream') -> str:
+        """Uploads a file (from bytes) to a specific Google Drive folder."""
+        from googleapiclient.http import MediaInMemoryUpload
+        if not self.service: raise Exception("Serviço do Google Drive não inicializado.")
+        try:
+            file_metadata = {
+                'name': file_name,
+                'parents': [parent_folder_id]
+            }
+            media = MediaInMemoryUpload(file_content_bytes, mimetype=mime_type, resumable=True)
+            file = self.service.files().create(
+                body=file_metadata,
+                media_body=media,
+                fields='id'
+            ).execute()
+            return file.get('id')
+        except Exception as e:
+            logger.error(f"Erro ao fazer upload de arquivo para a pasta {parent_folder_id}: {e}")
+            raise e
+
+    def delete_old_backups(self, folder_id: str, days: int = 30) -> int:
+        """
+        Lista os arquivos da pasta informada e exclui permanentemente
+        aqueles criados há mais de `days` dias.
+        Retorna o número de arquivos excluídos.
+        """
+        if not self.service:
+            logger.error("Drive: Tentativa de limpeza sem serviço inicializado.")
+            return 0
+
+        from datetime import datetime, timezone, timedelta
+
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        cutoff_str = cutoff.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        deleted_count = 0
+        page_token = None
+
+        try:
+            while True:
+                query = (
+                    f"'{folder_id}' in parents "
+                    f"and trashed = false "
+                    f"and createdTime < '{cutoff_str}'"
+                )
+                results = self.service.files().list(
+                    q=query,
+                    pageSize=100,
+                    fields="nextPageToken, files(id, name, createdTime)",
+                    pageToken=page_token
+                ).execute()
+
+                items = results.get('files', [])
+                for item in items:
+                    try:
+                        self.service.files().delete(fileId=item['id']).execute()
+                        logger.info(
+                            f"Drive: Backup antigo excluído — '{item['name']}' "
+                            f"(criado em {item.get('createdTime', 'desconhecido')})"
+                        )
+                        deleted_count += 1
+                    except Exception as del_ex:
+                        logger.warning(
+                            f"Drive: Não foi possível excluir '{item['name']}' "
+                            f"(ID: {item['id']}): {del_ex}"
+                        )
+
+                page_token = results.get('nextPageToken')
+                if not page_token:
+                    break
+
+            logger.info(f"Drive: Limpeza concluída. {deleted_count} backup(s) antigo(s) excluído(s).")
+        except Exception as e:
+            logger.error(f"Drive: Erro ao limpar backups antigos da pasta {folder_id}: {e}", exc_info=True)
+
+        return deleted_count
+
+    def watch_file(self, file_id: str, channel_id: str, webhook_url: str):
+        """Registra um canal de watch (push notifications) para um arquivo ou pasta."""
+        if not self.service:
+            logger.error("Drive: Tentativa de watch sem serviço inicializado.")
+            return None
+        try:
+            body = {
+                'id': channel_id,
+                'type': 'web_hook',
+                'address': webhook_url
+            }
+            logger.info(f"Drive: Registrando watch para o arquivo/pasta {file_id} no canal {channel_id} (URL: {webhook_url})")
+            return self.service.files().watch(fileId=file_id, body=body).execute()
+        except Exception as e:
+            logger.error(f"Drive: Erro ao registrar watch para {file_id}: {e}", exc_info=True)
+            raise e
+
+
 _drive_service = None
 def get_drive_service():
     global _drive_service

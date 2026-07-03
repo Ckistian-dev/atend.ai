@@ -31,10 +31,10 @@ function Login() {
 
       localStorage.setItem('accessToken', response.data.access_token);
 
-      if (response.data.is_admin) {
+      if (response.data.is_superuser === true) {
         navigate('/admin');
       } else {
-        const redirectPath = location.state?.from?.pathname || '/mensagens';
+        const redirectPath = location.state?.from?.pathname || '/dashboard';
         navigate(redirectPath);
       }
     } catch (err) {

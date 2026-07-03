@@ -10,13 +10,15 @@ import {
   Send,
   Zap,
   ChevronRight,
-  X
+  X,
+  ShieldCheck,
+  ShieldAlert
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────
    COMPONENT
    ───────────────────────────────────────── */
-const Sidebar = ({ isSuperUser, isMobileMenuOpen, setIsMobileMenuOpen }) => {
+const Sidebar = ({ isSuperUser, userRole, userPermissions, isMobileMenuOpen, setIsMobileMenuOpen }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const navigate = useNavigate();
 
@@ -26,15 +28,37 @@ const Sidebar = ({ isSuperUser, isMobileMenuOpen, setIsMobileMenuOpen }) => {
   };
 
   const baseNavItems = [
-    { icon: LayoutDashboard, name: 'Dashboard', path: '/dashboard' },
-    { icon: MessageSquareText, name: 'Atendimentos', path: '/atendimentos' },
-    { icon: Archive, name: 'Mensagens', path: '/mensagens' },
-    { icon: Bot, name: 'Persona & IA', path: '/configs' },
-    { icon: Send, name: 'Disparos', path: '/disparos' },
-    { icon: History, name: 'Follow-up', path: '/followup' },
+    { icon: LayoutDashboard, name: 'Dashboard', path: '/dashboard', key: 'dashboard' },
+    { icon: MessageSquareText, name: 'Atendimentos', path: '/atendimentos', key: 'atendimentos' },
+    { icon: Archive, name: 'Mensagens', path: '/mensagens', key: 'mensagens' },
+    { icon: Bot, name: 'Persona & IA', path: '/configs', key: 'configs' },
+    { icon: Send, name: 'Disparos', path: '/disparos', key: 'disparos' },
+    { icon: History, name: 'Follow-up', path: '/followup', key: 'followup' },
   ];
 
-  const navItems = isSuperUser ? [] : [...baseNavItems];
+  const hasPermission = (item) => {
+    if (isSuperUser) return true;
+    if (userRole === 'admin') return true;
+    if (item.key === 'permissoes') return false; // Usuários comuns não acessam a página de permissões
+
+    if (!userPermissions) return true; // Libera tudo se não houver configurações
+    return userPermissions[item.key] !== false;
+  };
+
+  const items = [];
+  if (isSuperUser) {
+    items.push({ icon: ShieldAlert, name: 'Super Admin', path: '/admin', key: 'admin' });
+  } else {
+    items.push(...baseNavItems);
+    if (userRole === 'admin') {
+      items.push({ icon: ShieldCheck, name: 'Permissões', path: '/permissoes', key: 'permissoes' });
+    }
+  }
+
+  const navItems = items.map(item => ({
+    ...item,
+    disabled: !hasPermission(item)
+  }));
 
   return (
     <aside
@@ -84,18 +108,27 @@ const Sidebar = ({ isSuperUser, isMobileMenuOpen, setIsMobileMenuOpen }) => {
         {navItems.map((item) => (
           <NavLink
             key={item.name}
-            to={item.path}
+            to={item.disabled ? '#' : item.path}
             className={({ isActive }) => `
               flex items-center gap-3 px-4 py-3 rounded-[14px] transition-all duration-200 group relative
-              ${isActive
-                ? 'bg-white/20 text-white shadow-xl shadow-black/5 ring-1 ring-white/20 backdrop-blur-md'
-                : 'text-white/60 hover:bg-white/10 hover:text-white'}
+              ${item.disabled 
+                ? 'opacity-30 cursor-not-allowed text-white/40 hover:bg-transparent' 
+                : (isActive 
+                  ? 'bg-white/20 text-white shadow-xl shadow-black/5 ring-1 ring-white/20 backdrop-blur-md' 
+                  : 'text-white/60 hover:bg-white/10 hover:text-white')
+              }
             `}
-            onClick={() => setIsMobileMenuOpen(false)}
+            onClick={(e) => {
+              if (item.disabled) {
+                e.preventDefault();
+                return;
+              }
+              setIsMobileMenuOpen(false);
+            }}
           >
             {({ isActive }) => (
               <>
-                <div className={`shrink-0 transition-transform duration-300 ${isActive ? 'scale-105' : 'group-hover:scale-110'}`}>
+                <div className={`shrink-0 transition-transform duration-300 ${item.disabled ? '' : (isActive ? 'scale-105' : 'group-hover:scale-110')}`}>
                   <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                 </div>
                 <span className={`
@@ -106,7 +139,7 @@ const Sidebar = ({ isSuperUser, isMobileMenuOpen, setIsMobileMenuOpen }) => {
                 </span>
 
                 {/* Active Indicator Bar */}
-                {isActive && (
+                {!item.disabled && isActive && (
                   <div className="absolute left-0 top-1/4 bottom-1/4 w-1 bg-white rounded-r-full shadow-[2px_0_10px_white]" />
                 )}
 
@@ -119,7 +152,7 @@ const Sidebar = ({ isSuperUser, isMobileMenuOpen, setIsMobileMenuOpen }) => {
 
                 {/* Chevron: only when expanded */}
                 {(isExpanded || isMobileMenuOpen) && (
-                  <ChevronRight size={14} className="ml-auto text-white/30 group-hover:text-white/60 transition-colors" />
+                  <ChevronRight size={14} className={`ml-auto transition-colors ${item.disabled ? 'text-white/10' : 'text-white/30 group-hover:text-white/60'}`} />
                 )}
               </>
             )}

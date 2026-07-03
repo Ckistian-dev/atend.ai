@@ -49,8 +49,8 @@ function Followup() {
         setIsLoading(true);
         try {
             const { data } = await api.get('/auth/me');
-            setIsActive(data.followup_active || false);
-            const backendConfig = data.followup_config;
+            setIsActive(data.company?.followup_active || false);
+            const backendConfig = data.company?.followup_config;
             if (backendConfig && backendConfig.intervals) {
                 const frontendIntervals = backendConfig.intervals.map(interval => {
                     if (interval.hours < 1) return { value: Math.round(interval.hours * 60), unit: 'minutes' };

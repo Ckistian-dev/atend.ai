@@ -42,7 +42,7 @@ LOGGING_CONFIG = {
         "file": { # Handler para arquivo rotativo
             "formatter": "file_default",
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": "app.log", # Nome do arquivo
+            "filename": "atendai_api.log", # Nome do arquivo
             "maxBytes": 10 * 1024 * 1024,  # 10 MB
             "backupCount": 5, # Mantém 5 arquivos antigos
             "encoding": "utf-8",
@@ -126,28 +126,17 @@ from app.api.agent import router as agent_router
 from app.api.users import router as users_router
 from app.api.admin import router as admin_router
 from app.api.landingpage import router as landingpage_router
-from app.api.integracao_prospectai import router as prospect_router
 
 # Obtém o logger para ESTE arquivo (main.py) APÓS a configuração
 logger = logging.getLogger(__name__)
 
-async def init_db():
-    """
-    Inicializa o banco de dados criando as tabelas definidas no SQLAlchemy
-    caso elas ainda não existam.
-    """
-    try:
-        async with engine.begin() as conn:
-            await conn.run_sync(models.Base.metadata.create_all)
-        logger.info("Inicialização do banco de dados concluída (tabelas verificadas/criadas).")
-    except Exception as e:
-        logger.error(f"Erro ao inicializar o banco de dados: {e}")
-        raise e
+from app.services.init_db import init_db
+from app.services.backup_service import start_backup_scheduler
 
 app = FastAPI(
     title="API AtendAI",
     version="1.0.0",
-    on_startup=[init_db],
+    on_startup=[init_db, start_backup_scheduler],
 )
 
 # --- CONFIGURAÇÃO DE CORS MELHORADA ---
@@ -191,7 +180,6 @@ app.include_router(agent_router, prefix=f"{API_PREFIX}/agent", tags=["Agente"])
 app.include_router(admin_router, prefix=f"{API_PREFIX}/admin", tags=["Admin"])
 app.include_router(users_router, prefix=f"{API_PREFIX}/users", tags=["Utilizadores"])
 app.include_router(landingpage_router, prefix=f"{API_PREFIX}/landingpage", tags=["Landing Page"])
-app.include_router(prospect_router, prefix=f"{API_PREFIX}/prospect", tags=["Integração ProspectAI"])
 
 
 @app.get("/", tags=["Root"])

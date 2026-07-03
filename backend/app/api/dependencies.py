@@ -16,7 +16,7 @@ async def get_current_user(
     admin_email = settings.ADMIN_EMAIL
     if admin_email and token_data.email == admin_email:
         # Cria um usuário virtual em memória (não salvo no DB)
-        user = models.User(id=0, email=admin_email, hashed_password="")
+        user = models.User(id=0, email=admin_email, hashed_password="", role="admin")
         # Atribui a flag de superusuário dinamicamente
         user.is_superuser = True
         return user
@@ -43,6 +43,19 @@ def get_current_active_superuser(
     """
     # Usa getattr para evitar erro caso o atributo não exista no modelo do DB
     if not getattr(current_user, "is_superuser", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The user doesn't have enough privileges",
+        )
+    return current_user
+
+def get_current_active_admin(
+    current_user: models.User = Depends(get_current_active_user),
+) -> models.User:
+    """
+    Dependency to get the current active user and check if they are an admin or superuser.
+    """
+    if current_user.role != "admin" and not getattr(current_user, "is_superuser", False):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="The user doesn't have enough privileges",

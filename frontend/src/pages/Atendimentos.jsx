@@ -1183,6 +1183,7 @@ function Atendimentos() {
 
     const [searchParams, setSearchParams] = useSearchParams(); // Adicionado setSearchParams
     const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+    const [localSearchTerm, setLocalSearchTerm] = useState(searchParams.get('search') || '');
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [modalData, setModalData] = useState({ type: null, data: null });
@@ -1194,21 +1195,56 @@ function Atendimentos() {
     const location = useLocation();
 
     const [selectedIds, setSelectedIds] = useState(location.state?.selectedIds || []); // Array de IDs selecionados para disparo
-    const isSelectingForBulk = location.state?.isSelectingForBulk || false;
+    const isSelectingForBulk = searchParams.get('selecting_bulk') === 'true' || location.state?.isSelectingForBulk || false;
 
     const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1', 10)); // Lê a página da URL
     const [totalPages, setTotalPages] = useState(0);
     const [totalAtendimentos, setTotalAtendimentos] = useState(0);
 
     // Novos Estados de Filtro
-    const [selectedStatus, setSelectedStatus] = useState(searchParams.get('status') || '');
-    const [selectedTag, setSelectedTag] = useState(searchParams.get('tag') || '');
+    const [selectedStatus, setSelectedStatus] = useState(searchParams.getAll('status'));
+    const [selectedTags, setSelectedTags] = useState(searchParams.getAll('tags').length ? searchParams.getAll('tags') : (searchParams.getAll('tag').length ? searchParams.getAll('tag') : []));
     const [timeStart, setTimeStart] = useState(searchParams.get('time_start') || '');
     const [timeEnd, setTimeEnd] = useState(searchParams.get('time_end') || '');
     const [pageSize, setPageSize] = useState(parseInt(searchParams.get('limit') || '20', 10));
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || '');
     const [sortOrder, setSortOrder] = useState(searchParams.get('sort_order') || 'desc');
+
+    // Debounce para searchTerm
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setSearchTerm(localSearchTerm);
+        }, 500);
+        return () => clearTimeout(handler);
+    }, [localSearchTerm]);
+
+    // Sincroniza estados com URL quando alterado externamente (ex: voltar/avançar no navegador)
+    useEffect(() => {
+        const urlSearch = searchParams.get('search') || '';
+        const urlStatus = searchParams.getAll('status');
+        const urlTags = searchParams.getAll('tags').length ? searchParams.getAll('tags') : (searchParams.getAll('tag').length ? searchParams.getAll('tag') : []);
+        const urlTimeStart = searchParams.get('time_start') || '';
+        const urlTimeEnd = searchParams.get('time_end') || '';
+        const urlPage = parseInt(searchParams.get('page') || '1', 10);
+        const urlLimit = parseInt(searchParams.get('limit') || '20', 10);
+        const urlSortBy = searchParams.get('sort_by') || '';
+        const urlSortOrder = searchParams.get('sort_order') || 'desc';
+
+        if (urlSearch !== localSearchTerm) setLocalSearchTerm(urlSearch);
+
+        // Helper para comparar arrays
+        const arraysEqual = (a, b) => a.length === b.length && a.every((val, index) => val === b[index]);
+
+        if (!arraysEqual(urlStatus, selectedStatus)) setSelectedStatus(urlStatus);
+        if (!arraysEqual(urlTags, selectedTags)) setSelectedTags(urlTags);
+        if (urlTimeStart !== timeStart) setTimeStart(urlTimeStart);
+        if (urlTimeEnd !== timeEnd) setTimeEnd(urlTimeEnd);
+        if (urlPage !== currentPage) setCurrentPage(urlPage);
+        if (urlLimit !== pageSize) setPageSize(urlLimit);
+        if (urlSortBy !== sortBy) setSortBy(urlSortBy);
+        if (urlSortOrder !== sortOrder) setSortOrder(urlSortOrder);
+    }, [searchParams]);
 
     // Ref para evitar fetch duplicado no modo Strict do React
     const initialFetchDone = useRef(false);
@@ -1220,22 +1256,29 @@ function Atendimentos() {
         }
         setError(''); // Limpa erro anterior
         try {
-            const params = {
-                search: searchTerm,
-                page: currentPage,
-                limit: pageSize
-            };
+            // Construção dos query parameters com URLSearchParams para correta serialização de arrays (FastAPI)
+            const queryParams = new URLSearchParams();
+            queryParams.append('page', currentPage.toString());
+            queryParams.append('limit', pageSize.toString());
+            if (searchTerm) queryParams.append('search', searchTerm);
+            if (sortBy) queryParams.append('sort_by', sortBy);
+            if (sortOrder) queryParams.append('sort_order', sortOrder);
+            if (timeStart) queryParams.append('time_start', timeStart);
+            if (timeEnd) queryParams.append('time_end', timeEnd);
 
-            if (sortBy) params.sort_by = sortBy;
-            if (sortOrder) params.sort_order = sortOrder;
+            if (selectedStatus && selectedStatus.length > 0) {
+                selectedStatus.forEach(s => queryParams.append('status', s));
+            }
+            if (selectedTags && selectedTags.length > 0) {
+                selectedTags.forEach(t => queryParams.append('tags', t));
+            }
 
-            // Adiciona filtros se existirem
-            if (selectedStatus) params.status = selectedStatus;
-            if (selectedTag) params.tags = selectedTag;
-            if (timeStart) params.time_start = timeStart;
-            if (timeEnd) params.time_end = timeEnd;
+            if (isSelectingForBulk) {
+                queryParams.append('selecting_bulk', 'true');
+            }
+
             const [atendimentosRes, personasRes, userRes, situationsRes, tagsRes] = await Promise.all([
-                api.get('/atendimentos/', { params }),
+                api.get('/atendimentos/', { params: queryParams }),
                 api.get('/configs/'),
                 api.get('/auth/me'),
                 api.get('/configs/situations'),
@@ -1256,11 +1299,12 @@ function Atendimentos() {
             }
             setStatusOptions(sOptions);
 
+
             // CORREÇÃO: Só atualiza a URL se o componente ainda estiver montado.
             // Isso evita que uma busca de dados antiga, de uma página que já foi "deixada para trás",
             // altere a URL da nova página e cause um redirecionamento indesejado.
             // A verificação `isMountedRef.current` garante que isso não aconteça se o usuário navegar para outra página.
-            if (isMountedRef?.current) setSearchParams(params, { replace: true });
+            if (isMountedRef?.current) setSearchParams(queryParams, { replace: true });
 
         } catch (err) {
             console.error("Erro ao buscar dados:", err); // Log mais detalhado
@@ -1272,7 +1316,7 @@ function Atendimentos() {
                 initialFetchDone.current = true; // Marca que o fetch inicial foi feito
             }
         }
-    }, [searchTerm, currentPage, pageSize, selectedStatus, selectedTag, timeStart, timeEnd, sortBy, sortOrder, setSearchParams]); // Adicionado sortBy e sortOrder
+    }, [searchTerm, currentPage, pageSize, selectedStatus, selectedTags, timeStart, timeEnd, sortBy, sortOrder, setSearchParams, isSelectingForBulk]);
 
     // --- CORREÇÃO DE POLLING (COM PAUSA EM SEGUNDO PLANO) ---
     useEffect(() => {
@@ -1389,6 +1433,34 @@ function Atendimentos() {
         }
     };
 
+    const handleSelectAllFiltered = async () => {
+        try {
+            const queryParams = new URLSearchParams();
+            queryParams.append('page', '1');
+            queryParams.append('limit', totalAtendimentos.toString());
+            if (searchTerm) queryParams.append('search', searchTerm);
+            if (sortBy) queryParams.append('sort_by', sortBy);
+            if (sortOrder) queryParams.append('sort_order', sortOrder);
+            if (timeStart) queryParams.append('time_start', timeStart);
+            if (timeEnd) queryParams.append('time_end', timeEnd);
+
+            if (selectedStatus && selectedStatus.length > 0) {
+                selectedStatus.forEach(s => queryParams.append('status', s));
+            }
+            if (selectedTags && selectedTags.length > 0) {
+                selectedTags.forEach(t => queryParams.append('tags', t));
+            }
+
+            const response = await api.get('/atendimentos/', { params: queryParams });
+            const allIds = (response.data.items || []).map(at => at.id);
+            setSelectedIds(allIds);
+            toast.success(`Todos os ${totalAtendimentos} contatos selecionados!`);
+        } catch (err) {
+            console.error("Erro ao selecionar todos os contatos filtrados:", err);
+            toast.error("Erro ao selecionar todos os contatos.");
+        }
+    };
+
     const handleSaveEdit = async (atendimentoId, updates) => {
         const originalAtendimentos = [...atendimentos]; // Guarda estado original
         // Atualização Otimista
@@ -1502,15 +1574,21 @@ function Atendimentos() {
         try {
             const toastId = toast.loading('A gerar relatório...');
 
+            // Usando URLSearchParams para exportação também para serializar arrays corretamente
+            const exportParams = new URLSearchParams();
+            if (searchTerm) exportParams.append('search', searchTerm);
+            if (timeStart) exportParams.append('time_start', timeStart);
+            if (timeEnd) exportParams.append('time_end', timeEnd);
+            if (selectedStatus && selectedStatus.length > 0) {
+                selectedStatus.forEach(s => exportParams.append('status', s));
+            }
+            if (selectedTags && selectedTags.length > 0) {
+                selectedTags.forEach(t => exportParams.append('tags', t));
+            }
+
             // Chama o endpoint de exportação com responseType blob
             const response = await api.get('/atendimentos/export', {
-                params: {
-                    search: searchTerm,
-                    status: selectedStatus || undefined,
-                    tags: selectedTag || undefined,
-                    time_start: timeStart || undefined,
-                    time_end: timeEnd || undefined
-                },
+                params: exportParams,
                 responseType: 'blob' // Importante para download de arquivo binário
             });
 
@@ -1559,14 +1637,24 @@ function Atendimentos() {
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                    {selectedIds.length > 0 && (
+                    {(selectedIds.length > 0 || isSelectingForBulk) && (
                         <button
                             onClick={() => navigate('/disparos', { state: { selectedIds } })}
                             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-violet-600 rounded-xl text-xs sm:text-sm font-bold transition-all animate-fade-in whitespace-nowrap"
                             style={{ border: '1px solid rgba(139,92,246,0.3)', boxShadow: '0 4px 12px rgba(139,92,246,0.1)' }}
                         >
                             <Send size={14} />
-                            <span className="sm:inline">Disparo ({selectedIds.length})</span>
+                            <span className="sm:inline">
+                                {isSelectingForBulk ? `Confirmar Seleção (${selectedIds.length})` : `Disparo (${selectedIds.length})`}
+                            </span>
+                        </button>
+                    )}
+                    {isSelectingForBulk && (
+                        <button
+                            onClick={() => navigate('/disparos', { state: { selectedIds: [] } })}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-rose-600 rounded-xl text-xs sm:text-sm font-bold transition-all border border-rose-200 shadow-sm"
+                        >
+                            Cancelar Seleção
                         </button>
                     )}
                     <button
@@ -1596,80 +1684,180 @@ function Atendimentos() {
             )}
 
 
-            <div className="bg-white rounded-[3rem] premium-shadow border border-slate-100/50 overflow-hidden">
+            <div className="bg-white rounded-[3rem] premium-shadow border border-slate-100/50 relative z-30">
                 <div className="p-6 sm:p-10 border-b border-slate-50 rounded-t-[3rem]">
-                    <div className="flex flex-col md:flex-row gap-6 items-center">
-                        <div className="relative group flex-1 w-full text-left">
-                            <input
-                                type="text"
-                                placeholder="Pesquisar por telefone, nome, situação ou resumo..."
-                                value={searchTerm}
-                                onChange={(e) => {
-                                    setSearchTerm(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                className="atend-input px-6 sm:px-8 bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-500/30 font-medium"
-                            />
-                        </div>
-                        <div className="relative w-full md:w-auto">
-                            <button
-                                onClick={() => setIsFilterOpen(!isFilterOpen)}
-                                className={`flex items-center justify-center gap-2.5 px-6 h-14 md:h-16 w-full md:w-auto rounded-2xl font-bold transition-all border ${isFilterOpen || selectedStatus || selectedTag || timeStart || timeEnd
-                                    ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200'
-                                    : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'
-                                    }`}
-                            >
-                                <ListFilter size={20} />
-                                <span className="text-[13px] uppercase tracking-widest whitespace-nowrap">Filtros</span>
-                                {(selectedStatus || selectedTag || timeStart || timeEnd) && (
-                                    <div className="w-5 h-5 bg-white text-blue-600 rounded-full flex items-center justify-center text-[10px] font-black">
-                                        !
-                                    </div>
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-col md:flex-row gap-6 items-center">
+                            <div className="relative group flex-1 w-full text-left">
+                                <input
+                                    type="text"
+                                    placeholder="Pesquisar por telefone, nome, situação ou resumo..."
+                                    value={localSearchTerm}
+                                    onChange={(e) => {
+                                        setLocalSearchTerm(e.target.value);
+                                        setCurrentPage(1);
+                                    }}
+                                    className="atend-input pl-6 sm:pl-8 pr-12 bg-slate-50 border-slate-100 focus:bg-white focus:border-blue-500/30 font-medium"
+                                />
+                                {localSearchTerm && (
+                                    <button 
+                                        type="button"
+                                        onClick={() => { setLocalSearchTerm(''); setCurrentPage(1); }}
+                                        className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
+                                    >
+                                        <XIcon size={16} />
+                                    </button>
                                 )}
-                            </button>
-                            <FilterPopover
-                                isOpen={isFilterOpen}
-                                onClose={() => setIsFilterOpen(false)}
-                                statusOptions={statusOptions}
-                                allTags={allTags}
-                                selectedStatus={selectedStatus}
-                                onStatusChange={(val) => {
-                                    setSelectedStatus(val === selectedStatus ? '' : val);
-                                    setCurrentPage(1);
-                                }}
-                                selectedTags={selectedTag}
-                                onTagChange={(val) => {
-                                    setSelectedTag(val === selectedTag ? '' : val);
-                                    setCurrentPage(1);
-                                }}
-                                timeStart={timeStart}
-                                onTimeStartChange={(val) => {
-                                    setTimeStart(val);
-                                    setCurrentPage(1);
-                                }}
-                                timeEnd={timeEnd}
-                                onTimeEndChange={(val) => {
-                                    setTimeEnd(val);
-                                    setCurrentPage(1);
-                                }}
-                                limit={pageSize}
-                                onLimitChange={(val) => {
-                                    setPageSize(val);
-                                    setCurrentPage(1);
-                                }}
-                                onClearFilters={() => {
-                                    setSelectedStatus('');
-                                    setSelectedTag('');
-                                    setTimeStart('');
-                                    setTimeEnd('');
-                                    setCurrentPage(1);
-                                }}
-                            />
+                            </div>
+                            <div className="relative w-full md:w-auto">
+                                <button
+                                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                                    className={`flex items-center justify-center gap-2.5 px-6 h-14 md:h-16 w-full md:w-auto rounded-2xl font-bold transition-all border ${isFilterOpen || selectedStatus || selectedTag || timeStart || timeEnd
+                                        ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200'
+                                        : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'
+                                        }`}
+                                >
+                                    <ListFilter size={20} />
+                                    <span className="text-[13px] uppercase tracking-widest whitespace-nowrap">Filtros</span>
+                                    {((selectedStatus && selectedStatus.length > 0) || (selectedTags && selectedTags.length > 0) || timeStart || timeEnd) && (
+                                        <div className="w-5 h-5 bg-white text-blue-600 rounded-full flex items-center justify-center text-[10px] font-black animate-pulse">
+                                            {(selectedStatus ? selectedStatus.length : 0) + (selectedTags ? selectedTags.length : 0) + (timeStart || timeEnd ? 1 : 0)}
+                                        </div>
+                                    )}
+                                </button>
+                                <FilterPopover
+                                    isOpen={isFilterOpen}
+                                    onClose={() => setIsFilterOpen(false)}
+                                    statusOptions={statusOptions}
+                                    allTags={allTags}
+                                    selectedStatus={selectedStatus}
+                                    onStatusChange={(val) => {
+                                        setSelectedStatus(prev => {
+                                            const arr = Array.isArray(prev) ? prev : (prev ? [prev] : []);
+                                            return arr.includes(val) ? arr.filter(s => s !== val) : [...arr, val];
+                                        });
+                                        setCurrentPage(1);
+                                    }}
+                                    selectedTags={selectedTags}
+                                    onTagChange={(val) => {
+                                        setSelectedTags(prev => {
+                                            const arr = Array.isArray(prev) ? prev : (prev ? [prev] : []);
+                                            return arr.includes(val) ? arr.filter(t => t !== val) : [...arr, val];
+                                        });
+                                        setCurrentPage(1);
+                                    }}
+                                    timeStart={timeStart}
+                                    onTimeStartChange={(val) => {
+                                        setTimeStart(val);
+                                        setCurrentPage(1);
+                                    }}
+                                    timeEnd={timeEnd}
+                                    onTimeEndChange={(val) => {
+                                        setTimeEnd(val);
+                                        setCurrentPage(1);
+                                    }}
+                                    limit={pageSize}
+                                    onLimitChange={(val) => {
+                                        setPageSize(val);
+                                        setCurrentPage(1);
+                                    }}
+                                    onClearFilters={() => {
+                                        setSelectedStatus([]);
+                                        setSelectedTags([]);
+                                        setTimeStart('');
+                                        setTimeEnd('');
+                                        setCurrentPage(1);
+                                    }}
+                                />
+                            </div>
                         </div>
+
+                        {/* Active Filters Row */}
+                        {((selectedStatus && selectedStatus.length > 0) || (selectedTags && selectedTags.length > 0) || timeStart || timeEnd) && (
+                            <div className="flex flex-wrap gap-2.5 items-center pt-2 animate-fade-in text-left">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Filtros ativos:</span>
+                                {selectedStatus && selectedStatus.map(status => (
+                                    <span key={status} className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl border border-blue-100 shadow-sm transition-all hover:bg-blue-100/50">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                                        Situação: {status}
+                                        <button 
+                                            onClick={() => { setSelectedStatus(selectedStatus.filter(s => s !== status)); setCurrentPage(1); }} 
+                                            className="hover:bg-blue-200 text-blue-800 rounded-full p-0.5 transition-colors"
+                                            title="Remover filtro de situação"
+                                        >
+                                            <XIcon size={12} />
+                                        </button>
+                                    </span>
+                                ))}
+                                {selectedTags && selectedTags.map(tag => (
+                                    <span key={tag} className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-purple-50 text-purple-700 text-xs font-bold rounded-xl border border-purple-100 shadow-sm transition-all hover:bg-purple-100/50">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-purple-600" />
+                                        Tag: {tag}
+                                        <button 
+                                            onClick={() => { setSelectedTags(selectedTags.filter(t => t !== tag)); setCurrentPage(1); }} 
+                                            className="hover:bg-purple-200 text-purple-800 rounded-full p-0.5 transition-colors"
+                                            title="Remover filtro de tag"
+                                        >
+                                            <XIcon size={12} />
+                                        </button>
+                                    </span>
+                                ))}
+                                {timeStart && (
+                                    <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-xl border border-indigo-100 shadow-sm transition-all hover:bg-indigo-100/50">
+                                        <Clock size={12} className="text-indigo-600" />
+                                        Início: {new Date(timeStart).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                                        <button 
+                                            onClick={() => { setTimeStart(''); setCurrentPage(1); }} 
+                                            className="hover:bg-indigo-200 text-indigo-800 rounded-full p-0.5 transition-colors"
+                                            title="Remover data início"
+                                        >
+                                            <XIcon size={12} />
+                                        </button>
+                                    </span>
+                                )}
+                                {timeEnd && (
+                                    <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-xl border border-indigo-100 shadow-sm transition-all hover:bg-indigo-100/50">
+                                        <Clock size={12} className="text-indigo-600" />
+                                        Fim: {new Date(timeEnd).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                                        <button 
+                                            onClick={() => { setTimeEnd(''); setCurrentPage(1); }} 
+                                            className="hover:bg-indigo-200 text-indigo-800 rounded-full p-0.5 transition-colors"
+                                            title="Remover data fim"
+                                        >
+                                            <XIcon size={12} />
+                                        </button>
+                                    </span>
+                                )}
+                                <button
+                                    onClick={() => {
+                                        setSelectedStatus([]);
+                                        setSelectedTags([]);
+                                        setTimeStart('');
+                                        setTimeEnd('');
+                                        setCurrentPage(1);
+                                    }}
+                                    className="text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 ml-2 transition-colors flex items-center gap-1 hover:underline"
+                                >
+                                    Limpar Tudo
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 <div className="overflow-x-auto custom-scrollbar border-b border-slate-50">
+                    {isSelectingForBulk && atendimentos.length > 0 && atendimentos.every(at => selectedIds.includes(at.id)) && totalAtendimentos > atendimentos.length && selectedIds.length < totalAtendimentos && (
+                        <div className="bg-blue-50/80 border-b border-blue-100/50 px-6 py-3.5 text-center text-xs font-bold text-blue-700 animate-fade-in flex items-center justify-center gap-2">
+                            <span>Todos os {atendimentos.length} contatos desta página foram selecionados.</span>
+                            <button 
+                                type="button" 
+                                onClick={handleSelectAllFiltered}
+                                className="underline hover:text-blue-900 transition-colors flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg shadow-sm border border-blue-100"
+                            >
+                                Selecionar todos os {totalAtendimentos} contatos
+                            </button>
+                        </div>
+                    )}
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -1709,6 +1897,15 @@ function Atendimentos() {
                                         <tr key={at.id}
                                             className={`atend-table-row group cursor-pointer ${isSelected ? 'selected' : ''}`}
                                             onDoubleClick={() => navigate(`/mensagens?atendimentoId=${at.id}`)}
+                                            onClick={() => {
+                                                if (isSelectingForBulk) {
+                                                    if (isSelected) {
+                                                        setSelectedIds(prev => prev.filter(selectedId => selectedId !== at.id));
+                                                    } else {
+                                                        setSelectedIds(prev => [...prev, at.id]);
+                                                    }
+                                                }
+                                            }}
                                         >
                                             {isSelectingForBulk && (
                                                 <td className="px-6 py-5 text-center" onClick={(e) => e.stopPropagation()}>

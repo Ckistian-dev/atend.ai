@@ -65,9 +65,19 @@ const FilterPopover = ({
         </div>
     );
 
+    const isStatusActive = Array.isArray(selectedStatus) ? selectedStatus.length > 0 : !!selectedStatus;
+    const statusActiveVal = Array.isArray(selectedStatus) 
+        ? (selectedStatus.length === 1 ? selectedStatus[0] : (selectedStatus.length > 1 ? `${selectedStatus.length} itens` : null))
+        : selectedStatus;
+
+    const isTagsActive = Array.isArray(selectedTags) ? selectedTags.length > 0 : !!selectedTags;
+    const tagsActiveVal = Array.isArray(selectedTags) 
+        ? (selectedTags.length === 1 ? selectedTags[0] : (selectedTags.length > 1 ? `${selectedTags.length} itens` : null))
+        : selectedTags;
+
     const menuOptions = [
-        { id: 'status', label: 'Situação', icon: CheckCircle2, color: 'text-blue-500', active: !!selectedStatus, activeVal: selectedStatus },
-        { id: 'tags', label: 'Marcação (Tag)', icon: Tag, color: 'text-purple-500', active: !!selectedTags, activeVal: selectedTags },
+        { id: 'status', label: 'Situação', icon: CheckCircle2, color: 'text-blue-500', active: isStatusActive, activeVal: statusActiveVal },
+        { id: 'tags', label: 'Marcação (Tag)', icon: Tag, color: 'text-purple-500', active: isTagsActive, activeVal: tagsActiveVal },
         { id: 'time', label: 'Intervalo de Tempo', icon: Clock, color: 'text-indigo-500', active: !!timeStart || !!timeEnd, activeVal: (timeStart || timeEnd) ? 'Ativo' : null },
         { id: 'limit', label: 'Itens por Página', icon: ArrowRight, color: 'text-slate-500', active: true, activeVal: limit + ' itens' },
     ];
@@ -102,7 +112,7 @@ const FilterPopover = ({
                             </button>
                         ))}
                         
-                        {(selectedStatus || selectedTags || timeStart || timeEnd) && (
+                        {(isStatusActive || isTagsActive || timeStart || timeEnd) && (
                             <button
                                 onClick={onClearFilters}
                                 className="w-full mt-3 flex items-center justify-center gap-2 p-3 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50/50 rounded-2xl hover:bg-red-50 transition-all"
@@ -119,7 +129,9 @@ const FilterPopover = ({
                             <CheckCircle2 size={10} className="text-blue-500" /> Situação
                         </h5>
                         {statusOptions.map(status => {
-                            const isSelected = selectedStatus === status.nome;
+                            const isSelected = Array.isArray(selectedStatus) 
+                                ? selectedStatus.includes(status.nome) 
+                                : selectedStatus === status.nome;
                             return (
                                 <button 
                                     key={status.nome} 
@@ -146,7 +158,9 @@ const FilterPopover = ({
                         </h5>
                         <div className="space-y-1 max-h-52 overflow-y-auto no-scrollbar pr-1">
                             {allTags.map(tag => {
-                                const isSelected = selectedTags === tag.name;
+                                const isSelected = Array.isArray(selectedTags) 
+                                    ? selectedTags.includes(tag.name) 
+                                    : selectedTags === tag.name;
                                 return (
                                     <button 
                                         key={tag.name} 
@@ -173,23 +187,43 @@ const FilterPopover = ({
                             <Clock size={10} className="text-indigo-500" /> Intervalo
                         </h5>
                         <div className="space-y-5">
-                            <div className="relative">
-                                <label className="absolute -top-2 left-3 px-1.5 bg-white text-[8px] font-black uppercase tracking-widest text-slate-400 rounded">Início</label>
+                            <div className="relative flex items-center">
+                                <label className="absolute -top-2 left-3 px-1.5 bg-white text-[8px] font-black uppercase tracking-widest text-slate-400 rounded z-10">Início</label>
                                 <input
                                     type="datetime-local"
                                     value={timeStart || ''}
                                     onChange={(e) => onTimeStartChange(e.target.value)}
-                                    className="w-full px-3 py-3 text-[11px] bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:border-blue-300 outline-none transition-all font-bold text-slate-700"
+                                    className="w-full pl-3 pr-8 py-3 text-[11px] bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:border-blue-300 outline-none transition-all font-bold text-slate-700"
                                 />
+                                {timeStart && (
+                                    <button 
+                                        type="button"
+                                        onClick={() => onTimeStartChange('')}
+                                        className="absolute right-8 text-slate-400 hover:text-red-500 transition-colors p-1"
+                                        title="Limpar início"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                )}
                             </div>
-                            <div className="relative">
-                                <label className="absolute -top-2 left-3 px-1.5 bg-white text-[8px] font-black uppercase tracking-widest text-slate-400 rounded">Fim</label>
+                            <div className="relative flex items-center">
+                                <label className="absolute -top-2 left-3 px-1.5 bg-white text-[8px] font-black uppercase tracking-widest text-slate-400 rounded z-10">Fim</label>
                                 <input
                                     type="datetime-local"
                                     value={timeEnd || ''}
                                     onChange={(e) => onTimeEndChange(e.target.value)}
-                                    className="w-full px-3 py-3 text-[11px] bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:border-blue-300 outline-none transition-all font-bold text-slate-700"
+                                    className="w-full pl-3 pr-8 py-3 text-[11px] bg-slate-50 rounded-xl border border-slate-100 focus:bg-white focus:border-blue-300 outline-none transition-all font-bold text-slate-700"
                                 />
+                                {timeEnd && (
+                                    <button 
+                                        type="button"
+                                        onClick={() => onTimeEndChange('')}
+                                        className="absolute right-8 text-slate-400 hover:text-red-500 transition-colors p-1"
+                                        title="Limpar fim"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Send, FileText, Users, Upload, Loader2, Info, CheckCircle, Search, FileImage, FileVideo, File as FileIcon, LayoutGrid, Plus, ExternalLink, Reply, Zap } from 'lucide-react';
+import { Send, FileText, Users, Upload, Loader2, Info, CheckCircle, Search, FileImage, FileVideo, File as FileIcon, LayoutGrid, Plus, ExternalLink, Reply, Zap, X as XIcon, Download, ChevronDown } from 'lucide-react';
 import PageLoader from '../components/common/PageLoader';
 
 import TemplateModal from '../components/mensagens/TemplateModal';
@@ -31,6 +31,80 @@ const DS_STYLE = `
 .premium-tile:hover { transform: translateY(-2px); }
 `;
 
+// Variáveis disponíveis para inserção nos templates
+const AVAILABLE_VARS = [
+    { label: 'Nome', value: '{nome}', description: 'Nome do contato' },
+    { label: 'Observações', value: '{observacoes}', description: 'Anotações do contato' },
+];
+
+// --- COMPONENTE DE INPUT COM DROPDOWN DE VARIÁVEIS ---
+const VarInput = ({ varName, value, onChange }) => {
+    const [open, setOpen] = useState(false);
+    const wrapperRef = useRef(null);
+
+    // Fecha ao clicar fora
+    useEffect(() => {
+        const handler = (e) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const handleSelect = (varValue) => {
+        onChange(varValue);
+        setOpen(false);
+    };
+
+    return (
+        <span ref={wrapperRef} className="inline-flex items-center align-baseline relative" style={{ verticalAlign: 'baseline' }}>
+            <input
+                type="text"
+                value={value || ''}
+                onChange={(e) => onChange(e.target.value)}
+                className="bg-white/60 border-indigo-200 text-blue-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-bold transition-all rounded-l-md px-1"
+                style={{
+                    width: `${Math.max(((value || `{{${varName}}}`).length) * 9, 50)}px`,
+                    minWidth: '40px',
+                    height: '1.35rem',
+                    border: '1px solid rgba(191,219,254,0.8)',
+                    borderRight: 'none',
+                }}
+            />
+            <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); setOpen(v => !v); }}
+                className="inline-flex items-center justify-center h-[1.35rem] px-1 rounded-r-md bg-blue-50 border border-blue-200 text-blue-400 hover:text-blue-600 hover:bg-blue-100 transition-colors"
+                style={{ borderLeft: 'none' }}
+                title="Variáveis disponíveis"
+            >
+                <ChevronDown size={11} strokeWidth={3} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+            </button>
+            {open && (
+                <div
+                    className="absolute z-50 bg-white rounded-xl shadow-xl border border-slate-100 py-1 animate-fade-in"
+                    style={{ top: 'calc(100% + 4px)', left: 0, minWidth: '170px' }}
+                >
+                    <div className="px-3 py-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
+                        Variáveis disponíveis
+                    </div>
+                    {AVAILABLE_VARS.map((v) => (
+                        <button
+                            key={v.value}
+                            type="button"
+                            onMouseDown={(e) => { e.preventDefault(); handleSelect(v.value); }}
+                            className="w-full text-left flex items-center gap-2.5 px-3 py-2 hover:bg-blue-50 transition-colors group"
+                        >
+                            <span className="font-mono text-[11px] font-bold text-blue-600 bg-blue-50 group-hover:bg-blue-100 px-1.5 py-0.5 rounded-md transition-colors">{v.value}</span>
+                            <span className="text-[11px] text-slate-500 font-medium">{v.description}</span>
+                        </button>
+                    ))}
+                </div>
+            )}
+        </span>
+    );
+};
+
 // --- COMPONENTE DE PREVIEW ---
 const TemplatePreview = ({ template, variables, headerFile, onVariableChange, onFileChange }) => {
     const fileInputRef = useRef(null);
@@ -52,19 +126,11 @@ const TemplatePreview = ({ template, variables, headerFile, onVariableChange, on
                     if (match) {
                         const varName = match[1];
                         return (
-                            <input
+                            <VarInput
                                 key={index}
-                                type="text"
-                                value={variables[varName] || ''}
-                                onChange={(e) => onVariableChange(varName, e.target.value)}
-                                className="bg-white/60 border-indigo-200 text-blue-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-bold transition-all rounded-md px-1"
-                                style={{
-                                    width: `${Math.max(((variables[varName] || match[0]).length) * 8, 40)}px`,
-                                    minWidth: '40px',
-                                    height: '1.2rem',
-                                    verticalAlign: 'baseline',
-                                    border: '1px solid rgba(191,219,254,0.8)'
-                                }}
+                                varName={varName}
+                                value={variables[varName]}
+                                onChange={(val) => onVariableChange(varName, val)}
                             />
                         );
                     }
@@ -105,7 +171,11 @@ const TemplatePreview = ({ template, variables, headerFile, onVariableChange, on
                         />
                         {headerFile ? (
                             headerFile.type.startsWith('image/') ? (
-                                <img src={URL.createObjectURL(headerFile)} alt="Header preview" className="w-full h-full object-cover" />
+                                <img
+                                    src={headerFile.dataUrl || URL.createObjectURL(headerFile)}
+                                    alt="Header preview"
+                                    className="w-full h-full object-cover"
+                                />
                             ) : (
                                 <div className="flex flex-col items-center gap-1 p-4">
                                     <FileIcon size={32} className="text-blue-500" />
@@ -156,9 +226,45 @@ const TemplatePreview = ({ template, variables, headerFile, onVariableChange, on
     );
 };
 
+// -- IndexedDB helpers para headerFile (persiste no reload) --
+const IDB_NAME = 'bulkSenderDB';
+const IDB_STORE = 'headerFile';
+
+function openHeaderFileDB() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(IDB_NAME, 1);
+        req.onupgradeneeded = (e) => e.target.result.createObjectStore(IDB_STORE);
+        req.onsuccess = (e) => resolve(e.target.result);
+        req.onerror = (e) => reject(e.target.error);
+    });
+}
+async function saveHeaderFileToDB(file) {
+    try {
+        const db = await openHeaderFileDB();
+        await new Promise((res, rej) => {
+            const tx = db.transaction(IDB_STORE, 'readwrite');
+            file ? tx.objectStore(IDB_STORE).put(file, 'current') : tx.objectStore(IDB_STORE).delete('current');
+            tx.oncomplete = res;
+            tx.onerror = (e) => rej(e.target.error);
+        });
+    } catch (e) { console.warn('IDB save error', e); }
+}
+async function loadHeaderFileFromDB() {
+    try {
+        const db = await openHeaderFileDB();
+        return await new Promise((res, rej) => {
+            const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get('current');
+            req.onsuccess = (e) => res(e.target.result || null);
+            req.onerror = (e) => rej(e.target.error);
+        });
+    } catch { return null; }
+}
+// ------------------------------------------------------------------
+
 function BulkSender() {
     const location = useLocation();
     const navigate = useNavigate();
+    const csvInputRef = useRef(null);
 
     // -- INÍCIO DA LÓGICA DE PERSISTÊNCIA --
     const savedState = useMemo(() => {
@@ -180,20 +286,41 @@ function BulkSender() {
     const [variables, setVariables] = useState(savedState.variables || {});
     const [observacoes, setObservacoes] = useState(savedState.observacoes || '');
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // Estado novo
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isCsvHelpOpen, setIsCsvHelpOpen] = useState(false);
     const [contactCount, setContactCount] = useState(0);
     const [file, setFile] = useState(null);
-    const [headerFile, setHeaderFile] = useState(null);
+    // headerFile: window para navegação rápida + IndexedDB para sobreviver ao reload
+    const [headerFile, setHeaderFile] = useState(() => window._bulkSenderHeaderFile || null);
     const [selectedIds, setSelectedIds] = useState(location.state?.selectedIds || savedState.selectedIds || []);
 
-    // Efeito para salvar o estado no sessionStorage
+    // Carrega do IndexedDB no mount (caso seja um reload de página)
+    useEffect(() => {
+        if (!window._bulkSenderHeaderFile) {
+            loadHeaderFileFromDB().then(f => {
+                if (f) {
+                    window._bulkSenderHeaderFile = f;
+                    setHeaderFile(f);
+                }
+            });
+        }
+    }, []);
+
+    // Salva/limpa no IndexedDB e window ao mudar o headerFile
+    const handleSetHeaderFile = useCallback((f) => {
+        window._bulkSenderHeaderFile = f || undefined;
+        setHeaderFile(f);
+        saveHeaderFileToDB(f || null);
+    }, []);
+
+    // Salva campos serializáveis no sessionStorage
     useEffect(() => {
         const stateToSave = {
             selectedTemplate,
             selectedPersona,
             variables,
             observacoes,
-            selectedIds
+            selectedIds,
         };
         sessionStorage.setItem('bulkSenderState', JSON.stringify(stateToSave));
     }, [selectedTemplate, selectedPersona, variables, observacoes, selectedIds]);
@@ -222,27 +349,27 @@ function BulkSender() {
     }, [activeTemplate]);
 
     useEffect(() => {
+        // Não roda se o template ainda não carregou — evita limpar variáveis salvas
+        if (!activeTemplate) return;
+
         setVariables(prev => {
-            const newVars = { ...prev };
+            const newVars = {};
             let hasChanges = false;
 
+            // Preserva valores já preenchidos
             variableNames.forEach(name => {
-                if (newVars[name] === undefined) {
-                    newVars[name] = '';
-                    hasChanges = true;
-                }
+                newVars[name] = prev[name] ?? '';
+                if (prev[name] === undefined) hasChanges = true;
             });
 
-            Object.keys(newVars).forEach(name => {
-                if (!variableNames.includes(name)) {
-                    delete newVars[name];
-                    hasChanges = true;
-                }
+            // Verifica se alguma variável foi removida
+            Object.keys(prev).forEach(name => {
+                if (!variableNames.includes(name)) hasChanges = true;
             });
 
             return hasChanges ? newVars : prev;
         });
-    }, [variableNames]);
+    }, [variableNames, activeTemplate]);
 
     const fetchInitialData = async () => {
         try {
@@ -276,7 +403,7 @@ function BulkSender() {
             setSelectedTemplate(payload.template_name);
 
             // 2. Define o arquivo de mídia se houver
-            if (mediaFile) setHeaderFile(mediaFile);
+            if (mediaFile) handleSetHeaderFile(mediaFile);
 
             // 3. Reconstrói o dicionário de variáveis para o formulário do Bulk
             const allParams = [];
@@ -384,7 +511,7 @@ function BulkSender() {
             const hadSelectedIds = selectedIds.length > 0;
 
             setFile(null);
-            setHeaderFile(null);
+            handleSetHeaderFile(null);
             setObservacoes('');
             setContactCount(0);
             setSelectedIds([]);
@@ -479,7 +606,7 @@ function BulkSender() {
                                         </div>
                                     </div>
 
-                                    <div>
+                                    <div className="col-span-1 sm:col-span-2">
                                         <label className="block text-[13px] font-bold text-slate-700 mb-3 px-1 flex items-center gap-2">
                                             <Users size={16} className="text-blue-500" /> Persona Ativa
                                         </label>
@@ -494,15 +621,6 @@ function BulkSender() {
                                             ))}
                                         </select>
                                     </div>
-
-                                    <div>
-                                        <label className="block text-[13px] font-bold text-slate-700 mb-3 px-1 flex items-center gap-2">
-                                            <CheckCircle size={16} className="text-blue-500" /> Status do Atendimento
-                                        </label>
-                                        <div className="bulk-input bg-slate-50/50 flex items-center gap-2 text-slate-400">
-                                            Auto-inicializado
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -513,14 +631,14 @@ function BulkSender() {
 
                             <div className="grid grid-cols-2 gap-3 sm:gap-5">
                                 {/* Opção: Buscar na Base */}
-                                <div onClick={() => navigate('/atendimentos', { state: { isSelectingForBulk: true, selectedIds } })}
+                                <div onClick={() => navigate('/atendimentos?selecting_bulk=true', { state: { isSelectingForBulk: true, selectedIds } })}
                                     className={`premium-tile cursor-pointer p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-2 transition-all flex flex-col items-center text-center ${selectedIds.length > 0 ? 'border-blue-500 bg-blue-50/30' : 'border-slate-100 bg-slate-50/50'}`}>
                                     <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-all ${selectedIds.length > 0 ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-slate-400 shadow-sm'}`}>
                                         <Search size={20} className="sm:hidden" />
                                         <Search size={22} className="hidden sm:block" />
                                     </div>
                                     <h5 className="font-black text-slate-800 text-[12px] sm:text-sm mb-1 leading-tight text-center">Base Interna</h5>
-                                    
+
                                     {selectedIds.length > 0 && (
                                         <div className="mt-2 text-blue-600 text-[9px] font-black uppercase tracking-wider">
                                             {selectedIds.length} selecionados
@@ -529,20 +647,43 @@ function BulkSender() {
                                 </div>
 
                                 {/* Opção: Planilha Externa */}
-                                <label className={`premium-tile cursor-pointer p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-2 transition-all flex flex-col items-center text-center ${file ? 'border-indigo-500 bg-indigo-50/30' : 'border-slate-100 bg-slate-50/50'}`}>
-                                    <input type="file" accept=".csv" className="sr-only" onChange={handleCsvFileChange} />
+                                <div
+                                    onClick={() => csvInputRef.current?.click()}
+                                    className={`premium-tile cursor-pointer p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-2 transition-all flex flex-col items-center text-center relative ${file ? 'border-indigo-500 bg-indigo-50/30' : 'border-slate-100 bg-slate-50/50'}`}
+                                >
+                                    <input
+                                        type="file"
+                                        accept=".csv"
+                                        ref={csvInputRef}
+                                        className="sr-only"
+                                        onChange={handleCsvFileChange}
+                                    />
+
+                                    {/* Help button at top-right */}
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsCsvHelpOpen(true);
+                                        }}
+                                        className="absolute top-3 right-3 p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors shadow-sm z-20 border border-slate-100"
+                                        title="Ajuda com a planilha CSV"
+                                    >
+                                        <Info size={16} />
+                                    </button>
+
                                     <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 transition-all ${file ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-slate-400 shadow-sm'}`}>
                                         <Upload size={20} className="sm:hidden" />
                                         <Upload size={22} className="hidden sm:block" />
                                     </div>
                                     <h5 className="font-black text-slate-800 text-[12px] sm:text-sm mb-1 leading-tight text-center">Planilha CSV</h5>
-                                    
+
                                     {file && (
                                         <div className="mt-2 text-indigo-600 text-[9px] font-black uppercase tracking-wider truncate max-w-full">
                                             {file.name}
                                         </div>
                                     )}
-                                </label>
+                                </div>
                             </div>
 
                             <div className="mt-6 p-4 bg-slate-50/50 rounded-2xl flex items-center justify-between border border-slate-100">
@@ -579,30 +720,8 @@ function BulkSender() {
                                             variables={variables}
                                             headerFile={headerFile}
                                             onVariableChange={(name, value) => setVariables(prev => ({ ...prev, [name]: value }))}
-                                            onFileChange={setHeaderFile}
+                                            onFileChange={handleSetHeaderFile}
                                         />
-
-                                        <div className="mt-8 space-y-4">
-                                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center px-4">Configuração das Variáveis</h5>
-                                            {variableNames.length > 0 ? (
-                                                <div className="grid grid-cols-1 gap-3 px-2">
-                                                    {variableNames.map(name => (
-                                                        <div key={name} className="flex flex-col gap-1">
-                                                            <span className="text-[10px] font-bold text-slate-400 ml-3">{name}</span>
-                                                            <input
-                                                                type="text"
-                                                                value={variables[name] || ''}
-                                                                onChange={e => setVariables(prev => ({ ...prev, [name]: e.target.value }))}
-                                                                placeholder={`Filtro ${name}...`}
-                                                                className="bulk-input bg-white !rounded-xl !py-2 text-xs"
-                                                            />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <p className="text-[11px] text-slate-400 text-center font-medium italic">Template sem variáveis customizáveis.</p>
-                                            )}
-                                        </div>
                                     </div>
                                 ) : (
                                     <div className="flex flex-col items-center text-center max-w-[200px] gap-4">
@@ -624,9 +743,6 @@ function BulkSender() {
                                     {issubmitting ? <Loader2 className="animate-spin" /> : <Send size={18} sm:size={20} />}
                                     {issubmitting ? 'Processando...' : 'Iniciar Sequência de Disparos'}
                                 </button>
-                                <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest text-center mt-4">
-                                    Custo estimado: R$ {((selectedIds.length + contactCount) * 0.50).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </p>
                             </div>
                         </div>
                     </div>
@@ -635,9 +751,118 @@ function BulkSender() {
 
             <TemplateModal isOpen={isTemplateModalOpen} onClose={() => setIsTemplateModalOpen(false)} onSend={handleTemplateFromModal} />
             <CreateTemplateModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onCreated={fetchInitialData} />
+            <CsvHelpModal isOpen={isCsvHelpOpen} onClose={() => setIsCsvHelpOpen(false)} />
             <div className="py-10"></div>
         </div>
     );
 }
+
+// Componente Modal de Ajuda CSV
+const CsvHelpModal = ({ isOpen, onClose }) => {
+    if (!isOpen) return null;
+
+    const downloadSampleCsv = () => {
+        const rows = [
+            ['whatsapp', 'nome', 'observacoes'],
+            ['5511999998888', 'Jo\u00e3o da Silva', 'Cliente VIP - prefere atendimento \u00e0 tarde'],
+            ['5511988887777', 'Maria Souza', 'Interessada no produto X - j\u00e1 fez contato antes'],
+        ];
+        const csvContent = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'exemplo_disparos.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+            <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-100 animate-fade-in-up-fast" onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
+                            <Info size={18} />
+                        </div>
+                        <h3 className="text-base font-bold text-slate-800">Como estruturar sua Planilha CSV</h3>
+                    </div>
+                    <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
+                        <XIcon size={18} />
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div className="p-6 space-y-4 text-left">
+                    <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                        Para importar seus contatos com sucesso, a planilha deve ser salva no formato <strong>CSV (.csv)</strong>, utilizando <strong>vírgula</strong> como separador de colunas.
+                    </p>
+
+                    <div className="space-y-2">
+                        <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Estrutura Esperada:</h4>
+                        <div className="border border-slate-100 rounded-xl overflow-hidden bg-slate-50">
+                            <table className="w-full text-xs text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-100/80 text-slate-500 font-bold border-b border-slate-200">
+                                        <th className="px-3 py-2 border-r border-slate-200">whatsapp</th>
+                                        <th className="px-3 py-2 border-r border-slate-200">nome</th>
+                                        <th className="px-3 py-2 text-violet-600">observacoes <span className="font-normal text-slate-400">(opcional)</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-slate-600 font-medium">
+                                    <tr className="border-b border-slate-200">
+                                        <td className="px-3 py-2 border-r border-slate-200 font-mono">5511999998888</td>
+                                        <td className="px-3 py-2 border-r border-slate-200">João da Silva</td>
+                                        <td className="px-3 py-2 text-violet-700 italic">Cliente VIP, prefere tarde</td>
+                                    </tr>
+                                    <tr>
+                                        <td className="px-3 py-2 border-r border-slate-200 font-mono">5521988887777</td>
+                                        <td className="px-3 py-2 border-r border-slate-200">Maria Souza</td>
+                                        <td className="px-3 py-2 text-violet-700 italic">Interessada em produto X</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3 bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 text-xs">
+                        <h5 className="font-bold text-blue-800 flex items-center gap-1.5">
+                            <Zap size={14} className="text-blue-600" />
+                            Dicas importantes:
+                        </h5>
+                        <ul className="list-disc pl-4 space-y-1.5 text-slate-600 leading-relaxed font-medium">
+                            <li>Os nomes das colunas no cabeçalho devem ser exatamente <strong>whatsapp</strong>, <strong>nome</strong> e (opcional) <strong>observacoes</strong> (em minúsculas, sem acento).</li>
+                            <li>O número do telefone deve conter o código do país (DDI), DDD e o número (ex: 55 para o Brasil + DDD + número).</li>
+                            <li>Você pode usar o marcador <code>{"{nome}"}</code> nas variáveis do seu template no painel lateral. Ele será substituído pelo nome do respectivo contato no momento do envio!</li>
+                            <li className="text-violet-700"><strong>Observações por contato:</strong> a coluna <code>observacoes</code> é salva individualmente para cada contato e fica disponível para a IA usar como contexto durante a conversa.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/30 flex items-center justify-between">
+                    <button
+                        type="button"
+                        onClick={downloadSampleCsv}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
+                    >
+                        <Download size={14} />
+                        Baixar Modelo
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md active:scale-95"
+                    >
+                        Entendi
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export default BulkSender;

@@ -127,7 +127,10 @@ async def read_user_configs_by_admin(
     """
     Retrieve all configs for a specific user. Only for superusers.
     """
-    result = await db.execute(select(models.Config).where(models.Config.user_id == user_id))
+    db_user = await crud_user.get_user(db, user_id=user_id)
+    if not db_user or not db_user.company_id:
+        return []
+    result = await db.execute(select(models.Config).where(models.Config.company_id == db_user.company_id))
     configs = result.scalars().all()
     return configs
 
@@ -142,4 +145,84 @@ async def read_all_configs(
     Retrieve all configs from all users. Only for superusers.
     """
     result = await db.execute(select(models.Config).offset(skip).limit(limit))
+    return result.scalars().all()
+
+# --- GESTÃO DE EMPRESAS (COMPANIES) ---
+
+@router.get("/companies", response_model=List[schemas.Company])
+async def read_companies(
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_superuser)
+):
+    """
+    List all companies. Only for superusers.
+    """
+    result = await db.execute(select(models.Company))
+    return result.scalars().all()
+
+@router.post("/companies", response_model=schemas.Company, status_code=status.HTTP_201_CREATED)
+async def create_company(
+    company_in: schemas.CompanyCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_superuser)
+):
+    """
+    Create a new company. Only for superusers.
+    """
+    db_company = models.Company(**company_in.model_dump())
+    db.add(db_company)
+    await db.commit()
+    await db.refresh(db_company)
+    return db_company
+
+@router.put("/companies/{company_id}", response_model=schemas.Company)
+async def update_company(
+    company_id: int,
+    company_in: schemas.CompanyUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_superuser)
+):
+    """
+    Update a company. Only for superusers.
+    """
+    db_company = await db.get(models.Company, company_id)
+    if not db_company:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+        
+    update_data = company_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        if hasattr(db_company, field):
+            setattr(db_company, field, value)
+            
+    db.add(db_company)
+    await db.commit()
+    await db.refresh(db_company)
+    return db_company
+
+@router.delete("/companies/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_company(
+    company_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_superuser)
+):
+    """
+    Delete a company. Only for superusers.
+    """
+    db_company = await db.get(models.Company, company_id)
+    if not db_company:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
+    await db.delete(db_company)
+    await db.commit()
+    return
+
+@router.get("/companies/{company_id}/configs", response_model=List[schemas.Config])
+async def read_company_configs_by_admin(
+    company_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_superuser)
+):
+    """
+    List all configs for a specific company. Only for superusers.
+    """
+    result = await db.execute(select(models.Config).where(models.Config.company_id == company_id))
     return result.scalars().all()

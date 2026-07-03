@@ -12,6 +12,7 @@ import Followup from './pages/Followup';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import BulkSender from './pages/BulkSender';
+import Permissions from './pages/Permissions';
 
 // Importação dos componentes de layout
 import MainLayout from './components/MainLayout';
@@ -38,6 +39,7 @@ function App() {
         <Route path="admin" element={<Admin />} />
         <Route path="followup" element={<Followup />} />
         <Route path="disparos" element={<BulkSender />} />
+        <Route path="permissoes" element={<Permissions />} />
         
         {/* Redireciona a rota raiz para o dashboard */}
         <Route index element={<Navigate to="/dashboard" />} />

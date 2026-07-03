@@ -15,31 +15,50 @@ async def get_user(db: AsyncSession, user_id: int) -> models.User | None:
 
 async def get_user_by_email(db: AsyncSession, email: str) -> models.User | None:
     """Busca um utilizador pelo seu endereço de e-mail."""
-    result = await db.execute(select(models.User).filter(models.User.email == email))
+    result = await db.execute(
+        select(models.User)
+        .filter(models.User.email == email)
+        .options(joinedload(models.User.company))
+    )
     return result.scalars().first()
 
 async def get_users(db: AsyncSession, skip: int = 0, limit: int = 100) -> List[models.User]:
     """Busca todos os utilizadores com paginação, ordenados por ID."""
-    result = await db.execute(select(models.User).order_by(models.User.id).offset(skip).limit(limit))
+    result = await db.execute(
+        select(models.User)
+        .order_by(models.User.id)
+        .offset(skip)
+        .limit(limit)
+        .options(joinedload(models.User.company))
+    )
     users = result.scalars().all()
     return users
 
-async def get_user_by_wbp_phone_number_id(db: AsyncSession, phone_number_id: str) -> Optional[models.User]:
-    """Busca um utilizador pelo ID do número de telefone da API Oficial."""
+async def get_company(db: AsyncSession, company_id: int) -> models.Company | None:
+    """Busca uma empresa pelo seu ID."""
+    return await db.get(models.Company, company_id)
+
+async def get_company_by_wbp_phone_number_id(db: AsyncSession, phone_number_id: str) -> Optional[models.Company]:
+    """Busca uma empresa pelo ID do número de telefone da API Oficial."""
     if not phone_number_id:
         return None
     result = await db.execute(
-        select(models.User).where(models.User.wbp_phone_number_id == phone_number_id)
+        select(models.Company).where(models.Company.wbp_phone_number_id == phone_number_id)
     )
     return result.scalars().first()
 
-
-async def decrement_user_tokens(db: AsyncSession, db_user: models.User, usage: int, atendimento_id: Optional[int] = None):
-    """Deduz os tokens usados pelo usuário do seu saldo e atualiza o atendimento."""
-    if db_user.tokens is None:
-        db_user.tokens = 0
+async def decrement_company_tokens(
+    db: AsyncSession,
+    db_company: models.Company,
+    usage: int,
+    atendimento_id: Optional[int] = None,
+    token_type: str = "inference"
+):
+    """Deduz os tokens usados pela empresa do seu saldo e atualiza o atendimento."""
+    if db_company.tokens is None:
+        db_company.tokens = 0
     
-    db_user.tokens -= usage
+    db_company.tokens -= usage
     
     if atendimento_id:
         stmt = select(models.Atendimento).where(models.Atendimento.id == atendimento_id)
@@ -51,37 +70,39 @@ async def decrement_user_tokens(db: AsyncSession, db_user: models.User, usage: i
             atendimento.token_usage += usage
             db.add(atendimento)
     
-    logger.info(f"DEBUG: {usage} token(s) deduzido(s) do utilizador {db_user.id}. Restantes: {db_user.tokens}")
-    db.add(db_user)
+    logger.info(
+        f"DEDUÇÃO DE TOKENS: Tipo='{token_type}', Consumo={usage} tokens, "
+        f"Empresa={db_company.id} ({db_company.name}), "
+        f"Saldo Anterior={db_company.tokens + usage}, Saldo Atual={db_company.tokens}"
+    )
+    db.add(db_company)
         
-async def get_users_with_agent_running(db: AsyncSession) -> List[models.User]:
+async def get_companies_with_agent_running(db: AsyncSession) -> List[models.Company]:
     """
-    Busca todos os usuários no banco de dados que estão com o
+    Busca todas as empresas no banco de dados que estão com o
     agente de IA ativado (agent_running == True).
     """
-    # Isso assume que a coluna no seu models.User se chama 'agent_running'
-    # Se o nome for diferente (como 'agent_runing'), ajuste abaixo.
-    stmt = select(models.User).where(models.User.agent_running == True)
+    stmt = select(models.Company).where(models.Company.agent_running == True)
     result = await db.execute(stmt)
-    users = result.scalars().all()
-    return users
+    companies = result.scalars().all()
+    return companies
 
-async def get_users_with_followup_active(db: AsyncSession) -> List[models.User]:
+async def get_companies_with_followup_active(db: AsyncSession) -> List[models.Company]:
     """
-    Busca todos os usuários com o sistema de follow-up ativo.
+    Busca todas as empresas com o sistema de follow-up ativo.
     """
     stmt = (
-        select(models.User)
-        .where(models.User.followup_active == True)
-        .options(joinedload(models.User.default_persona)) # Eager load a persona padrão
+        select(models.Company)
+        .where(models.Company.followup_active == True)
+        .options(joinedload(models.Company.default_persona)) # Eager load a persona padrão
     )
     result = await db.execute(stmt)
     return result.scalars().unique().all()
 
-async def get_token_usage_in_period(db: AsyncSession, user_id: int, start_date: datetime, end_date: datetime) -> int:
-    """Retorna o total de tokens consumidos em um período para cálculos de média."""
+async def get_token_usage_in_period(db: AsyncSession, company_id: int, start_date: datetime, end_date: datetime) -> int:
+    """Retorna o total de tokens consumidos em um período para cálculos de média por empresa."""
     stmt = select(func.sum(models.Atendimento.token_usage)).where(
-        models.Atendimento.user_id == user_id,
+        models.Atendimento.company_id == company_id,
         models.Atendimento.created_at >= start_date,
         models.Atendimento.created_at <= end_date
     )

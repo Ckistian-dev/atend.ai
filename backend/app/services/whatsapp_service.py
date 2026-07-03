@@ -492,29 +492,27 @@ class WhatsAppService:
             logger.error(f"WBP: Erro inesperado ao enviar template para {clean_to_number}: {e}", exc_info=True)
             raise MessageSendError(f"WBP: Erro inesperado no envio de template: {e}") from e
 
-    async def send_text_message(self, user: models.User, number: str, text: str) -> Dict[str, Any]:
-        # (Função existente sem alterações)
-        if not user or not number or not text:
-             raise ValueError("User, number, and text are required for sending messages.")
+    async def send_text_message(self, company: models.Company, number: str, text: str) -> Dict[str, Any]:
+        if not company or not number or not text:
+             raise ValueError("Company, number, and text are required for sending messages.")
         try:
-            if not user.wbp_phone_number_id:
-                raise ValueError(f"Usuário {user.id} configurado, mas 'wbp_phone_number_id' não definido.")
+            if not company.wbp_phone_number_id:
+                raise ValueError(f"Empresa {company.id} configurada, mas 'wbp_phone_number_id' não definido.")
             
-            return await self.send_text_message_official(user.wbp_phone_number_id, settings.WBP_ACCESS_TOKEN, number, text)
-
+            return await self.send_text_message_official(company.wbp_phone_number_id, settings.WBP_ACCESS_TOKEN, number, text)
 
         except MessageSendError as e:
             raise e
         except ValueError as e:
-            logger.error(f"Erro de configuração ao tentar enviar mensagem para user {user.id}: {e}")
+            logger.error(f"Erro de configuração ao tentar enviar mensagem para empresa {company.id}: {e}")
             raise MessageSendError(f"Erro de configuração: {e}") from e
         except Exception as e:
-            logger.error(f"Erro inesperado no adaptador send_text_message para user {user.id}: {e}", exc_info=True)
+            logger.error(f"Erro inesperado no adaptador send_text_message para empresa {company.id}: {e}", exc_info=True)
             raise MessageSendError(f"Erro inesperado no envio: {e}") from e
 
     async def send_media_message(
         self, 
-        user: models.User, 
+        company: models.Company, 
         number: str, 
         media_type: str, 
         file_bytes: bytes, 
@@ -526,8 +524,8 @@ class WhatsAppService:
         Função centralizada para enviar MÍDIA.
         Retorna um dict com {"id": ..., "timestamp": ...} (ou "media_id")
         """
-        if not all([user, number, media_type, file_bytes, filename]):
-            raise ValueError("User, number, media_type, file_bytes, e filename são obrigatórios.")
+        if not all([company, number, media_type, file_bytes, filename]):
+            raise ValueError("Company, number, media_type, file_bytes, e filename são obrigatórios.")
 
         # --- NORMALIZAÇÃO DE TIPO (FIX) ---
         # O WhatsApp aceita apenas: audio, document, image, video, sticker.
@@ -564,46 +562,68 @@ class WhatsAppService:
                     logger.info(f"Mimetype adivinhado via bytes para {filename}: {mimetype}")
 
         try:
-            if not user.wbp_phone_number_id:
-                raise ValueError(f"Usuário {user.id} configurado, mas 'wbp_phone_number_id' não definido.")
+            if not company.wbp_phone_number_id:
+                raise ValueError(f"Empresa {company.id} configurada, mas 'wbp_phone_number_id' não definido.")
             
             return await self.send_media_message_official(
-                user.wbp_phone_number_id, settings.WBP_ACCESS_TOKEN, number, media_type, 
+                company.wbp_phone_number_id, settings.WBP_ACCESS_TOKEN, number, media_type, 
                 file_bytes, filename, mimetype, caption
             )
 
         except MessageSendError as e:
             raise e
         except ValueError as e:
-            logger.error(f"Erro de configuração ao tentar enviar mídia para user {user.id}: {e}")
+            logger.error(f"Erro de configuração ao tentar enviar mídia para empresa {company.id}: {e}")
             raise MessageSendError(f"Erro de configuração (mídia): {e}") from e
         except Exception as e:
-            logger.error(f"Erro inesperado no adaptador send_media_message para user {user.id}: {e}", exc_info=True)
+            logger.error(f"Erro inesperado no adaptador send_media_message para empresa {company.id}: {e}", exc_info=True)
             raise MessageSendError(f"Erro inesperado no envio de mídia: {e}") from e
 
     async def send_template_message(
         self,
-        user: models.User,
+        company: models.Company,
         number: str,
         template_name: str,
         language_code: str,
-        components: Optional[List[Dict[str, Any]]]
+        components: Optional[List[Dict[str, Any]]],
+        db: Optional[Any] = None,
+        atendimento_id: Optional[int] = None
     ) -> Dict[str, Any]:
-        """Adapter para enviar mensagem de template, tratando a autenticação do usuário."""
-        if not all([user, number, template_name, language_code]):
-            raise ValueError("User, number, template_name e language_code são obrigatórios.")
+        """Adapter para enviar mensagem de template, tratando a autenticação da empresa."""
+        if not all([company, number, template_name, language_code]):
+            raise ValueError("Company, number, template_name e language_code são obrigatórios.")
 
         try:
-            if not user.wbp_phone_number_id:
-                raise ValueError(f"Usuário {user.id} não tem 'wbp_phone_number_id' configurado.")
+            if not company.wbp_phone_number_id:
+                raise ValueError(f"Empresa {company.id} não tem 'wbp_phone_number_id' configurado.")
 
-            return await self.send_template_message_official(
-                user.wbp_phone_number_id, settings.WBP_ACCESS_TOKEN, number, template_name, language_code, components
+            result = await self.send_template_message_official(
+                company.wbp_phone_number_id, settings.WBP_ACCESS_TOKEN, number, template_name, language_code, components
             )
+
+            # Desconta 50000 tokens pelo envio de template
+            if db is not None:
+                try:
+                    from app.crud import crud_user
+                    logger.info(f"Deduzindo 50000 tokens de template da empresa {company.id}...")
+                    await crud_user.decrement_company_tokens(
+                        db=db,
+                        db_company=company,
+                        usage=50000,
+                        atendimento_id=atendimento_id,
+                        token_type="whatsapp_template"
+                    )
+                    await db.commit()
+                    await db.refresh(company)
+                except Exception as token_err:
+                    logger.error(f"Falha ao deduzir tokens de template da empresa {company.id}: {token_err}", exc_info=True)
+                    await db.rollback()
+
+            return result
         except (MessageSendError, ValueError) as e:
             raise e
         except Exception as e:
-            logger.error(f"Erro inesperado no adaptador send_template_message para user {user.id}: {e}", exc_info=True)
+            logger.error(f"Erro inesperado no adaptador send_template_message para empresa {company.id}: {e}", exc_info=True)
             raise MessageSendError(f"Erro inesperado no envio de template: {e}") from e
 
     async def get_templates_official(self, business_account_id: str, access_token: str) -> List[Dict[str, Any]]:

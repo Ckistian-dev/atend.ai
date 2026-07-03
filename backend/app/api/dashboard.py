@@ -27,7 +27,8 @@ async def get_dashboard_data(
     start_date = datetime.fromisoformat(start_date_str) if start_date_str else datetime.now() - timedelta(days=30)
     end_date = datetime.fromisoformat(end_date_str) if end_date_str else datetime.now()
 
-    dashboard_data = await crud_atendimento.get_dashboard_data(db, user_id=current_user.id, start_date=start_date, end_date=end_date)
+    company_id = current_user.company_id or 0
+    dashboard_data = await crud_atendimento.get_dashboard_data(db, company_id=company_id, start_date=start_date, end_date=end_date)
     return dashboard_data
 
 @router.post("/analyze", summary="Analisar dados com IA")
@@ -44,14 +45,15 @@ async def analyze_data_with_ia(
     end_date_str = payload.get("end_date_str")
 
     if not question:
-        raise HTTPException(status_code=400, detail="A pergunta é obrigatória.")
+        raise HTTPException(status_code=404, detail="A pergunta é obrigatória.")
 
     start_date = datetime.fromisoformat(start_date_str) if start_date_str else None
     end_date = datetime.fromisoformat(end_date_str) if end_date_str else None
 
+    company_id = current_user.company_id or 0
     atendimentos_data = []
     if start_date and end_date:
-        atendimentos_data = await crud_atendimento.get_atendimentos_no_periodo(db, user_id=current_user.id, start_date=start_date, end_date=end_date)
+        atendimentos_data = await crud_atendimento.get_atendimentos_no_periodo(db, company_id=company_id, start_date=start_date, end_date=end_date)
 
     analysis = await gemini_service.analyze_data(
         question=question,

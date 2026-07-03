@@ -14,7 +14,7 @@ import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { LLM_MODELS, DEFAULT_MODEL } from '../constants/models';
+import { LLM_MODELS, DEFAULT_MODEL } from '../constants/models.json';
 import {
     Loader2, TrendingUp, CheckCircle, Percent, Cpu, Send, AlertCircle,
     Calendar as CalendarIcon, Lightbulb, Zap, ArrowRight, BarChart3,
@@ -1337,43 +1337,6 @@ const Dashboard = () => {
                             </div>
                         </div>
                     </div>
-
-                    {/* Novo Gráfico: Atendimentos por Número de Notificação */}
-                    {data.charts.atendimentosPorNotificacao?.length > 0 && (
-                        <div className="bg-white rounded-[32px] p-6 sm:p-8 shadow-xl shadow-slate-100 border border-slate-100/50" style={{ animation: 'fade-in-up 0.6s ease backwards 0.6s' }}>
-                            <div className="flex items-center gap-3 mb-8">
-                                <div className="p-2.5 bg-amber-50 rounded-2xl">
-                                    <Bell size={18} className="text-amber-600" />
-                                </div>
-                                <div>
-                                    <h3 className="text-slate-800 font-bold text-lg tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Atendimentos por Número de Notificação</h3>
-                                    <p className="text-slate-400 text-xs mt-0.5">Distribuição de atendimentos por destino de alerta</p>
-                                </div>
-                            </div>
-                            <div className="h-[500px] mt-4">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={data.charts.atendimentosPorNotificacao} margin={{ top: 5, right: 30, left: 20, bottom: 60 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                                        <XAxis
-                                            dataKey="name"
-                                            tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }}
-                                            axisLine={false}
-                                            tickLine={false}
-                                            interval={0}
-                                        />
-                                        <YAxis tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }} axisLine={false} tickLine={false} />
-                                        <Tooltip content={<CustomTooltip />} />
-                                        <Bar dataKey="value" name="Atendimentos" radius={[8, 8, 0, 0]}>
-                                            {data.charts.atendimentosPorNotificacao.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={CHART_PALETTE[index % CHART_PALETTE.length]} />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    )}
-
                     {/* AI Analyzer Area */}
                     <div style={{ animation: 'fade-in-up 0.7s ease backwards 0.6s' }}>
                         <AIAnalyzer

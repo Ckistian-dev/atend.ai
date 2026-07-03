@@ -19,7 +19,7 @@ from starlette.responses import RedirectResponse
 import httpx # Para fazer requisições HTTP assíncronas
 
 # Importações do SQLAlchemy para manipulação do banco de dados
-from sqlalchemy import select, func, cast, Time, text
+from sqlalchemy import select, func, cast, Time, text, or_
 from sqlalchemy.orm import joinedload
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -54,7 +54,8 @@ async def export_atendimentos(
     Gera um CSV com todos os atendimentos filtrados, usando streaming para suportar grandes volumes de dados.
     """
     # --- 1. Reconstrução da Query de Filtro (Mesma lógica do get_atendimentos) ---
-    stmt_base = select(models.Atendimento).where(models.Atendimento.user_id == current_user.id)
+    company_id = current_user.company_id or 0
+    stmt_base = select(models.Atendimento).where(models.Atendimento.company_id == company_id)
 
     last_client_ts = func.get_last_user_msg_timestamp(models.Atendimento.conversa)
     sort_expression = func.coalesce(last_client_ts, models.Atendimento.updated_at)
@@ -63,8 +64,8 @@ async def export_atendimentos(
         stmt_base = stmt_base.where(models.Atendimento.status.in_(status))
 
     if tags:
-        tag_pattern_obj = [{'name': tags[0]}]
-        stmt_base = stmt_base.where(cast(models.Atendimento.tags, JSONB).contains(tag_pattern_obj))
+        conditions = [cast(models.Atendimento.tags, JSONB).contains([{'name': tag}]) for tag in tags]
+        stmt_base = stmt_base.where(or_(*conditions))
 
     if time_start:
         try:
@@ -162,10 +163,11 @@ async def get_atendimentos(
     # Calcula o número de registros a pular (offset) com base na página atual e no limite
     skip = (page - 1) * limit
 
-    # Constrói a query base para selecionar atendimentos do usuário logado
+    # Constrói a query base para selecionar atendimentos da empresa do usuário logado
+    company_id = current_user.company_id or 0
     stmt_base = (
         select(models.Atendimento)
-        .where(models.Atendimento.user_id == current_user.id)
+        .where(models.Atendimento.company_id == company_id)
     )
 
     # --- LÓGICA DE ORDENAÇÃO POR ÚLTIMA MENSAGEM DO CLIENTE (Default) ---
@@ -197,8 +199,8 @@ async def get_atendimentos(
 
     # --- NOVO: Adiciona filtro por tags, se fornecido ---
     if tags:
-        tag_pattern_obj = [{'name': tags[0]}] # Apenas o primeiro tag é usado por enquanto
-        stmt_base = stmt_base.where(cast(models.Atendimento.tags, JSONB).contains(tag_pattern_obj))
+        conditions = [cast(models.Atendimento.tags, JSONB).contains([{'name': tag}]) for tag in tags]
+        stmt_base = stmt_base.where(or_(*conditions))
 
     # --- NOVO: Adiciona filtro por intervalo de horário ---
     if time_start:
@@ -261,7 +263,7 @@ async def get_atendimentos(
     # Retorna o resultado no formato esperado pelo schema `AtendimentoPage`
     return {"total": total, "items": items}
 
-# Endpoint para buscar todas as tags únicas do usuário
+# Endpoint para buscar todas as tags únicas da empresa do usuário
 @router.get("/tags", response_model=List[Dict[str, str]])
 async def get_user_tags(
     db: AsyncSession = Depends(get_db),
@@ -269,9 +271,10 @@ async def get_user_tags(
 ):
     """
     Busca e retorna uma lista de todas as tags únicas (nome e cor)
-    utilizadas nos atendimentos do usuário logado.
+    utilizadas nos atendimentos da empresa do usuário logado.
     """
-    tags = await crud_atendimento.get_all_user_tags(db, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    tags = await crud_atendimento.get_all_user_tags(db, company_id=company_id)
     return tags
 
 # Endpoint para obter um atendimento específico
@@ -284,9 +287,10 @@ async def get_atendimento_by_id(
     """
     Busca um atendimento específico. Útil para polling focado no chat aberto.
     """
+    company_id = current_user.company_id or 0
     stmt = select(models.Atendimento).where(
         models.Atendimento.id == atendimento_id,
-        models.Atendimento.user_id == current_user.id
+        models.Atendimento.company_id == company_id
     ).options(joinedload(models.Atendimento.active_persona))
     
     result = await db.execute(stmt)
@@ -309,8 +313,9 @@ async def update_atendimento(
     Atualiza um atendimento específico. Usado, por exemplo, para alterar o status
     ou a persona ativa de uma conversa a partir da interface.
     """
-    # Busca o atendimento no banco de dados para garantir que ele pertence ao usuário logado
-    db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, user_id=current_user.id)
+    # Busca o atendimento no banco de dados para garantir que ele pertence à empresa do usuário logado
+    company_id = current_user.company_id or 0
+    db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
     if not db_atendimento:
         raise HTTPException(status_code=404, detail="Atendimento não encontrado")
     
@@ -335,15 +340,16 @@ async def create_atendimento(
     atendimento_in.whatsapp = format_whatsapp_number(atendimento_in.whatsapp)
 
     # Verifica se já existe um atendimento para este número
+    company_id = current_user.company_id or 0
     existing_query = await db.execute(select(models.Atendimento).where(
         models.Atendimento.whatsapp == atendimento_in.whatsapp,
-        models.Atendimento.user_id == current_user.id
+        models.Atendimento.company_id == company_id
     ))
     if existing_query.scalars().first():
         raise HTTPException(status_code=409, detail="Já existe um atendimento para este número.")
 
     # Cria o atendimento no banco de dados
-    db_atendimento = await crud_atendimento.create_atendimento(db=db, atendimento_in=atendimento_in, user_id=current_user.id)
+    db_atendimento = await crud_atendimento.create_atendimento(db=db, atendimento_in=atendimento_in, company_id=company_id)
     await db.commit()
     await db.refresh(db_atendimento, attribute_names=['active_persona'])
 
@@ -361,7 +367,8 @@ async def delete_atendimento(
     Apaga um atendimento específico do banco de dados.
     """
     # Chama a função do CRUD para apagar o atendimento, que também verifica a posse
-    deleted_atendimento = await crud_atendimento.delete_atendimento(db, atendimento_id=atendimento_id, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    deleted_atendimento = await crud_atendimento.delete_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
     if not deleted_atendimento:
         raise HTTPException(status_code=404, detail="Atendimento não encontrado")
     
@@ -393,7 +400,8 @@ async def send_manual_message(
     Este endpoint é usado pela interface de "Mensagens".
     """
     # 1. Busca o atendimento no banco para obter o número do contato
-    db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
     if not db_atendimento or not db_atendimento.whatsapp:
         raise HTTPException(status_code=404, detail="Atendimento ou contato não encontrado")
 
@@ -403,9 +411,9 @@ async def send_manual_message(
 
     try:
         # 2. Envia a mensagem através do serviço do WhatsApp
-        # O objeto `current_user` é passado para que o serviço possa acessar tokens e configurações
+        # O objeto `current_user.company` é passado para que o serviço possa acessar tokens e configurações
         send_result = await whatsapp_service.send_text_message(
-            user=current_user,
+            company=current_user.company,
             number=whatsapp_number,
             text=text_to_send
         )
@@ -431,7 +439,7 @@ async def send_manual_message(
         atendimento_atualizado = await crud_atendimento.add_message_to_conversa(
             db=db,
             atendimento_id=atendimento_id,
-            user_id=current_user.id,
+            company_id=company_id,
             message=formatted_message
         )
         
@@ -470,7 +478,8 @@ async def send_manual_media_message(
     """
     
     # 1. Busca o atendimento para obter o número do contato
-    db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
     if not db_atendimento or not db_atendimento.whatsapp:
         raise HTTPException(status_code=404, detail="Atendimento ou contato não encontrado")
 
@@ -510,7 +519,7 @@ async def send_manual_media_message(
         # 3. Envia a mídia através do serviço do WhatsApp
         # O serviço internamente pode precisar converter o arquivo (ex: áudio para mp3)
         send_result = await whatsapp_service.send_media_message(
-            user=current_user,
+            company=current_user.company,
             number=whatsapp_number,
             media_type=type, # 'image', 'audio', etc.
             file_bytes=file_bytes,
@@ -548,7 +557,7 @@ async def send_manual_media_message(
         atendimento_atualizado = await crud_atendimento.add_message_to_conversa(
             db=db,
             atendimento_id=atendimento_id,
-            user_id=current_user.id,
+            company_id=company_id,
             message=formatted_message
         )
         
@@ -581,8 +590,9 @@ async def get_whatsapp_templates(
     Busca e retorna a lista de templates de mensagem aprovados ('ACTIVE')
     da conta do WhatsApp Business associada ao usuário.
     """
-    # NOTA: Requer que 'wbp_business_account_id' esteja no modelo User e preenchido.
-    if not hasattr(current_user, 'wbp_business_account_id') or not current_user.wbp_business_account_id:
+    # NOTA: Requer que 'wbp_business_account_id' esteja no modelo Company e preenchido.
+    wbp_business_account_id = current_user.company.wbp_business_account_id if current_user.company else None
+    if not wbp_business_account_id:
         logger.error(f"Usuário {current_user.id} tentou buscar templates sem 'wbp_business_account_id' configurado.")
         raise HTTPException(
             status_code=400,
@@ -591,12 +601,12 @@ async def get_whatsapp_templates(
 
     try:
         templates = await whatsapp_service.get_templates_official(
-            business_account_id=current_user.wbp_business_account_id,
+            business_account_id=wbp_business_account_id,
             access_token=settings.WBP_ACCESS_TOKEN
         )
         return templates
     except (MessageSendError, ValueError) as e:
-        logger.error(f"Erro ao buscar templates para o usuário {current_user.id}: {e}", exc_info=True)
+        logger.error(f"Erro ao buscar templates para a empresa do usuário {current_user.id}: {e}", exc_info=True)
         raise HTTPException(status_code=502, detail=f"Falha ao buscar templates da API do WhatsApp: {e}")
         
 @router.post("/whatsapp/templates", summary="Criar novo template na Meta")
@@ -609,7 +619,8 @@ async def create_whatsapp_template(
     """
     Cria um template diretamente na conta do WhatsApp Business vinculada ao usuário.
     """
-    if not hasattr(current_user, 'wbp_business_account_id') or not current_user.wbp_business_account_id:
+    wbp_business_account_id = current_user.company.wbp_business_account_id if current_user.company else None
+    if not wbp_business_account_id:
         raise HTTPException(
             status_code=400,
             detail="ID da Conta do WhatsApp Business não está configurado para este usuário."
@@ -636,7 +647,7 @@ async def create_whatsapp_template(
                     comp['example'] = {'header_handle': [handle]}
 
         result = await whatsapp_service.create_template_official(
-            business_account_id=current_user.wbp_business_account_id,
+            business_account_id=wbp_business_account_id,
             access_token=settings.WBP_ACCESS_TOKEN,
             payload=payload
         )
@@ -656,7 +667,8 @@ async def delete_whatsapp_template(
     Exclui um template diretamente na conta do WhatsApp Business vinculada ao usuário.
     Tenta excluir pelo ID (se fornecido) ou pelo nome.
     """
-    if not hasattr(current_user, 'wbp_business_account_id') or not current_user.wbp_business_account_id:
+    wbp_business_account_id = current_user.company.wbp_business_account_id if current_user.company else None
+    if not wbp_business_account_id:
         raise HTTPException(
             status_code=400,
             detail="ID da Conta do WhatsApp Business não está configurado para este usuário."
@@ -664,7 +676,7 @@ async def delete_whatsapp_template(
 
     try:
         await whatsapp_service.delete_template_official(
-            business_account_id=current_user.wbp_business_account_id,
+            business_account_id=wbp_business_account_id,
             access_token=settings.WBP_ACCESS_TOKEN,
             template_name=template_name,
             template_id=template_id
@@ -688,7 +700,8 @@ async def download_media_directly(
     que foi recebido de um contato. Ele atua como um proxy seguro.
     """
     # 1. Validações de segurança e configuração
-    db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
     if not db_atendimento: raise HTTPException(status_code=404, detail="Atendimento não encontrado.")
 
     decrypted_token = settings.WBP_ACCESS_TOKEN
@@ -792,15 +805,18 @@ async def send_template_message(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Payload JSON inválido: {e}")
 
-    db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
     if not db_atendimento or not db_atendimento.whatsapp:
         raise HTTPException(status_code=404, detail="Atendimento ou contato não encontrado")
 
     whatsapp_number = db_atendimento.whatsapp
+    wbp_phone_number_id = current_user.company.wbp_phone_number_id if current_user.company else None
+    wbp_business_account_id = current_user.company.wbp_business_account_id if current_user.company else None
 
     try:
         # Se houver arquivo, faz o upload para a Meta antes de enviar o template
-        if file and current_user.wbp_phone_number_id:
+        if file and wbp_phone_number_id:
             file_bytes = await file.read()
             mimetype = file.content_type or mimetypes.guess_type(file.filename)[0] or 'application/octet-stream'
             
@@ -809,7 +825,7 @@ async def send_template_message(
             elif mimetype.startswith('video/'): media_type = 'video'
             
             media_id = await whatsapp_service._upload_media_official(
-                phone_number_id=current_user.wbp_phone_number_id,
+                phone_number_id=wbp_phone_number_id,
                 access_token=settings.WBP_ACCESS_TOKEN,
                 file_bytes=file_bytes,
                 mimetype=mimetype,
@@ -833,11 +849,13 @@ async def send_template_message(
                 raise HTTPException(status_code=502, detail="Falha ao carregar a mídia do template para os servidores da Meta.")
 
         send_result = await whatsapp_service.send_template_message(
-            user=current_user,
+            company=current_user.company,
             number=whatsapp_number,
             template_name=payload.template_name,
             language_code=payload.language_code,
-            components=payload.components
+            components=payload.components,
+            db=db,
+            atendimento_id=atendimento_id
         )
 
         logger.info(f"Template '{payload.template_name}' enviado para {whatsapp_number}. API Msg ID: {send_result.get('id')}")
@@ -851,52 +869,55 @@ async def send_template_message(
         content_for_history = f"[Template: {payload.template_name}]\n"
         try:
             # 1. Busca a definição do template para obter o texto original
-            templates = await whatsapp_service.get_templates_official(
-                business_account_id=current_user.wbp_business_account_id,
-                access_token=settings.WBP_ACCESS_TOKEN
-            )
-            
-            target_template = next((t for t in templates if t['name'] == payload.template_name and t['language'] == payload.language_code), None)
-
-            if target_template:
-                # 2. Pega os textos do header e body
-                header_text = next((c.get('text', '') for c in target_template.get('components', []) if c['type'] == 'HEADER'), '')
-                body_text = next((c.get('text', '') for c in target_template.get('components', []) if c['type'] == 'BODY'), '')
-
-                # 3. Pega os valores das variáveis enviadas (se houver)
-                sent_components = payload.components or [] # Garante que é uma lista, mesmo se for None
-                header_params = next((c.get('parameters', []) for c in sent_components if c['type'] == 'header'), [])
-                body_params = next((c.get('parameters', []) for c in sent_components if c['type'] == 'body'), [])
-
-                # Captura o media_id do header para que o chat possa exibir a imagem no histórico
-                for hp in header_params:
-                    if 'image' in hp:
-                        msg_type = 'image'; final_media_id = hp['image'].get('id')
-                    elif 'video' in hp:
-                        msg_type = 'video'; final_media_id = hp['video'].get('id')
-                    elif 'document' in hp:
-                        msg_type = 'document'; final_media_id = hp['document'].get('id')
-                    if final_media_id: break
-
-                # 4. Substitui as variáveis no texto
-                for i, param in enumerate(header_params):
-                    header_text = header_text.replace(f"{{{{{i+1}}}}}", param.get('text', ''))
+            if wbp_business_account_id:
+                templates = await whatsapp_service.get_templates_official(
+                    business_account_id=wbp_business_account_id,
+                    access_token=settings.WBP_ACCESS_TOKEN
+                )
                 
-                for i, param in enumerate(body_params):
-                    # A contagem de variáveis do corpo pode continuar da do header, ou começar de 1.
-                    # A API da Meta é um pouco inconsistente. Vamos tentar os dois.
-                    # Ex: {{1}} no header, {{1}} no body.
-                    body_text = body_text.replace(f"{{{{{i+1}}}}}", param.get('text', ''))
-                    # Ex: {{1}} no header, {{2}} no body.
-                    body_text = body_text.replace(f"{{{{{len(header_params) + i + 1}}}}}", param.get('text', ''))
+                target_template = next((t for t in templates if t['name'] == payload.template_name and t['language'] == payload.language_code), None)
 
-                # Captura os botões do template para renderizar na interface
-                buttons_data = next((c.get('buttons', []) for c in target_template.get('components', []) if c['type'] == 'BUTTONS'), [])
-                extracted_buttons = [b.get('text') for b in buttons_data if b.get('text')]
+                if target_template:
+                    # 2. Pega os textos do header e body
+                    header_text = next((c.get('text', '') for c in target_template.get('components', []) if c['type'] == 'HEADER'), '')
+                    body_text = next((c.get('text', '') for c in target_template.get('components', []) if c['type'] == 'BODY'), '')
 
-                full_message = f"{header_text}\n{body_text}".strip()
-                if full_message:
-                    content_for_history = full_message
+                    # 3. Pega os valores das variáveis enviadas (se houver)
+                    sent_components = payload.components or [] # Garante que é uma lista, mesmo se for None
+                    header_params = next((c.get('parameters', []) for c in sent_components if c['type'] == 'header'), [])
+                    body_params = next((c.get('parameters', []) for c in sent_components if c['type'] == 'body'), [])
+
+                    # Captura o media_id do header para que o chat possa exibir a imagem no histórico
+                    for hp in header_params:
+                        if 'image' in hp:
+                            msg_type = 'image'; final_media_id = hp['image'].get('id')
+                        elif 'video' in hp:
+                            msg_type = 'video'; final_media_id = hp['video'].get('id')
+                        elif 'document' in hp:
+                            msg_type = 'document'; final_media_id = hp['document'].get('id')
+                        if final_media_id: break
+
+                    # 4. Substitui as variáveis no texto
+                    for i, param in enumerate(header_params):
+                        header_text = header_text.replace(f"{{{{{i+1}}}}}", param.get('text', ''))
+                    
+                    for i, param in enumerate(body_params):
+                        # A contagem de variáveis do corpo pode continuar da do header, ou começar de 1.
+                        # A API da Meta é um pouco inconsistente. Vamos tentar os dois.
+                        # Ex: {{1}} no header, {{1}} no body.
+                        body_text = body_text.replace(f"{{{{{i+1}}}}}", param.get('text', ''))
+                        # Ex: {{1}} no header, {{2}} no body.
+                        body_text = body_text.replace(f"{{{{{len(header_params) + i + 1}}}}}", param.get('text', ''))
+
+                    # Captura os botões do template para renderizar na interface
+                    buttons_data = next((c.get('buttons', []) for c in target_template.get('components', []) if c['type'] == 'BUTTONS'), [])
+                    extracted_buttons = [b.get('text') for b in buttons_data if b.get('text')]
+
+                    full_message = f"{header_text}\n{body_text}".strip()
+                    if full_message:
+                        content_for_history = full_message
+            else:
+                extracted_buttons = []
 
         except Exception as e:
             logger.warning(f"Não foi possível montar o preview completo do template '{payload.template_name}': {e}")
@@ -919,7 +940,7 @@ async def send_template_message(
         )
 
         atendimento_atualizado = await crud_atendimento.add_message_to_conversa(
-            db=db, atendimento_id=atendimento_id, user_id=current_user.id, message=formatted_message
+            db=db, atendimento_id=atendimento_id, company_id=company_id, message=formatted_message
         )
 
         await db.refresh(atendimento_atualizado, attribute_names=['active_persona'])
@@ -957,8 +978,11 @@ async def create_bulk_disparos(
         except:
             logger.warning(f"Falha ao parsear template_params no bulk: {template_params}")
 
+    company_id = current_user.company_id or 0
+    wbp_phone_number_id = current_user.company.wbp_phone_number_id if current_user.company else None
+
     # Se houver arquivo de mídia, faz o upload para a Meta uma única vez para todos os disparos
-    if media_file and current_user.wbp_phone_number_id:
+    if media_file and wbp_phone_number_id:
         file_bytes = await media_file.read()
         mimetype = media_file.content_type or mimetypes.guess_type(media_file.filename)[0] or 'application/octet-stream'
         
@@ -967,7 +991,7 @@ async def create_bulk_disparos(
         elif mimetype.startswith('video/'): media_type = 'video'
         
         media_id = await whatsapp_service._upload_media_official(
-            phone_number_id=current_user.wbp_phone_number_id,
+            phone_number_id=wbp_phone_number_id,
             access_token=settings.WBP_ACCESS_TOKEN,
             file_bytes=file_bytes,
             mimetype=mimetype,
@@ -1000,11 +1024,17 @@ async def create_bulk_disparos(
             number = format_whatsapp_number(row.get('whatsapp', ''))
             # Extrai o nome do CSV, com fallback para string vazia
             nome_csv = row.get('nome', '') or row.get('Nome', '') or row.get('NOME', '')
+            # Extrai observações individuais por linha (coluna opcional)
+            obs_csv = (row.get('observacoes', '') or row.get('Observacoes', '') or
+                       row.get('OBSERVACOES', '') or row.get('observações', '') or '').strip()
+            # Combina as observações globais do formulário com as específicas da linha
+            combined_obs = '\n'.join(filter(None, [observacoes, obs_csv])).strip() or None
+
             if not number: continue
             
             existing = await db.execute(select(models.Atendimento).where(
                 models.Atendimento.whatsapp == number,
-                models.Atendimento.user_id == current_user.id
+                models.Atendimento.company_id == company_id
             ))
             existing_at = existing.scalars().first()
             
@@ -1022,8 +1052,8 @@ async def create_bulk_disparos(
                 existing_at.active_persona_id = persona_id
                 if nome_csv and not existing_at.nome_contato:
                     existing_at.nome_contato = nome_csv
-                if observacoes:
-                    existing_at.observacoes = f"{existing_at.observacoes or ''}\n{observacoes}".strip()
+                if combined_obs:
+                    existing_at.observacoes = f"{existing_at.observacoes or ''}\n{combined_obs}".strip()
                 db.add(existing_at)
             else:
                 row_params = copy.deepcopy(params_dict)
@@ -1035,11 +1065,11 @@ async def create_bulk_disparos(
                 new_at = models.Atendimento(
                     whatsapp=number,
                     nome_contato=nome_csv,
-                    user_id=current_user.id,
+                    company_id=company_id,
                     status="Aguardando Envio",
                     active_persona_id=persona_id,
                     bulk_template_name=template_name,
-                    observacoes=observacoes,
+                    observacoes=combined_obs,
                     bulk_template_params=row_params
                 )
                 db.add(new_at)
@@ -1053,7 +1083,7 @@ async def create_bulk_disparos(
                 for at_id in ids_list:
                     existing = await db.execute(select(models.Atendimento).where(
                         models.Atendimento.id == int(at_id),
-                        models.Atendimento.user_id == current_user.id
+                        models.Atendimento.company_id == company_id
                     ))
                     existing_at = existing.scalars().first()
                     if existing_at:
@@ -1090,7 +1120,8 @@ async def analyze_feedback(
     current_user: models.User = Depends(dependencies.get_current_active_user),
     gemini_service: GeminiService = Depends(get_gemini_service)
 ):
-    db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
     if not db_atendimento:
         raise HTTPException(status_code=404, detail="Atendimento não encontrado")
 
@@ -1112,7 +1143,8 @@ async def analyze_feedback(
         recent_msgs = conversa_list[-5:]
         rag_query = gemini_service._format_history_optimized(recent_msgs, include_timestamps=False)
 
-    persona_id = db_atendimento.active_persona_id or current_user.default_persona_id
+    default_persona_id = current_user.company.default_persona_id if current_user.company else None
+    persona_id = db_atendimento.active_persona_id or default_persona_id
     persona = await db.get(models.Config, persona_id)
     if not persona:
         raise HTTPException(status_code=400, detail="Persona não encontrada para este atendimento.")
@@ -1161,10 +1193,12 @@ async def apply_feedback(
 ):
     from app.api.configs import run_sync_sheet # Lazy import para evitar import circular
 
-    db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, user_id=current_user.id)
+    company_id = current_user.company_id or 0
+    db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
     if not db_atendimento: raise HTTPException(status_code=404, detail="Atendimento não encontrado")
         
-    persona_id = db_atendimento.active_persona_id or current_user.default_persona_id
+    default_persona_id = current_user.company.default_persona_id if current_user.company else None
+    persona_id = db_atendimento.active_persona_id or default_persona_id
     persona = await db.get(models.Config, persona_id)
     if not persona:
         raise HTTPException(status_code=400, detail="Persona não encontrada.")
@@ -1200,7 +1234,7 @@ async def apply_feedback(
             await sheets_service.apply_feedback_to_sheet(persona.spreadsheet_rag_id, alteracoes_rag_dict)
             
             # Resincroniza o RAG (usa await)
-            await run_sync_sheet(persona.id, current_user.id, persona.spreadsheet_rag_id, "rag")
+            await run_sync_sheet(persona.id, company_id, persona.spreadsheet_rag_id, "rag")
             mensagens_sucesso.append("Planilha RAG atualizada e embeddings regerados.")
 
         # 3. Substituir o JSON do fluxo
