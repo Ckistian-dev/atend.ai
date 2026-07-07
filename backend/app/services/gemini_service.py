@@ -83,7 +83,8 @@ class GeminiService:
             current_key = self.api_keys[self.current_key_index]
             
             # Instanciação limpa: o SDK gerencia v1/v1beta automaticamente
-            self.client = genai.Client(api_key=current_key, http_options=types.HttpOptions(timeout=120000))
+            from google.genai._api_client import HttpOptions
+            self.client = genai.Client(api_key=current_key, http_options=HttpOptions(timeout=120000))
             
             logger.info(f"✅ Cliente Gemini inicializado (chave índice {self.current_key_index}).")
         except Exception as e:
@@ -139,6 +140,29 @@ class GeminiService:
             "top_k": top_k,
         }
 
+        # Configuração do processo de pensamento (Thinking Config)
+        is_gemini_3_or_newer = "gemini-3" in model_name or re.search(r"\b(gemini-)[3-9]\b", model_name)
+        is_gemini_2_5 = "gemini-2.5" in model_name
+
+        if is_gemini_3_or_newer:
+            thinking_level = getattr(persona, "thinking_level", "medium") if persona else "medium"
+            if thinking_level and thinking_level != "default":
+                try:
+                    config_args["thinking_config"] = types.ThinkingConfig(
+                        thinking_level=thinking_level
+                    )
+                except Exception as te:
+                    logger.warning(f"Erro ao instanciar ThinkingConfig com thinking_level={thinking_level}: {te}")
+        elif is_gemini_2_5:
+            thinking_budget = getattr(persona, "thinking_budget", 1024) if persona else 1024
+            if thinking_budget is not None:
+                try:
+                    config_args["thinking_config"] = types.ThinkingConfig(
+                        thinking_budget=thinking_budget
+                    )
+                except Exception as te:
+                    logger.warning(f"Erro ao instanciar ThinkingConfig com thinking_budget={thinking_budget}: {te}")
+
         if not is_media and isinstance(prompt, str):
             logger.debug(f"Prompt (texto) para a IA: {prompt[:500]}...")
             # No novo SDK, response_mime_type entra na config
@@ -150,6 +174,7 @@ class GeminiService:
 
         # Cria o objeto de configuração tipado
         gen_config = types.GenerateContentConfig(**config_args)
+
 
         # --- DEBUG: PRINT PROMPT ---
         try:
@@ -278,6 +303,13 @@ class GeminiService:
                     await asyncio.sleep(2)
                 except Exception as e:
                     error_str = str(e).lower()
+                    
+                    # Se for erro de parâmetro não suportado devido a thinking_config
+                    if ("thinking" in error_str or "parameter" in error_str or "unsupported" in error_str) and "thinking_config" in config_args:
+                        logger.warning(f"O modelo {model_name} não suporta a configuração de pensamento (thinking_config). Removendo parâmetro e tentando novamente...")
+                        config_args.pop("thinking_config", None)
+                        gen_config = types.GenerateContentConfig(**config_args)
+                        continue
                     
                     # Detecção de Erro de Cota (429) ou Recurso Esgotado
                     if "429" in error_str or "resource exhausted" in error_str or "quota" in error_str:
@@ -511,18 +543,48 @@ class GeminiService:
         
         # Para cada origem encontrada (cada aba e o drive), busca os 'limit' mais relevantes com threshold de distância
         for origin in origins:
-            threshold = 0.52 if origin == "drive" else 0.58
-            stmt_origin = select(models.KnowledgeVector).where(
-                models.KnowledgeVector.config_id == config_id,
-                models.KnowledgeVector.origin == origin,
-                models.KnowledgeVector.embedding.cosine_distance(query_embedding) < threshold
-            ).order_by(
-                models.KnowledgeVector.embedding.cosine_distance(query_embedding)
-            ).limit(limit)
-            
-            result_origin = await db.execute(stmt_origin)
-            vectors = result_origin.scalars().all()
-            final_vectors.extend(vectors)
+            threshold = 0.65 if origin == "drive" else 0.70
+            if origin == "drive":
+                # Busca mais registros do Drive para permitir filtragem por tipo em python
+                stmt_origin = select(models.KnowledgeVector).where(
+                    models.KnowledgeVector.config_id == config_id,
+                    models.KnowledgeVector.origin == origin,
+                    models.KnowledgeVector.embedding.cosine_distance(query_embedding) < threshold
+                ).order_by(
+                    models.KnowledgeVector.embedding.cosine_distance(query_embedding)
+                ).limit(100)
+                
+                result_origin = await db.execute(stmt_origin)
+                vectors = result_origin.scalars().all()
+                
+                # Filtra limitando a no máximo 10 registros por tipo de arquivo
+                by_type_counts = {}
+                filtered_drive_vectors = []
+                for v in vectors:
+                    try:
+                        from app.api.configs import parse_drive_index
+                        parsed = parse_drive_index(v.content)
+                        file_type = parsed.get("TIPO", "OUTROS").strip().upper()
+                    except Exception:
+                        file_type = "OUTROS"
+                    
+                    if by_type_counts.get(file_type, 0) < 10:
+                        filtered_drive_vectors.append(v)
+                        by_type_counts[file_type] = by_type_counts.get(file_type, 0) + 1
+                
+                final_vectors.extend(filtered_drive_vectors)
+            else:
+                stmt_origin = select(models.KnowledgeVector).where(
+                    models.KnowledgeVector.config_id == config_id,
+                    models.KnowledgeVector.origin == origin,
+                    models.KnowledgeVector.embedding.cosine_distance(query_embedding) < threshold
+                ).order_by(
+                    models.KnowledgeVector.embedding.cosine_distance(query_embedding)
+                ).limit(limit)
+                
+                result_origin = await db.execute(stmt_origin)
+                vectors = result_origin.scalars().all()
+                final_vectors.extend(vectors)
         
         if not final_vectors: return ""
         
@@ -551,7 +613,8 @@ class GeminiService:
             if match_count > 0:
                 new_content = "\n".join(current_lines[match_count:])
                 if new_content:
-                    formatted_text += "\n" + new_content
+                    # Adiciona quebra de linha dupla para separar claramente itens agrupados
+                    formatted_text += "\n\n" + new_content
             else:
                 # Se não houver correspondência, adiciona o chunk inteiro
                 if formatted_text:
@@ -613,7 +676,7 @@ class GeminiService:
         return "\n".join(formatted_lines)
         
     def _format_workflow_to_markdown(self, workflow_data: Optional[Dict[str, Any]]) -> str:
-        """Converte o JSON do React Flow em uma tabela Markdown legível para a IA."""
+        """Converte o JSON do React Flow em uma lista estruturada legível para a IA."""
         if not workflow_data or not isinstance(workflow_data, dict):
             return ""
             
@@ -623,24 +686,30 @@ class GeminiService:
         if not nodes:
             return ""
             
-        lines = ["# Fluxo de Atendimento e Condições", "| Etapa ou Estado | Ação/Instrução Esperada | Condição para Avançar |", "|---|---|---|"]
+        lines = ["# Fluxo de Atendimento e Condições"]
         
         for node_id, node in nodes.items():
-            etapa = node.get('data', {}).get('label', 'Etapa').replace('\n', ' ')
-            acao = node.get('data', {}).get('description', 'Sem instrução específica').replace('\n', ' ')
+            etapa = node.get('data', {}).get('label', 'Etapa').replace('\n', ' ').strip()
+            acao = node.get('data', {}).get('description', 'Sem instrução específica').replace('\n', ' ').strip()
             
             target_edges = [e for e in edges if e.get('source') == node_id]
             proximos = []
             for e in target_edges:
                 target_node = nodes.get(e.get('target'))
                 if target_node:
-                    condicao = e.get('label', 'Avanço Direto')
-                    proximos.append(f"Se '{condicao}' -> Ir para [{target_node.get('data', {}).get('label', '')}]")
+                    condicao = e.get('label', 'Avanço Direto').strip()
+                    proximos.append(f"Se '{condicao}' -> Ir para [{target_node.get('data', {}).get('label', '').strip()}]")
             
             proximo_str = " | ".join(proximos) if proximos else "Fim do fluxo"
-            lines.append(f"| {etapa} | {acao} | {proximo_str} |")
             
-        return "\n".join(lines) + "\n\n"
+            node_block = (
+                f"- Etapa: {etapa}\n"
+                f"  Ação: {acao}\n"
+                f"  Avanço: {proximo_str}"
+            )
+            lines.append(node_block)
+            
+        return "\n\n".join(lines) + "\n\n"
 
     async def generate_conversation_action(
         self,
@@ -741,7 +810,7 @@ class GeminiService:
                     
                     hours_text = " | ".join(hours_summary) if hours_summary else "Não configurado"
 
-                    calendar_context = f"\n# DISPONIBILIDADE DE AGENDA\n| Item | Descrição |\n|---|---|\n| Horários de Trabalho | {hours_text} |\n"
+                    calendar_context = f"\n# DISPONIBILIDADE DE AGENDA\n- Horários de Trabalho: {hours_text}\n"
                     calendar_context += booked_events_str
                     calendar_context += "Se o cliente demonstrar interesse em agendar, verifique a disponibilidade real (horários de trabalho vs ocupados) e proponha um horário livre. Se confirmado, use a ação 'agendar_reuniao' no JSON.\n"
 
@@ -809,14 +878,12 @@ class GeminiService:
                 )
 
                 # --- 3. Montagem do Prompt (Histórico e Tarefa) ---
-                _obs_row = f"| Observações | {whatsapp.observacoes.strip()} |\n" if whatsapp.observacoes and whatsapp.observacoes.strip() else ""
+                _obs_row = f"- Observações: {whatsapp.observacoes.strip()}\n" if whatsapp.observacoes and whatsapp.observacoes.strip() else ""
                 prompt_text = (
                     f"# DATA E HORA ATUAL\n{datetime_context}\n"
                     f"# DADOS DO CLIENTE\n"
-                    f"| Campo | Valor |\n"
-                    f"|---|---|\n"
-                    f"| Nome | {whatsapp.nome_contato or 'Não identificado'} |\n"
-                    f"| Tags Atuais | {', '.join(current_tags_names) if current_tags_names else 'Nenhuma'} |\n"
+                    f"- Nome: {whatsapp.nome_contato or 'Não identificado'}\n"
+                    f"- Tags Atuais: {', '.join(current_tags_names) if current_tags_names else 'Nenhuma'}\n"
                     f"{_obs_row}"
                     f"\n# HISTÓRICO\n{history_str}\n\n"
                     f"# TAREFA\n"

@@ -16,7 +16,7 @@ from app.services.whatsapp_service import get_whatsapp_service, MessageSendError
 from app.services.gemini_service import get_gemini_service
 from app.services.google_calendar_service import get_google_calendar_service
 from app.services.google_drive_service import get_drive_service # <--- Import do serviço de Drive
-from app.api.configs import SITUATIONS
+from app.api.configs import SITUATIONS, parse_drive_index
 from app.db import models, schemas
 
 logger = logging.getLogger(__name__)
@@ -128,23 +128,13 @@ async def process_single_atendimento(atendimento_id: int, company: models.Compan
                 res = await db_validate.execute(stmt)
                 drive_records = res.scalars().all()
                 for content in drive_records:
-                    # Filtra linhas vazias, de título (#) ou de separador (---)
-                    data_lines = [
-                        l.strip() 
-                        for l in content.strip().split("\n") 
-                        if l.strip() and not l.strip().startswith("#") and "---" not in l
-                    ]
-                    if len(data_lines) >= 2:
-                        try:
-                            headers = [h.strip() for h in data_lines[0].split("|") if h.strip()]
-                            if "ID" in headers:
-                                idx = headers.index("ID")
-                                for row_line in data_lines[1:]:
-                                    values = [v.strip() for v in row_line.split("|") if v.strip()]
-                                    if idx < len(values):
-                                        valid_drive_file_ids.add(values[idx])
-                        except Exception:
-                            pass
+                    try:
+                        parsed = parse_drive_index(content)
+                        file_id = parsed.get("ID")
+                        if file_id:
+                            valid_drive_file_ids.add(file_id)
+                    except Exception:
+                        pass
         except Exception as e:
             logger.error(f"Agente: Erro ao pre-carregar IDs válidos do Drive: {e}")
 

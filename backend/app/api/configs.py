@@ -88,47 +88,91 @@ class ProvisionWithCodePayload(BaseModel):
 
 def format_sheet_to_csv_system(sheet_name: str, rows: List[Dict[str, Any]]) -> str:
     """
-    Converte uma aba inteira em formato CSV para o System Prompt.
+    Converte uma aba inteira em formato de lista (chave-valor) para o System Prompt.
     """
     if not rows:
         return ""
     
     headers = list(rows[0].keys())
-    # Adiciona cabeçalhos e a linha separadora do Markdown para garantir dados estruturados
-    lines = [f"# {sheet_name}", "| " + " | ".join(headers) + " |", "| " + " | ".join(["---"] * len(headers)) + " |"]
+    lines = [f"# {sheet_name}"]
     
     for row in rows:
-        values = [str(row.get(h, "") or "").strip().replace("\n", "\\n").replace("\r", "") for h in headers]
-        lines.append("| " + " | ".join(values) + " |")
-        
+        # Se houver exatamente 2 colunas, formata como "- Coluna1: Coluna2" para máxima economia de tokens e clareza
+        if len(headers) == 2:
+            k = str(row.get(headers[0], "") or "").strip().replace("\n", "\\n").replace("\r", "")
+            v = str(row.get(headers[1], "") or "").strip().replace("\n", "\\n").replace("\r", "")
+            if k and v and v.lower() not in ["", "-", "--", "none", "n/a", "null"]:
+                lines.append(f"- {k}: {v}")
+        else:
+            # Para mais colunas, faz uma lista recuada de chave-valor
+            kv_lines = []
+            for idx, h in enumerate(headers):
+                val = str(row.get(h, "") or "").strip().replace("\n", "\\n").replace("\r", "")
+                if val and val.lower() not in ["", "-", "--", "none", "n/a", "null"]:
+                    if idx == 0:
+                        kv_lines.append(f"- {h}: {val}")
+                    else:
+                        kv_lines.append(f"  {h}: {val}")
+            if kv_lines:
+                lines.append("\n".join(kv_lines))
+                
     return "\n".join(lines)
+
+def parse_drive_index(content: str) -> dict:
+    """
+    Parses drive index content (either table format or key-value format).
+    Returns a dict with uppercase keys like 'ID', 'ARQUIVO', 'CATEGORIAS', 'TIPO'.
+    """
+    data = {}
+    lines = [l.strip() for l in content.strip().split("\n") if l.strip()]
+    
+    # Check if it's the new key-value format (bullet points or key-values)
+    is_kv = False
+    for line in lines:
+        if line.startswith("- ") and ":" in line:
+            is_kv = True
+            break
+            
+    if is_kv:
+        for line in lines:
+            if line.startswith("- "):
+                line = line[2:]
+            if ":" in line:
+                key, val = line.split(":", 1)
+                data[key.strip().upper()] = val.strip()
+    else:
+        # Fallback to old table format
+        data_lines = [l for l in lines if not l.startswith("#") and "---" not in l]
+        if len(data_lines) >= 2:
+            try:
+                headers = [h.strip().upper() for h in data_lines[0].split("|") if h.strip()]
+                values = [v.strip() for v in data_lines[1].split("|") if v.strip()]
+                for h, v in zip(headers, values):
+                    data[h] = v
+            except Exception:
+                pass
+    return data
 
 def format_row_to_csv_rag(sheet_name: str, row: Dict[str, Any]) -> str:
     """
-    Converte uma linha em formato CSV com cabeçalho para o RAG.
+    Converte uma linha da planilha em formato chave-valor (lista/marcadores) para o RAG.
     """
-    headers = []
-    values = []
+    kv_lines = []
     
     for key, val in row.items():
         if val is not None:
             val_str = str(val).strip().replace("\n", "\\n").replace("\r", "")
-            if val_str:
-                headers.append(key)
-                values.append(val_str)
+            # Filtra placeholders de valores vazios/nulos comuns em planilhas para economizar tokens
+            if val_str and val_str.lower() not in ["", "-", "--", "none", "n/a", "null"]:
+                kv_lines.append(f"- {key}: {val_str}")
     
-    if not headers:
+    if not kv_lines:
         return ""
     
-    # Formata como uma tabela Markdown de uma linha para garantir leitura estruturada no RAG
-    header_line = "| " + " | ".join(headers) + " |"
-    separator_line = "| " + " | ".join(["---"] * len(headers)) + " |"
-    value_line = "| " + " | ".join(values) + " |"
-    
-    return f"# {sheet_name}\n{header_line}\n{separator_line}\n{value_line}"
+    return f"# {sheet_name}\n" + "\n".join(kv_lines)
 
 def flatten_drive_tree(node: Dict[str, Any], path: str = "") -> List[str]:
-    """Recursivamente achata a árvore de arquivos em linhas de texto estruturado."""
+    """Recursivamente achata a árvore de arquivos em linhas de texto estruturado usando marcadores."""
     lines = []
     current_name = node.get("nome", "Raiz")
     
@@ -136,7 +180,6 @@ def flatten_drive_tree(node: Dict[str, Any], path: str = "") -> List[str]:
     current_path = f"{path} > {current_name}" if path else current_name
     
     for f in node.get("arquivos", []):
-        # Formato CSV estilo Sheets RAG
         row_data = {
             "Categorias": current_path,
             "Arquivo": f.get('nome'),
@@ -144,20 +187,16 @@ def flatten_drive_tree(node: Dict[str, Any], path: str = "") -> List[str]:
             "ID": f.get('id')
         }
         
-        headers = []
-        values = []
-        
+        kv_lines = []
         for key, val in row_data.items():
             if val:
                 val_str = str(val).strip().replace("\n", "\\n").replace("\r", "")
-                headers.append(key)
-                values.append(val_str)
+                if val_str and val_str.lower() not in ["", "-", "--", "none", "n/a", "null"]:
+                    kv_lines.append(f"- {key}: {val_str}")
         
-        if headers:
-            header_line = "| " + " | ".join(headers) + " |"
-            separator_line = "| " + " | ".join(["---"] * len(headers)) + " |"
-            value_line = "| " + " | ".join(values) + " |"
-            lines.append(f"# DRIVE\n{header_line}\n{separator_line}\n{value_line}")
+        if kv_lines:
+            content = f"# DRIVE\n" + "\n".join(kv_lines)
+            lines.append(content)
         
     for sub in node.get("subpastas", []):
         lines.extend(flatten_drive_tree(sub, current_path))
@@ -497,29 +536,10 @@ def _extract_file_name_from_drive_content(content: str) -> str:
 
 def _extract_file_name_from_drive_index(content: str) -> str:
     """
-    Extrai o nome do arquivo de um vetor 'drive'.
-    Formato esperado:
-        # DRIVE
-        Categorias|Arquivo|Tipo|ID
-        Pasta A > Sub|nome.pdf|PDF|1abc...
+    Extrai o nome do arquivo de um vetor 'drive' usando o parse_drive_index.
     """
-    data_lines = [
-        l.strip() 
-        for l in content.strip().split("\n") 
-        if l.strip() and not l.strip().startswith("#") and "---" not in l
-    ]
-    if len(data_lines) < 2:
-        return ""
-    try:
-        headers = [h.strip() for h in data_lines[0].split("|") if h.strip()]
-        values = [v.strip() for v in data_lines[1].split("|") if v.strip()]
-        if "Arquivo" in headers:
-            idx = headers.index("Arquivo")
-            if idx < len(values):
-                return values[idx].strip()
-    except Exception:
-        pass
-    return ""
+    parsed = parse_drive_index(content)
+    return parsed.get("ARQUIVO", "")
 
 
 async def run_sync_drive(config_id: int, company_id: int, folder_id: str) -> int:

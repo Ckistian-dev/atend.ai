@@ -8,7 +8,7 @@ import NameEditor from './NameEditor'; // Importa o novo componente
 // --- NOVO Componente: Sidebar de Perfil do Contato ---
 const ProfileSidebar = ({
     atendimento, onClose, statusOptions, getTextColorForBackground, isOpen,
-    allTags, onUpdateTags, onAddNewTag, onUpdateStatus
+    allTags, onUpdateTags, onAddNewTag, onUpdateStatus, onDeleteTag
 }) => {
     const [activeSubMenu, setActiveSubMenu] = useState(null);
     const [isEditingObs, setIsEditingObs] = useState(false);
@@ -284,7 +284,7 @@ const ProfileSidebar = ({
 
                     {activeSubMenu === 'tags' && (
                         <div className="absolute right-0 bottom-full mb-4 z-50">
-                            <TagEditor contactTags={atendimento.tags || []} allTags={allTags} onToggleTag={handleToggleTag} onSaveNewTag={handleSaveNewTag} onClose={() => setActiveSubMenu(null)} />
+                            <TagEditor contactTags={atendimento.tags || []} allTags={allTags} onToggleTag={handleToggleTag} onSaveNewTag={handleSaveNewTag} onDeleteTag={onDeleteTag} onClose={() => setActiveSubMenu(null)} />
                         </div>
                     )}
                 </section>

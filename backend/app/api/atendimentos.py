@@ -277,6 +277,27 @@ async def get_user_tags(
     tags = await crud_atendimento.get_all_user_tags(db, company_id=company_id)
     return tags
 
+@router.delete("/tags", summary="Excluir tag de todos os atendimentos")
+async def delete_tag_from_company(
+    tag_name: str = Query(..., description="Nome da tag a ser excluída"),
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(dependencies.get_current_active_user)
+):
+    """
+    Exclui a tag informada de todos os atendimentos da empresa do usuário logado.
+    """
+    company_id = current_user.company_id or 0
+    try:
+        affected_rows = await crud_atendimento.delete_tag_from_all_atendimentos(
+            db, company_id=company_id, tag_name=tag_name
+        )
+        await db.commit()
+        return {"message": f"Tag '{tag_name}' excluída de {affected_rows} atendimentos."}
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Erro ao excluir tag {tag_name} da empresa {company_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro interno ao excluir tag: {str(e)}")
+
 # Endpoint para obter um atendimento específico
 @router.get("/{atendimento_id}", response_model=schemas.Atendimento)
 async def get_atendimento_by_id(

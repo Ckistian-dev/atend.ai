@@ -1,5 +1,5 @@
 import logging
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text
 from sqlalchemy.orm import joinedload
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -634,3 +634,30 @@ async def get_atendimentos_by_status_and_inactivity(db: AsyncSession, company_id
     )
     result = await db.execute(stmt)
     return result.scalars().all()
+
+async def delete_tag_from_all_atendimentos(db: AsyncSession, company_id: int, tag_name: str) -> int:
+    """
+    Remove uma tag pelo nome de todos os atendimentos da empresa especificada.
+    Retorna o número de linhas afetadas.
+    """
+    try:
+        # Usamos uma query SQL nativa para performance e atomicidade
+        query = text("""
+            UPDATE atendimentos
+            SET tags = COALESCE(
+                (
+                    SELECT json_agg(elem)
+                    FROM jsonb_array_elements(tags::jsonb) elem
+                    WHERE elem->>'name' != CAST(:tag_name AS text)
+                ),
+                '[]'::json
+            )
+            WHERE company_id = :company_id
+              AND tags IS NOT NULL
+              AND tags::jsonb @> jsonb_build_array(jsonb_build_object('name', CAST(:tag_name AS text)))
+        """)
+        result = await db.execute(query, {"company_id": company_id, "tag_name": tag_name})
+        return result.rowcount
+    except Exception as e:
+        logger.error(f"Erro ao excluir tag '{tag_name}' para a empresa {company_id}: {e}", exc_info=True)
+        raise e

@@ -429,8 +429,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange, totalItems }) => {
     );
 };
 
-// --- MODAL DE EDIÇÃO ---
-const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allTags, setAllTags }) => { // eslint-disable-line
+const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allTags, setAllTags, onDeleteGlobalTag }) => { // eslint-disable-line
     const [activeTab, setActiveTab] = useState('dados');
     const [status, setStatus] = useState(atendimento.status);
     const [personaId, setPersonaId] = useState(atendimento.active_persona_id ?? (personas?.[0]?.id ?? null));
@@ -439,6 +438,7 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allT
     const [currentTags, setCurrentTags] = useState(atendimento.tags || []);
     const [newTagName, setNewTagName] = useState('');
     const [newTagColor, setNewTagColor] = useState('#3b82f6');
+    const [tagToDelete, setTagToDelete] = useState(null);
 
     const handleAddTag = () => {
         if (newTagName.trim() && !currentTags.some(t => t.name.toLowerCase() === newTagName.trim().toLowerCase())) {
@@ -610,15 +610,30 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allT
                                         </p>
                                         <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
                                             {availableTags.map(tag => (
-                                                <button
+                                                <span
                                                     key={tag.name}
-                                                    type="button"
-                                                    onClick={() => handleToggleTag(tag)}
-                                                    className="px-3 py-1.5 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-500 hover:bg-white hover:border-blue-300 hover:text-blue-600 transition-all flex items-center gap-2 bg-slate-50/50"
+                                                    className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-500 bg-slate-50/50 hover:bg-white transition-all shadow-sm"
                                                 >
-                                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }} />
-                                                    {tag.name}
-                                                </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleToggleTag(tag)}
+                                                        className="flex items-center gap-2 hover:text-blue-600 transition-colors"
+                                                    >
+                                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }} />
+                                                        {tag.name}
+                                                     </button>
+                                                     <button
+                                                         type="button"
+                                                         onClick={(e) => {
+                                                             e.stopPropagation();
+                                                             setTagToDelete(tag);
+                                                         }}
+                                                         className="opacity-40 hover:opacity-100 text-slate-400 hover:text-red-500 hover:bg-red-50 p-0.5 rounded transition-all ml-0.5"
+                                                         title="Excluir tag de todos os atendimentos"
+                                                     >
+                                                         <XIcon size={10} />
+                                                     </button>
+                                                </span>
                                             ))}
                                         </div>
                                     </div>
@@ -652,6 +667,41 @@ const EditModal = ({ atendimento, personas, statusOptions, onSave, onClose, allT
                     </button>
                 </div>
             </div>
+            {tagToDelete && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[250] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-white text-center animate-fade-in">
+                        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-50 mb-4 shadow-inner">
+                            <Tag size={20} className="text-red-500" />
+                        </div>
+                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider mb-2">Excluir etiqueta?</h4>
+                        <p className="text-xs text-slate-400 font-semibold leading-relaxed mb-6">
+                            Tem certeza de que deseja excluir a etiqueta <span className="font-extrabold text-slate-700">"{tagToDelete.name}"</span>? Ela será removida de TODOS os atendimentos.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setTagToDelete(null)}
+                                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-500 font-black text-[11px] uppercase tracking-wider rounded-xl transition-all"
+                            >
+                                Não
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (onDeleteGlobalTag) {
+                                        onDeleteGlobalTag(tagToDelete);
+                                    }
+                                    setCurrentTags(prev => prev.filter(t => t.name !== tagToDelete.name));
+                                    setTagToDelete(null);
+                                }}
+                                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-black text-[11px] uppercase tracking-wider rounded-xl transition-all"
+                            >
+                                Excluir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </Modal>
     );
 };
@@ -703,8 +753,7 @@ const DeleteConfirmationModal = ({ atendimento, onConfirm, onClose }) => (
     </Modal>
 );
 
-// --- NOVO: MODAL DE CRIAÇÃO ---
-const CreateModal = ({ personas, statusOptions, onSave, onClose, allTags, setAllTags }) => {
+const CreateModal = ({ personas, statusOptions, onSave, onClose, allTags, setAllTags, onDeleteGlobalTag }) => {
     const [activeTab, setActiveTab] = useState('dados');
     const [whatsapp, setWhatsapp] = useState('');
     const [nomeContato, setNomeContato] = useState('');
@@ -715,6 +764,7 @@ const CreateModal = ({ personas, statusOptions, onSave, onClose, allTags, setAll
     const [currentTags, setCurrentTags] = useState([]);
     const [newTagName, setNewTagName] = useState('');
     const [newTagColor, setNewTagColor] = useState('#3b82f6');
+    const [tagToDelete, setTagToDelete] = useState(null);
 
     const [templates, setTemplates] = useState([]);
     const [selectedTemplateName, setSelectedTemplateName] = useState('');
@@ -1126,15 +1176,30 @@ const CreateModal = ({ personas, statusOptions, onSave, onClose, allTags, setAll
                                         </p>
                                         <div className="flex flex-wrap gap-2 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
                                             {availableTags.map(tag => (
-                                                <button
+                                                <span
                                                     key={tag.name}
-                                                    type="button"
-                                                    onClick={() => handleToggleTag(tag)}
-                                                    className="group px-3.5 py-2 rounded-2xl border border-slate-200 text-[11px] font-bold text-slate-600 hover:border-blue-500/50 hover:bg-blue-50 transition-all flex items-center gap-2 bg-white shadow-sm active:scale-95"
+                                                    className="group inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border border-slate-200 text-[11px] font-bold text-slate-600 bg-white shadow-sm transition-all"
                                                 >
-                                                    <div className="w-2.5 h-2.5 rounded-full shadow-sm transition-transform group-hover:scale-125" style={{ backgroundColor: tag.color }} />
-                                                    {tag.name}
-                                                </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleToggleTag(tag)}
+                                                        className="flex items-center gap-2 hover:text-blue-600 transition-colors"
+                                                    >
+                                                        <div className="w-2.5 h-2.5 rounded-full shadow-sm transition-transform group-hover:scale-125" style={{ backgroundColor: tag.color }} />
+                                                        {tag.name}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setTagToDelete(tag);
+                                                        }}
+                                                        className="opacity-40 hover:opacity-100 text-slate-400 hover:text-red-500 hover:bg-red-50 p-0.5 rounded transition-all ml-0.5"
+                                                        title="Excluir tag de todos os atendimentos"
+                                                    >
+                                                        <XIcon size={10} />
+                                                    </button>
+                                                </span>
                                             ))}
                                         </div>
                                     </div>
@@ -1168,6 +1233,41 @@ const CreateModal = ({ personas, statusOptions, onSave, onClose, allTags, setAll
                     </button>
                 </div>
             </div>
+            {tagToDelete && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[250] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-white text-center animate-fade-in">
+                        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-50 mb-4 shadow-inner">
+                            <Tag size={20} className="text-red-500" />
+                        </div>
+                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider mb-2">Excluir etiqueta?</h4>
+                        <p className="text-xs text-slate-400 font-semibold leading-relaxed mb-6">
+                            Tem certeza de que deseja excluir a etiqueta <span className="font-extrabold text-slate-700">"{tagToDelete.name}"</span>? Ela será removida de TODOS os atendimentos.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setTagToDelete(null)}
+                                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-500 font-black text-[11px] uppercase tracking-wider rounded-xl transition-all"
+                            >
+                                Não
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (onDeleteGlobalTag) {
+                                        onDeleteGlobalTag(tagToDelete);
+                                    }
+                                    setCurrentTags(prev => prev.filter(t => t.name !== tagToDelete.name));
+                                    setTagToDelete(null);
+                                }}
+                                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-black text-[11px] uppercase tracking-wider rounded-xl transition-all"
+                            >
+                                Excluir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </Modal>
     );
 };
@@ -1590,6 +1690,28 @@ function Atendimentos() {
             }
             toast.error(errorMessage);
             // Não fecha o modal em caso de erro para o usuário corrigir
+        }
+    };
+
+    const handleDeleteTag = async (tag) => {
+        try {
+            await api.delete('/atendimentos/tags', { params: { tag_name: tag.name } });
+            toast.success(`Etiqueta "${tag.name}" excluída.`);
+            
+            // 1. Remove from allTags
+            setAllTags(prev => prev.filter(t => t.name !== tag.name));
+            
+            // 2. Remove from selectedTags filter if active
+            setSelectedTags(prev => prev.filter(t => t !== tag.name));
+            
+            // 3. Remove from atendimentos
+            setAtendimentos(prev => prev.map(at => ({
+                ...at,
+                tags: at.tags ? at.tags.filter(t => t.name !== tag.name) : []
+            })));
+        } catch (error) {
+            console.error("Erro ao excluir tag:", error);
+            toast.error("Erro ao excluir etiqueta.");
         }
     };
 
@@ -2086,9 +2208,9 @@ function Atendimentos() {
 
             {/* Modais */}
             {modalData.type === 'conversation' && modalData.data && <ConversationModal onClose={handleCloseModals} conversation={modalData.data.conversa} contactIdentifier={modalData.data.nome_contato || modalData.data.whatsapp} />}
-            {modalData.type === 'edit' && modalData.data && <EditModal onClose={handleCloseModals} atendimento={modalData.data} personas={personas} statusOptions={statusOptions} onSave={handleSaveEdit} allTags={allTags} setAllTags={setAllTags} />}
+            {modalData.type === 'edit' && modalData.data && <EditModal onClose={handleCloseModals} atendimento={modalData.data} personas={personas} statusOptions={statusOptions} onSave={handleSaveEdit} allTags={allTags} setAllTags={setAllTags} onDeleteGlobalTag={handleDeleteTag} />}
             {modalData.type === 'delete' && modalData.data && <DeleteConfirmationModal onClose={handleCloseModals} atendimento={modalData.data} onConfirm={handleConfirmDelete} />}
-            {isCreateModalOpen && <CreateModal onClose={() => setIsCreateModalOpen(false)} onSave={handleCreate} personas={personas} statusOptions={statusOptions} allTags={allTags} setAllTags={setAllTags} />}
+            {isCreateModalOpen && <CreateModal onClose={() => setIsCreateModalOpen(false)} onSave={handleCreate} personas={personas} statusOptions={statusOptions} allTags={allTags} setAllTags={setAllTags} onDeleteGlobalTag={handleDeleteTag} />}
         </div>
     );
 }

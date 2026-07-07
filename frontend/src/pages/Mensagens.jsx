@@ -1269,6 +1269,39 @@ function Mensagens() {
         }
     };
 
+    const handleDeleteTag = async (tag) => {
+        try {
+            await api.delete('/atendimentos/tags', { params: { tag_name: tag.name } });
+            toast.success(`Etiqueta "${tag.name}" excluída.`);
+            
+            // 1. Remove from allTags
+            setAllTags(prev => prev.filter(t => t.name !== tag.name));
+            
+            // 2. Remove from tagFilters
+            setTagFilters(prev => prev.filter(t => t !== tag.name));
+            
+            // 3. Remove from atendimentos (state variable 'mensagens')
+            setAtendimentos(prev => prev.map(at => ({
+                ...at,
+                tags: at.tags ? at.tags.filter(t => t.name !== tag.name) : []
+            })));
+            
+            // 4. Remove from selectedAtendimento if needed
+            setSelectedAtendimento(prev => {
+                if (prev) {
+                    return {
+                        ...prev,
+                        tags: prev.tags ? prev.tags.filter(t => t.name !== tag.name) : []
+                    };
+                }
+                return null;
+            });
+        } catch (error) {
+            console.error("Erro ao excluir tag:", error);
+            toast.error("Erro ao excluir etiqueta.");
+        }
+    };
+
     // --- Efeito para fechar a sidebar ao clicar fora (Desktop) ---
     useEffect(() => {
         function handleClickOutside(event) {
@@ -1360,6 +1393,7 @@ function Mensagens() {
                                         allTags={allTags}
                                         onUpdateTags={handleUpdateAtendimento}
                                         onAddNewTag={handleAddNewTag}
+                                        onDeleteTag={handleDeleteTag}
                                         onSwitchToAtendimentos={handleSwitchToAtendimentos}
                                     />
                                 ))
@@ -1499,6 +1533,7 @@ function Mensagens() {
                                     onUpdateTags={handleUpdateAtendimento}
                                     onAddNewTag={handleAddNewTag}
                                     onUpdateStatus={handleUpdateAtendimento}
+                                    onDeleteTag={handleDeleteTag}
                                 />
                             </div>
                         </div>

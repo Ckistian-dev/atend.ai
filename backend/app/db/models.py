@@ -71,6 +71,9 @@ class Config(Base):
     temperature: Mapped[float] = mapped_column(default=0.5, server_default="0.5")
     top_p: Mapped[float] = mapped_column(default=0.95, server_default="0.95")
     top_k: Mapped[int] = mapped_column(default=40, server_default="40")
+    thinking_budget: Mapped[Optional[int]] = mapped_column(Integer, default=1024, server_default="1024", nullable=True)
+    thinking_level: Mapped[Optional[str]] = mapped_column(String(50), default="medium", server_default="'medium'", nullable=True)
+
 
     company: Mapped["Company"] = relationship(back_populates="configs", foreign_keys=[company_id])
     vectors: Mapped[List["KnowledgeVector"]] = relationship(back_populates="config", cascade="all, delete-orphan")

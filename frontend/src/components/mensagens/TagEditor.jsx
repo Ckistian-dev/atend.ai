@@ -6,11 +6,13 @@ const TagEditor = ({
     allTags,
     onToggleTag,
     onSaveNewTag,
+    onDeleteTag,
     onClose,
 }) => {
     const [isCreating, setIsCreating] = useState(false);
     const [newTagName, setNewTagName] = useState('');
     const [newTagColor, setNewTagColor] = useState('#2563eb');
+    const [tagToDelete, setTagToDelete] = useState(null);
     const editorRef = useRef(null);
 
     useEffect(() => {
@@ -36,6 +38,45 @@ const TagEditor = ({
 
     const contactTagNames = new Set(contactTags.map(t => t.name));
 
+    if (tagToDelete) {
+        return (
+            <div
+                ref={editorRef}
+                className="w-64 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2),0_0_0_1px_rgba(0,0,0,0.05)] z-[200] border border-white p-4 animate-fade-in text-center"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="mx-auto flex items-center justify-center h-10 w-10 rounded-full bg-red-50 mb-3 shadow-inner">
+                    <Tag size={16} className="text-red-500" />
+                </div>
+                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-2">Excluir etiqueta?</h4>
+                <p className="text-[10px] text-slate-400 font-semibold leading-relaxed mb-4">
+                    Tem certeza de que deseja excluir a etiqueta <span className="font-extrabold text-slate-700">"{tagToDelete.name}"</span>? Ela será removida de TODOS os atendimentos.
+                </p>
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setTagToDelete(null)}
+                        className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-500 font-black text-[9px] uppercase tracking-wider rounded-xl transition-all"
+                    >
+                        Não
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (onDeleteTag) {
+                                onDeleteTag(tagToDelete);
+                            }
+                            setTagToDelete(null);
+                        }}
+                        className="flex-1 py-2 bg-red-500 hover:bg-red-600 text-white font-black text-[9px] uppercase tracking-wider rounded-xl transition-all"
+                    >
+                        Excluir
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div
             ref={editorRef}
@@ -56,27 +97,43 @@ const TagEditor = ({
                 {allTags.length > 0 ? allTags.map(tag => {
                     const isSelected = contactTagNames.has(tag.name);
                     return (
-                        <button
+                        <div
                             key={tag.name}
-                            type="button"
-                            onClick={() => onToggleTag(tag)}
-                            className={`w-full text-left flex items-center justify-between p-1.5 rounded-xl transition-all ${isSelected ? 'bg-blue-50/70' : 'hover:bg-slate-50'}`}
+                            className={`group w-full flex items-center justify-between p-1 rounded-xl transition-all ${isSelected ? 'bg-blue-50/70' : 'hover:bg-slate-50'}`}
                         >
-                            <span className="flex items-center gap-2">
-                                <span
-                                    className="h-2 w-2 rounded-full shadow-sm"
-                                    style={{ backgroundColor: tag.color }}
-                                ></span>
-                                <span className={`text-[11px] font-bold ${isSelected ? 'text-blue-600' : 'text-slate-600'}`}>
-                                    {tag.name}
+                            <button
+                                type="button"
+                                onClick={() => onToggleTag(tag)}
+                                className="flex-1 text-left flex items-center justify-between p-1"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <span
+                                        className="h-2 w-2 rounded-full shadow-sm"
+                                        style={{ backgroundColor: tag.color }}
+                                    ></span>
+                                    <span className={`text-[11px] font-bold ${isSelected ? 'text-blue-600' : 'text-slate-600'}`}>
+                                        {tag.name}
+                                    </span>
                                 </span>
-                            </span>
-                            {isSelected && (
-                                <div className="w-3.5 h-3.5 flex items-center justify-center bg-blue-600 text-white rounded-md">
-                                    <Check size={9} strokeWidth={4} />
-                                </div>
-                            )}
-                        </button>
+                                {isSelected && (
+                                    <div className="w-3.5 h-3.5 flex items-center justify-center bg-blue-600 text-white rounded-md mr-1">
+                                        <Check size={9} strokeWidth={4} />
+                                    </div>
+                                )}
+                            </button>
+                            
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setTagToDelete(tag);
+                                }}
+                                className="opacity-50 md:opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all ml-1 shrink-0"
+                                title="Excluir tag de todos os atendimentos"
+                            >
+                                <X size={12} />
+                            </button>
+                        </div>
                     );
                 }) : (
                     <div className="py-6 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">

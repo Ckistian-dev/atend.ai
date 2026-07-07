@@ -20,6 +20,9 @@ class ConfigBase(BaseModel):
     temperature: Optional[float] = 0.5
     top_p: Optional[float] = 0.95
     top_k: Optional[int] = 40
+    thinking_budget: Optional[int] = 1024
+    thinking_level: Optional[str] = "medium"
+
 
 
 class ConfigCreate(ConfigBase):
@@ -40,6 +43,9 @@ class ConfigUpdate(BaseModel):
     temperature: Optional[float] = None
     top_p: Optional[float] = None
     top_k: Optional[int] = None
+    thinking_budget: Optional[int] = None
+    thinking_level: Optional[str] = None
+
 
 class Config(ConfigBase):
     id: int

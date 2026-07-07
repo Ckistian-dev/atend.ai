@@ -9,7 +9,7 @@ import { stripWhatsAppFormatting } from '../../utils/formatters';
 const ContactItem = ({
     mensagem, isSelected, onSelect, statusOptions, onUpdateStatus, getTextColorForBackground,
     // Novas props para o editor de tags
-    allTags, onUpdateTags, onAddNewTag, onSwitchToAtendimentos
+    allTags, onUpdateTags, onAddNewTag, onDeleteTag, onSwitchToAtendimentos
 }) => {
     // --- ESTADOS DO MENU (MODIFICADO) ---
     // Controla o menu principal de 2 opções ('Alterar Situação', 'Editar Tags')
@@ -386,6 +386,7 @@ const ContactItem = ({
                             allTags={allTags}
                             onToggleTag={handleToggleTag}
                             onSaveNewTag={handleSaveNewTag}
+                            onDeleteTag={onDeleteTag}
                             onClose={() => setActiveSubMenu(null)}
                         />
                     </div>

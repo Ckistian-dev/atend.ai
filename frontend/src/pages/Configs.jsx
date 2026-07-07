@@ -106,7 +106,9 @@ const initialFormData = {
     ai_model: DEFAULT_MODEL,
     temperature: 0.5,
     top_p: 0.95,
-    top_k: 40
+    top_k: 40,
+    thinking_budget: 1024,
+    thinking_level: 'medium'
 };
 
 
@@ -203,7 +205,9 @@ function Configs() {
             ai_model: config.ai_model || DEFAULT_MODEL,
             temperature: config.temperature ?? 0.5,
             top_p: config.top_p ?? 0.95,
-            top_k: config.top_k ?? 40
+            top_k: config.top_k ?? 40,
+            thinking_budget: config.thinking_budget ?? 1024,
+            thinking_level: config.thinking_level || 'medium'
         });
 
         // Parse Schedule
@@ -322,7 +326,9 @@ function Configs() {
             ai_model: formData.ai_model,
             temperature: formData.temperature,
             top_p: formData.top_p,
-            top_k: formData.top_k
+            top_k: formData.top_k,
+            thinking_budget: formData.thinking_budget,
+            thinking_level: formData.thinking_level
         };
         try {
             let updatedConfig;
@@ -1286,7 +1292,7 @@ function Configs() {
                                                     </p>
                                                 </div>
 
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10">
+                                                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-10">
                                                     <div>
                                                         <div className="flex justify-between items-center mb-4">
                                                             <label className={labelClass}>Criatividade</label>
@@ -1341,6 +1347,23 @@ function Configs() {
                                                             className={inputClass}
                                                         />
                                                         <p className="mt-2 text-[10px] font-bold text-slate-400 uppercase">Limita vocabulário (Padrão: 40)</p>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className={labelClass}>Raciocínio (Thinking)</label>
+                                                        <select
+                                                            name="thinking_level"
+                                                            value={formData.thinking_level || 'medium'}
+                                                            onChange={handleFormChange}
+                                                            className={`${inputClass} appearance-none cursor-pointer bg-white`}
+                                                        >
+                                                            <option value="default">Padrão</option>
+                                                            <option value="minimal">Mínimo</option>
+                                                            <option value="low">Baixo</option>
+                                                            <option value="medium">Médio</option>
+                                                            <option value="high">Máximo</option>
+                                                        </select>
+                                                        <p className="mt-2 text-[10px] font-bold text-slate-400 uppercase">Nível de pensamento</p>
                                                     </div>
                                                 </div>
                                             </div>

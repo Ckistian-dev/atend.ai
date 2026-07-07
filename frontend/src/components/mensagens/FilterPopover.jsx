@@ -46,21 +46,21 @@ const FilterPopover = ({
     if (!isOpen) return null;
 
     const renderHeader = () => (
-        <div className="flex justify-between items-center mb-5">
+        <div className="flex justify-between items-center px-3 py-2 border-b border-slate-50 mb-1 shrink-0">
             {view === 'menu' ? (
-                <p className="editorial-label text-slate-900 flex items-center gap-2">
-                    <ListFilter size={14} className="text-blue-600" /> Filtros
-                </p>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <ListFilter size={14} className="text-blue-500" /> Filtros
+                </span>
             ) : (
                 <button 
                     onClick={() => setView('menu')}
-                    className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-600 transition-colors"
+                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-blue-600 transition-colors"
                 >
                     <ChevronLeft size={14} /> Voltar
                 </button>
             )}
-            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400 transition-all">
-                <X size={18} />
+            <button onClick={onClose} className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 transition-all">
+                <X size={14} />
             </button>
         </div>
     );
@@ -85,27 +85,25 @@ const FilterPopover = ({
     return (
         <div
             ref={popoverRef}
-            className="absolute top-12 right-0 w-64 bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.2),0_0_0_1px_rgba(0,0,0,0.05)] z-[200] border border-white p-4 animate-fade-in-up-fast"
+            className="absolute top-12 right-0 mt-1 w-64 bg-white border border-slate-100 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2),0_0_0_1px_rgba(0,0,0,0.05)] z-[200] overflow-hidden animate-fade-in p-2"
             onClick={(e) => e.stopPropagation()}
         >
             {renderHeader()}
 
-            <div className="max-h-[60vh] overflow-y-auto no-scrollbar">
+            <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                 {view === 'menu' && (
-                    <div className="space-y-1.5 animate-fade-in">
+                    <div className="space-y-0.5">
                         {menuOptions.map(opt => (
                             <button
                                 key={opt.id}
                                 onClick={() => setView(opt.id)}
-                                className={`w-full flex items-center justify-between p-3 rounded-2xl transition-all border border-transparent ${opt.active ? 'bg-slate-50 border-slate-100' : 'hover:bg-slate-50'}`}
+                                className={`w-full text-left p-3 text-[12px] font-bold transition-all rounded-2xl flex items-center justify-between ${opt.active ? 'bg-slate-50 text-slate-900 shadow-inner' : 'text-slate-600 hover:bg-slate-50 hover:text-blue-600'}`}
                             >
-                                <div className="flex items-center gap-2.5">
-                                    <div className={`w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center ${opt.color}`}>
-                                        <opt.icon size={14} />
-                                    </div>
+                                <div className="flex items-center gap-3">
+                                    <opt.icon size={16} className={opt.color} />
                                     <div className="flex flex-col items-start min-w-0">
-                                        <span className="text-[11px] font-bold text-slate-700">{opt.label}</span>
-                                        {opt.active && <span className="text-[8px] font-black uppercase tracking-widest text-blue-600 truncate max-w-[100px]">{opt.activeVal}</span>}
+                                        <span className="text-[12px] font-bold">{opt.label}</span>
+                                        {opt.active && <span className="text-[8px] font-black uppercase tracking-widest text-blue-600 truncate max-w-[140px] mt-0.5">{opt.activeVal}</span>}
                                     </div>
                                 </div>
                                 <ArrowRight size={12} className="text-slate-300" />
@@ -113,22 +111,22 @@ const FilterPopover = ({
                         ))}
                         
                         {(isStatusActive || isTagsActive || timeStart || timeEnd) && (
-                            <button
-                                onClick={onClearFilters}
-                                className="w-full mt-3 flex items-center justify-center gap-2 p-3 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50/50 rounded-2xl hover:bg-red-50 transition-all"
-                            >
-                                <Trash2 size={12} /> Limpar Filtros
-                            </button>
+                            <div className="p-1">
+                                <button
+                                    onClick={onClearFilters}
+                                    className="w-full mt-2 flex items-center justify-center gap-2 p-3 text-[10px] font-black uppercase tracking-widest text-red-500 bg-red-50/50 rounded-2xl hover:bg-red-50 transition-all"
+                                >
+                                    <Trash2 size={12} /> Limpar Filtros
+                                </button>
+                            </div>
                         )}
                     </div>
                 )}
 
                 {view === 'status' && (
-                    <div className="space-y-1 animate-fade-in">
-                        <h5 className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1 flex items-center gap-1.5 px-1">
-                            <CheckCircle2 size={10} className="text-blue-500" /> Situação
-                        </h5>
-                        {statusOptions.map(status => {
+                    <div className="space-y-0.5">
+                        <div className="px-3 py-1 text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Situação</div>
+                        {(statusOptions || []).map(status => {
                             const isSelected = Array.isArray(selectedStatus) 
                                 ? selectedStatus.includes(status.nome) 
                                 : selectedStatus === status.nome;
@@ -136,13 +134,11 @@ const FilterPopover = ({
                                 <button 
                                     key={status.nome} 
                                     onClick={() => onStatusChange(status.nome)} 
-                                    className={`w-full text-left flex items-center justify-between p-1.5 rounded-xl transition-all ${isSelected ? 'bg-blue-50/70' : 'hover:bg-slate-50'}`}
+                                    className={`w-full text-left p-3 text-[12px] font-bold transition-all rounded-2xl flex items-center justify-between ${isSelected ? 'bg-slate-50 text-slate-900 shadow-inner' : 'text-slate-600 hover:bg-slate-50 hover:text-blue-600'}`}
                                 >
-                                    <span className="flex items-center gap-2">
+                                    <span className="flex items-center gap-3">
                                         <span className="h-2 w-2 rounded-full shadow-sm" style={{ backgroundColor: status.cor }}></span>
-                                        <span className={`text-[11px] font-bold ${isSelected ? 'text-blue-600' : 'text-slate-600'}`}>
-                                            {status.nome}
-                                        </span>
+                                        {status.nome}
                                     </span>
                                     {isSelected && <Check size={12} className="text-blue-600" />}
                                 </button>
@@ -152,12 +148,10 @@ const FilterPopover = ({
                 )}
 
                 {view === 'tags' && (
-                    <div className="space-y-1 animate-fade-in">
-                        <h5 className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1 flex items-center gap-1.5 px-1">
-                            <Tag size={10} className="text-purple-500" /> Tags
-                        </h5>
-                        <div className="space-y-1 max-h-52 overflow-y-auto no-scrollbar pr-1">
-                            {allTags.map(tag => {
+                    <div className="space-y-0.5">
+                        <div className="px-3 py-1 text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Tags</div>
+                        <div className="space-y-0.5 max-h-52 overflow-y-auto custom-scrollbar">
+                            {(allTags || []).map(tag => {
                                 const isSelected = Array.isArray(selectedTags) 
                                     ? selectedTags.includes(tag.name) 
                                     : selectedTags === tag.name;
@@ -165,13 +159,11 @@ const FilterPopover = ({
                                     <button 
                                         key={tag.name} 
                                         onClick={() => onTagChange(tag.name)} 
-                                        className={`w-full text-left flex items-center justify-between p-1.5 rounded-xl transition-all ${isSelected ? 'bg-purple-50/70' : 'hover:bg-slate-50'}`}
+                                        className={`w-full text-left p-3 text-[12px] font-bold transition-all rounded-2xl flex items-center justify-between ${isSelected ? 'bg-slate-50 text-slate-900 shadow-inner' : 'text-slate-600 hover:bg-slate-50 hover:text-purple-600'}`}
                                     >
-                                        <span className="flex items-center gap-2">
+                                        <span className="flex items-center gap-3">
                                             <span className="h-2 w-2 rounded-full shadow-sm" style={{ backgroundColor: tag.color }}></span>
-                                            <span className={`text-[11px] font-bold ${isSelected ? 'text-purple-600' : 'text-slate-600'}`}>
-                                                {tag.name}
-                                            </span>
+                                            {tag.name}
                                         </span>
                                         {isSelected && <Check size={12} className="text-purple-600" />}
                                     </button>
@@ -182,11 +174,11 @@ const FilterPopover = ({
                 )}
 
                 {view === 'time' && (
-                    <div className="space-y-3 animate-fade-in p-1">
-                        <h5 className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1.5">
-                            <Clock size={10} className="text-indigo-500" /> Intervalo
-                        </h5>
-                        <div className="space-y-5">
+                    <div className="space-y-3 p-3">
+                        <div className="px-1 text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1.5">
+                            <Clock size={12} className="text-indigo-500" /> Intervalo
+                        </div>
+                        <div className="space-y-5 py-1">
                             <div className="relative flex items-center">
                                 <label className="absolute -top-2 left-3 px-1.5 bg-white text-[8px] font-black uppercase tracking-widest text-slate-400 rounded z-10">Início</label>
                                 <input
@@ -199,7 +191,7 @@ const FilterPopover = ({
                                     <button 
                                         type="button"
                                         onClick={() => onTimeStartChange('')}
-                                        className="absolute right-8 text-slate-400 hover:text-red-500 transition-colors p-1"
+                                        className="absolute right-3 text-slate-400 hover:text-red-500 transition-colors p-1"
                                         title="Limpar início"
                                     >
                                         <X size={12} />
@@ -218,7 +210,7 @@ const FilterPopover = ({
                                     <button 
                                         type="button"
                                         onClick={() => onTimeEndChange('')}
-                                        className="absolute right-8 text-slate-400 hover:text-red-500 transition-colors p-1"
+                                        className="absolute right-3 text-slate-400 hover:text-red-500 transition-colors p-1"
                                         title="Limpar fim"
                                     >
                                         <X size={12} />
@@ -230,19 +222,19 @@ const FilterPopover = ({
                 )}
 
                 {view === 'limit' && (
-                    <div className="animate-fade-in">
-                        <h5 className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Itens</h5>
-                        <div className="grid grid-cols-1 gap-1.5">
+                    <div className="space-y-1.5 p-1.5">
+                        <div className="px-2 text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Itens</div>
+                        <div className="grid grid-cols-1 gap-1">
                             {[20, 50, 100].map(value => {
                                 const isSelected = limit === value;
                                 return (
                                     <button
                                         key={value}
                                         onClick={() => onLimitChange(value)}
-                                        className={`w-full flex items-center justify-between p-3 rounded-xl transition-all border ${
+                                        className={`w-full flex items-center justify-between p-3 rounded-2xl transition-all border ${
                                             isSelected
                                                 ? 'bg-slate-900 border-slate-900 text-white shadow-lg shadow-slate-200'
-                                                : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'
+                                                : 'bg-white border-transparent text-slate-600 hover:bg-slate-50 hover:text-blue-600'
                                         }`}
                                     >
                                         <span className="text-[12px] font-bold">{value} Itens</span>
