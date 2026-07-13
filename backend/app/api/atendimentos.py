@@ -1158,19 +1158,36 @@ async def analyze_feedback(
 
     history_str = gemini_service._format_history_optimized(conversa_list, include_timestamps=False)
     
-    # Extrai as últimas mensagens para tentar pegar o contexto do RAG que foi usado
-    rag_query = ""
-    if conversa_list:
-        recent_msgs = conversa_list[-5:]
-        rag_query = gemini_service._format_history_optimized(recent_msgs, include_timestamps=False)
-
     default_persona_id = current_user.company.default_persona_id if current_user.company else None
     persona_id = db_atendimento.active_persona_id or default_persona_id
     persona = await db.get(models.Config, persona_id)
     if not persona:
         raise HTTPException(status_code=400, detail="Persona não encontrada para este atendimento.")
 
-    rag_context = await gemini_service._retrieve_rag_context(db, persona.id, rag_query)
+    stmt_origins = select(models.KnowledgeVector.origin).where(
+        models.KnowledgeVector.config_id == persona.id
+    ).distinct()
+    result_origins = await db.execute(stmt_origins)
+    available_origins = list(result_origins.scalars().all())
+
+    # Extrai as últimas mensagens para tentar pegar o contexto do RAG que foi usado
+    rag_analysis = await gemini_service.build_rag_query(
+        conversa_list,
+        model_name=persona.ai_model,
+        available_origins=available_origins
+    )
+    rag_query = rag_analysis.get("query", "")
+    needs_rag = rag_analysis.get("needs_rag", True)
+    selected_sources = rag_analysis.get("selected_sources", None)
+
+    rag_context = ""
+    if needs_rag and rag_query:
+        rag_context = await gemini_service._retrieve_rag_context(
+            db,
+            persona.id,
+            rag_query,
+            selected_sources=selected_sources
+        )
 
     logger.info(f"Solicitando análise de feedback para Atendimento {atendimento_id} ao Gemini...")
     try:

@@ -120,38 +120,74 @@ def format_sheet_to_csv_system(sheet_name: str, rows: List[Dict[str, Any]]) -> s
 
 def parse_drive_index(content: str) -> dict:
     """
-    Parses drive index content (either table format or key-value format).
+    Parses drive index content (either table format, key-value format, or pipe-separated single-line format).
     Returns a dict with uppercase keys like 'ID', 'ARQUIVO', 'CATEGORIAS', 'TIPO'.
     """
     data = {}
-    lines = [l.strip() for l in content.strip().split("\n") if l.strip()]
-    
-    # Check if it's the new key-value format (bullet points or key-values)
-    is_kv = False
-    for line in lines:
-        if line.startswith("- ") and ":" in line:
-            is_kv = True
-            break
-            
-    if is_kv:
-        for line in lines:
-            if line.startswith("- "):
-                line = line[2:]
-            if ":" in line:
-                key, val = line.split(":", 1)
+    content_clean = content.strip()
+    if not content_clean:
+        return data
+        
+    # Check for single-line pipe-separated format: "[DRIVE] Categoria: ... | Arquivo: ..."
+    if "|" in content_clean and ":" in content_clean and "\n" not in content_clean:
+        parts = [p.strip() for p in content_clean.split("|") if p.strip()]
+        for part in parts:
+            # Remove leading '[DRIVE]' if present
+            if part.upper().startswith("[DRIVE]"):
+                part = part[7:].strip()
+            if ":" in part:
+                key, val = part.split(":", 1)
                 data[key.strip().upper()] = val.strip()
     else:
-        # Fallback to old table format
-        data_lines = [l for l in lines if not l.startswith("#") and "---" not in l]
-        if len(data_lines) >= 2:
-            try:
-                headers = [h.strip().upper() for h in data_lines[0].split("|") if h.strip()]
-                values = [v.strip() for v in data_lines[1].split("|") if v.strip()]
-                for h, v in zip(headers, values):
-                    data[h] = v
-            except Exception:
-                pass
-    return data
+        lines = [l.strip() for l in content_clean.split("\n") if l.strip()]
+        
+        # Check if it's the new key-value format (bullet points or key-values)
+        is_kv = False
+        for line in lines:
+            if line.startswith("- ") and ":" in line:
+                is_kv = True
+                break
+                
+        if is_kv:
+            for line in lines:
+                if line.startswith("- "):
+                    line = line[2:]
+                if ":" in line:
+                    key, val = line.split(":", 1)
+                    data[key.strip().upper()] = val.strip()
+        else:
+            # Fallback to old table format
+            data_lines = [l for l in lines if not l.startswith("#") and "---" not in l]
+            if len(data_lines) >= 2:
+                try:
+                    headers = [h.strip().upper() for h in data_lines[0].split("|") if h.strip()]
+                    values = [v.strip() for v in data_lines[1].split("|") if v.strip()]
+                    for h, v in zip(headers, values):
+                        data[h] = v
+                except Exception:
+                    pass
+
+    # Normalize keys for consistent access
+    normalized_data = {}
+    for k, v in data.items():
+        k_upper = k.strip().upper()
+        if k_upper in ["CATEGORIA", "CATEGORIAS"]:
+            normalized_data["CATEGORIAS"] = v
+        elif k_upper in ["TIPO", "TIPO_MIDIA", "MIDIA"]:
+            normalized_data["TIPO"] = v
+        elif k_upper in ["ID", "ID_ARQUIVO"]:
+            normalized_data["ID"] = v
+        elif k_upper in ["ARQUIVO", "NOME_ARQUIVO", "NOME"]:
+            if " > " in v:
+                parts = [p.strip() for p in v.split(" > ") if p.strip()]
+                normalized_data["ARQUIVO"] = parts[-1]
+                normalized_data["CATEGORIAS"] = " > ".join(parts[:-1])
+            else:
+                normalized_data["ARQUIVO"] = v
+        else:
+            normalized_data[k_upper] = v
+            
+    return normalized_data
 
 def format_row_to_csv_rag(sheet_name: str, row: Dict[str, Any]) -> str:
     """
@@ -180,9 +216,11 @@ def flatten_drive_tree(node: Dict[str, Any], path: str = "") -> List[str]:
     current_path = f"{path} > {current_name}" if path else current_name
     
     for f in node.get("arquivos", []):
+        file_name = f.get('nome') or ""
+        file_path = f"{current_path} > {file_name}" if current_path else file_name
+        
         row_data = {
-            "Categorias": current_path,
-            "Arquivo": f.get('nome'),
+            "Arquivo": file_path,
             "Tipo": f.get('tipo'),
             "ID": f.get('id')
         }

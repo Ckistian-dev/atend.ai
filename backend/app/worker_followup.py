@@ -179,11 +179,42 @@ async def process_atendimento_followup_task(atendimento_id: int, company_id: int
                 company=company
             )
             
-            action = ia_response.get("action")
-            message_to_send = ia_response.get("mensagem_para_enviar")
+            action = ia_response.get("action") or ia_response.get("acao")
+            message_to_send = ia_response.get("mensagem_para_enviar") or ia_response.get("mensagem")
             
             if action == "skip":
                 logger.info(f"Follow-up (At. {atendimento_id}): IA decidiu pular o follow-up.")
+                reason = message_to_send or "IA decidiu pular este follow-up."
+                
+                async with SessionLocal() as db_final:
+                    async with db_final.begin():
+                        at_locked = await db_final.get(models.Atendimento, atendimento_id, with_for_update=True)
+                        if at_locked and at_locked.status == "Aguardando Resposta":
+                            locked_conversa = json.loads(at_locked.conversa or "[]")
+                            
+                            already_sent = False
+                            for msg in locked_conversa:
+                                m_ts = _get_ts_from_message(msg)
+                                if m_ts > last_client_ts and msg.get('tag') == followup_key:
+                                    already_sent = True
+                                    break
+                                    
+                            if not already_sent:
+                                system_message = {
+                                    "id": f"skip-{int(now.timestamp())}",
+                                    "role": "system",
+                                    "content": reason,
+                                    "timestamp": int(now.timestamp()),
+                                    "type": "followup_skipped",
+                                    "tag": followup_key
+                                }
+                                locked_conversa.append(system_message)
+                                at_locked.conversa = json.dumps(locked_conversa, ensure_ascii=False)
+                                at_locked.updated_at = datetime.now(timezone.utc)
+                                db_final.add(at_locked)
+                                logger.info(f"Follow-up (At. {atendimento_id}): Registro de skip salvo com sucesso.")
+                            else:
+                                logger.warning(f"Follow-up (At. {atendimento_id}): Detectado skip duplicado no lock, cancelando.")
                 return
                 
             if message_to_send:
@@ -194,7 +225,8 @@ async def process_atendimento_followup_task(atendimento_id: int, company_id: int
                 
                 new_message = {
                     "id": sent_info.get('id'), "role": "assistant", "content": message_to_send,
-                    "timestamp": int(now.timestamp()), "type": "followup", "tag": followup_key
+                    "timestamp": int(now.timestamp()), "type": "followup", "tag": followup_key,
+                    "is_ai": True
                 }
                 
                 # Para evitar condições de corrida, fazemos o update com SELECT FOR UPDATE no final
@@ -220,6 +252,8 @@ async def process_atendimento_followup_task(atendimento_id: int, company_id: int
                                 logger.info(f"Follow-up (At. {atendimento_id}): Mensagem enviada e salva com sucesso.")
                             else:
                                 logger.warning(f"Follow-up (At. {atendimento_id}): Detectada mensagem duplicada no lock, cancelando salvamento.")
+            else:
+                logger.warning(f"Follow-up (At. {atendimento_id}): IA não retornou mensagem para envio. Resposta: {ia_response}")
         except Exception as e:
             logger.error(f"Follow-up: Erro processando atendimento {atendimento_id}: {e}", exc_info=True)
 
@@ -249,7 +283,13 @@ async def followup_poller():
                         continue
                     
                     now = datetime.now(timezone.utc)
-                    earliest_time = now
+                    config = company.followup_config or {}
+                    intervals = config.get("intervals", [])
+                    if not intervals:
+                        continue
+                    
+                    min_hours = min(interval['hours'] for interval in intervals)
+                    earliest_time = now - timedelta(hours=min_hours)
                     latest_time = now - timedelta(hours=24)
                     
                     stmt_at = (
@@ -279,11 +319,11 @@ async def followup_poller():
             else:
                 logger.info("Nenhum atendimento elegível para follow-up neste ciclo.")
                 
-            await asyncio.sleep(300)
+            await asyncio.sleep(30)
             
         except Exception as e:
             logger.error(f"Worker-Followup: Erro crítico no loop: {e}", exc_info=True)
-            await asyncio.sleep(300)
+            await asyncio.sleep(30)
 
 async def main():
     logger.info("--- INICIANDO SERVIÇO DE WORKER (FOLLOW-UP) ---")

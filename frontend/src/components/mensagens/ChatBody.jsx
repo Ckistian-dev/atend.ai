@@ -96,6 +96,21 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
             className="flex-1 p-4 md:p-6 overflow-y-auto space-y-6 custom-scrollbar bg-slate-50/20"
         >
             {messages.map((msg, index) => {
+                if (msg.role === 'system' || msg.type === 'followup_skipped') {
+                    return (
+                        <div key={msg.id} className="flex justify-center my-3 animate-fade-in">
+                            <div className="flex items-center gap-2 bg-amber-50/60 border border-amber-200/40 rounded-full px-4 py-1.5 shadow-sm backdrop-blur-sm">
+                                <Clock size={12} className="text-amber-500" />
+                                <span className="text-[9px] font-black uppercase tracking-wider text-amber-700">Follow-up Suspenso</span>
+                                <span className="text-slate-300">|</span>
+                                <span className="text-[11px] font-semibold text-slate-600">
+                                    {msg.content ? msg.content.replace('Follow-up suspenso: ', '') : ''}
+                                </span>
+                            </div>
+                        </div>
+                    );
+                }
+
                 const isAssistant = msg.role === 'assistant';
                 const nextMsg = messages[index + 1];
                 const isLastInGroup = !nextMsg || nextMsg.role !== msg.role;
@@ -126,9 +141,14 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
                             />
 
                             <div className={`flex items-center gap-2 mt-3 ${isAssistant ? 'justify-end text-white/60' : 'justify-start text-slate-400'}`}>
-                                {msg.is_ai && (
+                                {(msg.is_ai || msg.type === 'followup') && (
                                     <span className={`text-[9px] font-black uppercase flex items-center gap-1 ${isAssistant ? 'text-white/80' : 'text-blue-500'}`}>
                                         <Wand2 size={10} /> IA
+                                    </span>
+                                )}
+                                {msg.type === 'followup' && (
+                                    <span className={`text-[9px] font-black uppercase flex items-center gap-1 ${isAssistant ? 'text-white/80' : 'text-blue-500'}`}>
+                                        <Clock size={10} /> Follow-up
                                     </span>
                                 )}
                                 <span className="text-[10px] font-bold uppercase tracking-tight">{formatTimestamp(msg.timestamp)}</span>

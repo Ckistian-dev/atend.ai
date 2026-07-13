@@ -519,7 +519,14 @@ class GeminiService:
         return all_embeddings
 
 
-    async def _retrieve_rag_context(self, db: AsyncSession, config_id: int, query_text: str, limit: int = 10) -> str:
+    async def _retrieve_rag_context(
+        self,
+        db: AsyncSession,
+        config_id: int,
+        query_text: str,
+        limit: int = 10,
+        selected_sources: Optional[List[str]] = None
+    ) -> str:
         """Busca contexto relevante na base vetorial (PGVector) usando similaridade de cosseno."""
         if not query_text: return ""
         
@@ -539,6 +546,11 @@ class GeminiService:
         result_origins = await db.execute(stmt_origins)
         origins = result_origins.scalars().all()
         
+        # Filtra por fontes selecionadas caso fornecidas
+        if selected_sources:
+            selected_set = {s.strip().lower() for s in selected_sources if s}
+            origins = [o for o in origins if o.strip().lower() in selected_set]
+            
         final_vectors = []
         
         # Para cada origem encontrada (cada aba e o drive), busca os 'limit' mais relevantes com threshold de distância
@@ -592,37 +604,8 @@ class GeminiService:
         chunks = [v.content for v in final_vectors]
         unique_chunks = list(dict.fromkeys(chunks))
         
-        # Formatação inteligente: Agrupa chunks com cabeçalhos repetidos
-        formatted_text = ""
-        previous_lines = []
-
-        for chunk in unique_chunks:
-            current_lines = chunk.strip().split('\n')
-            
-            # Verifica quantas linhas iniciais são iguais ao chunk anterior
-            match_count = 0
-            min_len = min(len(previous_lines), len(current_lines))
-            
-            for i in range(min_len):
-                if previous_lines[i] == current_lines[i]:
-                    match_count += 1
-                else:
-                    break
-            
-            # Se houver correspondência de cabeçalho (pelo menos 1 linha), adiciona apenas o restante
-            if match_count > 0:
-                new_content = "\n".join(current_lines[match_count:])
-                if new_content:
-                    # Adiciona quebra de linha dupla para separar claramente itens agrupados
-                    formatted_text += "\n\n" + new_content
-            else:
-                # Se não houver correspondência, adiciona o chunk inteiro
-                if formatted_text:
-                    formatted_text += "\n\n"
-                formatted_text += chunk.strip()
-            
-            previous_lines = current_lines
-
+        # Junta os chunks mantendo todas as linhas (não omitindo linhas de cabeçalho iguais entre chunks)
+        formatted_text = "\n\n".join([chunk.strip() for chunk in unique_chunks])
         return formatted_text
 
     def _get_datetime_context(self, company: models.Company) -> str:
