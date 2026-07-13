@@ -286,7 +286,7 @@ function Followup() {
                             </div>
                             <div className="flex-1">
                                 <p className="text-[12px] sm:text-[13px] text-slate-600 font-medium leading-relaxed">
-                                    Conclua automaticamente atendimentos parados em <span className="font-bold text-slate-900 line-clamp-1 sm:line-clamp-none">"Atendente Chamado"</span>.
+                                    Conclua automaticamente atendimentos parados em <span className="font-bold text-slate-900 line-clamp-1 sm:line-clamp-none">"Atendente Chamado"</span>
                                 </p>
                             </div>
                             <div className="flex items-center justify-between sm:justify-start gap-3 bg-white p-2 rounded-xl sm:rounded-2xl border border-slate-100 shadow-sm w-full sm:w-auto">
