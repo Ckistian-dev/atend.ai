@@ -60,205 +60,225 @@ def is_within_business_hours(config: dict) -> bool:
         return False
 
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 
-async def process_followups_for_company(company: models.Company, db: AsyncSession):
-    """Processa todos os follow-ups pendentes para uma empresa."""
-    if not company.followup_active or not company.followup_config:
-        return
-
-    config = company.followup_config
-    if not is_within_business_hours(config):
-        return
-
-    intervals = sorted(config.get("intervals", []), key=lambda x: x['hours'])
-    auto_conclude_days = config.get("auto_conclude_days", 0)
-
-    # --- LÓGICA DE AUTO-CONCLUSÃO ---
-    if auto_conclude_days and isinstance(auto_conclude_days, int) and auto_conclude_days > 0:
-        try:
-            old_tickets = await crud_atendimento.get_atendimentos_by_status_and_inactivity(
-                db, company.id, "Atendente Chamado", auto_conclude_days
-            )
-            
-            if old_tickets:
-                for ticket in old_tickets:
-                    ticket.status = "Concluído"
-                    # Atualiza timestamp para refletir a conclusão
-                    ticket.updated_at = datetime.now(timezone.utc)
-                await db.commit()
-                logger.info(f"Follow-up: {len(old_tickets)} atendimentos 'Atendente Chamado' auto-concluídos para empresa {company.id} (Inatividade > {auto_conclude_days} dias).")
-        except Exception as e:
-            logger.error(f"Erro na auto-conclusão para empresa {company.id}: {e}", exc_info=True)
-            await db.rollback()
-
-    # Se não houver intervalos configurados, encerra aqui (após ter tentado a auto-conclusão)
-    if not intervals:
-        return
-
-    gemini_service = get_gemini_service()
-    whatsapp_service = get_whatsapp_service()
-
-    now = datetime.now(timezone.utc)
-    
-    # Busca atendimentos atualizados nas últimas 24h (filtro amplo no banco)
-    # Passamos 'now' como earliest_time para ignorar o filtro de "mais antigo que X" do SQL,
-    # pois faremos a verificação precisa do timestamp do cliente via Python.
-    earliest_time = now
-    latest_time = now - timedelta(hours=24)
-
-    atendimentos = await crud_atendimento.get_atendimentos_for_followup(
-        db, company_id=company.id, earliest_time=earliest_time, latest_time=latest_time
-    )
-
-    for at in atendimentos:
-        at_id = at.id
-        at_whatsapp = at.whatsapp
-        in_savepoint = False
-        try:
-            async with db.begin_nested():
-                in_savepoint = True
-                conversa = json.loads(at.conversa or "[]")
-                
-                # 1. Encontrar o timestamp da ÚLTIMA MENSAGEM DO CLIENTE
-                last_client_ts = 0
-                for msg in reversed(conversa):
-                    if msg.get('role') == 'user':
-                        last_client_ts = _get_ts_from_message(msg)
-                        if last_client_ts > 0:
-                            break
-                
-                if last_client_ts == 0:
-                    continue
-
-                # 1.5. Anti-Burst: Verificar se um follow-up foi enviado recentemente.
-                last_followup_ts = 0
-                for msg in reversed(conversa):
-                    if msg.get('type') == 'followup':
-                        ts = _get_ts_from_message(msg)
-                        if ts > last_client_ts: # Só conta follow-ups após a última msg do cliente
-                            last_followup_ts = ts
-                            break # Pega o mais recente
-
-                # Se um follow-up já foi enviado, garante um intervalo mínimo antes de enviar o próximo.
-                if last_followup_ts > 0 and intervals:
-                    # Usa o primeiro intervalo como o "gap" mínimo para evitar rajadas.
-                    min_gap_hours = intervals[0]['hours']
-                    time_since_last_followup_hours = (now.timestamp() - last_followup_ts) / 3600
-                    
-                    if time_since_last_followup_hours < min_gap_hours:
-                        # logger.debug(f"Follow-up (At. {at_id}): Pulando, último follow-up enviado há {time_since_last_followup_hours:.2f}h (mínimo {min_gap_hours}h).")
-                        continue
-
-                # 2. Calcular inatividade baseada na ÚLTIMA MENSAGEM DO CLIENTE
-                time_since_client = now.timestamp() - last_client_ts
-                inactive_hours = time_since_client / 3600
-
-                # Janela de 24h estrita baseada na mensagem do cliente
-                if inactive_hours > 24:
-                    continue
-
-                # 3. Verificar intervalos pendentes
-                target_interval = None
-                
-                for interval in intervals:
-                    hours = interval['hours']
-                    if inactive_hours >= hours:
-                        # Verifica se JÁ ENVIAMOS este follow-up APÓS a última mensagem do cliente
-                        tag = f"followup_{hours}h_sent"
-                        already_sent = False
-                        
-                        for msg in conversa:
-                            m_ts = _get_ts_from_message(msg)
-                            # Só conta se foi enviada DEPOIS do cliente falar
-                            if m_ts > last_client_ts and msg.get('tag') == tag:
-                                already_sent = True
-                                break
-                        
-                        if not already_sent:
-                            target_interval = interval
-                            break # Envia apenas o primeiro intervalo pendente (sequencial)
-                
-                if not target_interval:
-                    continue
-
-                followup_key = f"followup_{target_interval['hours']}h_sent"
-                
-                logger.info(f"Follow-up (At. {at_id}): Inativo por {inactive_hours:.2f}h. Gerando follow-up de {target_interval['hours']}h.")
-
-                # Chama o serviço de IA específico para follow-up
-                ia_response = await gemini_service.generate_followup_action(
-                    whatsapp=at,
-                    conversation_history_db=conversa,
-                    db=db,
-                    company=company
-                )
-
-                action = ia_response.get("action")
-                message_to_send = ia_response.get("mensagem_para_enviar")
-
-                if action == "skip":
-                    logger.info(f"Follow-up (At. {at_id}): IA decidiu pular o follow-up (Risco de loop/insatisfação).")
-                    continue
-
-                elif message_to_send:
-                    # Limpa a mensagem (remove backslashes e corrige newlines literais)
-                    message_to_send = message_to_send.replace('\\n', '\n').replace('\\', '')
-                    
-                    sent_info = await whatsapp_service.send_text_message(company, at.whatsapp, message_to_send)
-                    
-                    new_message = {
-                        "id": sent_info.get('id'), "role": "assistant", "content": message_to_send,
-                        "timestamp": int(now.timestamp()), "type": "followup", "tag": followup_key
-                    }
-                    conversa.append(new_message)
-                    at.conversa = json.dumps(conversa, ensure_ascii=False)
-            
-            in_savepoint = False
-            await db.commit()
-            logger.info(f"Follow-up (At. {at_id}): Mensagem enviada e salva com sucesso.")
-
-        except Exception as e:
-            logger.error(f"Follow-up: Erro ao processar atendimento {at_id} ({at_whatsapp}): {e}", exc_info=True)
-            if in_savepoint:
-                # O erro ocorreu dentro do savepoint, então o nested transaction já reverteu o savepoint.
-                # A transação principal está saudável, podemos continuar para os próximos atendimentos.
-                continue
-            else:
-                # O erro ocorreu fora do savepoint (ex: no commit).
-                # A transação principal foi corrompida. Executamos rollback geral e encerramos para esta empresa.
-                try:
-                    await db.rollback()
-                except Exception as rollback_err:
-                    logger.error(f"Follow-up: Erro ao executar rollback geral: {rollback_err}")
-                break
-
-async def process_company_followup_task(company_id: int):
-    """Encapsula o processamento de uma empresa em uma sessão própria."""
+async def run_auto_conclude_for_company(company_id: int):
+    """Executa a lógica de auto-conclusão para atendimentos inativos da empresa."""
     async with SessionLocal() as db:
         try:
-            company = await db.get(models.Company, company_id)
-            if company:
-                await process_followups_for_company(company, db)
+            async with db.begin():
+                company = await db.get(models.Company, company_id)
+                if not company:
+                    return
+                config = company.followup_config or {}
+                auto_conclude_days = config.get("auto_conclude_days", 0)
+                if auto_conclude_days and isinstance(auto_conclude_days, int) and auto_conclude_days > 0:
+                    old_tickets = await crud_atendimento.get_atendimentos_by_status_and_inactivity(
+                        db, company.id, "Atendente Chamado", auto_conclude_days
+                    )
+                    if old_tickets:
+                        for ticket in old_tickets:
+                            ticket_locked = await db.get(models.Atendimento, ticket.id, with_for_update=True)
+                            if ticket_locked and ticket_locked.status == "Atendente Chamado":
+                                ticket_locked.status = "Concluído"
+                                ticket_locked.updated_at = datetime.now(timezone.utc)
+                                db.add(ticket_locked)
+                        logger.info(f"Follow-up: {len(old_tickets)} atendimentos auto-concluídos para a empresa {company_id}.")
         except Exception as e:
-            logger.error(f"Worker-Followup: Erro processando empresa {company_id}: {e}", exc_info=True)
+            logger.error(f"Erro na auto-conclusão para a empresa {company_id}: {e}", exc_info=True)
+
+async def process_atendimento_followup_task(atendimento_id: int, company_id: int):
+    """Processa um atendimento elegível para verificar e enviar o follow-up correspondente."""
+    async with SessionLocal() as db:
+        try:
+            # 1. Carrega o atendimento e a empresa
+            at = await db.get(
+                models.Atendimento,
+                atendimento_id,
+                options=[joinedload(models.Atendimento.active_persona)]
+            )
+            company = await db.get(models.Company, company_id)
+            
+            if not at or not company:
+                return
+                
+            # Garante que o status ainda é 'Aguardando Resposta'
+            if at.status != "Aguardando Resposta":
+                return
+                
+            config = company.followup_config or {}
+            if not is_within_business_hours(config):
+                return
+                
+            intervals = sorted(config.get("intervals", []), key=lambda x: x['hours'])
+            if not intervals:
+                return
+                
+            conversa = json.loads(at.conversa or "[]")
+            
+            # Encontrar timestamp da última mensagem do cliente
+            last_client_ts = 0
+            for msg in reversed(conversa):
+                if msg.get('role') == 'user':
+                    last_client_ts = _get_ts_from_message(msg)
+                    if last_client_ts > 0:
+                        break
+            
+            if last_client_ts == 0:
+                return
+                
+            # Anti-Burst: Verificar se um follow-up foi enviado recentemente
+            last_followup_ts = 0
+            for msg in reversed(conversa):
+                if msg.get('type') == 'followup':
+                    ts = _get_ts_from_message(msg)
+                    if ts > last_client_ts:
+                        last_followup_ts = ts
+                        break
+                        
+            now = datetime.now(timezone.utc)
+            if last_followup_ts > 0 and intervals:
+                min_gap_hours = intervals[0]['hours']
+                time_since_last_followup_hours = (now.timestamp() - last_followup_ts) / 3600
+                if time_since_last_followup_hours < min_gap_hours:
+                    return
+                    
+            # Calcular inatividade baseada na última mensagem do cliente
+            inactive_hours = (now.timestamp() - last_client_ts) / 3600
+            if inactive_hours > 24:
+                return
+                
+            # Verificar intervalos pendentes
+            target_interval = None
+            for interval in intervals:
+                hours = interval['hours']
+                if inactive_hours >= hours:
+                    tag = f"followup_{hours}h_sent"
+                    already_sent = False
+                    for msg in conversa:
+                        m_ts = _get_ts_from_message(msg)
+                        if m_ts > last_client_ts and msg.get('tag') == tag:
+                            already_sent = True
+                            break
+                    if not already_sent:
+                        target_interval = interval
+                        break
+                        
+            if not target_interval:
+                return
+                
+            followup_key = f"followup_{target_interval['hours']}h_sent"
+            logger.info(f"Follow-up (At. {atendimento_id}): Inativo por {inactive_hours:.2f}h. Gerando follow-up de {target_interval['hours']}h.")
+            
+            # Chama o serviço de IA para o follow-up (isso pode decrementar tokens e commitar de forma isolada)
+            gemini_service = get_gemini_service()
+            ia_response = await gemini_service.generate_followup_action(
+                whatsapp=at,
+                conversation_history_db=conversa,
+                db=db,
+                company=company
+            )
+            
+            action = ia_response.get("action")
+            message_to_send = ia_response.get("mensagem_para_enviar")
+            
+            if action == "skip":
+                logger.info(f"Follow-up (At. {atendimento_id}): IA decidiu pular o follow-up.")
+                return
+                
+            if message_to_send:
+                message_to_send = message_to_send.replace('\\n', '\n').replace('\\', '')
+                
+                whatsapp_service = get_whatsapp_service()
+                sent_info = await whatsapp_service.send_text_message(company, at.whatsapp, message_to_send)
+                
+                new_message = {
+                    "id": sent_info.get('id'), "role": "assistant", "content": message_to_send,
+                    "timestamp": int(now.timestamp()), "type": "followup", "tag": followup_key
+                }
+                
+                # Para evitar condições de corrida, fazemos o update com SELECT FOR UPDATE no final
+                async with SessionLocal() as db_final:
+                    async with db_final.begin():
+                        at_locked = await db_final.get(models.Atendimento, atendimento_id, with_for_update=True)
+                        if at_locked and at_locked.status == "Aguardando Resposta":
+                            locked_conversa = json.loads(at_locked.conversa or "[]")
+                            
+                            # Verifica novamente se o follow-up não foi enviado concorrentemente
+                            already_sent = False
+                            for msg in locked_conversa:
+                                m_ts = _get_ts_from_message(msg)
+                                if m_ts > last_client_ts and msg.get('tag') == followup_key:
+                                    already_sent = True
+                                    break
+                                    
+                            if not already_sent:
+                                locked_conversa.append(new_message)
+                                at_locked.conversa = json.dumps(locked_conversa, ensure_ascii=False)
+                                at_locked.updated_at = datetime.now(timezone.utc)
+                                db_final.add(at_locked)
+                                logger.info(f"Follow-up (At. {atendimento_id}): Mensagem enviada e salva com sucesso.")
+                            else:
+                                logger.warning(f"Follow-up (At. {atendimento_id}): Detectada mensagem duplicada no lock, cancelando salvamento.")
+        except Exception as e:
+            logger.error(f"Follow-up: Erro processando atendimento {atendimento_id}: {e}", exc_info=True)
 
 async def followup_poller():
-    """Loop que verifica e dispara follow-ups."""
+    """Loop que verifica e dispara follow-ups de forma concorrente e segura."""
     logger.info("Worker-Followup: Iniciando poller de follow-up...")
     while True:
         try:
-            logger.info(f"Verificando atendimentos para follow-up...")
+            logger.info("Verificando atendimentos para follow-up...")
             async with SessionLocal() as db:
+                # 1. Obter todas as empresas com follow-up ativo
                 stmt = select(models.Company).where(models.Company.followup_active == True)
                 res = await db.execute(stmt)
-                companies_with_followup = res.scalars().all()
-                company_ids = [c.id for c in companies_with_followup]
+                companies = res.scalars().all()
+                company_ids = [c.id for c in companies]
             
-            if company_ids:
-                # Dispara o processamento de cada empresa em paralelo com sessões isoladas
-                tasks = [process_company_followup_task(cid) for cid in company_ids]
-                await asyncio.gather(*tasks)
+            # Executa a auto-conclusão para cada empresa em background
+            for cid in company_ids:
+                asyncio.create_task(run_auto_conclude_for_company(cid))
 
+            # 2. Identifica os atendimentos candidatos a follow-up
+            tasks = []
+            async with SessionLocal() as db:
+                for cid in company_ids:
+                    company = await db.get(models.Company, cid)
+                    if not company or not is_within_business_hours(company.followup_config or {}):
+                        continue
+                    
+                    now = datetime.now(timezone.utc)
+                    earliest_time = now
+                    latest_time = now - timedelta(hours=24)
+                    
+                    stmt_at = (
+                        select(models.Atendimento.id)
+                        .where(
+                            models.Atendimento.company_id == cid,
+                            models.Atendimento.status == "Aguardando Resposta",
+                            models.Atendimento.updated_at < earliest_time,
+                            models.Atendimento.updated_at > latest_time
+                        )
+                    )
+                    res_at = await db.execute(stmt_at)
+                    atendimento_ids = res_at.scalars().all()
+                    
+                    for at_id in atendimento_ids:
+                        tasks.append((at_id, cid))
+            
+            if tasks:
+                logger.info(f"Encontrados {len(tasks)} atendimentos candidatos a follow-up. Processando com limite de concorrência...")
+                sem = asyncio.Semaphore(10)  # Limita a 10 conexões simultâneas da pool do SQLAlchemy
+                
+                async def sem_task(at_id, cid):
+                    async with sem:
+                        await process_atendimento_followup_task(at_id, cid)
+                
+                await asyncio.gather(*(sem_task(at_id, cid) for at_id, cid in tasks))
+            else:
+                logger.info("Nenhum atendimento elegível para follow-up neste ciclo.")
+                
             await asyncio.sleep(300)
             
         except Exception as e:

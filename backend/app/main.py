@@ -163,9 +163,15 @@ app.add_middleware(
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Erro não tratado: {exc}", exc_info=True)
+    origin = request.headers.get("origin")
+    headers = {}
+    if origin and (origin in origins or "*" in origins):
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
     return JSONResponse(
         status_code=500,
         content={"message": "Erro interno do servidor", "detail": str(exc)},
+        headers=headers,
     )
 
 API_PREFIX = "/api/v1"

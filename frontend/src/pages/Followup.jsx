@@ -258,8 +258,8 @@ function Followup() {
                                         <input type="number" min="1" max={interval.unit === 'hours' ? 168 : 1440}
                                             value={interval.value}
                                             onChange={e => handleIntervalChange(index, 'value', e.target.value)}
-                                            className="followup-input !w-14 !py-1 text-center font-bold !bg-white text-xs" />
-                                        <select value={interval.unit} onChange={e => handleIntervalChange(index, 'unit', e.target.value)} className="followup-input !flex-1 !py-1 !text-[10px] !font-black uppercase tracking-tighter !bg-white truncate">
+                                            className="followup-input !w-16 !px-2 !py-1 text-center font-bold !bg-white text-xs" />
+                                        <select value={interval.unit} onChange={e => handleIntervalChange(index, 'unit', e.target.value)} className="followup-input !flex-1 !pl-2 !pr-6 !py-1 !text-[10px] !font-black uppercase tracking-tighter !bg-white truncate">
                                             <option value="minutes">Min</option>
                                             <option value="hours">Horas</option>
                                         </select>
@@ -295,7 +295,7 @@ function Followup() {
                                     type="number" min="0" max="365"
                                     value={config.auto_conclude_days}
                                     onChange={e => setConfig(prev => ({ ...prev, auto_conclude_days: parseInt(e.target.value, 10) || 0 }))}
-                                    className="followup-input !w-16 !py-1.5 text-center font-bold !border-none !bg-slate-50 text-xs"
+                                    className="followup-input !w-16 !px-2 !py-1.5 text-center font-bold !border-none !bg-slate-50 text-xs"
                                 />
                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mr-2 sm:mr-4">dias</span>
                             </div>
