@@ -11,6 +11,7 @@ from app.services.message_producer import send_webhook_to_queue
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+# Recebe notificações em tempo real enviadas pela Meta (mensagens, status de envio) e enfileira no RabbitMQ
 @router.post("/official/webhook", summary="Receber eventos da API Oficial (Meta)")
 async def receive_official_webhook(request: Request, background_tasks: BackgroundTasks):
     """
@@ -49,6 +50,7 @@ async def receive_official_webhook(request: Request, background_tasks: Backgroun
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+# Responde à verificação GET solicitada pela Meta para validação inicial de segurança do webhook
 @router.get("/official/webhook", summary="Verificar webhook da API Oficial (Meta)")
 async def verify_official_webhook(request: Request):
     """

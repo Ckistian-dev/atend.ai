@@ -16,12 +16,199 @@ from app.services.whatsapp_service import get_whatsapp_service, MessageSendError
 from app.services.gemini_service import get_gemini_service
 from app.services.google_calendar_service import get_google_calendar_service
 from app.services.google_drive_service import get_drive_service # <--- Import do serviço de Drive
-from app.api.configs import SITUATIONS, parse_drive_index
+from app.services.config_service import SITUATIONS, ConfigService
+parse_drive_index = ConfigService.parse_drive_index
 from app.db import models, schemas
+from app.services.agent_service import agente_atendimento, ContextoSaaS, contabilizar_tokens_pydantic
+from pydantic_ai.messages import ModelRequest, ModelResponse, UserPromptPart, TextPart
 
 logger = logging.getLogger(__name__)
 
+# Conjunto global para evitar que o mesmo atendimento seja processado concorrentemente por múltiplas tasks
+_active_processing_ids = set()
+
+def build_prompt_from_persona_form(persona_form: Dict[str, Any]) -> str:
+    """
+    Compila os dados estruturados do formulário de persona em um system prompt
+    textual rico e pronto para ser enviado à IA.
+    Retorna string vazia se o formulário não tiver dados relevantes.
+    """
+    if not persona_form:
+        return ""
+
+    parts = []
+
+    # --- Identidade ---
+    ai_name = persona_form.get("ai_name", "").strip()
+    company_name = persona_form.get("company_name", "").strip()
+    role = persona_form.get("role", "").strip()
+    segment = persona_form.get("segment", "").strip()
+
+    identity_parts = []
+    if ai_name:
+        identity_parts.append(f"Seu nome é **{ai_name}**.")
+    if role:
+        identity_parts.append(f"Você é {role}.")
+    if company_name:
+        identity_parts.append(f"Você representa a empresa **{company_name}**.")
+    if segment:
+        identity_parts.append(f"O segmento de atuação é: {segment}.")
+
+    nature_identity = str(persona_form.get("nature_identity", "human")).lower()
+    if nature_identity == "ai":
+        identity_parts.append("Caso o usuário pergunte diretamente se você é um robô ou inteligência artificial, confirme abertamente e de forma transparente que você é um assistente virtual da empresa.")
+    elif nature_identity == "ignore":
+        identity_parts.append("Caso o usuário pergunte se você é um robô ou inteligência artificial, desvie de forma evasiva e cordial sem confirmar e nem negar, mantendo o foco em tirar as dúvidas do cliente.")
+    else:  # 'human'
+        identity_parts.append("REGRA ESTREITA DE OCULTAÇÃO DA NATUREZA ARTIFICIAL: Adote uma persona estritamente humana em todas as interações. Caso o usuário pergunte diretamente se você é um robô ou inteligência artificial, afirme categoricamente ser um atendente humano da equipe e contorne qualquer questionamento com naturalidade.")
+
+    if identity_parts:
+        parts.append("## IDENTIDADE\n" + "\n".join(identity_parts))
+
+    # --- Missão / Objetivo ---
+    objective = persona_form.get("objective", "").strip()
+    if objective:
+        parts.append(f"## MISSÃO\n{objective}")
+
+    # --- Tom de Voz e Estilo de Comunicação ---
+    formality_raw = persona_form.get("formality")
+    if formality_raw is None:
+        formality_raw = persona_form.get("tone", "formal")
+    
+    if isinstance(formality_raw, (int, float)):
+        is_informal = formality_raw > 0.5
+    else:
+        is_informal = str(formality_raw).lower() in ("informal", "1", "1.0", "true")
+
+    objectivity_raw = persona_form.get("objectivity", "direto")
+    if isinstance(objectivity_raw, (int, float)):
+        is_detailed = objectivity_raw > 0.5
+    else:
+        is_detailed = str(objectivity_raw).lower() in ("detalhado", "explicativo", "1", "1.0", "true")
+
+    qualities = persona_form.get("qualities") or []
+
+    tone_lines = []
+    if is_informal:
+        tone_lines.append("- Linguagem informal, amigável, descontraída e próxima do cliente.")
+    else:
+        tone_lines.append("- Linguagem formal, profissional, respeitosa e sem gírias.")
+
+    if is_detailed:
+        tone_lines.append("- Comunicação detalhada, explicativa e didática, fornecendo informações completas.")
+    else:
+        tone_lines.append("- Comunicação direta, objetiva, concisa e focada na solução rápida.")
+
+    if isinstance(qualities, list) and qualities:
+        tone_lines.append(f"- Qualidades e atributos de personalidade: {', '.join(qualities)}.")
+    elif isinstance(qualities, str) and qualities:
+        tone_lines.append(f"- Qualidades e atributos de personalidade: {qualities}.")
+
+    if tone_lines:
+        parts.append("## TOM DE VOZ E ESTILO DE COMUNICAÇÃO\n" + "\n".join(tone_lines))
+
+    # --- Idioma ---
+    language = persona_form.get("language", "").strip()
+    if language and language.lower() not in ("português", "pt-br", ""):
+        parts.append(f"## IDIOMA\nResponda SEMPRE em {language}. Nunca mude de idioma mesmo que o cliente escreva em outro.")
+    elif language.lower() in ("português", "pt-br"):
+        parts.append("## IDIOMA\nResponda SEMPRE em português brasileiro.")
+
+    # --- Apresentação inicial ---
+    greeting = persona_form.get("greeting", "").strip()
+    if greeting:
+        parts.append(f"## SAUDAÇÃO INICIAL\nUse como saudação/apresentação: \"{greeting}\"")
+
+    # --- Produtos e Serviços ---
+    products = persona_form.get("products", "").strip()
+    if products:
+        parts.append(f"## PRODUTOS E SERVIÇOS\n{products}")
+
+    # --- Informações da Empresa ---
+    company_info = persona_form.get("company_info", "").strip()
+    if company_info:
+        parts.append(f"## SOBRE A EMPRESA\n{company_info}")
+
+    # --- Perguntas Frequentes Inline (FAQ rápido) ---
+    faq = persona_form.get("faq", "").strip()
+    if faq:
+        parts.append(f"## FAQ RÁPIDO\n{faq}")
+
+    # --- Regras e Restrições ---
+    restrictions = persona_form.get("restrictions")
+    if isinstance(restrictions, list) and restrictions:
+        rest_lines = [f"- {r.strip()}" for r in restrictions if str(r).strip()]
+        if rest_lines:
+            parts.append("## REGRAS E RESTRIÇÕES\n" + "\n".join(rest_lines))
+    elif isinstance(restrictions, str) and restrictions.strip():
+        parts.append(f"## REGRAS E RESTRIÇÕES\n{restrictions.strip()}")
+
+    # --- Regras de Transferência para Humano ---
+    handoff_rules = persona_form.get("handoff_rules")
+    if isinstance(handoff_rules, list) and handoff_rules:
+        handoff_lines = [f"- {h.strip()}" for h in handoff_rules if str(h).strip()]
+        if handoff_lines:
+            parts.append("## REGRAS DE TRANSFERÊNCIA\n" + "\n".join(handoff_lines))
+    elif isinstance(handoff_rules, str) and handoff_rules.strip():
+        parts.append(f"## REGRAS DE TRANSFERÊNCIA\n{handoff_rules.strip()}")
+
+    # --- Horário de Funcionamento (texto livre) ---
+    business_hours = persona_form.get("business_hours", "").strip()
+    if business_hours:
+        parts.append(f"## HORÁRIO DE ATENDIMENTO\n{business_hours}")
+
+    # --- Instruções Adicionais ---
+    extra_instructions = persona_form.get("extra_instructions", "").strip()
+    if extra_instructions:
+        parts.append(f"## INSTRUÇÕES ADICIONAIS\n{extra_instructions}")
+
+    return "\n\n".join(parts)
+
+
+def converter_historico_para_pydantic(historico_db: List[Dict[str, Any]]) -> list:
+    """
+    Converte o histórico JSON salvo no banco para a estrutura nativa de memória do PydanticAI.
+    """
+    pydantic_history = []
+    
+    # Se a conversa estiver vazia, retorna lista vazia
+    if not historico_db:
+        return pydantic_history
+
+    # Separamos a ÚLTIMA mensagem se for do user
+    if historico_db[-1].get('role') == 'user':
+        mensagens_de_contexto = historico_db[:-1]
+    else:
+        mensagens_de_contexto = historico_db
+
+    for msg in mensagens_de_contexto:
+        role = msg.get('role')
+        conteudo = msg.get('content') or "[Mídia ou mensagem sem texto]"
+        
+        if role == 'user':
+            pydantic_history.append(
+                ModelRequest(parts=[UserPromptPart(content=conteudo)])
+            )
+        elif role == 'assistant':
+            pydantic_history.append(
+                ModelResponse(parts=[TextPart(content=conteudo)])
+            )
+
+    return pydantic_history
+
 async def process_single_atendimento(atendimento_id: int, company: models.Company):
+    if atendimento_id in _active_processing_ids:
+        logger.warning(f"Atendimento {atendimento_id} já está sendo processado em outra task. Pulando redundância.")
+        return
+
+    _active_processing_ids.add(atendimento_id)
+    try:
+        await _process_single_atendimento_inner(atendimento_id, company)
+    finally:
+        _active_processing_ids.discard(atendimento_id)
+
+
+async def _process_single_atendimento_inner(atendimento_id: int, company: models.Company):
     """
     Processa um único atendimento de ponta a ponta.
     Esta função é o coração do agente, orquestrando a leitura do estado atual,
@@ -29,7 +216,7 @@ async def process_single_atendimento(atendimento_id: int, company: models.Compan
     É projetada para ser executada de forma assíncrona para cada atendimento.
     """
     # Log inicial para rastrear qual usuário está processando qual atendimento.
-    logger.info(f"Agente (Company {company.id}): Processando atendimento ID {atendimento_id}...")
+    logger.info(f"[ATENDIMENTO INICIADO] ID: {atendimento_id} | Empresa ID: {company.id}")
     
     # Inicializa os serviços necessários para o processamento.
     whatsapp_service = get_whatsapp_service()
@@ -41,8 +228,7 @@ async def process_single_atendimento(atendimento_id: int, company: models.Compan
 
     try:
         # --- ETAPA 1: BLOQUEIO E ATUALIZAÇÃO DE STATUS ---
-        # Esta etapa é crucial para evitar que o mesmo atendimento seja processado por múltiplos agentes ao mesmo tempo (condição de corrida).
-        # O status é alterado para "Gerando Resposta" para sinalizar que este atendimento está em processamento ativo.
+        logger.info(f"[Passo 1/5 - Bloqueio] Tentando travar atendimento ID {atendimento_id}...")
         marked_generating = False
         try:
             async with SessionLocal() as db_mark_generating:
@@ -58,19 +244,19 @@ async def process_single_atendimento(atendimento_id: int, company: models.Compan
                         atendimento_to_mark.updated_at = datetime.now(timezone.utc)
                         marked_generating = True
                     else:
-                        logger.warning(f"Agente: Atendimento {atendimento_id} pulado (status '{atendimento_to_mark.status if atendimento_to_mark else 'N/A'}' não permite processamento).")
+                        logger.warning(f"[Passo 1/5 - Bloqueio] Atendimento {atendimento_id} pulado. Status atual: '{atendimento_to_mark.status if atendimento_to_mark else 'N/A'}' (esperado: 'Mensagem Recebida').")
                         return 
 
         except Exception as lock_err:
-            logger.error(f"Agente: Falha ao marcar status: {lock_err}")
+            logger.error(f"[Passo 1/5 - Bloqueio] Falha crítica ao marcar status de processamento: {lock_err}")
             return
         
         if not marked_generating: return
 
-        logger.info(f"Agente: Atendimento {atendimento_id} marcado como 'Gerando Resposta'.")
+        logger.info(f"[Passo 1/5 - Bloqueio] Atendimento ID {atendimento_id} travado com sucesso e marcado como 'Gerando Resposta'.")
 
         # --- ETAPA 2: COLETA DE CONTEXTO PARA A IA ---
-        # Reúne todas as informações necessárias para que a IA possa gerar uma resposta coerente.
+        logger.info(f"[Passo 2/5 - Contexto] Iniciando coleta de contexto e histórico de mensagens...")
         conversation_history = []
         persona_config = None
 
@@ -94,17 +280,22 @@ async def process_single_atendimento(atendimento_id: int, company: models.Compan
                 
                 # Se nenhuma persona for encontrada, o processo não pode continuar.
                 if not persona_config:
-                    raise ValueError("Nenhuma persona encontrada.")
+                    raise ValueError("Nenhuma persona configurada para esta empresa/atendimento.")
                 
+                logger.info(f"[Passo 2/5 - Contexto] Persona carregada: ID {persona_config.id} | Nome: {persona_config.nome_config or 'N/A'}")
+
                 # Carrega o histórico da conversa a partir do campo JSON no banco de dados.
                 try:
                     conversation_history = json.loads(atendimento_context.conversa or "[]")
                     conversation_history.sort(key=lambda x: x.get('timestamp') or 0) # Garante a ordem cronológica.
                 except:
                     conversation_history = []
+                
+                logger.info(f"[Passo 2/5 - Contexto] Histórico carregado: {len(conversation_history)} mensagens no total.")
+
         # Se ocorrer um erro ao coletar o contexto, o status do atendimento é revertido para "Erro Contexto".
         except Exception as context_err:
-            logger.error(f"Agente: Erro contexto (ID {atendimento_id}): {context_err}")
+            logger.error(f"[Passo 2/5 - Contexto] Falha ao ler dados de contexto para o atendimento ID {atendimento_id}: {context_err}")
             try:
                 async with SessionLocal() as db_revert:
                     async with db_revert.begin():
@@ -115,105 +306,293 @@ async def process_single_atendimento(atendimento_id: int, company: models.Compan
             except Exception: pass
             return 
 
-        # --- ETAPA 3: GERAÇÃO DA RESPOSTA PELA IA (COM RETRIES DE ID VALIDO) ---
-        # Pré-carrega os IDs do Drive válidos para esta persona para validar a resposta da IA.
-        valid_drive_file_ids = set()
-        downloaded_files = {}
-        try:
-            async with SessionLocal() as db_validate:
-                stmt = select(models.KnowledgeVector.content).where(
-                    models.KnowledgeVector.config_id == persona_config.id,
-                    models.KnowledgeVector.origin == "drive"
-                )
-                res = await db_validate.execute(stmt)
-                drive_records = res.scalars().all()
-                for content in drive_records:
-                    try:
-                        parsed = parse_drive_index(content)
-                        file_id = parsed.get("ID")
-                        if file_id:
-                            valid_drive_file_ids.add(file_id)
-                    except Exception:
-                        pass
-        except Exception as e:
-            logger.error(f"Agente: Erro ao pre-carregar IDs válidos do Drive: {e}")
-
+        # --- ETAPA 3: GERAÇÃO DA RESPOSTA PELA IA ---
         ia_response = None
-        max_ia_attempts = 3
         
         try:
-            for ia_attempt in range(max_ia_attempts):
-                logger.info(f"Agente: Atendimento {atendimento_id} apto para IA. Chamando Gemini (Tentativa {ia_attempt + 1}/{max_ia_attempts})...")
-                async with SessionLocal() as db_gemini_deduct:
-                    company_for_gemini = await db_gemini_deduct.get(models.Company, company.id)
-                    
-                    ia_response = await gemini_service.generate_conversation_action(
-                        whatsapp=atendimento_context,
-                        conversation_history_db=conversation_history,
-                        persona=persona_config,
-                        db=db_gemini_deduct, 
-                        company=company_for_gemini
-                    )
-                if not ia_response:
-                    raise ValueError("IA retornou vazio.")
+            logger.info(f"[Passo 3/5 - IA] Preparando dados do contexto para envio à IA...")
+            # 0. Coleta os dados do banco em uma transação curta para liberar a conexão antes de chamar a IA
+            async with SessionLocal() as db_gemini_deduct:
+                company_for_gemini = await db_gemini_deduct.get(models.Company, company.id)
+                workflow_context = gemini_service._format_workflow_to_markdown(persona_config.workflow_json)
+                available_tags = await crud_atendimento.get_all_user_tags(db_gemini_deduct, company_id=company.id)
+                available_tags_names = [t['name'] for t in available_tags]
+                
+                # Busca as categorias reais de conhecimento disponíveis no banco
+                categorias_conhecimento = []
+                try:
+                    stmt_cats = select(models.KnowledgeVector.category).where(
+                        models.KnowledgeVector.config_id == persona_config.id
+                    ).distinct()
+                    res_cats = await db_gemini_deduct.execute(stmt_cats)
+                    categorias_conhecimento = sorted(list({str(r).strip() for r in res_cats.scalars().all() if r and str(r).strip()}))
+                    logger.info(f"[Passo 2/5 - Contexto] Categorias de conhecimento disponíveis na base: {categorias_conhecimento}")
+                except Exception as cat_err:
+                    logger.error(f"[Passo 2/5 - Contexto] Erro ao buscar categorias de conhecimento: {cat_err}")
+                
+                atendimento_for_gemini = await db_gemini_deduct.get(models.Atendimento, atendimento_id)
+                datetime_context = gemini_service._get_datetime_context(company_for_gemini)
 
-                # Validação imediata da resposta gerada
-                arquivos_anexos = ia_response.get("arquivos_anexos")
-                invalid_found = False
-                downloaded_files.clear()
+            # 3. Recupera Calendar Context (Fora do bloco SessionLocal)
+            calendar_context = ""
+            if persona_config.is_calendar_active and persona_config.available_hours:
+                logger.info(f"[Passo 3/5 - IA] Configuração do Calendário está ativa. Buscando eventos no Google Calendar...")
+                booked_events_str = ""
+                if persona_config.google_calendar_credentials:
+                    try:
+                        cal_service = get_google_calendar_service(persona_config)
+                        events = await asyncio.to_thread(cal_service.get_upcoming_events)
+                        if events:
+                            booked_list = [f"- {e['start'].get('dateTime', e['start'].get('date'))}" for e in events]
+                            booked_events_str = "\n# HORÁRIOS JÁ OCUPADOS (NÃO AGENDAR NESTES)\n" + "\n".join(booked_list) + "\n"
+                    except Exception as cal_err:
+                        logger.error(f"[Passo 3/5 - IA] Erro ao carregar eventos da agenda Google: {cal_err}")
+
+                hours_summary = []
+                for day, intervals in persona_config.available_hours.items():
+                    if intervals:
+                        if isinstance(intervals, str):
+                            hours_summary.append(f"{day.capitalize()}: {intervals}")
+                        elif isinstance(intervals, list):
+                            formatted_intervals = []
+                            for i in intervals:
+                                if isinstance(i, dict):
+                                    start = i.get('start')
+                                    end = i.get('end')
+                                    if start and end:
+                                        formatted_intervals.append(f"{start}-{end}")
+                                    elif start:
+                                        formatted_intervals.append(start)
+                                    elif end:
+                                        formatted_intervals.append(end)
+                                elif isinstance(i, str):
+                                    formatted_intervals.append(i)
+                            if formatted_intervals:
+                                hours_summary.append(f"{day.capitalize()}: {', '.join(formatted_intervals)}")
+                        else:
+                            hours_summary.append(f"{day.capitalize()}: {str(intervals)}")
                 
-                if arquivos_anexos and isinstance(arquivos_anexos, list):
-                    for arquivo_anexo in arquivos_anexos:
-                        if not isinstance(arquivo_anexo, dict):
-                            continue
-                        file_id = arquivo_anexo.get("id_arquivo")
-                        
-                        # Verifica se é placeholder ou inválido (não cadastrado no RAG da persona)
-                        is_placeholder = not file_id or "ID_DO_" in str(file_id).upper() or "ID_AQUI" in str(file_id).upper()
-                        is_not_synced = valid_drive_file_ids and file_id not in valid_drive_file_ids
-                        
-                        if is_placeholder or is_not_synced:
-                            logger.warning(
-                                f"Agente: Tentativa {ia_attempt + 1} de resposta da IA continha ID de arquivo inválido/não sincronizado ({file_id})."
-                            )
-                            invalid_found = True
-                            break
-                        
-                        # Pré-validação de download do arquivo físico para garantir existência
-                        try:
-                            logger.info(f"Agente: Pré-verificando existência e download do arquivo {file_id} no Drive...")
-                            file_bytes = drive_service.download_file_bytes(file_id)
-                            if not file_bytes:
-                                logger.warning(f"Agente: Arquivo ID {file_id} está no banco mas falhou ao baixar do Google Drive (pode ter sido excluído).")
-                                invalid_found = True
-                                break
-                            else:
-                                downloaded_files[file_id] = file_bytes
-                        except Exception as dl_err:
-                            logger.warning(f"Agente: Falha ao baixar arquivo ID {file_id} durante validação: {dl_err}")
-                            invalid_found = True
-                            break
+                hours_text = " | ".join(hours_summary) if hours_summary else "Não configurado"
+                calendar_context = f"\n# DISPONIBILIDADE DE AGENDA\n- Horários de Trabalho: {hours_text}\n"
+                calendar_context += booked_events_str
+                calendar_context += "Se o cliente demonstrar interesse em agendar, verifique a disponibilidade real (horários de trabalho vs ocupados) e proponha um horário livre usando a tool correspondente.\n"
+
+
+            
+            # --- RESOLUÇÃO DE PERSONA PROMPT E PÁGINA DE INSTRUÇÕES ---
+            persona_form_data = getattr(persona_config, 'persona_form', None)
+            persona_from_tab = build_prompt_from_persona_form(persona_form_data) if persona_form_data else ""
+            
+            has_spreadsheet_id = bool(persona_config.spreadsheet_id and str(persona_config.spreadsheet_id).strip())
+            instructions_page_prompt = (persona_config.prompt or "").strip() if has_spreadsheet_id else ""
+
+            if persona_from_tab and instructions_page_prompt:
+                persona_prompt_resolved = f"{persona_from_tab}\n\n## MATRIZ DE INSTRUÇÕES DO SISTEMA\n{instructions_page_prompt}"
+                logger.info(f"[Passo 3/5 - IA] Usando ABA DE PERSONA e PÁGINA DE INSTRUÇÕES (Planilha ID: {persona_config.spreadsheet_id}) no system prompt.")
+            elif persona_from_tab:
+                persona_prompt_resolved = persona_from_tab
+                logger.info(f"[Passo 3/5 - IA] Planilha de instruções não configurada (ID ausente). Usando apenas a ABA DE PERSONA no system prompt.")
+            elif instructions_page_prompt:
+                persona_prompt_resolved = instructions_page_prompt
+                logger.info(f"[Passo 3/5 - IA] Aba de persona não preenchida. Usando apenas a PÁGINA DE INSTRUÇÕES da planilha como system prompt.")
+            else:
+                persona_prompt_resolved = "Você é um assistente virtual útil."
+                logger.info(f"[Passo 3/5 - IA] Nenhuma instrução ou persona configurada. Usando prompt fallback padrão.")
+
+            contexto = ContextoSaaS(
+                db=None,
+                company_id=company.id,
+                config_id=persona_config.id,
+                atendimento_id=atendimento_id,
+                nome_cliente=atendimento_context.nome_contato or "Desconhecido",
+                data_hora_atual=datetime_context,
+                persona_prompt=persona_prompt_resolved,
+                model_name=persona_config.ai_model or "gemini-3.1-flash-lite",
+                rag_context="",
+                workflow_context=workflow_context,
+                calendar_context=calendar_context,
+                available_tags=available_tags_names,
+                drive_ativo=bool(persona_config.drive_id),
+                calendar_ativo=bool(persona_config.is_calendar_active),
+                # --- Configuracoes de inferencia vindas da Config do cliente ---
+                temperature=float(persona_config.temperature or 0.1),
+                top_p=float(persona_config.top_p or 0.95),
+                top_k=int(persona_config.top_k or 40),
+                thinking_budget=persona_config.thinking_budget,
+                thinking_level=str(persona_config.thinking_level or "medium").strip("'\"").strip().lower(),
+                tts_voice=str(persona_config.tts_voice or "").strip("'\"").strip(),
+                # --- Micro-tools ---
+                empresa=company_for_gemini,
+                atendimento=atendimento_for_gemini,
+                whatsapp_service=whatsapp_service,
+                categorias_conhecimento=categorias_conhecimento
+            )
+            
+            # 6. Executa o Agente do Pydantic AI com histórico de mensagens nativo
+            if conversation_history and conversation_history[-1].get("role") == "user":
+                ultima_mensagem = conversation_history[-1].get("content", "") or "Olá"
+            else:
+                ultima_mensagem = "Olá"
+            memoria_ia = converter_historico_para_pydantic(conversation_history)
+            
+            model_to_use = contexto.model_name
+            if not model_to_use.startswith("google:") and not model_to_use.startswith("google-cloud:"):
+                model_to_use = f"google:{model_to_use}"
+
+            logger.info(f"[Passo 3/5 - IA] Executando Pydantic AI com o modelo '{model_to_use}'...")
+            
+            import os
+            try:
+                os.environ["GOOGLE_API_KEY"] = gemini_service.api_key
+            except Exception as key_err:
+                logger.warning(f"[Passo 3/5 - IA] Não foi possível definir GOOGLE_API_KEY no ambiente: {key_err}")
+
+            from pydantic_ai.models.google import GoogleModelSettings
+
+            thinking_cfg = {}
+            is_gemini_3 = "gemini-3" in contexto.model_name
+            if is_gemini_3:
+                raw_lvl = (contexto.thinking_level or "").strip("'\"").strip().lower()
+                if raw_lvl and raw_lvl not in ("default", "none", "null", ""):
+                    thinking_cfg["thinking_level"] = raw_lvl.upper()
+            elif contexto.thinking_budget is not None:
+                thinking_cfg["thinking_budget"] = contexto.thinking_budget
+
+            model_settings_dict = {
+                "temperature": contexto.temperature,
+                "top_p": contexto.top_p,
+                "top_k": contexto.top_k,
+            }
+            if thinking_cfg:
+                model_settings_dict["google_thinking_config"] = thinking_cfg
+
+            model_settings = GoogleModelSettings(**model_settings_dict)
+
+            logger.info(
+                f"[Passo 3/5 - IA] ModelSettings: temperature={contexto.temperature}, "
+                f"top_p={contexto.top_p}, top_k={contexto.top_k}, "
+                f"thinking_config={thinking_cfg}"
+            )
+
+            resultado_ia = await agente_atendimento.run(
+                ultima_mensagem,
+                deps=contexto,
+                message_history=memoria_ia,
+                model=model_to_use,
+                model_settings=model_settings
+            )
+            
+            # 7. Converte a resposta estruturada para o formato esperado pelo restante do agent_processor
+            dados = resultado_ia.output
+            logger.info(f"[Passo 3/5 - IA] Retorno recebido com sucesso do LLM. Output Resumo: '{dados.resumo}'")
+
+            # Escreve o input e output detalhado em last_prompt.txt de forma humanizada e amigável
+            try:
+                from pydantic_core import to_jsonable_python
+                parts = []
+                parts.append("=" * 80)
+                parts.append(f"🕒 CICLO DO AGENTE: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                parts.append(f"🤖 MODELO UTILIZADO: {model_to_use}")
+                parts.append("=" * 80)
+                parts.append("")
+
+                messages = resultado_ia.all_messages()
+                system_prompt_content = ""
+                conversation_parts = []
                 
-                if not invalid_found:
-                    # ID válido e arquivo acessível, aceita a resposta
-                    logger.info(f"Agente: Resposta da IA validada com sucesso na tentativa {ia_attempt + 1}.")
-                    break
-                else:
-                    if ia_attempt < max_ia_attempts - 1:
-                        # Pequeno delay antes de tentar novamente
-                        await asyncio.sleep(1)
-                    else:
-                        # Última tentativa: filtra e remove apenas os anexos inválidos da resposta para não quebrar a mensagem
-                        logger.warning("Agente: Limite de tentativas atingido. Removendo anexos inválidos da resposta final para evitar falhas no envio.")
-                        if "arquivos_anexos" in ia_response and isinstance(arquivos_anexos, list):
-                            ia_response["arquivos_anexos"] = [
-                                a for a in arquivos_anexos 
-                                if isinstance(a, dict) and a.get("id_arquivo") and (not valid_drive_file_ids or a.get("id_arquivo") in valid_drive_file_ids)
-                            ]
+                for msg in messages:
+                    msg_dict = to_jsonable_python(msg)
+                    role = msg_dict.get("role", "unknown")
+                    parts_list = msg_dict.get("parts", [])
+                    
+                    for p in parts_list:
+                        part_kind = p.get("part_kind")
+                        content = p.get("content") or p.get("text")
+                        
+                        if part_kind in ["system-prompt", "system"] or (content and ("--- CONTEXTO DO ATENDIMENTO ---" in str(content) or "Assistente virtual" in str(content))):
+                            system_prompt_content = str(content)
+                        elif part_kind == "user-prompt":
+                            conversation_parts.append(f"[Cliente 👤] {content}")
+                        elif part_kind == "tool-call" or ("tool_name" in p and "args" in p):
+                            tool_name = p.get("tool_name")
+                            args = p.get("args") or {}
+                            args_str = ", ".join(f"{k}={repr(v)}" for k, v in args.items())
+                            conversation_parts.append(f"[Ação da IA 🛠️] Executar ferramenta '{tool_name}' com: {args_str}")
+                        elif part_kind == "tool-return" or "outcome" in p:
+                            tool_name = p.get("tool_name")
+                            conversation_parts.append(f"[Resultado da Ferramenta '{tool_name}' 📥] {content}")
+                        elif part_kind == "text" or role == "model":
+                            conversation_parts.append(f"[IA 🤖] {content}")
+                        else:
+                            if content:
+                                conversation_parts.append(f"[{role.upper()}] {content}")
+
+                # Fallback de garantia: se o prompt do sistema não veio nas partes da mensagem, gera via construir_prompt_base
+                if not system_prompt_content:
+                    try:
+                        from app.services.agent_service import construir_prompt_base
+                        class MockRunContext:
+                            def __init__(self, deps):
+                                self.deps = deps
+                        system_prompt_content = construir_prompt_base(MockRunContext(contexto))
+                    except Exception as sys_err:
+                        logger.warning(f"Não foi possível obter o prompt do sistema dinamicamente: {sys_err}")
+
+                if system_prompt_content:
+                    parts.append("--- 🧠 PROMPT DO SISTEMA (INSTRUÇÕES DO AGENTE) ---")
+                    parts.append(system_prompt_content.strip())
+                    parts.append("")
+                    parts.append("-" * 80)
+                    parts.append("")
+
+                if conversation_parts:
+                    parts.append("--- 💬 FLUXO DE CONVERSA E AÇÕES DA RODADA ---")
+                    parts.append("\n".join(conversation_parts))
+                    parts.append("")
+                    parts.append("-" * 80)
+                    parts.append("")
+
+                parts.append("--- 📝 RESUMO FINAL / STATUS ---")
+                parts.append(f"Resumo da Rodada: {dados.resumo}")
+                parts.append("Próximo Status: Aguardando Resposta")
+                parts.append("")
+                parts.append("-" * 80)
+                parts.append("")
+
+                if resultado_ia.usage:
+                    u = resultado_ia.usage
+                    parts.append("--- 📊 CONSUMO DE TOKENS DO CICLO ---")
+                    parts.append(f"Tokens de Entrada (Prompt): {getattr(u, 'input_tokens', 0)}")
+                    parts.append(f"Tokens de Saída (Resposta): {getattr(u, 'output_tokens', 0)}")
+                    parts.append(f"Total de Tokens Consumidos: {getattr(u, 'total_tokens', getattr(u, 'input_tokens', 0) + getattr(u, 'output_tokens', 0))}")
+                    parts.append("")
+                    parts.append("-" * 80)
+                    parts.append("")
+
+                # Adiciona o ciclo formatado ao last_prompt.txt (modo append 'a')
+                parts.append("=" * 80)
+                parts.append("\n")
+
+                with open("last_prompt.txt", "a", encoding="utf-8") as f:
+                    f.write("\n".join(parts))
+            except Exception as f_err:
+                logger.error(f"Erro ao gravar last_prompt.txt: {f_err}", exc_info=True)
+            
+            ia_response = {
+                "resumo": dados.resumo or "",
+                "nova_situacao": "Aguardando Resposta"
+            }
+            
+            # 8. Contabiliza tokens
+            logger.info(f"[Passo 3/5 - IA] Iniciando contabilização de tokens...")
+            await contabilizar_tokens_pydantic(resultado_ia, contexto, company_for_gemini)
+            
+            if not ia_response:
+                raise ValueError("A IA retornou um resultado vazio ou inválido.")
 
         # Se a IA falhar permanentemente, o status é atualizado para "Erro IA" com detalhes do erro.
         except Exception as ia_err:
-            logger.error(f"Agente: Falha GERAÇÃO IA: {ia_err}", exc_info=True)
+            logger.error(f"[Passo 3/5 - IA] Falha crítica na geração ou execução da IA: {ia_err}", exc_info=True)
             try:
                 async with SessionLocal() as db_ia_fail:
                     async with db_ia_fail.begin():
@@ -225,306 +604,42 @@ async def process_single_atendimento(atendimento_id: int, company: models.Compan
             except Exception: pass
             return
 
-        # --- ETAPA 4: EXECUÇÃO DAS AÇÕES (ENVIO DE MENSAGEM/ARQUIVO) ---
-        # A resposta da IA é processada e as ações correspondentes (enviar texto, enviar arquivo) são executadas.
-        mensagens_ia = ia_response.get("mensagens")
-        message_to_send_fallback = ia_response.get("mensagem_para_enviar")
-        
+        # --- ETAPA 4: EXECUÇÃO DAS AÇÕES (MIGRADAS PARA AS MICRO-TOOLS) ---
+        logger.info(f"[Passo 4/5 - Ações] Ações delegadas para execução interna nas ferramentas da IA.")
         intended_status_after_send = ia_response.get("nova_situacao", "Aguardando Resposta")
         intended_resumo = ia_response.get("resumo", "")
-        contact_name_from_ia = ia_response.get("nome_contato")
-        email_cliente = ia_response.get("email_cliente")
-        tags_sugeridas = ia_response.get("tags_sugeridas")
-        acao_agenda = ia_response.get("acao_agenda")
-        data_agendamento = ia_response.get("data_agendamento")
-        
-        # Extração dos dados do anexo, se a IA solicitou um.
-        arquivos_anexos = ia_response.get("arquivos_anexos")
-        fonte_confiavel = ia_response.get("fonte_confiavel", True)
-        
-        sent_messages_info = []
-        media_sent = False
-
-        # --- VALIDACAO DE INTEGRIDADE (Hallucination Prevention) ---
-        if not fonte_confiavel:
-            logger.warning(f"Agente: IA sinalizou baixa confiança (fonte_confiavel=False) para Atendimento {atendimento_id}. Procedendo com cautela.")
-            # Opcional: Poderia forçar 'Atendente Chamado' aqui se a confiança for crucial
-            # intended_status_after_send = "Atendente Chamado"
-
-        # Prepara a lista de partes a enviar
-        message_parts = []
-        if mensagens_ia and isinstance(mensagens_ia, list):
-            message_parts = [str(m).strip() for m in mensagens_ia if m and str(m).strip()]
-        elif message_to_send_fallback and isinstance(message_to_send_fallback, str):
-            # Fallback para o formato antigo de string única
-            cleaned = message_to_send_fallback.strip().replace('\\n', '\n').replace('\\', '')
-            message_parts = [p.strip() for p in cleaned.split('\n\n') if p.strip()]
-
-        # --- LÓGICA DE ENVIO DE MENSAGEM DE TEXTO ---
-        if message_parts:
-
-            for i, part in enumerate(message_parts):
-                try:
-                    # --- SAFEGUARD: Validar links/IDs alucinados no corpo do texto ---
-                    # Se o texto contiver padrões de ID do Drive que não estão na lista de anexos, removemos ou alertamos
-                    if "ID_DO_" in part.upper() or "ID_AQUI" in part.upper():
-                        logger.warning(f"Agente: Texto contém placeholder de ID detectado. Limpando parte da mensagem.")
-                        part = re.sub(r"\[?ID_DO_[^\]\s]+\]?", "", part, flags=re.IGNORECASE).strip()
-
-                    # 2. Simulação de Digitação Variável (Humanização)
-                    # Velocidade varia entre 0.10 e 0.20 segundos por caractere
-                    chars_per_sec = random.uniform(0.10, 0.20)
-                    typing_delay = min(max(len(part) * chars_per_sec, 2.5), 15.0)
-                    
-                    logger.info(f"Agente: Simulando digitação ({chars_per_sec:.3f}s/char) por {typing_delay:.1f}s para parte {i+1}/{len(message_parts)}...")
-                    await asyncio.sleep(typing_delay)
-
-                    logger.info(f"Agente: Enviando texto {i+1}/{len(message_parts)}...")
-                    sent_info = await whatsapp_service.send_text_message(company, atendimento_contato_num_log, part)
-                    
-                    sent_messages_info.append({
-                        "id": sent_info.get('id') or f"text_{uuid.uuid4()}",
-                        "content": part,
-                        "timestamp": int(datetime.now(timezone.utc).timestamp()),
-                        "status": "sent"
-                    })
-
-                    if i < len(message_parts) - 1: 
-                        await asyncio.sleep(random.uniform(2.5, 5.0))
-                except Exception as send_err:
-                    logger.error(f"Agente: Erro envio texto: {send_err}")
-                    intended_status_after_send = "Falha no Envio"
-                    break
-        
-        # Se a IA decidiu não enviar nada (nem mídia, nem texto), apenas registra essa decisão.
-        elif not arquivos_anexos and not message_parts:
-             logger.info(f"Agente: IA decidiu não enviar nada.")
-        # --- LÓGICA DE ENVIO DE MÍDIA (ARQUIVO DO GOOGLE DRIVE) ---
-        # Agora iteramos sobre uma lista de arquivos
-        if arquivos_anexos and isinstance(arquivos_anexos, list):
-            for i, arquivo_anexo in enumerate(arquivos_anexos):
-                if not (isinstance(arquivo_anexo, dict) and arquivo_anexo.get("id_arquivo")):
-                    continue
-
-                nome_arquivo = arquivo_anexo.get("nome_exato", "arquivo")
-                file_id = arquivo_anexo.get("id_arquivo")
-                tipo_midia = arquivo_anexo.get("tipo_midia", "document")
-
-                # --- SAFEGUARD: Ignorar IDs placeholders alucinados pela IA ---
-                if not file_id or "ID_DO_" in str(file_id).upper() or "ID_AQUI" in str(file_id).upper():
-                    logger.warning(f"Agente: ID de arquivo inválido/placeholder detectado ({file_id}). Ignorando envio para evitar erro 404.")
-                    continue
-
-                # --- SAFEGUARD EXTRA: Validar se o ID realmente pertence aos arquivos sincronizados desta Persona ---
-                if valid_drive_file_ids and file_id not in valid_drive_file_ids:
-                    logger.warning(f"Agente: Bloqueado envio do arquivo '{nome_arquivo}' (ID: {file_id}) porque o ID não consta nos arquivos sincronizados desta persona.")
-                    continue
-                
-                logger.info(f"Agente: IA solicitou envio de arquivo {i+1}/{len(arquivos_anexos)}: {nome_arquivo} (ID: {file_id})")
-                
-                # Pega os bytes do cache (já baixados e verificados na validação prévia em Etapa 3)
-                file_bytes = downloaded_files.get(file_id)
-                
-                # Se por acaso não estiver no cache (ex: fallback), faz o download
-                if not file_bytes:
-                    max_retries = 3
-                    for attempt in range(max_retries):
-                        try:
-                            logger.info(f"Agente: Cache de download vazio para ID {file_id}. Tentando baixar do Drive (Tentativa: {attempt + 1}/{max_retries})...")
-                            file_bytes = drive_service.download_file_bytes(file_id)
-                            if file_bytes:
-                                break
-                        except Exception as media_err:
-                            logger.warning(f"Agente: Falha na tentativa {attempt + 1} de download: {media_err}")
-                            if attempt < max_retries - 1:
-                                await asyncio.sleep(3)
-                            else:
-                                break
-
-                if file_bytes:
-                    try:
-                        logger.info(f"Agente: Enviando mídia {nome_arquivo} via WhatsApp...")
-                        sent_info = await whatsapp_service.send_media_message(
-                            company=company,
-                            number=atendimento_contato_num_log,
-                            media_type=tipo_midia,
-                            file_bytes=file_bytes,
-                            filename=nome_arquivo,
-                            caption=None 
-                        )
-                        
-                        sent_messages_info.append({
-                            "id": sent_info.get('id') or f"media_{uuid.uuid4()}",
-                            "content": f"[Arquivo Enviado: {nome_arquivo}]",
-                            "timestamp": int(datetime.now(timezone.utc).timestamp()),
-                            "type": tipo_midia,
-                            "media_id": sent_info.get("media_id"),
-                            "filename": nome_arquivo,
-                            "status": "sent"
-                        })
-                        media_sent = True
-                        await asyncio.sleep(random.uniform(2, 4))
-                    except Exception as send_media_err:
-                        logger.error(f"Agente: Erro ao enviar mídia pelo WhatsApp: {send_media_err}")
-                        intended_status_after_send = "Erro Drive"
-                        intended_resumo += f" | Falha ao enviar o arquivo {nome_arquivo} (ID: {file_id}) via WhatsApp."
-                else:
-                    logger.error(f"Agente: Falha permanente ao baixar o arquivo {nome_arquivo} (ID: {file_id}).")
-                    intended_status_after_send = "Erro Drive"
-                    intended_resumo += f" | Falha permanente no download do arquivo {nome_arquivo} (ID: {file_id})."
-
-        # --- LÓGICA DE AGENDAMENTO NO GOOGLE CALENDAR ---
-        meeting_link = None
-        if acao_agenda == "agendar_reuniao" and data_agendamento:
-            try:
-                if persona_config and persona_config.google_calendar_credentials:
-                    calendar_service = get_google_calendar_service(persona_config)
-                    service = calendar_service.get_service()
-                    
-                    # --- Cancelar agendamentos anteriores deste contato ---
-                    try:
-                        now_iso = datetime.now(timezone.utc).isoformat()
-                        # Busca eventos futuros que contenham o número do WhatsApp na descrição ou título
-                        existing_events = service.events().list(
-                            calendarId='primary',
-                            timeMin=now_iso,
-                            q=atendimento_context.whatsapp,
-                            singleEvents=True,
-                            orderBy='startTime'
-                        ).execute().get('items', [])
-
-                        for old_event in existing_events:
-                            if old_event.get('description') and f"WhatsApp: {atendimento_context.whatsapp}" in old_event.get('description'):
-                                logger.info(f"Agente: Cancelando evento anterior {old_event.get('id')} para reagendamento.")
-                                service.events().delete(calendarId='primary', eventId=old_event.get('id'), sendUpdates='all').execute()
-                    except Exception as cancel_err:
-                        logger.warning(f"Agente: Erro ao cancelar agendamentos anteriores: {cancel_err}")
-
-                    dt_start = datetime.fromisoformat(data_agendamento)
-                    dt_end = dt_start + timedelta(hours=1) # Duração padrão de 1h
-                    
-                    event_body = {
-                        'summary': f'Reunião: {atendimento_context.nome_contato or atendimento_context.whatsapp}',
-                        'description': f'Agendado automaticamente pela IA AtendAI.\nWhatsApp: {atendimento_context.whatsapp}\nObservações: {atendimento_context.resumo or "Nenhuma"}',
-                        'start': {'dateTime': dt_start.isoformat(), 'timeZone': 'America/Sao_Paulo'},
-                        'end': {'dateTime': dt_end.isoformat(), 'timeZone': 'America/Sao_Paulo'},
-                        'conferenceData': {
-                            'createRequest': {
-                                'requestId': f"{uuid.uuid4()}",
-                                # 'conferenceSolutionKey': {'type': 'hangoutMeet'} # Removido para usar o padrão (Meet) e evitar erro 400
-                            }
-                        }
-                    }
-                    
-                    # Validação de e-mail antes de adicionar
-                    if email_cliente and isinstance(email_cliente, str):
-                        clean_email = email_cliente.strip()
-                        if re.match(r"[^@]+@[^@]+\.[^@]+", clean_email):
-                            event_body['attendees'] = [{'email': clean_email}]
-                        else:
-                            logger.warning(f"Agente: Email do cliente inválido para convite: '{email_cliente}'. Agendando sem convite.")
-
-                    try:
-                        event = service.events().insert(calendarId='primary', body=event_body, conferenceDataVersion=1, sendUpdates='all').execute()
-                        meeting_link = event.get('hangoutLink')
-                        logger.info(f"Agente: Reunião agendada com sucesso! Link: {meeting_link}")
-                        intended_resumo += f" | Reunião agendada para {data_agendamento}."
-                    except Exception as req_err:
-                        logger.error(f"Agente: Erro na requisição do Calendar com ConferenceData. Tentando sem conferência. Erro: {req_err}")
-                        # Fallback: Tenta criar sem conferência se falhar (evita perder o agendamento)
-                        if 'conferenceData' in event_body:
-                            del event_body['conferenceData']
-                        try:
-                            event = service.events().insert(calendarId='primary', body=event_body, sendUpdates='all').execute()
-                            logger.info(f"Agente: Reunião agendada (sem link Meet) com sucesso!")
-                            intended_resumo += f" | Reunião agendada para {data_agendamento} (Sem link Meet)."
-                        except Exception as fallback_err:
-                            logger.error(f"Agente: Falha total no agendamento. Erro: {fallback_err}")
-                else:
-                    logger.warning("Agente: IA solicitou agendamento mas Google Calendar não está configurado.")
-            except Exception as cal_err:
-                logger.error(f"Agente: Erro ao agendar no Google Calendar: {cal_err}")
 
         # --- ETAPA 5: ATUALIZAÇÃO FINAL DO ATENDIMENTO ---
-        # Consolida todas as mudanças no banco de dados.
         try:
+            logger.info(f"[Passo 5/5 - Finalização] Iniciando persistência final do status e resumo no banco de dados...")
             async with SessionLocal() as db_final:
                 async with db_final.begin():
                     # Bloqueia novamente a linha para garantir a consistência dos dados.
                     at_final = await db_final.get(models.Atendimento, atendimento_id, with_for_update=True)
                     if at_final:
-                        current_hist = []
-                        try:
-                            # Carrega o histórico de conversa atual.
-                            current_hist = json.loads(at_final.conversa or "[]")
-                        except: pass
-                        
-                        # Adiciona as novas mensagens (enviadas pelo agente) ao histórico.
-                        if sent_messages_info:
-                            for msg in sent_messages_info:
-                                current_hist.append({
-                                    "id": msg['id'], "role": "assistant", 
-                                    "content": msg['content'], "timestamp": msg['timestamp'],
-                                    # Adiciona os campos de mídia se existirem
-                                    "type": msg.get("type", "text"),
-                                    "media_id": msg.get("media_id"),
-                                    "filename": msg.get("filename"),
-                                    "status": msg.get("status", "sent"),
-                                    "is_ai": True
-                                })
-                            current_hist.sort(key=lambda x: x.get('timestamp') or 0) # Reordena para garantir a cronologia.
-                        
-                        # Atualiza o status apenas se ele ainda for "Gerando Resposta", para evitar sobrescrever uma mudança manual.
+                        # Atualiza o status apenas se ele ainda for "Gerando Resposta", para evitar sobrescrever uma mudança manual ou de tool.
                         if at_final.status == "Gerando Resposta":
-                             at_final.status = intended_status_after_send 
+                             at_final.status = intended_status_after_send
+                             logger.info(f"[Passo 5/5 - Finalização] Definindo status final do atendimento como '{intended_status_after_send}'")
+                        else:
+                             logger.info(f"[Passo 5/5 - Finalização] Status já alterado anteriormente para '{at_final.status}'. Mantendo.")
 
                         if at_final.status == "Atendente Chamado":
+                            logger.info(f"[Passo 5/5 - Finalização] Status é 'Atendente Chamado'. Distribuindo atendimento para equipe humana...")
                             await crud_atendimento.distribute_atendimento(db_final, at_final)
                         
-                        # Salva as observações da IA, o histórico de conversa atualizado e a data de atualização.
+                        # Salva as observações da IA (resumo)
                         at_final.resumo = intended_resumo
-                        at_final.conversa = json.dumps(current_hist, ensure_ascii=False)
-                        
-                        # Atualiza o nome do contato se a IA retornou um novo nome e o campo atual está vazio.
-                        if contact_name_from_ia and not at_final.nome_contato:
-                            at_final.nome_contato = contact_name_from_ia
-                        
-                        # Salva o link da reunião nas observações
-                        if meeting_link:
-                            current_obs = at_final.observacoes or ""
-                            at_final.observacoes = f"{current_obs}\nLink Reunião: {meeting_link}".strip()
-
-                        # Atualiza tags se houver sugestão da IA
-                        if tags_sugeridas and isinstance(tags_sugeridas, list):
-                            try:
-                                # Busca tags disponíveis para obter as cores corretas
-                                all_user_tags = await crud_atendimento.get_all_user_tags(db_final, company_id=company.id)
-                                tag_map = {t['name']: t for t in all_user_tags}
-                                
-                                current_tags = list(at_final.tags) if at_final.tags else []
-                                current_tag_names = {t['name'] for t in current_tags}
-                                
-                                for tag_name in tags_sugeridas:
-                                    # Só adiciona se a tag existir no mapa e ainda não estiver no atendimento
-                                    if tag_name in tag_map and tag_name not in current_tag_names:
-                                        current_tags.append(tag_map[tag_name])
-                                
-                                at_final.tags = current_tags
-                            except Exception as e:
-                                logger.error(f"Agente: Erro ao atualizar tags sugeridas pela IA: {e}")
-
                         at_final.updated_at = datetime.now(timezone.utc)
             
-            logger.info(f"Agente: Atendimento {atendimento_id} finalizado com sucesso.")
-
-
+            logger.info(f"[ATENDIMENTO CONCLUÍDO] Atendimento ID {atendimento_id} processado com total sucesso.")
 
         except Exception as final_err:
-            logger.error(f"Agente: Erro update final: {final_err}")
+            logger.error(f"[Passo 5/5 - Finalização] Erro ao persistir atualizações finais: {final_err}")
 
     # Bloco de captura para erros inesperados e graves durante todo o processo.
     except Exception as outer_err:
-        logger.error(f"Agente: ERRO CRÍTICO GERAL: {outer_err}", exc_info=True)
+        logger.error(f"[ATENDIMENTO ERRO] ERRO CRÍTICO GERAL no processamento do atendimento {atendimento_id}: {outer_err}", exc_info=True)
         # Tenta reverter o status para "Erro IA" para que o atendimento possa ser analisado manualmente.
         try:
             async with SessionLocal() as db_fail:
@@ -533,6 +648,8 @@ async def process_single_atendimento(atendimento_id: int, company: models.Compan
                     if at_fail and at_fail.status == "Gerando Resposta":
                         at_fail.status = "Erro IA"
                         at_fail.resumo = f"Outer Error: {str(outer_err)[:100]}"
+                        at_fail.updated_at = datetime.now(timezone.utc)
+                        logger.info(f"[ATENDIMENTO ERRO] Status revertido para 'Erro IA' com sucesso.")
         except: pass
 
 
@@ -566,6 +683,9 @@ async def run_agent_cycle():
             if atendimentos_para_processar:
                 logger.info(f"Agente (Ciclo): Disparando {len(atendimentos_para_processar)} tarefa(s) em background.")
                 for at in atendimentos_para_processar.values():
+                    if at.id in _active_processing_ids:
+                        logger.info(f"Agente (Ciclo): Atendimento {at.id} já está em processamento ativo. Pulando disparo.")
+                        continue
                     if at.company:
                         asyncio.create_task(process_single_atendimento(at.id, at.company))
                     else:
@@ -574,4 +694,4 @@ async def run_agent_cycle():
                 logger.info("Agente (Ciclo): Nenhum atendimento para processar.")
 
         except Exception as cycle_err:
-            logger.error(f"Agente (Ciclo): Erro CRÍTICO no loop principal: {cycle_err}", exc_info=True)
+            logger.error(f"Agente (Ciclo): Erro CRÍTICO no loop principal: {cycle_err}", exc_info=True)

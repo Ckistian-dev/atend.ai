@@ -1,10 +1,41 @@
 {
   "LLM_MODELS": [
-    { "id": "gemini-3.5-flash", "name": "Gemini 3.5 Flash (5x)", "pricing": { "input_text": 1.50, "input_audio": 1.50, "output": 9.00 } },
-    { "id": "gemini-3.1-flash-lite", "name": "Gemini 3.1 Flash Lite (0.83x)", "pricing": { "input_text": 0.25, "input_audio": 0.50, "output": 1.50 } },
-    { "id": "gemini-3.1-pro-preview", "name": "Gemini 3.1 Pro Preview (6.67x)", "pricing": { "input_text": 2.00, "input_audio": 2.00, "output": 12.00 } },
-    { "id": "gemini-3.1-flash-lite-preview", "name": "Gemini 3.1 Flash Lite Preview (0.83x)", "pricing": { "input_text": 0.25, "input_audio": 0.50, "output": 1.50 } },
-    { "id": "gemini-3-flash-preview", "name": "Gemini 3 Flash Preview (1.67x)", "pricing": { "input_text": 0.50, "input_audio": 1.00, "output": 3.00 } }
+    {
+      "id": "gemini-3.1-pro-preview",
+      "name": "Gemini 3.1 Pro Preview (8x)",
+      "pricing": {
+        "input_text": 2.00,
+        "input_audio": 2.00,
+        "output": 12.00
+      }
+    },
+    {
+      "id": "gemini-3.5-flash",
+      "name": "Gemini 3.5 Flash (6x)",
+      "pricing": {
+        "input_text": 1.50,
+        "input_audio": 1.50,
+        "output": 9.00
+      }
+    },
+    {
+      "id": "gemini-3-flash-preview",
+      "name": "Gemini 3 Flash Preview (2x)",
+      "pricing": {
+        "input_text": 0.50,
+        "input_audio": 1.00,
+        "output": 3.00
+      }
+    },
+    {
+      "id": "gemini-3.1-flash-lite",
+      "name": "Gemini 3.1 Flash Lite (1x)",
+      "pricing": {
+        "input_text": 0.25,
+        "input_audio": 0.50,
+        "output": 1.50
+      }
+    }
   ],
   "DEFAULT_MODEL": "gemini-3.1-flash-lite"
 }

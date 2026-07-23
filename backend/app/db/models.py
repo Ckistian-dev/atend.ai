@@ -72,20 +72,57 @@ class Config(Base):
     top_p: Mapped[float] = mapped_column(default=0.95, server_default="0.95")
     top_k: Mapped[int] = mapped_column(default=40, server_default="40")
     thinking_budget: Mapped[Optional[int]] = mapped_column(Integer, default=1024, server_default="1024", nullable=True)
-    thinking_level: Mapped[Optional[str]] = mapped_column(String(50), default="medium", server_default="'medium'", nullable=True)
+    thinking_level: Mapped[Optional[str]] = mapped_column(String(50), default="medium", server_default="medium", nullable=True)
+    tts_voice: Mapped[Optional[str]] = mapped_column(String(50), default="Aoede", server_default="Aoede", nullable=True)
+
+    # Formulário de Persona
+    persona_form: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Dados estruturados do formulário de persona (Aba Persona)")
 
 
     company: Mapped["Company"] = relationship(back_populates="configs", foreign_keys=[company_id])
     vectors: Mapped[List["KnowledgeVector"]] = relationship(back_populates="config", cascade="all, delete-orphan")
+    integrations: Mapped[List["Integration"]] = relationship(back_populates="config", cascade="all, delete-orphan")
+
+class Integration(Base):
+    __tablename__ = "integrations"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    config_id: Mapped[int] = mapped_column(ForeignKey("configs.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    integration_type: Mapped[str] = mapped_column(String(50), default="polling", server_default="'polling'", nullable=False, comment="'polling' ou 'webhook'")
+    url: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="Endpoint de saída para polling")
+    webhook_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True, unique=True, comment="Token secreto passado no Header X-Webhook-Token")
+    method: Mapped[str] = mapped_column(String(10), default="GET", server_default="'GET'", nullable=False)
+    headers: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Cabeçalhos HTTP customizados")
+    body: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Payload JSON caso o método seja POST")
+    items_path: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="", comment="Nó no JSON para a lista de itens ex: data.products")
+    title_field: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="Campo chave para o título/ID do item")
+    content_field: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="Campo(s) para o conteúdo do item")
+    category: Mapped[str] = mapped_column(String(100), default="integração", server_default="'integração'", comment="Categoria atribuída aos vetores RAG")
+    sync_interval_minutes: Mapped[int] = mapped_column(Integer, default=5, server_default="5")
+    enabled: Mapped[bool] = mapped_column(default=True, server_default="true")
+    last_sync_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default="pending")
+    last_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    item_checksums: Mapped[Optional[Dict[str, str]]] = mapped_column(JSONB, nullable=True, comment="Mapeamento item_id -> md5 hash para atualizações incrementais")
+    last_payload: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Último payload JSON recebido via webhook")
+
+    config: Mapped["Config"] = relationship(back_populates="integrations")
 
 class KnowledgeVector(Base):
     __tablename__ = "contextos"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     config_id: Mapped[int] = mapped_column(ForeignKey("configs.id"), index=True)
-    content: Mapped[str] = mapped_column(Text, nullable=False, comment="Conteúdo textual formatado para RAG")
-    origin: Mapped[str] = mapped_column(String(50), nullable=False, comment="'sheet' ou 'drive'")
-    embedding: Mapped[Optional[List[float]]] = mapped_column(Vector(768), nullable=True, comment="Vetor de embedding (Google text-embedding-004)")
+    
+    # --- NOVAS COLUNAS PARA O PYDANTIC AI ---
+    category: Mapped[str] = mapped_column(String(50), nullable=False, index=True, default="uncategorized", server_default="'uncategorized'", comment="Ex: 'product', 'faq', 'company'")
+    raw_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Exact JSON row from the client's spreadsheet/data source")
+    
+    # --- COLUNAS ORIGINAIS MANTIDAS E OTIMIZADAS ---
+    content: Mapped[str] = mapped_column(Text, nullable=False, comment="Formatted text used for RAG embedding AND fast ILIKE text searches")
+    origin: Mapped[str] = mapped_column(String(50), nullable=False, comment="'sheet' or 'drive'")
+    embedding: Mapped[Optional[List[float]]] = mapped_column(Vector(768), nullable=True, comment="Vector embedding (Google text-embedding-004)")
 
     config: Mapped["Config"] = relationship(back_populates="vectors")
 
@@ -111,3 +148,20 @@ class Atendimento(Base):
 
     company: Mapped["Company"] = relationship(back_populates="atendimentos")
     active_persona: Mapped[Optional["Config"]] = relationship()
+
+class AtendimentoMessageSearch(Base):
+    __tablename__ = "mensagens"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    company_id: Mapped[int] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), index=True)
+    atendimento_id: Mapped[int] = mapped_column(ForeignKey("atendimentos.id", ondelete="CASCADE"), index=True)
+    message_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    role: Mapped[str] = mapped_column(String(50), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    message_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    atendimento_info: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
+    embedding: Mapped[Optional[List[float]]] = mapped_column(Vector(768), nullable=True)
+
+    company: Mapped["Company"] = relationship()
+    atendimento: Mapped["Atendimento"] = relationship()
+

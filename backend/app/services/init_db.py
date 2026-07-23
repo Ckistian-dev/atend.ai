@@ -65,6 +65,18 @@ async def init_db():
 
     async with engine.begin() as conn:
         try:
+            # --- Altera colunas de integrações para TEXT para aceitar listas longas de campos selecionados ---
+            await conn.execute(text("""
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'integrations') THEN
+                        ALTER TABLE integrations ALTER COLUMN content_field TYPE TEXT;
+                        ALTER TABLE integrations ALTER COLUMN items_path TYPE TEXT;
+                        ALTER TABLE integrations ALTER COLUMN title_field TYPE TEXT;
+                    END IF;
+                END $$;
+            """))
+
             # --- NOVO: Função para obter timestamp da última mensagem do CLIENTE ---
             await conn.execute(text("""
                 CREATE OR REPLACE FUNCTION get_last_user_msg_timestamp(conversa_text TEXT)
@@ -277,6 +289,27 @@ END $$;
             # Executa a sincronização segura de schema de forma dinâmica e persistente
             await conn.run_sync(sync_schema)
             logger.info("Tabelas e colunas do banco de dados verificadas/sincronizadas com sucesso.")
+
+            # --- LIMPEZA DE HIGIENIZAÇÃO DE CONFIGS (Remoção de aspas armazenadas em thinking_level e tts_voice) ---
+            try:
+                cleanup_sql = """
+                    DO $$
+                    BEGIN
+                        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'configs') THEN
+                            UPDATE configs 
+                            SET thinking_level = TRIM(BOTH '''' FROM TRIM(BOTH '"' FROM thinking_level))
+                            WHERE thinking_level LIKE '%''%' OR thinking_level LIKE '%"%';
+
+                            UPDATE configs 
+                            SET tts_voice = TRIM(BOTH '''' FROM TRIM(BOTH '"' FROM tts_voice))
+                            WHERE tts_voice LIKE '%''%' OR tts_voice LIKE '%"%';
+                        END IF;
+                    END $$;
+                """
+                await conn.execute(text(cleanup_sql))
+                logger.info("Higienização de 'thinking_level' e 'tts_voice' na tabela configs concluída.")
+            except Exception as clean_err:
+                logger.warning(f"Aviso ao higienizar colunas da tabela configs: {clean_err}")
         except Exception as e:
             logger.exception("ERRO CRÍTICO ao criar tabelas e colunas do banco de dados.") # Usa logger.exception para incluir traceback
             raise

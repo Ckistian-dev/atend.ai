@@ -14,7 +14,8 @@ SCOPES = ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.co
 
 class GoogleCalendarService:
     def __init__(self, config: Optional[models.Config] = None):
-        self.config = config
+        # Extrai as credenciais imediatamente na thread principal para evitar lazy load em threads secundárias
+        self.credentials_info = config.google_calendar_credentials if config else None
         self.flow: Optional[Flow] = None
 
     def _create_flow(self, redirect_uri_override: Optional[str] = None) -> Flow:
@@ -59,9 +60,9 @@ class GoogleCalendarService:
         }
 
     def _get_credentials(self) -> Optional[Credentials]:
-        if not self.config or not self.config.google_calendar_credentials:
+        if not self.credentials_info:
             return None
-        return Credentials.from_authorized_user_info(self.config.google_calendar_credentials, SCOPES)
+        return Credentials.from_authorized_user_info(self.credentials_info, SCOPES)
 
     def get_service(self):
         credentials = self._get_credentials()
@@ -69,17 +70,22 @@ class GoogleCalendarService:
             raise Exception("Configuração não autenticada com o Google Calendar.")
         return build('calendar', 'v3', credentials=credentials)
 
-    def get_upcoming_events(self, max_results: int = 50) -> List[Dict[str, Any]]:
+    def get_upcoming_events(self, max_results: int = 50, time_min: Optional[str] = None, time_max: Optional[str] = None) -> List[Dict[str, Any]]:
         """Busca os próximos eventos agendados no calendário principal."""
         service = self.get_service()
-        now = datetime.now(timezone.utc).isoformat()
-        events_result = service.events().list(
-            calendarId='primary',
-            timeMin=now,
-            maxResults=max_results,
-            singleEvents=True,
-            orderBy='startTime'
-        ).execute()
+        t_min = time_min or datetime.now(timezone.utc).isoformat()
+        
+        list_kwargs = {
+            "calendarId": 'primary',
+            "timeMin": t_min,
+            "maxResults": max_results,
+            "singleEvents": True,
+            "orderBy": 'startTime'
+        }
+        if time_max:
+            list_kwargs["timeMax"] = time_max
+            
+        events_result = service.events().list(**list_kwargs).execute()
         return events_result.get('items', [])
 
 def get_google_calendar_service(config: models.Config) -> GoogleCalendarService:

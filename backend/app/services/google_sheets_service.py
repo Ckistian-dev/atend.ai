@@ -121,6 +121,112 @@ class GoogleSheetsService:
                 raise Exception("Planilha não encontrada (404). Verifique o ID.")
             raise Exception(f"Erro ao ler planilha: {str(e)}")
 
+    async def process_sheet_for_knowledge_base(self, spreadsheet_id_or_url: str) -> List[Dict[str, Any]]:
+        """
+        Lê a planilha e formata os dados para a estrutura KnowledgeVector (category, raw_data, content).
+        Prepara a base para receber embeddings e ser salva no banco.
+        """
+        if not self.service:
+            raise Exception("Serviço Google Sheets não está autenticado/inicializado.")
+
+        # Lógica de extração do ID da planilha
+        spreadsheet_id = spreadsheet_id_or_url
+        if "docs.google.com" in spreadsheet_id_or_url:
+            try:
+                start = spreadsheet_id_or_url.find("/d/") + 3
+                end = spreadsheet_id_or_url.find("/", start)
+                spreadsheet_id = spreadsheet_id_or_url[start:] if end == -1 else spreadsheet_id_or_url[start:end]
+            except:
+                pass # Falha silenciosa, tenta usar o original
+
+        # Função auxiliar para categorizar com base no nome da aba
+        def get_category_from_title(title: str) -> str:
+            title_lower = title.lower()
+            if any(x in title_lower for x in ["produto", "serviço", "servico", "catálogo", "catalogo", "preco", "preço"]):
+                return "product"
+            if any(x in title_lower for x in ["faq", "pergunta", "dúvida", "duvida"]):
+                return "faq"
+            if any(x in title_lower for x in ["empresa", "regra", "sistema", "sobre", "politica"]):
+                return "company"
+            return "uncategorized" # Fica como default, ou poderia ser None já que é nullable
+
+        knowledge_vectors_ready = []
+
+        try:
+            # 1. Busca metadados para saber os nomes das abas
+            sheet_metadata = self.service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+            sheets = sheet_metadata.get('sheets', [])
+
+            if not sheets:
+                raise Exception("Nenhuma aba encontrada na planilha.")
+
+            # 2. Itera sobre cada aba
+            for sheet in sheets:
+                title = sheet['properties']['title']
+                category = title
+                
+                # Pega todos os valores da aba
+                result = self.service.spreadsheets().values().get(
+                    spreadsheetId=spreadsheet_id, 
+                    range=title
+                ).execute()
+                
+                rows = result.get('values', [])
+
+                # Se tiver menos de 2 linhas (só cabeçalho ou vazio), ignora
+                if len(rows) < 2:
+                    continue
+
+                # 3. Limpeza estrutural com Pandas
+                headers = rows[0]
+                data = rows[1:]
+
+                df = pd.DataFrame(data, columns=headers)
+
+                # Remove linhas/colunas totalmente vazias
+                df.dropna(how='all', axis=0, inplace=True) 
+                df.dropna(how='all', axis=1, inplace=True) 
+
+                # Substitui strings vazias e NaN por None para o JSON ficar limpo
+                df = df.replace(r'^\s*$', None, regex=True)
+                df = df.replace({np.nan: None})
+
+                # Converte para lista de dicionários
+                records = df.to_dict(orient='records')
+
+                # 4. Formatação final para o banco de dados
+                for row in records:
+                    # Remove chaves (colunas) onde o valor é nulo para economizar espaço
+                    clean_row = {str(k).strip(): v for k, v in row.items() if v is not None and str(v).strip() != ""}
+                    
+                    if not clean_row:
+                        continue
+                        
+                    # CRIAÇÃO DO CONTENT (A string que vai receber embedding e busca ILIKE)
+                    # Junta "Chave: Valor" de todas as colunas preenchidas
+                    content_parts = [f"{key}: {val}" for key, val in clean_row.items()]
+                    content_str = " | ".join(content_parts)
+                    
+                    knowledge_vectors_ready.append({
+                        "category": category,
+                        "origin": "sheet",
+                        "raw_data": clean_row,    # O JSON limpo para a IA ler
+                        "content": content_str    # A string para busca/embedding
+                    })
+
+            if not knowledge_vectors_ready:
+                raise Exception("Nenhum dado válido encontrado nas abas da planilha após a limpeza.")
+
+            return knowledge_vectors_ready
+
+        except Exception as e:
+            logger.error(f"Sheets: Erro ao processar planilha ID {spreadsheet_id}: {e}", exc_info=True)
+            if "403" in str(e):
+                raise Exception("Erro de Permissão (403). Você compartilhou a planilha com o email da Service Account?")
+            if "404" in str(e):
+                raise Exception("Planilha não encontrada (404). Verifique o ID.")
+            raise Exception(f"Erro ao ler planilha: {str(e)}")
+
     async def apply_feedback_to_sheet(self, spreadsheet_id_or_url: str, alteracoes: List[Dict[str, Any]]):
         """
         Aplica alterações (Substituir ou Adicionar) direto na planilha do Google Sheets.

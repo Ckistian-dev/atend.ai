@@ -1474,18 +1474,6 @@ function Mensagens() {
                                 </div>
 
                                 <div className="flex items-center gap-0 sm:gap-1 text-slate-400 shrink-0 ml-2">
-                                    <button 
-                                        onClick={() => setIsFeedbackModalOpen(true)} 
-                                        disabled={!hasConfigsPermission}
-                                        className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl transition-all ${
-                                            hasConfigsPermission 
-                                                ? 'hover:bg-white hover:text-blue-600 text-slate-400' 
-                                                : 'opacity-40 cursor-not-allowed text-slate-300'
-                                        }`} 
-                                        title={hasConfigsPermission ? "Treinar IA" : "Sem permissão de Persona & IA"}
-                                    >
-                                        <Wand2 size={18} className="sm:w-5 sm:h-5" />
-                                    </button>
                                     <button onClick={handleExportConversation} className="hidden sm:flex w-10 h-10 items-center justify-center rounded-xl hover:bg-white hover:text-blue-600 transition-all" title="Exportar Log">
                                         <Download size={20} />
                                     </button>
@@ -1495,7 +1483,20 @@ function Mensagens() {
                                 </div>
                             </header>
 
-                            <div className="flex-1 min-h-0 bg-slate-50/30 overflow-hidden flex flex-col">
+                            <div className="flex-1 min-h-0 bg-slate-50/30 overflow-hidden flex flex-col relative">
+                                {/* Floating IA Button in top right */}
+                                <div className="absolute top-4 right-4 z-10 pointer-events-none">
+                                    <button 
+                                        type="button" 
+                                        onClick={() => hasConfigsPermission && setIsFeedbackModalOpen(true)} 
+                                        disabled={!hasConfigsPermission}
+                                        className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-md transition-all w-10 h-10 sm:w-12 sm:h-12 pointer-events-auto active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        title={hasConfigsPermission ? "Treinar IA" : "Sem permissão de Persona & IA"}
+                                    >
+                                        <Sparkles size={18} className="sm:hidden" />
+                                        <Sparkles size={22} className="hidden sm:block" />
+                                    </button>
+                                </div>
                                 <ChatBody
                                     mensagem={selectedAtendimento}
                                     onViewMedia={handleViewMedia}

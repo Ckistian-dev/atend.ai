@@ -1,17 +1,19 @@
 import httpx
 import logging
 import json
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
+from sqlalchemy.ext.asyncio import AsyncSession
 import os
 import uuid
 import tempfile
 import asyncio
 from app.core.config import settings
 from app.services.security import decrypt_token
-from app.db import models
+from app.db import models, schemas
 import subprocess
 import mimetypes
 import io
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -136,6 +138,7 @@ class WhatsAppService:
         """Envia mensagem de texto via API Oficial (WBP) e retorna o ID."""
         if not all([phone_number_id, access_token, to_number, text]):
             raise ValueError("WBP: phone_number_id, access_token, to_number, and text must be provided.")
+        text = text.replace("**", "*")
         url = f"{self.wbp_graph_url_base}/{self.wbp_api_version}/{phone_number_id}/messages"
         headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
         # Usa _normalize_number da classe, que *não* remove o 9
@@ -343,6 +346,62 @@ class WhatsAppService:
                 if media_type == 'image' and final_mimetype == 'application/octet-stream':
                      logger.warning("WBP: Forçando 'document' para o upload de fallback para evitar erro 400 da Meta.")
                      media_type = 'document'
+        
+        # --- INÍCIO DA LÓGICA DE COMPRESSÃO DE VÍDEO (NOVO) ---
+        elif media_type == 'video' and len(file_bytes) > 14 * 1024 * 1024:
+            logger.info(f"WBP: Vídeo recebido com tamanho maior que 14MB ({len(file_bytes)} bytes). Iniciando compressão...")
+            try:
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    input_ext = os.path.splitext(filename)[1] or '.mp4'
+                    input_path = os.path.join(temp_dir, f"{uuid.uuid4()}{input_ext}")
+                    output_path = os.path.join(temp_dir, f"{uuid.uuid4()}.mp4")
+                    
+                    with open(input_path, "wb") as f:
+                        f.write(file_bytes)
+                    
+                    # Usamos FFmpeg com CRF 28 e preset fast para compressão rápida e eficiente, forçando h264 e aac
+                    command = [
+                        "ffmpeg", "-y",
+                        "-i", input_path,
+                        "-vcodec", "libx264",
+                        "-profile:v", "main",
+                        "-level:v", "3.0",
+                        "-pix_fmt", "yuv420p",
+                        "-acodec", "aac",
+                        "-b:a", "128k",
+                        "-crf", "28",
+                        "-preset", "faster",
+                        "-movflags", "faststart",
+                        output_path
+                    ]
+                    
+                    logger.info(f"WBP: Rodando compressão de vídeo: {' '.join(command)}")
+                    process = await asyncio.to_thread(
+                        subprocess.run, 
+                        command, 
+                        capture_output=True, 
+                        check=False
+                    )
+                    
+                    if process.returncode != 0:
+                        stderr = process.stderr.decode('utf-8', errors='ignore')
+                        logger.error(f"WBP: Compressão de vídeo falhou (code {process.returncode}). Stderr: {stderr}")
+                        raise subprocess.CalledProcessError(process.returncode, command, output=process.stdout, stderr=process.stderr)
+                    
+                    with open(output_path, "rb") as f:
+                        compressed_bytes = f.read()
+                    
+                    if not compressed_bytes:
+                        raise ValueError("Arquivo de vídeo resultante está vazio.")
+                    
+                    final_file_bytes = compressed_bytes
+                    final_mimetype = 'video/mp4'
+                    final_filename = os.path.splitext(filename)[0] + ".mp4"
+                    logger.info(f"WBP: Compressão de vídeo concluída de {len(file_bytes)} para {len(final_file_bytes)} bytes.")
+                    
+            except Exception as conv_e:
+                logger.error(f"WBP: Falha na compressão do vídeo: {conv_e}", exc_info=True)
+                logger.warning("WBP: Mantendo vídeo original...")
         # --- FIM DA LÓGICA DE CONVERSÃO ---
         
         url = f"{self.wbp_graph_url_base}/{self.wbp_api_version}/{phone_number_id}/media"
@@ -359,6 +418,8 @@ class WhatsAppService:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(url, headers=headers, files=files, timeout=120.0)
+                if response.status_code != 200:
+                    logger.error(f"WBP: Resposta de erro do upload (Status {response.status_code}): {response.text}")
                 response.raise_for_status()
                 response_data = response.json()
                 media_id = response_data.get("id")
@@ -370,6 +431,9 @@ class WhatsAppService:
                 logger.info(f"WBP: Upload sucesso. Media ID: {media_id}")
                 return media_id
                 
+        except httpx.HTTPStatusError as http_err:
+            logger.error(f"WBP: Erro HTTP no upload. Status: {http_err.response.status_code} | Corpo: {http_err.response.text}", exc_info=True)
+            return None
         except Exception as e:
             logger.error(f"WBP: Erro no upload: {e}", exc_info=True)
             return None
@@ -386,6 +450,8 @@ class WhatsAppService:
         caption: Optional[str] = None
     ) -> Dict[str, Any]:
         """Etapa 2 (Oficial): Envia a mídia usando o Media ID."""
+        if caption:
+            caption = caption.replace("**", "*")
         
         # Etapa 1: Upload
         # --- ALTERAÇÃO AQUI ---
@@ -772,6 +838,309 @@ class WhatsAppService:
                 raise Exception("A API da Meta não retornou um handle válido para o arquivo.")
             
             return handle
+
+    async def get_whatsapp_templates(
+        self,
+        company: models.Company
+    ) -> List[Dict[str, Any]]:
+        """
+        Lista todos os templates ativos na API Oficial da Meta para a empresa informada.
+
+        @param company: Modelo da empresa.
+        @returns: Lista de templates configurados.
+        """
+        wbp_business_account_id = company.wbp_business_account_id if company else None
+        if not wbp_business_account_id:
+            raise ValueError("ID da Conta do WhatsApp Business não está configurado para esta empresa.")
+
+        return await self.get_templates_official(
+            business_account_id=wbp_business_account_id,
+            access_token=settings.WBP_ACCESS_TOKEN
+        )
+
+    async def create_whatsapp_template(
+        self,
+        company: models.Company,
+        payload: Dict[str, Any],
+        file_bytes: Optional[bytes],
+        filename: Optional[str],
+        mimetype: Optional[str]
+    ) -> Dict[str, Any]:
+        """
+        Cria um template oficial na plataforma Meta vinculada à empresa.
+
+        @param company: Modelo da empresa.
+        @param payload: Dicionário de configuração do template.
+        @param file_bytes: Bytes do arquivo de exemplo de mídia (opcional).
+        @param filename: Nome do arquivo (opcional).
+        @param mimetype: Mimetype do arquivo (opcional).
+        @returns: Detalhes do template criado.
+        """
+        wbp_business_account_id = company.wbp_business_account_id if company else None
+        if not wbp_business_account_id:
+            raise ValueError("ID da Conta do WhatsApp Business não está configurado para esta empresa.")
+
+        # Se houver um arquivo, faz upload prévio do exemplo para obter o handle de cabeçalho
+        if file_bytes:
+            actual_mime = mimetype or 'application/octet-stream'
+            handle = await self.upload_template_example(
+                access_token=settings.WBP_ACCESS_TOKEN,
+                file_bytes=file_bytes,
+                mimetype=actual_mime
+            )
+            
+            for comp in payload.get('components', []):
+                if comp.get('type') == 'HEADER' and comp.get('format') in ['IMAGE', 'VIDEO', 'DOCUMENT']:
+                    comp['example'] = {'header_handle': [handle]}
+
+        result = await self.create_template_official(
+            business_account_id=wbp_business_account_id,
+            access_token=settings.WBP_ACCESS_TOKEN,
+            payload=payload
+        )
+        return result
+
+    async def delete_whatsapp_template(
+        self,
+        company: models.Company,
+        template_name: str,
+        template_id: Optional[str]
+    ) -> None:
+        """
+        Remove um template cadastrado na Meta.
+
+        @param company: Modelo da empresa.
+        @param template_name: Nome do template.
+        @param template_id: ID do template (opcional).
+        """
+        wbp_business_account_id = company.wbp_business_account_id if company else None
+        if not wbp_business_account_id:
+            raise ValueError("ID da Conta do WhatsApp Business não está configurado para esta empresa.")
+
+        await self.delete_template_official(
+            business_account_id=wbp_business_account_id,
+            access_token=settings.WBP_ACCESS_TOKEN,
+            template_name=template_name,
+            template_id=template_id
+        )
+
+    async def download_media_directly(
+        self,
+        db: AsyncSession,
+        company_id: int,
+        atendimento_id: int,
+        media_id: str
+    ) -> Tuple[bytes, str, str]:
+        """
+        Faz proxy e download seguro de uma mídia da Meta.
+
+        @param db: Sessão do banco de dados.
+        @param company_id: ID da empresa proprietária do atendimento.
+        @param atendimento_id: ID do atendimento.
+        @param media_id: ID do arquivo de mídia na Meta.
+        @returns: Tupla contendo os bytes do arquivo, o mimetype e o nome do arquivo.
+        """
+        from app.crud import crud_atendimento
+        from app.services.atendimento_service import AtendimentoNotFoundError
+
+        db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
+        if not db_atendimento:
+            raise AtendimentoNotFoundError("Atendimento não encontrado.")
+
+        decrypted_token = settings.WBP_ACCESS_TOKEN
+        
+        logger.debug(f"Buscando URL para media_id {media_id}...")
+        media_url = await self.get_media_url_official(media_id, decrypted_token)
+        if not media_url:
+            raise ValueError("URL da mídia não encontrada na Meta.")
+
+        logger.info(f"Baixando mídia {media_id} diretamente da Meta...")
+        async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
+            headers = {"Authorization": f"Bearer {decrypted_token}"}
+            media_response = await client.get(media_url, headers=headers)
+
+            content_type = media_response.headers.get('content-type', '').lower()
+            if media_response.status_code != 200 or 'text/html' in content_type:
+                response_body_text = "[Corpo indisponível]"
+                try:
+                    response_body_text = (await media_response.aread(1024)).decode('utf-8', errors='ignore')
+                except Exception:
+                    pass
+                logger.error(f"Erro ao baixar mídia {media_id}: Meta retornou status {media_response.status_code} / tipo {content_type}. Corpo: {response_body_text}")
+                media_response.raise_for_status()
+                raise ValueError("Falha ao baixar mídia da Meta: Resposta inesperada.")
+
+            media_bytes = media_response.content
+            
+            # Recupera o nome original do arquivo gravado no histórico da conversa
+            filename = "download"
+            try:
+                conversa_list = json.loads(db_atendimento.conversa or "[]")
+                for msg in conversa_list:
+                    if msg.get("media_id") == media_id:
+                        filename = msg.get("filename") or "download"
+                        break
+            except Exception as e:
+                logger.warning(f"Erro ao buscar filename para media {media_id}: {e}")
+
+            return media_bytes, content_type, filename
+
+    async def send_template_message_with_history(
+        self,
+        db: AsyncSession,
+        company: models.Company,
+        company_id: int,
+        atendimento_id: int,
+        payload: schemas.SendTemplatePayload,
+        file_bytes: Optional[bytes],
+        filename: Optional[str],
+        mimetype: Optional[str]
+    ) -> models.Atendimento:
+        """
+        Envia uma mensagem estruturada com base em um template homologado e a persiste no histórico.
+
+        @param db: Sessão do banco de dados.
+        @param company: Modelo da empresa.
+        @param company_id: ID da empresa.
+        @param atendimento_id: ID do atendimento.
+        @param payload: Objeto de configuração do template enviado pelo frontend.
+        @param file_bytes: Bytes da mídia de cabeçalho (opcional).
+        @param filename: Nome do arquivo de mídia (opcional).
+        @param mimetype: Mimetype da mídia (opcional).
+        @returns: O atendimento atualizado.
+        """
+        from app.crud import crud_atendimento
+        from app.services.atendimento_service import AtendimentoNotFoundError
+
+        db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
+        if not db_atendimento or not db_atendimento.whatsapp:
+            raise AtendimentoNotFoundError("Atendimento ou contato não encontrado")
+
+        whatsapp_number = db_atendimento.whatsapp
+        wbp_phone_number_id = company.wbp_phone_number_id if company else None
+        wbp_business_account_id = company.wbp_business_account_id if company else None
+
+        # Se houver mídia de cabeçalho, realiza o upload prévio e a insere nos componentes
+        if file_bytes and wbp_phone_number_id:
+            actual_mime = mimetype or (mimetypes.guess_type(filename)[0] if filename else 'application/octet-stream')
+            
+            media_type = 'document'
+            if actual_mime.startswith('image/'):
+                media_type = 'image'
+            elif actual_mime.startswith('video/'):
+                media_type = 'video'
+            
+            media_id = await self._upload_media_official(
+                phone_number_id=wbp_phone_number_id,
+                access_token=settings.WBP_ACCESS_TOKEN,
+                file_bytes=file_bytes,
+                mimetype=actual_mime,
+                filename=filename or "template_media",
+                media_type=media_type
+            )
+            
+            if media_id:
+                if not payload.components:
+                    payload.components = []
+                header_comp = next((c for c in payload.components if c['type'] == 'header'), None)
+                if not header_comp:
+                    header_comp = {"type": "header", "parameters": []}
+                    payload.components.insert(0, header_comp)
+                
+                header_comp['parameters'].append({
+                    "type": media_type,
+                    media_type: {"id": media_id}
+                })
+            else:
+                logger.error(f"Falha no upload de mídia para template: {filename}")
+                raise ValueError("Falha ao carregar a mídia do template.")
+
+        # Dispara o envio oficial do template
+        send_result = await self.send_template_message(
+            company=company,
+            number=whatsapp_number,
+            template_name=payload.template_name,
+            language_code=payload.language_code,
+            components=payload.components,
+            db=db,
+            atendimento_id=atendimento_id
+        )
+
+        logger.info(f"Template '{payload.template_name}' enviado para {whatsapp_number}. API Msg ID: {send_result.get('id')}")
+
+        msg_type = 'text'
+        final_media_id = None
+        content_for_history = f"[Template: {payload.template_name}]\n"
+
+        try:
+            if wbp_business_account_id:
+                templates = await self.get_templates_official(
+                    business_account_id=wbp_business_account_id,
+                    access_token=settings.WBP_ACCESS_TOKEN
+                )
+                
+                target_template = next((t for t in templates if t['name'] == payload.template_name and t['language'] == payload.language_code), None)
+
+                if target_template:
+                    header_text = next((c.get('text', '') for c in target_template.get('components', []) if c['type'] == 'HEADER'), '')
+                    body_text = next((c.get('text', '') for c in target_template.get('components', []) if c['type'] == 'BODY'), '')
+
+                    sent_components = payload.components or []
+                    header_params = next((c.get('parameters', []) for c in sent_components if c['type'] == 'header'), [])
+                    body_params = next((c.get('parameters', []) for c in sent_components if c['type'] == 'body'), [])
+
+                    for hp in header_params:
+                        if 'image' in hp:
+                            msg_type = 'image'
+                            final_media_id = hp['image'].get('id')
+                        elif 'video' in hp:
+                            msg_type = 'video'
+                            final_media_id = hp['video'].get('id')
+                        elif 'document' in hp:
+                            msg_type = 'document'
+                            final_media_id = hp['document'].get('id')
+                        if final_media_id:
+                            break
+
+                    for i, param in enumerate(header_params):
+                        header_text = header_text.replace(f"{{{{{i+1}}}}}", param.get('text', ''))
+                    
+                    for i, param in enumerate(body_params):
+                        body_text = body_text.replace(f"{{{{{i+1}}}}}", param.get('text', ''))
+                        body_text = body_text.replace(f"{{{{{len(header_params) + i + 1}}}}}", param.get('text', ''))
+
+                    buttons_data = next((c.get('buttons', []) for c in target_template.get('components', []) if c['type'] == 'BUTTONS'), [])
+                    extracted_buttons = [b.get('text') for b in buttons_data if b.get('text')]
+
+                    full_message = f"{header_text}\n{body_text}".strip()
+                    if full_message:
+                        content_for_history = full_message
+            else:
+                extracted_buttons = []
+
+        except Exception as e:
+            logger.warning(f"Não foi possível montar o preview do template '{payload.template_name}': {e}")
+            extracted_buttons = []
+
+        formatted_message = schemas.FormattedMessage(
+            id=send_result.get('id') or f"template-{uuid.uuid4()}",
+            role='assistant',
+            content=content_for_history,
+            timestamp=int(datetime.now(timezone.utc).timestamp()),
+            type=msg_type,
+            media_id=final_media_id,
+            filename=filename if file_bytes else None,
+            status="sent",
+            is_template=True,
+            buttons=extracted_buttons
+        )
+
+        atendimento_atualizado = await crud_atendimento.add_message_to_conversa(
+            db=db, atendimento_id=atendimento_id, company_id=company_id, message=formatted_message
+        )
+
+        await db.refresh(atendimento_atualizado, attribute_names=['active_persona'])
+        return atendimento_atualizado
 
 # --- Singleton ---
 _whatsapp_service_instance = None

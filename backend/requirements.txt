@@ -49,3 +49,6 @@ boto3 # Mantido caso outra parte da aplicação use AWS
 #--- RabbitMQ ---
 # pika foi substituído por aio_pika para suporte assíncrono
 aio_pika
+
+#--- Agent IA ---
+pydantic-ai

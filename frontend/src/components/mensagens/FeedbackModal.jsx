@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import api from '../../api/axiosConfig';
 import { WorkflowPreview, WorkflowEditorModal } from '../configs/WorkflowEditor';
 
-const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId }) => {
+const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId, mode = 'conversation' }) => {
     const [feedbackText, setFeedbackText] = useState('');
     const [feedbackAnalysis, setFeedbackAnalysis] = useState(null);
     const [isAnalyzingFeedback, setIsAnalyzingFeedback] = useState(false);
@@ -42,7 +42,11 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId }) => {
             if (atendimentoId) {
                 endpoint = `/atendimentos/${atendimentoId}/analyze_feedback`;
             } else if (configId) {
-                endpoint = `/configs/${configId}/analyze_workflow`;
+                if (mode === 'knowledge') {
+                    endpoint = `/configs/${configId}/analyze_knowledge`;
+                } else {
+                    endpoint = `/configs/${configId}/analyze_workflow`;
+                }
             } else {
                 toast.error("Referência inválida.");
                 setIsAnalyzingFeedback(false);
@@ -57,7 +61,7 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId }) => {
             setSelectedRag(res.data.alteracoes_rag?.map((_, i) => i) || []);
             setApplyWorkflow(!!res.data.novo_workflow);
         } catch (error) {
-            toast.error("Erro ao analisar a conversa.");
+            toast.error("Erro ao analisar o contexto.");
             console.error(error);
         } finally {
             setIsAnalyzingFeedback(false);
@@ -75,7 +79,11 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId }) => {
             if (atendimentoId) {
                 endpoint = `/atendimentos/${atendimentoId}/apply_feedback`;
             } else if (configId) {
-                endpoint = `/configs/${configId}/apply_workflow`;
+                if (mode === 'knowledge') {
+                    endpoint = `/configs/${configId}/apply_feedback`;
+                } else {
+                    endpoint = `/configs/${configId}/apply_workflow`;
+                }
             } else {
                 toast.error("Referência inválida.");
                 setIsApplyingFeedback(false);
@@ -110,11 +118,15 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId }) => {
                                 <Wand2 className="text-brand-primary" size={24} />
                             </div>
                             <h2 className="text-2xl font-black tracking-tight text-slate-800">
-                                {atendimentoId ? "Treinamento de IA" : "Edição de Fluxo por IA"}
+                                {atendimentoId ? "Treinamento de IA" : mode === 'knowledge' ? "Melhoria de Conhecimento por IA" : "Edição de Fluxo por IA"}
                             </h2>
                         </div>
                         <p className="text-[13px] font-medium text-slate-400">
-                            {atendimentoId ? "Transforme conversas individuais em regras de inteligência universais." : "Explique como quer o fluxo e a IA fará o trabalho duro visual por você."}
+                            {atendimentoId 
+                                ? "Transforme conversas individuais em regras de inteligência universais." 
+                                : mode === 'knowledge' 
+                                    ? "Explique o que deseja corrigir ou adicionar ao conhecimento e a IA ajustará as planilhas." 
+                                    : "Explique como quer o fluxo e a IA fará o trabalho duro visual por você."}
                         </p>
                     </div>
                     <button onClick={onClose} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-100 text-slate-400 hover:bg-white hover:text-slate-900 shadow-sm transition-all"><XIcon size={24} /></button>
@@ -128,19 +140,25 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId }) => {
                                     <Sparkles className="text-indigo-600" size={32} />
                                 </div>
                                 <h3 className="text-lg font-bold text-slate-800 mb-2">
-                                    {atendimentoId ? "O que a IA falhou ou pode melhorar?" : "Descreva o novo fluxo desejado"}
+                                    {atendimentoId ? "O que a IA falhou ou pode melhorar?" : mode === 'knowledge' ? "Descreva as regras ou conhecimentos que deseja ajustar" : "Descreva o novo fluxo desejado"}
                                 </h3>
                                 <p className="text-sm text-slate-400">
                                     {atendimentoId 
                                         ? "Descreva o comportamento indesejado ou o que ela deveria ter respondido." 
-                                        : "Diga como os blocos devem se comportar e como as conexões devem ser feitas."}
+                                        : mode === 'knowledge' 
+                                            ? "Diga quais informações estão incorretas, desatualizadas ou o que precisa ser acrescentado na base."
+                                            : "Diga como os blocos devem se comportar e como as conexões devem ser feitas."}
                                 </p>
                             </div>
 
                             <textarea
                                 className="w-full p-6 bg-slate-50 rounded-[2rem] border border-transparent focus:bg-white focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10 shadow-inner resize-none text-slate-700 font-medium placeholder:text-slate-300 transition-all outline-none"
                                 rows="4"
-                                placeholder={atendimentoId ? "Ex: Ela demorou muito para falar o preço e ficou fazendo muitas perguntas seguidas..." : "Ex: Quero um fluxo de boas-vindas que pergunte o nome e encaminhe para o setor financeiro."}
+                                placeholder={atendimentoId 
+                                    ? "Ex: Ela demorou muito para falar o preço e ficou fazendo muitas perguntas seguidas..." 
+                                    : mode === 'knowledge'
+                                        ? "Ex: Atualize o preço do produto X para R$ 150 e adicione a política de devolução de 7 dias."
+                                        : "Ex: Quero um fluxo de boas-vindas que pergunte o nome e encaminhe para o setor financeiro."}
                                 value={feedbackText}
                                 onChange={(e) => setFeedbackText(e.target.value)}
                             ></textarea>
@@ -171,7 +189,7 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId }) => {
                             </div>
 
                             {/* Tabela de Revisão do Sistema */}
-                            {feedbackAnalysis.alteracoes_planilha?.length > 0 && atendimentoId && (
+                            {feedbackAnalysis.alteracoes_planilha?.length > 0 && (
                                 <div>
                                     <h4 className="editorial-label text-slate-900 mb-6 flex items-center gap-3">
                                         <Sparkles size={16} className="text-brand-primary" /> Melhorias (Instruções de Sistema)
@@ -231,7 +249,7 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId }) => {
                             )}
 
                             {/* Tabela de Revisão do RAG */}
-                            {feedbackAnalysis.alteracoes_rag?.length > 0 && atendimentoId && (
+                            {feedbackAnalysis.alteracoes_rag?.length > 0 && (
                                 <div className="mt-8">
                                     <h4 className="editorial-label text-slate-900 mb-6 flex items-center gap-3">
                                         <Sparkles size={16} className="text-brand-primary" /> Melhorias (Base de Conhecimento / RAG)

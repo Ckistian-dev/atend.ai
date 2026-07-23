@@ -1,18 +1,25 @@
+# app/api/dashboard.py
+
+# 1. Importações nativas/padrão do Python
 import logging
+from typing import Any, Dict
+
+# 2. Importações de terceiros
 from fastapi import APIRouter, Depends, Body, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Any, Dict, List
-from datetime import datetime, timedelta
 
+# 3. Importações locais do projeto
 from app.api import dependencies
 from app.db.database import get_db
 from app.db import models
-from app.crud import crud_atendimento, crud_config
-from app.services.gemini_service import get_gemini_service
+from app.services.gemini_service import GeminiService, get_gemini_service
+from app.services.dashboard_service import DashboardService
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+
+# Retorna dados quantitativos e consolidados de atendimentos para renderizar nos painéis gráficos do dashboard
 @router.get("/", response_model=Dict[str, Any], summary="Obter dados agregados para o dashboard")
 async def get_dashboard_data(
     db: AsyncSession = Depends(get_db),
@@ -24,43 +31,47 @@ async def get_dashboard_data(
     Endpoint que coleta, formata e retorna todas as métricas
     necessárias para popular o dashboard do frontend.
     """
-    start_date = datetime.fromisoformat(start_date_str) if start_date_str else datetime.now() - timedelta(days=30)
-    end_date = datetime.fromisoformat(end_date_str) if end_date_str else datetime.now()
+    try:
+        return await DashboardService.get_dashboard_data(
+            db=db,
+            current_user=current_user,
+            start_date_str=start_date_str,
+            end_date_str=end_date_str
+        )
+    except Exception as e:
+        logger.error(f"Erro ao buscar dados do dashboard: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro interno ao processar dados do dashboard.")
 
-    company_id = current_user.company_id or 0
-    dashboard_data = await crud_atendimento.get_dashboard_data(db, company_id=company_id, start_date=start_date, end_date=end_date)
-    return dashboard_data
 
+# Envia métricas e atendimentos de um período para o Gemini analisar de forma qualitativa e responder a uma pergunta do usuário
 @router.post("/analyze", summary="Analisar dados com IA")
 async def analyze_data_with_ia(
     payload: Dict[str, Any] = Body(...),
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(dependencies.get_current_active_user),
-    gemini_service = Depends(get_gemini_service)
+    gemini_service: GeminiService = Depends(get_gemini_service)
 ):
+    """
+    Endpoint que extrai os atendimentos do período e solicita à IA do Gemini uma
+    análise estruturada baseada na pergunta/comando informada pelo cliente.
+    """
     question = payload.get("question")
-    # contexts = payload.get("contexts", [])  <- Removido conforme solicitação de simplificação
     model_name = payload.get("model")
     start_date_str = payload.get("start_date_str")
     end_date_str = payload.get("end_date_str")
 
-    if not question:
-        raise HTTPException(status_code=404, detail="A pergunta é obrigatória.")
-
-    start_date = datetime.fromisoformat(start_date_str) if start_date_str else None
-    end_date = datetime.fromisoformat(end_date_str) if end_date_str else None
-
-    company_id = current_user.company_id or 0
-    atendimentos_data = []
-    if start_date and end_date:
-        atendimentos_data = await crud_atendimento.get_atendimentos_no_periodo(db, company_id=company_id, start_date=start_date, end_date=end_date)
-
-    analysis = await gemini_service.analyze_data(
-        question=question,
-        user=current_user,
-        atendimentos=atendimentos_data,
-        db=db,
-        model_name=model_name
-    )
-
-    return {"analysis": analysis}
+    try:
+        return await DashboardService.analyze_data_with_ia(
+            db=db,
+            current_user=current_user,
+            question=question,
+            model_name=model_name,
+            start_date_str=start_date_str,
+            end_date_str=end_date_str,
+            gemini_service=gemini_service
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro ao analisar dados com IA no dashboard: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))

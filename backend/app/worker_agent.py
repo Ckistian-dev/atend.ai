@@ -21,8 +21,8 @@ async def agent_db_poller():
         try:
             await run_agent_cycle() # Executa um ciclo completo do agente
             
-            # Aguarda 10 segundos + um jitter
-            sleep_time = random.uniform(10, 15)
+            # Aguarda 10 segundos
+            sleep_time = 10
             await asyncio.sleep(sleep_time)
             
         except Exception as e:

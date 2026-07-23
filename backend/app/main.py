@@ -125,7 +125,7 @@ from app.api.atendimentos import router as atendimentos_router
 from app.api.agent import router as agent_router
 from app.api.users import router as users_router
 from app.api.admin import router as admin_router
-from app.api.landingpage import router as landingpage_router
+from app.api.integrations import router as integrations_router
 
 # Obtém o logger para ESTE arquivo (main.py) APÓS a configuração
 logger = logging.getLogger(__name__)
@@ -140,13 +140,8 @@ app = FastAPI(
 )
 
 # --- CONFIGURAÇÃO DE CORS MELHORADA ---
-# Pega as URLs do frontend a partir das configurações, limpando espaços e removendo entradas vazias.
 frontend_urls = {origin.strip() for origin in settings.FRONTEND_URL.split(',') if origin.strip()}
-
-# Adiciona origens de desenvolvimento comuns para garantir que funcionem localmente.
 dev_urls = {"http://localhost:5173", "http://localhost:3000"}
-
-# Combina todas as URLs em uma lista final, sem duplicatas.
 origins = list(frontend_urls.union(dev_urls))
 
 logger.info(f"Configurando CORS para as origens: {origins}")
@@ -176,7 +171,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 API_PREFIX = "/api/v1"
 
-# Incluir todos os routers (igual)
+# Incluir todos os routers
 app.include_router(auth_router, prefix=f"{API_PREFIX}/auth", tags=["Autenticação"])
 app.include_router(configs_router, prefix=f"{API_PREFIX}/configs", tags=["Personas e Contexto"])
 app.include_router(webhook_router, prefix=f"{API_PREFIX}/webhook", tags=["Webhook"])
@@ -185,7 +180,10 @@ app.include_router(atendimentos_router, prefix=f"{API_PREFIX}/atendimentos", tag
 app.include_router(agent_router, prefix=f"{API_PREFIX}/agent", tags=["Agente"])
 app.include_router(admin_router, prefix=f"{API_PREFIX}/admin", tags=["Admin"])
 app.include_router(users_router, prefix=f"{API_PREFIX}/users", tags=["Utilizadores"])
-app.include_router(landingpage_router, prefix=f"{API_PREFIX}/landingpage", tags=["Landing Page"])
+app.include_router(integrations_router, prefix=API_PREFIX, tags=["Integrações"])
+
+
+
 
 
 @app.get("/", tags=["Root"])

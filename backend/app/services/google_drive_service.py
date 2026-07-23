@@ -283,7 +283,7 @@ class GoogleDriveService:
 
         return deleted_count
 
-    def watch_file(self, file_id: str, channel_id: str, webhook_url: str):
+    def watch_file(self, file_id: str, channel_id: str, webhook_url: str, token: str = None):
         """Registra um canal de watch (push notifications) para um arquivo ou pasta."""
         if not self.service:
             logger.error("Drive: Tentativa de watch sem serviço inicializado.")
@@ -294,6 +294,8 @@ class GoogleDriveService:
                 'type': 'web_hook',
                 'address': webhook_url
             }
+            if token:
+                body['token'] = token
             logger.info(f"Drive: Registrando watch para o arquivo/pasta {file_id} no canal {channel_id} (URL: {webhook_url})")
             return self.service.files().watch(fileId=file_id, body=body).execute()
         except Exception as e:

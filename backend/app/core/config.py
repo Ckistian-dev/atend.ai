@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str      # Chave para criptografar tokens sensíveis (Google Refresh Token, WBP Access Token)
 
     # --- Configurações Adicionais ---
+    ENVIRONMENT: str = "production"   # 'development' ou 'production'
     FRONTEND_URL: str        # URL base do seu frontend (ex: https://app.atendai.com)
     
     GOOGLE_API_KEYS: str     # Chaves da API Gemini (separadas por vírgula)

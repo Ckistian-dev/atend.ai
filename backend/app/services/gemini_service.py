@@ -30,15 +30,15 @@ class SetEncoder(json.JSONEncoder):
 
 class GeminiService:
     def __init__(self):
+        # Agora tem apenas uma chave
         keys_str = settings.GOOGLE_API_KEYS
-        self.api_keys = [key.strip() for key in keys_str.split(',') if key.strip()]
+        # Se contiver vírgula (antigo formato), pega apenas a primeira chave
+        self.api_key = keys_str.split(",")[0].strip() if keys_str else ""
 
-        if not self.api_keys:
-            logger.error("🚨 ERRO CRÍTICO: Nenhuma chave de API do Google foi configurada em GOOGLE_API_KEYS.")
-            raise ValueError("A lista de GOOGLE_API_KEYS não pode estar vazia.")
+        if not self.api_key:
+            logger.error("🚨 ERRO CRÍTICO: Chave de API do Google não configurada em GOOGLE_API_KEYS.")
+            raise ValueError("A chave GOOGLE_API_KEYS não pode estar vazia.")
             
-        self.current_key_index = 0
-        
         # Carregar tabela de preços do arquivo models.json
         self.model_pricing = {}
         try:
@@ -50,53 +50,39 @@ class GeminiService:
                 
             models_data = data.get("LLM_MODELS", [])
             if models_data:
-                # Busca o preço de input_text do gemini-2.5-flash como base dinamicamente
-                base_flash = 0.30
-                for model in models_data:
-                    if model.get("id") == "gemini-2.5-flash":
-                        base_flash = model.get("pricing", {}).get("input_text", 0.30)
-                        break
-                
+                # O usuário quer que use a base 0.25 por milhão
+                base_flash = 0.25
                 for model in models_data:
                     m_id = model["id"]
                     pricing = model.get("pricing", {})
                     
                     self.model_pricing[m_id] = {
-                        "input_text": pricing.get("input_text", 0.30) / base_flash,
-                        "input_audio": pricing.get("input_audio", 0.30) / base_flash,
-                        "output": pricing.get("output", 2.50) / base_flash
+                        "input_text": pricing.get("input_text", 0.25) / base_flash,
+                        "input_audio": pricing.get("input_audio", 0.50) / base_flash,
+                        "output": pricing.get("output", 1.50) / base_flash
                     }
                 logger.info(f"✅ Tabela de preços carregada de models.json: {len(self.model_pricing)} modelos (base: {base_flash}).")
             else:
                 raise ValueError("Array LLM_MODELS não encontrado em models.json")
         except Exception as e:
             logger.error(f"🚨 Erro ao ler tabela de preços do models.json: {e}")
-            # Fallback seguro
+            # Fallback seguro com base 0.25
             self.model_pricing = {
-                "gemini-2.5-flash": { "input_text": 1.0, "input_audio": 1.0 / 0.30, "output": 2.50 / 0.30 }
+                "gemini-3.1-flash-lite": { "input_text": 0.25 / 0.25, "input_audio": 0.50 / 0.25, "output": 1.50 / 0.25 }
             }
         self._initialize_model()
 
     def _initialize_model(self):
         """Inicializa o cliente Gemini."""
         try:
-            current_key = self.api_keys[self.current_key_index]
-            
             # Instanciação limpa: o SDK gerencia v1/v1beta automaticamente
             from google.genai._api_client import HttpOptions
-            self.client = genai.Client(api_key=current_key, http_options=HttpOptions(timeout=120000))
+            self.client = genai.Client(api_key=self.api_key, http_options=HttpOptions(timeout=120000))
             
-            logger.info(f"✅ Cliente Gemini inicializado (chave índice {self.current_key_index}).")
+            logger.info("✅ Cliente Gemini inicializado com a chave única.")
         except Exception as e:
             logger.error(f"🚨 ERRO CRÍTICO ao configurar o Gemini: {e}")
             raise
-
-    def _rotate_key(self):
-        """Muda para a próxima chave na lista."""
-        self.current_key_index = (self.current_key_index + 1) % len(self.api_keys)
-        logger.warning(f"Alternando para a chave de API do Google com índice {self.current_key_index}.")
-        self._initialize_model()
-        return self.current_key_index
 
     def _parse_json_response(self, response_text: str) -> dict:
         """Limpa e parseia JSON da resposta da IA, com tratamento de erros de escape."""
@@ -129,7 +115,7 @@ class GeminiService:
         """
         
         # Busca configurações da persona ou usa defaults
-        model_name = persona.ai_model if persona and persona.ai_model else "gemini-2.5-flash"
+        model_name = persona.ai_model if persona and persona.ai_model else "gemini-3.1-flash-lite"
         temp = persona.temperature if persona and persona.temperature is not None else 0.5
         top_p = persona.top_p if persona and persona.top_p is not None else 0.95
         top_k = persona.top_k if persona and persona.top_k is not None else 40
@@ -146,10 +132,12 @@ class GeminiService:
 
         if is_gemini_3_or_newer:
             thinking_level = getattr(persona, "thinking_level", "medium") if persona else "medium"
-            if thinking_level and thinking_level != "default":
+            if isinstance(thinking_level, str):
+                thinking_level = thinking_level.strip("'\"").strip().lower()
+            if thinking_level and thinking_level not in ("default", "none", "null", ""):
                 try:
                     config_args["thinking_config"] = types.ThinkingConfig(
-                        thinking_level=thinking_level
+                        thinking_level=thinking_level.upper()
                     )
                 except Exception as te:
                     logger.warning(f"Erro ao instanciar ThinkingConfig com thinking_level={thinking_level}: {te}")
@@ -201,137 +189,120 @@ class GeminiService:
         except Exception as e:
             print(f"Erro ao printar/salvar prompt: {e}")
 
-        initial_key_index = self.current_key_index
-        max_attempts_per_key = 2
+        max_attempts = 3
         
-        while True:
-            for attempt in range(max_attempts_per_key):
+        for attempt in range(max_attempts):
+            try:
+                logger.info(
+                    f"Tentando gerar conteúdo (tentativa {attempt + 1}/{max_attempts})."
+                )
+                
+                # --- MUDANÇA PRINCIPAL: Chamada Assíncrona Nativa (.aio) ---
+                # Timeout de 300s via asyncio — acomoda modelos mais lentos/poderosos
+                response = await asyncio.wait_for(
+                    self.client.aio.models.generate_content(
+                        model=model_name,
+                        contents=prompt,
+                        config=gen_config
+                    ),
+                    timeout=300.0
+                )
+                
+                # --- DEBUG: LOG RESPONSE ---
                 try:
-                    logger.info(
-                        f"Tentando gerar conteúdo com a chave índice {self.current_key_index} "
-                        f"(tentativa {attempt + 1}/{max_attempts_per_key})."
-                    )
+                    timestamp_resp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    resp_msg = f"\n{'='*20} RESPOSTA DA IA [{timestamp_resp}] {'='*20}\n"
+                    resp_msg += f"{response.text}\n"
+                    resp_msg += f"{'='*60}\n"
                     
-                    # --- MUDANÇA PRINCIPAL: Chamada Assíncrona Nativa (.aio) ---
-                    # Não precisa mais de run_in_executor
-                    # Timeout de 300s via asyncio — acomoda modelos mais lentos/poderosos
-                    response = await asyncio.wait_for(
-                        self.client.aio.models.generate_content(
-                            model=model_name,
-                            contents=prompt,
-                            config=gen_config
-                        ),
-                        timeout=300.0
-                    )
-                    
-                    # --- DEBUG: LOG RESPONSE ---
-                    try:
-                        timestamp_resp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        resp_msg = f"\n{'='*20} RESPOSTA DA IA [{timestamp_resp}] {'='*20}\n"
-                        resp_msg += f"{response.text}\n"
-                        resp_msg += f"{'='*60}\n"
-                        
-                        with open("last_prompt.txt", "a", encoding="utf-8") as f:
-                            f.write(resp_msg)
-                    except Exception as e:
-                        print(f"Erro ao salvar resposta no log: {e}")
-
-                    # --- LÓGICA DE TOKEN (ODÔMETRO) ---
-                    # Extrai o uso real de tokens da resposta do Gemini, incluindo tokens de pensamento (thinking)
-                    usage_metadata = response.usage_metadata
-                    tokens_to_deduct = 0 # Inicializa com 0
-
-                    if usage_metadata:
-                        input_tokens = usage_metadata.prompt_token_count or 0
-                        candidates_tokens = usage_metadata.candidates_token_count or 0
-                        thoughts_tokens = getattr(usage_metadata, "thoughts_token_count", 0) or 0
-                        output_tokens = candidates_tokens + thoughts_tokens
-                        
-                        # Recupera multiplicadores para o modelo usado
-                        pricing = self.model_pricing.get(model_name, self.model_pricing.get("gemini-2.5-flash", {"input_text": 1.0, "input_audio": 3.33, "output": 8.33}))
-                        
-                        # Determina se é áudio ou texto
-                        input_multiplier = pricing.get("input_audio", pricing.get("input_text", 1.0)) if media_type == "audio" else pricing.get("input_text", 1.0)
-                        output_multiplier = pricing.get("output", 8.33)
-                        
-                        # Calcula o custo equivalente em "tokens de input do Gemini 2.5 Flash"
-                        equivalent_total_tokens = (input_tokens * input_multiplier) + (output_tokens * output_multiplier)
-                        
-                        # Arredonda para o inteiro mais próximo para dedução
-                        tokens_to_deduct = round(equivalent_total_tokens)
-
-                        logger.info(
-                            f"Uso de tokens (Company {company.id}, Model {model_name}): "
-                            f"Input={input_tokens}, Output={output_tokens} (Candidates={candidates_tokens}, Thoughts={thoughts_tokens}). "
-                            f"Custo Equivalente = {tokens_to_deduct} tokens."
-                        )
-                    else:
-                        logger.warning(f"Não foi possível obter metadados de uso de tokens para a empresa {company.id}.")
-
-                    try:
-                        if tokens_to_deduct > 0:
-                            logger.info(f"Sucesso na chamada à API Gemini para a empresa {company.id}. Deduzindo {tokens_to_deduct} tokens.")
-                            await crud_user.decrement_company_tokens(
-                                db,
-                                db_company=company,
-                                usage=tokens_to_deduct,
-                                atendimento_id=atendimento_id,
-                                token_type="gemini_inference"
-                            )
-                            if db.in_nested_transaction():
-                                await db.flush()
-                            else:
-                                await db.commit()
-                                await db.refresh(company)
-                    except Exception as token_err:
-                        logger.error(f"Falha ao deduzir tokens da empresa: {token_err}", exc_info=True)
-                        if db.in_nested_transaction():
-                            # Rolls back the savepoint only
-                            await db.rollback()
-                        else:
-                            await db.rollback()
-                    
-                    return response
-
-                # Captura erros do novo SDK (geralmente ServerError ou ClientError)
-                # O erro 429 (Quota) agora geralmente vem como um ClientError com status 429
-                except asyncio.TimeoutError:
-                    logger.error(
-                        f"Timeout (90s) na chamada Gemini (chave {self.current_key_index}, "
-                        f"tentativa {attempt + 1}/{max_attempts_per_key}). Tentando novamente..."
-                    )
-                    await asyncio.sleep(2)
+                    with open("last_prompt.txt", "a", encoding="utf-8") as f:
+                        f.write(resp_msg)
                 except Exception as e:
-                    error_str = str(e).lower()
+                    print(f"Erro ao salvar resposta no log: {e}")
+
+                # --- LÓGICA DE TOKEN (ODÔMETRO) ---
+                # Extrai o uso real de tokens da resposta do Gemini, incluindo tokens de pensamento (thinking)
+                usage_metadata = response.usage_metadata
+                tokens_to_deduct = 0 # Inicializa com 0
+
+                if usage_metadata:
+                    input_tokens = usage_metadata.prompt_token_count or 0
+                    candidates_tokens = usage_metadata.candidates_token_count or 0
+                    thoughts_tokens = getattr(usage_metadata, "thoughts_token_count", 0) or 0
+                    output_tokens = candidates_tokens + thoughts_tokens
                     
-                    # Se for erro de parâmetro não suportado devido a thinking_config
-                    if ("thinking" in error_str or "parameter" in error_str or "unsupported" in error_str) and "thinking_config" in config_args:
-                        logger.warning(f"O modelo {model_name} não suporta a configuração de pensamento (thinking_config). Removendo parâmetro e tentando novamente...")
-                        config_args.pop("thinking_config", None)
-                        gen_config = types.GenerateContentConfig(**config_args)
-                        continue
+                    # Recupera multiplicadores para o modelo usado
+                    pricing = self.model_pricing.get(model_name, self.model_pricing.get("gemini-3.1-flash-lite", {"input_text": 1.0, "input_audio": 2.0, "output": 6.0}))
                     
-                    # Detecção de Erro de Cota (429) ou Recurso Esgotado
-                    if "429" in error_str or "resource exhausted" in error_str or "quota" in error_str:
-                        logger.warning(f"Quota da API excedida (429) com a chave {self.current_key_index}. Rotacionando...")
-                        break # Sai do loop 'for' para rotacionar a chave
+                    # Determina se é áudio ou texto
+                    input_multiplier = pricing.get("input_audio", pricing.get("input_text", 1.2)) if media_type == "audio" else pricing.get("input_text", 1.2)
+                    output_multiplier = pricing.get("output", 6.0)
                     
-                    # Detecção de bloqueio de segurança ou prompt inválido
-                    elif "blocked" in error_str or "invalid argument" in error_str:
-                        logger.error(f"Erro não recuperável (Bloqueio/Inválido): {e}")
-                        raise e
-                        
+                    # Calcula o custo equivalente em "tokens de input do Gemini 2.5 Flash"
+                    equivalent_total_tokens = (input_tokens * input_multiplier) + (output_tokens * output_multiplier)
+                    
+                    # Arredonda para o inteiro mais próximo para dedução
+                    tokens_to_deduct = round(equivalent_total_tokens)
+
+                    logger.info(
+                        f"Uso de tokens (Company {company.id}, Model {model_name}): "
+                        f"Input={input_tokens}, Output={output_tokens} (Candidates={candidates_tokens}, Thoughts={thoughts_tokens}). "
+                        f"Custo Equivalente = {tokens_to_deduct} tokens."
+                    )
+                else:
+                    logger.warning(f"Não foi possível obter metadados de uso de tokens para a empresa {company.id}.")
+
+                try:
+                    if tokens_to_deduct > 0:
+                        logger.info(f"Sucesso na chamada à API Gemini para a empresa {company.id}. Deduzindo {tokens_to_deduct} tokens.")
+                        await crud_user.decrement_company_tokens(
+                            db,
+                            db_company=company,
+                            usage=tokens_to_deduct,
+                            atendimento_id=atendimento_id,
+                            token_type="gemini_inference"
+                        )
+                        if db.in_nested_transaction():
+                            await db.flush()
+                        else:
+                            await db.commit()
+                            await db.refresh(company)
+                except Exception as token_err:
+                    logger.error(f"Falha ao deduzir tokens da empresa: {token_err}", exc_info=True)
+                    if db.in_nested_transaction():
+                        # Rolls back the savepoint only
+                        await db.rollback()
                     else:
-                        # Erros genéricos de conexão/servidor
-                        logger.error(f"Erro inesperado na API Gemini: {e}. Tentativa {attempt + 1}.")
-                        await asyncio.sleep(2) # Espera um pouco antes de tentar de novo na mesma chave
-            
-            # Se saiu do loop 'for', significa que precisa trocar de chave
-            new_key_index = self._rotate_key()
-            
-            if new_key_index == initial_key_index:
-                logger.critical(f"Todas as {len(self.api_keys)} chaves de API falharam.")
-                raise Exception("Todas as chaves de API excederam a quota.")
+                        await db.rollback()
+                
+                return response
+
+            # Captura erros
+            except asyncio.TimeoutError:
+                logger.error(
+                    f"Timeout na chamada Gemini (tentativa {attempt + 1}/{max_attempts}). Tentando novamente..."
+                )
+                await asyncio.sleep(2)
+            except Exception as e:
+                error_str = str(e).lower()
+                
+                # Se for erro de parâmetro não suportado devido a thinking_config
+                if ("thinking" in error_str or "parameter" in error_str or "unsupported" in error_str) and "thinking_config" in config_args:
+                    logger.warning(f"O modelo {model_name} não suporta a configuração de pensamento (thinking_config). Removendo parâmetro e tentando novamente...")
+                    config_args.pop("thinking_config", None)
+                    gen_config = types.GenerateContentConfig(**config_args)
+                    continue
+                
+                # Detecção de bloqueio de segurança ou prompt inválido
+                if "blocked" in error_str or "invalid argument" in error_str:
+                    logger.error(f"Erro não recuperável (Bloqueio/Inválido): {e}")
+                    raise e
+                
+                # Erros genéricos de conexão/servidor/quota
+                logger.error(f"Erro inesperado na API Gemini: {e}. Tentativa {attempt + 1}/{max_attempts}.")
+                if attempt == max_attempts - 1:
+                    raise e
+                await asyncio.sleep(2)
 
     async def transcribe_and_analyze_media(
         self, 
@@ -409,49 +380,154 @@ class GeminiService:
             logger.error(f"Erro ao transcrever/analisar mídia com Gemini: {e}", exc_info=True)
             return f"[Erro ao processar mídia: {mime_type}]"
 
+    async def generate_tts(
+        self, 
+        text: str, 
+        db: AsyncSession, 
+        company: models.Company, 
+        voice_name: Optional[str] = None,
+        atendimento_id: Optional[int] = None
+    ) -> bytes:
+        """
+        Gera áudio (WAV) a partir de um texto usando Gemini 3.1 Flash TTS.
+        """
+        from google.genai import types
+        import io
+        import wave
+
+        # Carrega dinamicamente a voz da persona/empresa se não fornecida diretamente
+        if not voice_name and db and atendimento_id:
+            try:
+                from sqlalchemy.orm import joinedload
+                result = await db.execute(
+                    select(models.Atendimento)
+                    .filter(models.Atendimento.id == atendimento_id)
+                    .options(joinedload(models.Atendimento.active_persona))
+                )
+                atendimento = result.scalars().first()
+                persona = None
+                if atendimento:
+                    persona = atendimento.active_persona
+                    if not persona and company.default_persona_id:
+                        persona = await db.get(models.Config, company.default_persona_id)
+                if persona and persona.tts_voice:
+                    voice_name = persona.tts_voice
+            except Exception as e:
+                logger.warning(f"Erro ao buscar voz da persona no banco de dados para atendimento {atendimento_id}: {e}")
+
+        voice_name = voice_name or "Aoede"
+        logger.info(f"Gerando áudio via Gemini (voz: {voice_name}) para o texto: {text[:100]}...")
+
+        # Configuramos o request para saída em áudio
+        config = types.GenerateContentConfig(
+            response_modalities=["AUDIO"],
+            speech_config=types.SpeechConfig(
+                voice_config=types.VoiceConfig(
+                    prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                        voice_name=voice_name
+                    )
+                )
+            )
+        )
+
+        try:
+            # Faz a chamada para a API do Gemini
+            # Usando gemini-3.1-flash-tts-preview para geração do áudio (multimodal)
+            response = await asyncio.wait_for(
+                self.client.aio.models.generate_content(
+                    model="gemini-3.1-flash-tts-preview",
+                    contents=text,
+                    config=config
+                ),
+                timeout=120.0
+            )
+
+            # Extrai os bytes de áudio brutos (geralmente PCM)
+            part = response.candidates[0].content.parts[0]
+            raw_pcm = part.inline_data.data
+
+        except (AttributeError, IndexError, KeyError, asyncio.TimeoutError) as e:
+            logger.error(f"Erro ao obter resposta ou dados de áudio do Gemini TTS: {e}")
+            raise ValueError("Falha ao gerar áudio a partir do texto no Gemini.")
+
+        # --- LÓGICA DE DEDUÇÃO DE TOKENS DO TTS ---
+        usage_metadata = response.usage_metadata
+        if usage_metadata:
+            input_tokens = usage_metadata.prompt_token_count or 0
+            candidates_tokens = usage_metadata.candidates_token_count or 0
+            thoughts_tokens = getattr(usage_metadata, "thoughts_token_count", 0) or 0
+            output_tokens = candidates_tokens + thoughts_tokens
+
+            # Preço do gemini-3.1-flash-tts-preview carregado dinamicamente ou fallback seguro
+            pricing = self.model_pricing.get("gemini-3.1-flash-tts-preview", {"input_text": 1.0, "input_audio": 2.0, "output": 6.0})
+            input_multiplier = pricing.get("input_text", 1.0)
+            output_multiplier = pricing.get("output", 6.0)
+
+            equivalent_total_tokens = (input_tokens * input_multiplier) + (output_tokens * output_multiplier)
+            tokens_to_deduct = round(equivalent_total_tokens)
+
+            try:
+                if tokens_to_deduct > 0:
+                    logger.info(f"Dedução TTS (Atend: {atendimento_id}): Consumo={tokens_to_deduct} tokens.")
+                    await crud_user.decrement_company_tokens(
+                        db,
+                        db_company=company,
+                        usage=tokens_to_deduct,
+                        atendimento_id=atendimento_id,
+                        token_type="gemini_tts"
+                    )
+                    if db.in_nested_transaction():
+                        await db.flush()
+                    else:
+                        await db.commit()
+                        await db.refresh(company)
+            except Exception as token_err:
+                logger.error(f"Falha ao deduzir tokens de TTS da empresa: {token_err}", exc_info=True)
+                await db.rollback()
+
+        # O Gemini retorna PCM bruto (24kHz, 16-bit, mono).
+        # Vamos empacotar como WAV para ser um arquivo de áudio padrão reproduzível.
+        wav_io = io.BytesIO()
+        with wave.open(wav_io, "wb") as wf:
+            wf.setnchannels(1)       # Mono
+            wf.setsampwidth(2)      # 16-bit (2 bytes)
+            wf.setframerate(24000)   # 24kHz
+            wf.writeframes(raw_pcm)
+
+        return wav_io.getvalue()
+
     async def generate_embedding(self, text: str) -> List[float]:
         """
         Gera embedding usando o modelo gemini-embedding-001.
         Força 768 dimensões para compatibilidade e eficiência.
         """
-        initial_key_index = self.current_key_index
-        max_attempts_per_key = 2
+        max_attempts = 3
         
         embed_config = types.EmbedContentConfig(
             task_type="RETRIEVAL_QUERY",
             output_dimensionality=768
         )
 
-        while True:
-            for attempt in range(max_attempts_per_key):
-                try:
-                    response = await self.client.aio.models.embed_content(
-                        model="gemini-embedding-001",
-                        contents=text,
-                        config=embed_config
-                    )
-                    if response.embeddings:
-                        return response.embeddings[0].values
-                    return []
-                except Exception as e:
-                    error_str = str(e).lower()
-                    if "429" in error_str or "resource exhausted" in error_str or "quota" in error_str:
-                        logger.warning(
-                            f"Quota da API excedida (429) ao gerar embedding com a chave {self.current_key_index}. Rotacionando..."
-                        )
-                        break  # Sai do loop for para rotacionar a chave
-                    elif "blocked" in error_str or "invalid argument" in error_str:
-                        logger.error(f"Erro não recuperável na geração de embedding (bloqueio/argumento): {e}")
-                        return []
-                    else:
-                        logger.error(f"Erro inesperado na geração de embedding: {e}. Tentativa {attempt + 1}.")
-                        await asyncio.sleep(2)
-            
-            # Rotaciona a chave se saiu do loop
-            new_key_index = self._rotate_key()
-            if new_key_index == initial_key_index:
-                logger.critical(f"Todas as {len(self.api_keys)} chaves de API falharam ao gerar embedding.")
+        for attempt in range(max_attempts):
+            try:
+                response = await self.client.aio.models.embed_content(
+                    model="gemini-embedding-001",
+                    contents=text,
+                    config=embed_config
+                )
+                if response.embeddings:
+                    return response.embeddings[0].values
                 return []
+            except Exception as e:
+                error_str = str(e).lower()
+                if "blocked" in error_str or "invalid argument" in error_str:
+                    logger.error(f"Erro não recuperável na geração de embedding (bloqueio/argumento): {e}")
+                    return []
+                logger.error(f"Erro na geração de embedding: {e}. Tentativa {attempt + 1}/{max_attempts}.")
+                if attempt == max_attempts - 1:
+                    logger.error(f"Erro final não recuperável na geração de embedding: {e}")
+                    return []
+                await asyncio.sleep(2)
 
     async def generate_embeddings_batch(self, texts: List[str], batch_size: int = 100) -> List[List[float]]:
         """
@@ -469,50 +545,35 @@ class GeminiService:
         # Mantemos o particionamento (batch) para evitar limites de payload muito grandes na API.
         for i in range(0, len(texts), batch_size):
             batch = texts[i:i + batch_size]
-            initial_key_index = self.current_key_index
-            max_attempts_per_key = 2
+            max_attempts = 3
             success = False
             batch_embeddings = []
 
-            while not success:
-                for attempt in range(max_attempts_per_key):
-                    try:
-                        response = await self.client.aio.models.embed_content(
-                            model="gemini-embedding-001",
-                            contents=batch,
-                            config=embed_config
-                        )
-                        if response.embeddings:
-                            batch_embeddings = [e.values for e in response.embeddings]
-                        else:
-                            logger.warning(f"Batch {i} retornou sem embeddings.")
-                            batch_embeddings = [[] for _ in batch]
+            for attempt in range(max_attempts):
+                try:
+                    response = await self.client.aio.models.embed_content(
+                        model="gemini-embedding-001",
+                        contents=batch,
+                        config=embed_config
+                    )
+                    if response.embeddings:
+                        batch_embeddings = [e.values for e in response.embeddings]
+                    else:
+                        logger.warning(f"Batch {i} retornou sem embeddings.")
+                        batch_embeddings = [[] for _ in batch]
+                    success = True
+                    break
+                except Exception as e:
+                    error_str = str(e).lower()
+                    if "blocked" in error_str or "invalid argument" in error_str:
+                        logger.error(f"Erro não recuperável na geração de batch embeddings (bloqueio/argumento): {e}")
+                        batch_embeddings = [[] for _ in batch]
                         success = True
                         break
-                    except Exception as e:
-                        error_str = str(e).lower()
-                        if "429" in error_str or "resource exhausted" in error_str or "quota" in error_str:
-                            logger.warning(
-                                f"Quota da API excedida (429) ao gerar batch embeddings com a chave {self.current_key_index}. Rotacionando..."
-                            )
-                            break  # Sai do loop for para rotacionar a chave
-                        elif "blocked" in error_str or "invalid argument" in error_str:
-                            logger.error(f"Erro não recuperável na geração de batch embeddings (bloqueio/argumento): {e}")
-                            batch_embeddings = [[] for _ in batch]
-                            success = True
-                            break
-                        else:
-                            logger.error(f"Erro inesperado na geração de batch embeddings: {e}. Tentativa {attempt + 1}.")
-                            await asyncio.sleep(2)
-                
-                if success:
-                    break
-
-                new_key_index = self._rotate_key()
-                if new_key_index == initial_key_index:
-                    logger.critical(f"Todas as {len(self.api_keys)} chaves de API falharam ao gerar batch embeddings.")
-                    batch_embeddings = [[] for _ in batch]
-                    break
+                    logger.error(f"Erro na geração de batch embeddings: {e}. Tentativa {attempt + 1}/{max_attempts}.")
+                    if attempt == max_attempts - 1:
+                        batch_embeddings = [[] for _ in batch]
+                    await asyncio.sleep(2)
 
             all_embeddings.extend(batch_embeddings)
         
@@ -574,8 +635,8 @@ class GeminiService:
                 filtered_drive_vectors = []
                 for v in vectors:
                     try:
-                        from app.api.configs import parse_drive_index
-                        parsed = parse_drive_index(v.content)
+                        from app.services.config_service import ConfigService
+                        parsed = ConfigService.parse_drive_index(v.content)
                         file_type = parsed.get("TIPO", "OUTROS").strip().upper()
                     except Exception:
                         file_type = "OUTROS"
@@ -610,10 +671,10 @@ class GeminiService:
 
     def _get_datetime_context(self, company: models.Company) -> str:
         """Gera o contexto de data e hora atual, incluindo dia da semana em PT-BR."""
+        import pytz
+        from datetime import datetime, timezone, timedelta
         now_utc = datetime.now(timezone.utc)
         
-        datetime_context = f"Data e Hora Atuais (UTC): {now_utc.strftime('%Y-%m-%d %H:%M:%S')} UTC\n"
-
         user_timezone_str = "America/Sao_Paulo" # Default
         if company.followup_config and isinstance(company.followup_config, dict):
             user_timezone_str = company.followup_config.get("timezone", "America/Sao_Paulo")
@@ -621,16 +682,32 @@ class GeminiService:
         try:
             user_tz = pytz.timezone(user_timezone_str)
             now_local = now_utc.astimezone(user_tz)
-            
-            weekdays = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
-            weekday_name = weekdays[now_local.weekday()]
-            
-            datetime_context += f"Data e Hora Local do Usuário ({user_timezone_str}): {now_local.strftime('%Y-%m-%d %H:%M:%S')} ({weekday_name})\n"
-        except pytz.UnknownTimeZoneError:
-            logger.warning(f"Timezone desconhecida '{user_timezone_str}' para a empresa {company.id}. Usando apenas UTC.")
-            pass 
-            
-        return datetime_context
+        except Exception:
+            try:
+                user_tz = pytz.timezone("America/Sao_Paulo")
+                now_local = now_utc.astimezone(user_tz)
+            except Exception:
+                now_local = now_utc
+        
+        weekdays = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
+        weekday_name = weekdays[now_local.weekday()]
+        
+        today_type = "Fim de semana" if now_local.weekday() in [5, 6] else "Dia útil"
+        
+        tomorrow_local = now_local + timedelta(days=1)
+        tomorrow_weekday = weekdays[tomorrow_local.weekday()]
+        tomorrow_type = "Fim de semana" if tomorrow_local.weekday() in [5, 6] else "Dia útil"
+        
+        day_after_local = now_local + timedelta(days=2)
+        day_after_weekday = weekdays[day_after_local.weekday()]
+        day_after_type = "Fim de semana" if day_after_local.weekday() in [5, 6] else "Dia útil"
+        
+        return (
+            f"{weekday_name}, {now_local.strftime('%d/%m/%Y %H:%M:%S')} (Fuso: {user_timezone_str}) | "
+            f"Hoje: {weekday_name} ({today_type}) | "
+            f"Amanhã: {tomorrow_weekday} ({tomorrow_type}) | "
+            f"Depois de amanhã: {day_after_weekday} ({day_after_type})"
+        )
 
     def _format_history_optimized(self, db_history: List[dict], include_timestamps: bool = False) -> str:
         """Formata o histórico completo como texto estruturado (User/AI)."""
@@ -659,243 +736,104 @@ class GeminiService:
         return "\n".join(formatted_lines)
         
     def _format_workflow_to_markdown(self, workflow_data: Optional[Dict[str, Any]]) -> str:
-        """Converte o JSON do React Flow em uma lista estruturada legível para a IA."""
+        """Converte o JSON do React Flow em roteiro hierárquico ordenado por BFS, legível para a IA.
+
+        Identifica o nó inicial (tipo 'start' ou menor in-degree), realiza BFS para
+        gerar a ordem lógica do fluxo e produz um roteiro numerado com tipo, instrução
+        e próximos passos explícitos para cada etapa.
+        """
         if not workflow_data or not isinstance(workflow_data, dict):
             return ""
-            
+
         nodes = {n['id']: n for n in workflow_data.get('nodes', [])}
         edges = workflow_data.get('edges', [])
-        
+
         if not nodes:
             return ""
-            
-        lines = ["# Fluxo de Atendimento e Condições"]
-        
-        for node_id, node in nodes.items():
-            etapa = node.get('data', {}).get('label', 'Etapa').replace('\n', ' ').strip()
-            acao = node.get('data', {}).get('description', 'Sem instrução específica').replace('\n', ' ').strip()
-            
-            target_edges = [e for e in edges if e.get('source') == node_id]
-            proximos = []
-            for e in target_edges:
-                target_node = nodes.get(e.get('target'))
-                if target_node:
-                    condicao = e.get('label', 'Avanço Direto').strip()
-                    proximos.append(f"Se '{condicao}' -> Ir para [{target_node.get('data', {}).get('label', '').strip()}]")
-            
-            proximo_str = " | ".join(proximos) if proximos else "Fim do fluxo"
-            
-            node_block = (
-                f"- Etapa: {etapa}\n"
-                f"  Ação: {acao}\n"
-                f"  Avanço: {proximo_str}"
-            )
-            lines.append(node_block)
-            
-        return "\n\n".join(lines) + "\n\n"
 
-    async def generate_conversation_action(
-        self,
-        whatsapp: models.Atendimento,
-        conversation_history_db: List[dict],
-        persona: models.Config,
-        db: AsyncSession,
-        company: models.Company
-    ) -> dict:
-        company_id = inspect(company).identity[0]
-        company = await db.get(models.Company, company_id)
-        max_retries = 3
-        last_response = None
+        # --- Mapa de adjacência e in-degree ---
+        adjacency: Dict[str, list] = {nid: [] for nid in nodes}
+        in_degree: Dict[str, int] = {nid: 0 for nid in nodes}
+        for e in edges:
+            src = e.get('source')
+            tgt = e.get('target')
+            if src in adjacency and tgt in nodes:
+                lbl = (e.get('data', {}).get('label') or e.get('label') or '').strip()
+                adjacency[src].append((lbl, tgt))
+                in_degree[tgt] = in_degree.get(tgt, 0) + 1
 
+        # --- Nó inicial: tipo 'start' > menor in-degree ---
+        start_node_id = None
+        for nid, node in nodes.items():
+            if node.get('data', {}).get('node_type') == 'start':
+                start_node_id = nid
+                break
+        if start_node_id is None:
+            start_node_id = min(in_degree, key=lambda nid: in_degree[nid])
 
-        for attempt in range(max_retries):
-            try:
-                # 1. Coleta de Contexto
-                persona_prompt = persona.prompt or "Você é um assistente útil."
-                
-                # Busca tags disponíveis e atuais para o prompt
-                available_tags = await crud_atendimento.get_all_user_tags(db, company_id=company.id)
-                available_tags_names = [t['name'] for t in available_tags]
-                
-                current_tags_names = []
-                if whatsapp.tags:
-                     current_tags_names = [t['name'] for t in whatsapp.tags]
+        # --- Ícones por tipo ---
+        TYPE_LABEL = {
+            'start':    'INÍCIO',
+            'message':  'MENSAGEM',
+            'decision': 'DECISÃO',
+            'action':   'AÇÃO',
+            'end':      'FIM',
+        }
 
-                # Gera o histórico formatado para o PROMPT
-                history_str = self._format_history_optimized(conversation_history_db, include_timestamps=True)
-                
-                # --- RAG QUERY BUILDER (Foco Exponencial) ---
-                # Prioriza as mensagens do usuário no histórico recente para evitar poluição
-                # com as respostas e saudações automáticas da própria IA.
-                rag_query = ""
-                if conversation_history_db:
-                    recent_msgs = conversation_history_db[-6:]
-                    user_contents = [
-                        msg.get("content", "").strip() 
-                        for msg in recent_msgs 
-                        if msg.get("role") == "user" and msg.get("content")
-                    ]
-                    if user_contents:
-                        rag_query = " ".join(user_contents)
+        # --- BFS para ordem lógica ---
+        visited: set = set()
+        queue = [start_node_id]
+        ordered_nodes: list = []
+        while queue:
+            cur = queue.pop(0)
+            if cur in visited:
+                continue
+            visited.add(cur)
+            ordered_nodes.append(cur)
+            for _, nxt in adjacency.get(cur, []):
+                if nxt not in visited:
+                    queue.append(nxt)
+        for nid in nodes:
+            if nid not in visited:
+                ordered_nodes.append(nid)
+
+        node_num = {nid: i + 1 for i, nid in enumerate(ordered_nodes)}
+
+        # --- Monta o roteiro ---
+        lines = [
+            "## ROTEIRO DE ATENDIMENTO (FLUXO)\n"
+            "Siga este roteiro em ordem. Analise o histórico para identificar em qual etapa estamos "
+            "e avance somente quando a condição da etapa atual for satisfeita.\n"
+        ]
+
+        for nid in ordered_nodes:
+            data = nodes[nid].get('data', {})
+            num = node_num[nid]
+            etapa = (data.get('label') or 'Etapa').replace('\n', ' ').strip()
+            acao = (data.get('description') or 'Sem instrução específica.').replace('\n', ' ').strip()
+            type_str = TYPE_LABEL.get(data.get('node_type', 'message'), '📌 ETAPA')
+
+            nexts = adjacency.get(nid, [])
+            if nexts:
+                avancos = []
+                for cond, tgt_id in nexts:
+                    tgt_num = node_num.get(tgt_id, '?')
+                    tgt_lbl = (nodes[tgt_id].get('data', {}).get('label') or '').replace('\n', ' ').strip() if tgt_id in nodes else '?'
+                    if cond:
+                        avancos.append(f"Se '{cond}' → Etapa {tgt_num} ({tgt_lbl})")
                     else:
-                        rag_query = conversation_history_db[-1].get("content", "")
+                        avancos.append(f"Avançar para Etapa {tgt_num} ({tgt_lbl})")
+                avanco_str = " | ".join(avancos)
+            else:
+                avanco_str = "Fim do fluxo — conclua ou transfira conforme necessário."
 
+            lines.append(
+                f"**Etapa {num} — {type_str}: {etapa}**\n"
+                f"  Instrução: {acao}\n"
+                f"  Próximo passo: {avanco_str}"
+            )
 
-                # Usa a query focada para buscar contexto
-                rag_context = await self._retrieve_rag_context(db, persona.id, rag_query)
-
-                # --- Contexto de Data e Hora ---
-                datetime_context = self._get_datetime_context(company)
-
-                # --- Contexto de Agenda ---
-                calendar_context = ""
-                if persona.is_calendar_active and persona.available_hours:
-                    booked_events_str = ""
-                    if persona.google_calendar_credentials:
-                        try:
-                            cal_service = get_google_calendar_service(persona)
-                            # Busca eventos reais para evitar conflitos (em thread para não bloquear o loop async)
-                            events = await asyncio.to_thread(cal_service.get_upcoming_events)
-                            if events:
-                                booked_list = []
-                                for event in events:
-                                    start = event['start'].get('dateTime', event['start'].get('date'))
-                                    booked_list.append(f"- {start}")
-                                booked_events_str = "\n# HORÁRIOS JÁ OCUPADOS (NÃO AGENDAR NESTES)\n" + "\n".join(booked_list) + "\n"
-                        except Exception as cal_err:
-                            logger.error(f"Erro ao buscar agenda para prompt (Company {company.id}): {cal_err}")
-
-                    # Formata horários de trabalho de forma simples
-                    hours_summary = []
-                    if persona.available_hours:
-                        for day, intervals in persona.available_hours.items():
-                            if intervals:
-                                if isinstance(intervals, str):
-                                    hours_summary.append(f"{day.capitalize()}: {intervals}")
-                                elif isinstance(intervals, list):
-                                    formatted_intervals = []
-                                    for i in intervals:
-                                        if isinstance(i, dict):
-                                            start = i.get('start')
-                                            end = i.get('end')
-                                            if start and end:
-                                                formatted_intervals.append(f"{start}-{end}")
-                                            elif start:
-                                                formatted_intervals.append(start)
-                                            elif end:
-                                                formatted_intervals.append(end)
-                                        elif isinstance(i, str):
-                                            formatted_intervals.append(i)
-                                    if formatted_intervals:
-                                        hours_summary.append(f"{day.capitalize()}: {', '.join(formatted_intervals)}")
-                                else:
-                                    hours_summary.append(f"{day.capitalize()}: {str(intervals)}")
-                    
-                    hours_text = " | ".join(hours_summary) if hours_summary else "Não configurado"
-
-                    calendar_context = f"\n# DISPONIBILIDADE DE AGENDA\n- Horários de Trabalho: {hours_text}\n"
-                    calendar_context += booked_events_str
-                    calendar_context += "Se o cliente demonstrar interesse em agendar, verifique a disponibilidade real (horários de trabalho vs ocupados) e proponha um horário livre. Se confirmado, use a ação 'agendar_reuniao' no JSON.\n"
-
-                # --- Contexto do Fluxo Visual ---
-                workflow_context = self._format_workflow_to_markdown(persona.workflow_json)
-
-                # 2. Montagem da System Instruction (Regras, Contexto e Formato)
-                # --- Partes condicionais para otimização de tokens ---
-                _rag_sec = f"# CONTEXTO (RAG)\n{rag_context}\n\n" if rag_context else ""
-                _workflow_sec = f"{workflow_context}" if persona.workflow_json else ""
-                _calendar_sec = f"{calendar_context}" if persona.is_calendar_active else ""
-                
-                _tags_rule = f"# TAGS DISPONÍVEIS\n{' | '.join(available_tags_names)}\n\n" if available_tags_names else ""
-                _tags_json = '  "tags_sugeridas": ["Tag1"],\n' if available_tags_names else ""
-
-                _drive_rule = (
-                    "3. *REGRAS RÍGIDAS DE ENVIO DE ARQUIVOS (DRIVE):*\n"
-                    "   - Você deve incluir um arquivo em 'arquivos_anexos' APENAS se o cliente solicitou diretamente esse arquivo ou a informação contida nele (ex: catálogo, tabela de preços, contrato, foto do produto, etc).\n"
-                    "   - NÃO envie arquivos por iniciativa própria ou para complementar saudações normais/conversas genéricas.\n"
-                    "   - É terminantemente PROIBIDO adivinhar, assumir ou inventar IDs de arquivos. Utilize APENAS os IDs reais listados na tabela '# CONTEXTO (RAG)' que correspondam EXATAMENTE ao arquivo solicitado pelo cliente.\n"
-                    "   - Se o cliente solicitar um arquivo e você não encontrar o ID exato dele na seção '# CONTEXTO (RAG)', NÃO envie nada no array 'arquivos_anexos'. Em vez disso, explique de forma educada que não localizou o arquivo ou peça para ele especificar melhor para que o atendente humano o envie.\n"
-                    "   - Certifique-se de que o campo 'nome_exato' corresponda exatamente ao nome do arquivo listado na tabela (incluindo a extensão, se houver, ex: '.pdf').\n"
-                    "   - Classifique o 'tipo_midia' corretamente como 'image' (para imagens/fotos), 'video' (para vídeos) ou 'document' (para PDFs, planilhas, Word, etc).\n"
-                ) if persona.drive_id else ""
-                _drive_json = '  "arquivos_anexos": [{ "nome_exato": "Nome", "id_arquivo": "ID", "tipo_midia": "image|video|document" }],\n' if persona.drive_id else ""
-
-                _sched_rule = (
-                    "4. *AGENDAMENTO:* Solicite o e-mail do cliente ao confirmar um horário. "
-                    "Retorne acao_agenda, data_agendamento e email_cliente no JSON apenas após obter o horário e o e-mail.\n"
-                    if persona.is_calendar_active else ""
-                )
-                _sched_json = '  "email_cliente": "Email", "acao_agenda": "Ação", "data_agendamento": "ISO",\n' if persona.is_calendar_active else ""
-
-                system_instruction = (
-                    f"{persona_prompt}\n\n"
-                    f"{_rag_sec}{_workflow_sec}{_tags_rule}{_calendar_sec}"
-                    f"# DIRETRIZES DE HUMANIZAÇÃO (CRÍTICO)\n"
-                    f"- *Ausência de Corporatiquês:* Elimine termos formais excessivos. Seja direto e objetivo.\n"
-                    f"- *NÃO SE REPITA:* Analise o histórico e evite duplicidade de informações ou ações já realizadas.\n"
-                    f"- *Continuidade Real:* Mantenha a fluidez de uma conversa contínua. Ignore apresentações se já houver interação prévia.\n"
-                    f"- *Zero Saudações Repetidas:* Omita cumprimentos se o histórico recente já os contiver.\n"
-                    f"- *Espelhamento de Estilo:* Adapte o nível de formalidade, uso de emojis e pontuação ao estilo demonstrado pelo cliente.\n"
-                    f"- *Interjeições Naturais:* É encorajado o uso de interjeições curtas (ex: 'Entendi!', 'Hum...', 'Certo.') para conferir naturalidade.\n"
-                    f"- *Formatação WhatsApp:* Utilize estritamente a sintaxe do WhatsApp (*negrito*, _itálico_, ~tachado~).\n"
-                    f"- *Separação de Bolhas:* Divida a resposta no array 'mensagens'. Cada item é um balão separado.\n"
-                    f"- *Linguagem Natural:* Priorize expressões cotidianas em vez de frases prontas.\n"
-                    f"# REGRAS DE EXECUÇÃO E INTEGRIDADE (CRÍTICO)\n"
-                    f"1. *ADMITIR IGNORÂNCIA:* CASO A INFORMAÇÃO SOLICITADA NÃO ESTEJA PRESENTE NO CONTEXTO (RAG) OU NO FLUXO, INFORME QUE NÃO POSSUI O DADO E OFEREÇA AJUDA COM O QUE ESTÁ DISPONÍVEL. PROIBIDO INVENTAR DADOS TÉCNICOS, PREÇOS OU CONDIÇÕES.\n"
-                    f"2. *FONTE DE VERDADE:* Baseie-se prioritariamente no contexto fornecido.\n"
-                    f"{_drive_rule}{_sched_rule}"
-                    f"# SITUAÇÕES DO ATENDIMENTO (campo 'nova_situacao')\n"
-                    f"- *Aguardando Resposta:* Use quando a conversa deve continuar e você aguarda um retorno do cliente.\n"
-                    f"- *Atendente Chamado:* Use se o cliente solicitar falar com um humano ou se você não puder ajudar com as informações disponíveis.\n"
-                    f"- *Concluído:* Use quando o objetivo do atendimento for alcançado ou a conversa for finalizada.\n\n"
-                    f"# FORMATO DE RESPOSTA (JSON OBRIGATÓRIO)\n"
-                    f"Retorne APENAS o JSON. OMITA campos vazios ou nulos para economizar tokens.\n"
-                    f"{{\n"
-                    f'  "mensagens": ["Balão 1", "Balão 2"],\n'
-                    f"{_sched_json}{_tags_json}{_drive_json}"
-                    f'  "fonte_confiavel": true,\n'
-                    f'  "nova_situacao": "Aguardando Resposta",\n'
-                    f'  "nome_contato": "Nome",\n'
-                    f'  "resumo": "Resumo curto"\n'
-                    f"}}"
-                )
-
-                # --- 3. Montagem do Prompt (Histórico e Tarefa) ---
-                _obs_row = f"- Observações: {whatsapp.observacoes.strip()}\n" if whatsapp.observacoes and whatsapp.observacoes.strip() else ""
-                prompt_text = (
-                    f"# DATA E HORA ATUAL\n{datetime_context}\n"
-                    f"# DADOS DO CLIENTE\n"
-                    f"- Nome: {whatsapp.nome_contato or 'Não identificado'}\n"
-                    f"- Tags Atuais: {', '.join(current_tags_names) if current_tags_names else 'Nenhuma'}\n"
-                    f"{_obs_row}"
-                    f"\n# HISTÓRICO\n{history_str}\n\n"
-                    f"# TAREFA\n"
-                    f"Responda ao último 'User' seguindo estritamente as instruções do sistema."
-                )
-                
-                response = await self._generate_with_retry(prompt_text, db, company, system_instruction=system_instruction, atendimento_id=whatsapp.id, persona=persona)
-                last_response = response
-                
-                return self._parse_json_response(response.text)
-
-            except json.JSONDecodeError as e:
-                response_text = last_response.text if last_response else "N/A"
-                logger.warning(
-                    f"Falha ao decodificar JSON da IA (tentativa {attempt + 1}/{max_retries}). "
-                    f"Resposta: {response_text}"
-                )
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(2)  # Aguarda antes da próxima tentativa
-                else:
-                    logger.error(f"Erro de decodificação JSON após {max_retries} tentativas. Resposta final: {response_text}", exc_info=True)
-                    return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "resumo": f"Falha da IA ao gerar JSON válido após {max_retries} tentativas: {str(e)}" }
-            
-            except Exception as e:
-                logger.error(f"Erro ao gerar ação de conversação com Gemini: {e}", exc_info=True)
-                return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "resumo": f"Falha da IA: {str(e)}" }
-        
-        # Fallback caso o loop termine sem sucesso (não deve acontecer com a lógica acima)
-        return { "mensagem_para_enviar": None, "nova_situacao": "Erro IA", "resumo": "Falha crítica no loop de geração de resposta da IA." }
+        return "\n\n".join(lines) + "\n\n"
 
     async def generate_followup_action(
         self,

@@ -1,16 +1,24 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+# app/api/admin.py
+
+# 1. Importações nativas/padrão do Python
+import logging
 from typing import List
 
+# 2. Importações de terceiros
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+# 3. Importações locais do projeto
 from app.db.database import get_db
 from app.db import models, schemas
-from app.crud import crud_user
 from app.api.dependencies import get_current_active_superuser
-from app.services.security import get_password_hash, encrypt_token
+from app.services.admin_service import AdminService
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
+
+# Retorna todos os usuários registrados no sistema com suporte a paginação
 @router.get("/users", response_model=List[schemas.User])
 async def read_users(
     db: AsyncSession = Depends(get_db),
@@ -21,9 +29,14 @@ async def read_users(
     """
     Retrieve all users. Only for superusers.
     """
-    users = await crud_user.get_users(db, skip=skip, limit=limit)
-    return users
+    try:
+        return await AdminService.read_users(db=db, skip=skip, limit=limit)
+    except Exception as e:
+        logger.error(f"Erro ao ler usuários: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao obter lista de usuários.")
 
+
+# Cria um novo usuário com senha criptografada sem restrição de tenant/empresa
 @router.post("/users", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
 async def create_user_by_admin(
     user_in: schemas.UserCreateByAdmin,
@@ -33,30 +46,16 @@ async def create_user_by_admin(
     """
     Create a new user. Only for superusers.
     """
-    db_user = await crud_user.get_user_by_email(db, email=user_in.email)
-    if db_user:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Email already registered.",
-        )
-    
-    user_data = user_in.model_dump(exclude_unset=True)
-    # Garante que não tentamos salvar is_superuser no banco
-    user_data.pop("is_superuser", None) 
+    try:
+        return await AdminService.create_user_by_admin(db=db, user_in=user_in)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro ao criar usuário por admin: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao criar novo usuário.")
 
-    hashed_password = get_password_hash(user_data.pop("password"))
 
-    new_user = models.User(
-        hashed_password=hashed_password,
-        **user_data
-    )
-    
-    db.add(new_user)
-    await db.commit()
-    await db.refresh(new_user)
-    
-    return new_user
-
+# Atualiza dados de qualquer usuário pelo ID no banco de dados
 @router.put("/users/{user_id}", response_model=schemas.User)
 async def update_user_by_admin(
     user_id: int,
@@ -67,37 +66,18 @@ async def update_user_by_admin(
     """
     Update a user by ID. Only for superusers.
     """
-    user_to_update = await crud_user.get_user(db, user_id=user_id)
-    if not user_to_update:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    try:
+        return await AdminService.update_user_by_admin(db=db, user_id=user_id, user_in=user_in)
+    except LookupError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro ao atualizar usuário {user_id} por admin: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao atualizar dados do usuário.")
 
-    update_data = user_in.model_dump(exclude_unset=True)
 
-    if "email" in update_data and update_data["email"] != user_to_update.email:
-        existing_user = await crud_user.get_user_by_email(db, email=update_data["email"])
-        if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Email already registered.",
-            )
-
-    # Garante que não tentamos salvar is_superuser no banco
-    update_data.pop("is_superuser", None)
-
-    if "password" in update_data:
-        password = update_data.pop("password")
-        if password:
-            user_to_update.hashed_password = get_password_hash(password)
-
-    for field, value in update_data.items():
-        if hasattr(user_to_update, field):
-            setattr(user_to_update, field, value)
-
-    db.add(user_to_update)
-    await db.commit()
-    await db.refresh(user_to_update)
-    return user_to_update
-
+# Deleta permanentemente qualquer usuário pelo ID do banco de dados
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user_by_admin(
     user_id: int,
@@ -107,17 +87,19 @@ async def delete_user_by_admin(
     """
     Delete a user by ID. Only for superusers.
     """
-    if current_user.id == user_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admins cannot delete themselves.")
+    try:
+        await AdminService.delete_user_by_admin(db=db, user_id=user_id, current_user=current_user)
+        return
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except LookupError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro ao excluir usuário {user_id} por admin: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao remover usuário.")
 
-    user_to_delete = await crud_user.get_user(db, user_id=user_id)
-    if not user_to_delete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    
-    await db.delete(user_to_delete)
-    await db.commit()
-    return
 
+# Lista todas as personas configuradas para a empresa associada a um usuário específico
 @router.get("/users/{user_id}/configs", response_model=List[schemas.Config])
 async def read_user_configs_by_admin(
     user_id: int,
@@ -127,13 +109,14 @@ async def read_user_configs_by_admin(
     """
     Retrieve all configs for a specific user. Only for superusers.
     """
-    db_user = await crud_user.get_user(db, user_id=user_id)
-    if not db_user or not db_user.company_id:
-        return []
-    result = await db.execute(select(models.Config).where(models.Config.company_id == db_user.company_id))
-    configs = result.scalars().all()
-    return configs
+    try:
+        return await AdminService.read_user_configs_by_admin(db=db, user_id=user_id)
+    except Exception as e:
+        logger.error(f"Erro ao obter configs do usuário {user_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao recuperar configurações do usuário.")
 
+
+# Lista todas as personas (Configurações) salvas no banco de dados geral
 @router.get("/configs", response_model=List[schemas.Config])
 async def read_all_configs(
     db: AsyncSession = Depends(get_db),
@@ -144,11 +127,14 @@ async def read_all_configs(
     """
     Retrieve all configs from all users. Only for superusers.
     """
-    result = await db.execute(select(models.Config).offset(skip).limit(limit))
-    return result.scalars().all()
+    try:
+        return await AdminService.read_all_configs(db=db, skip=skip, limit=limit)
+    except Exception as e:
+        logger.error(f"Erro ao ler todas as configs: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao obter lista de configurações do sistema.")
 
-# --- GESTÃO DE EMPRESAS (COMPANIES) ---
 
+# Lista todas as empresas (tenants) cadastradas na plataforma
 @router.get("/companies", response_model=List[schemas.Company])
 async def read_companies(
     db: AsyncSession = Depends(get_db),
@@ -157,9 +143,14 @@ async def read_companies(
     """
     List all companies. Only for superusers.
     """
-    result = await db.execute(select(models.Company))
-    return result.scalars().all()
+    try:
+        return await AdminService.read_companies(db=db)
+    except Exception as e:
+        logger.error(f"Erro ao listar empresas: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao recuperar lista de empresas.")
 
+
+# Cria uma nova empresa (tenant) na plataforma com suas próprias credenciais e limites
 @router.post("/companies", response_model=schemas.Company, status_code=status.HTTP_201_CREATED)
 async def create_company(
     company_in: schemas.CompanyCreate,
@@ -169,12 +160,14 @@ async def create_company(
     """
     Create a new company. Only for superusers.
     """
-    db_company = models.Company(**company_in.model_dump())
-    db.add(db_company)
-    await db.commit()
-    await db.refresh(db_company)
-    return db_company
+    try:
+        return await AdminService.create_company(db=db, company_in=company_in)
+    except Exception as e:
+        logger.error(f"Erro ao criar empresa: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao criar nova empresa.")
 
+
+# Atualiza as credenciais ou configurações de uma empresa cadastrada pelo ID
 @router.put("/companies/{company_id}", response_model=schemas.Company)
 async def update_company(
     company_id: int,
@@ -185,20 +178,16 @@ async def update_company(
     """
     Update a company. Only for superusers.
     """
-    db_company = await db.get(models.Company, company_id)
-    if not db_company:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
-        
-    update_data = company_in.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        if hasattr(db_company, field):
-            setattr(db_company, field, value)
-            
-    db.add(db_company)
-    await db.commit()
-    await db.refresh(db_company)
-    return db_company
+    try:
+        return await AdminService.update_company(db=db, company_id=company_id, company_in=company_in)
+    except LookupError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro ao atualizar empresa {company_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao atualizar dados da empresa.")
 
+
+# Deleta permanentemente uma empresa cadastrada pelo ID no banco de dados
 @router.delete("/companies/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_company(
     company_id: int,
@@ -208,13 +197,17 @@ async def delete_company(
     """
     Delete a company. Only for superusers.
     """
-    db_company = await db.get(models.Company, company_id)
-    if not db_company:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found")
-    await db.delete(db_company)
-    await db.commit()
-    return
+    try:
+        await AdminService.delete_company(db=db, company_id=company_id)
+        return
+    except LookupError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro ao deletar empresa {company_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao excluir empresa.")
 
+
+# Lista todas as personas configuradas para uma determinada empresa identificada pelo ID
 @router.get("/companies/{company_id}/configs", response_model=List[schemas.Config])
 async def read_company_configs_by_admin(
     company_id: int,
@@ -224,5 +217,8 @@ async def read_company_configs_by_admin(
     """
     List all configs for a specific company. Only for superusers.
     """
-    result = await db.execute(select(models.Config).where(models.Config.company_id == company_id))
-    return result.scalars().all()
+    try:
+        return await AdminService.read_company_configs_by_admin(db=db, company_id=company_id)
+    except Exception as e:
+        logger.error(f"Erro ao listar configs da empresa {company_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Erro ao obter configurações da empresa.")

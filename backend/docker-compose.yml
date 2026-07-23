@@ -163,6 +163,22 @@ services:
       postgres:
         condition: service_healthy
 
+  worker-integrations:
+    build: .
+    container_name: atendai_worker_integrations
+    command: [ "python", "-m", "app.worker_integrations" ]
+    volumes:
+      - .:/app
+    networks:
+      - atendai_network
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - GOOGLE_API_KEYS=${GOOGLE_API_KEYS}
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   tunnel:
     image: alpine:latest
     container_name: serveo_tunnel

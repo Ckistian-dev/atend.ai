@@ -276,6 +276,13 @@ async def process_official_message_task(value_payload: dict): # Recebe 'value'
             logger.warning(f"WBP Webhook (Worker): Empresa não encontrada para wbp_phone_number_id {phone_number_id}")
             return
             
+        # Em ambiente de desenvolvimento, só processa webhooks se a empresa pertencer ao cjstestes@gmail.com
+        if settings.ENVIRONMENT == "development":
+            company_emails = [u.email for u in company.users]
+            if "cjstestes@gmail.com" not in company_emails:
+                logger.info(f"WBP Webhook (Worker) [DEV]: Ignorando webhook da empresa '{company.name}' (ID: {company.id}). Permitido apenas para cjstestes@gmail.com.")
+                return
+
         user = company.users[0] if company.users else None
         if not user:
             logger.warning(f"WBP Webhook (Worker): Nenhum usuário encontrado para a empresa {company.name} (ID: {company.id})")
@@ -324,6 +331,13 @@ async def process_official_status_task(value_payload: dict):
             logger.warning(f"WBP Webhook (Status): Empresa não encontrada para wbp_phone_number_id {phone_number_id}")
             return
             
+        # Em ambiente de desenvolvimento, só processa webhooks se a empresa pertencer ao cjstestes@gmail.com
+        if settings.ENVIRONMENT == "development":
+            company_emails = [u.email for u in company.users]
+            if "cjstestes@gmail.com" not in company_emails:
+                logger.info(f"WBP Webhook (Status) [DEV]: Ignorando status da empresa '{company.name}' (ID: {company.id}). Permitido apenas para cjstestes@gmail.com.")
+                return
+
         user = company.users[0] if company.users else None
         if not user:
             logger.warning(f"WBP Webhook (Status): Nenhum usuário encontrado para a empresa {company.name} (ID: {company.id})")

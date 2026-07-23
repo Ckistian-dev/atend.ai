@@ -22,6 +22,28 @@ class ConfigBase(BaseModel):
     top_k: Optional[int] = 40
     thinking_budget: Optional[int] = 1024
     thinking_level: Optional[str] = "medium"
+    tts_voice: Optional[str] = "Aoede"
+    persona_form: Optional[Dict[str, Any]] = None
+
+    @field_validator("thinking_level", mode="before")
+    @classmethod
+    def clean_thinking_level(cls, v: Any) -> Optional[str]:
+        if isinstance(v, str):
+            cleaned = v.strip("'\"").strip()
+            if not cleaned or cleaned.lower() in ("none", "null"):
+                return None
+            return cleaned.lower()
+        return v
+
+    @field_validator("tts_voice", mode="before")
+    @classmethod
+    def clean_tts_voice(cls, v: Any) -> Optional[str]:
+        if isinstance(v, str):
+            cleaned = v.strip("'\"").strip()
+            if not cleaned or cleaned.lower() in ("none", "null"):
+                return None
+            return cleaned
+        return v
 
 
 
@@ -45,11 +67,109 @@ class ConfigUpdate(BaseModel):
     top_k: Optional[int] = None
     thinking_budget: Optional[int] = None
     thinking_level: Optional[str] = None
+    tts_voice: Optional[str] = None
+    persona_form: Optional[Dict[str, Any]] = None
+
+    @field_validator("thinking_level", mode="before")
+    @classmethod
+    def clean_thinking_level(cls, v: Any) -> Optional[str]:
+        if isinstance(v, str):
+            cleaned = v.strip("'\"").strip()
+            if not cleaned or cleaned.lower() in ("none", "null"):
+                return None
+            return cleaned.lower()
+        return v
+
+    @field_validator("tts_voice", mode="before")
+    @classmethod
+    def clean_tts_voice(cls, v: Any) -> Optional[str]:
+        if isinstance(v, str):
+            cleaned = v.strip("'\"").strip()
+            if not cleaned or cleaned.lower() in ("none", "null"):
+                return None
+            return cleaned
+        return v
 
 
 class Config(ConfigBase):
     id: int
     company_id: int
+    model_config = {"from_attributes": True}
+
+# --- Schemas de Integração ---
+class IntegrationBase(BaseModel):
+    name: str
+    integration_type: Optional[str] = "polling" # 'polling' ou 'webhook'
+    url: Optional[str] = None
+    method: Optional[str] = "GET"
+    headers: Optional[Dict[str, Any]] = None
+    body: Optional[Dict[str, Any]] = None
+    items_path: Optional[str] = ""
+    title_field: Optional[str] = None
+    content_field: Optional[str] = None
+    category: str = "integração"
+    sync_interval_minutes: Optional[int] = 5
+    enabled: Optional[bool] = True
+
+class IntegrationCreate(IntegrationBase):
+    config_id: int
+
+class IntegrationUpdate(BaseModel):
+    name: Optional[str] = None
+    integration_type: Optional[str] = None
+    url: Optional[str] = None
+    method: Optional[str] = None
+    headers: Optional[Dict[str, Any]] = None
+    body: Optional[Dict[str, Any]] = None
+    items_path: Optional[str] = None
+    title_field: Optional[str] = None
+    content_field: Optional[str] = None
+    category: Optional[str] = None
+    sync_interval_minutes: Optional[int] = None
+    enabled: Optional[bool] = None
+
+class Integration(IntegrationBase):
+    id: int
+    config_id: int
+    webhook_token: Optional[str] = None
+    last_sync_at: Optional[datetime] = None
+    last_status: Optional[str] = "pending"
+    last_error: Optional[str] = None
+    last_payload: Optional[Dict[str, Any]] = None
+    model_config = {"from_attributes": True}
+
+class TestEndpointPayload(BaseModel):
+    url: str
+    method: Optional[str] = "GET"
+    headers: Optional[Dict[str, Any]] = None
+    params: Optional[Dict[str, Any]] = None
+    body: Optional[Any] = None
+
+
+# --- Schemas de Conhecimento (KnowledgeVector) ---
+
+class KnowledgeVectorBase(BaseModel):
+    content: str = Field(..., description="Texto formatado usado para RAG e buscas textuais")
+    origin: str = Field(..., description="'sheet' or 'drive'")
+    category: Optional[str] = Field(None, description="Categoria do dado: 'product', 'faq', 'company'")
+    raw_data: Optional[Dict[str, Any]] = Field(None, description="JSON contendo a linha exata da planilha")
+    # Nota: omitimos o 'embedding' no Base para não trafegar vetores pesados desnecessariamente nas requisições normais
+
+class KnowledgeVectorCreate(KnowledgeVectorBase):
+    config_id: int
+    embedding: Optional[List[float]] = None
+
+class KnowledgeVectorUpdate(BaseModel):
+    content: Optional[str] = None
+    origin: Optional[str] = None
+    category: Optional[str] = None
+    raw_data: Optional[Dict[str, Any]] = None
+    embedding: Optional[List[float]] = None
+
+class KnowledgeVector(KnowledgeVectorBase):
+    id: int
+    config_id: int
+    
     model_config = {"from_attributes": True}
 
 # --- Schemas de Atendimento ---
@@ -211,3 +331,53 @@ class FormattedMessage(BaseModel):
     quoted_msg: Optional[Dict[str, Any]] = None
     is_ai: Optional[bool] = False
     model_config = {"from_attributes": True}
+
+
+# --- Schemas de Payload / Requests ---
+
+class SendMessagePayload(BaseModel):
+    text: str
+
+
+class SendTemplatePayload(BaseModel):
+    template_name: str
+    language_code: str = "en_US"
+    components: Optional[List[Dict[str, Any]]] = None
+
+
+class FeedbackAnalysisPayload(BaseModel):
+    feedback: str
+
+
+class AlteracaoPlanilha(BaseModel):
+    aba: str
+    coluna_1: str
+    valor_antigo: Optional[str] = None
+    valor_novo: str
+    acao: str
+    motivo: Optional[str] = None
+
+
+class ApplyFeedbackPayload(BaseModel):
+    alteracoes_planilha: Optional[List[AlteracaoPlanilha]] = None
+    alteracoes_rag: Optional[List[AlteracaoPlanilha]] = None
+    novo_workflow: Optional[Dict[str, Any]] = None
+
+
+class ProvisionWithCodePayload(BaseModel):
+    config_id: int
+    resource_type: str
+    code: str
+    redirect_uri: str
+
+
+class WorkflowFeedbackPayload(BaseModel):
+    feedback: str
+    current_workflow: Optional[Dict[str, Any]] = None
+
+
+
+class ApplyWorkflowPayload(BaseModel):
+    novo_workflow: Optional[Dict[str, Any]] = None
+
+

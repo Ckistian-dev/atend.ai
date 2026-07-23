@@ -298,13 +298,13 @@ const FrictionCardsModule = ({ modulo }) => (
                 return (
                     <div key={i} className="group rounded-[20px] p-5 bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-300">
                         <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
-                            <h4 className="text-slate-800 font-bold text-sm leading-tight flex-1 min-w-[60%]">{item.area}</h4>
+                            <h4 className="text-slate-800 font-bold text-sm leading-tight flex-1 min-w-[60%] m-0">{item.area}</h4>
                             <span className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${cfg.pill} shadow-sm max-w-full`}>
                                 <span className={`w-1.5 h-1.5 flex-shrink-0 rounded-full ${cfg.dot} animate-pulse`} />
                                 <span className="truncate">{isShortImpact ? item.impacto : 'Atenção'}</span>
                             </span>
                         </div>
-                        <p className="text-slate-500 text-xs leading-relaxed font-medium mb-3">{item.observacoes}</p>
+                        <p className="text-slate-500 text-xs leading-relaxed font-medium m-0 mb-3">{item.observacoes}</p>
                         {!isShortImpact && item.impacto && (
                             <div className="text-slate-600 text-xs leading-relaxed font-medium mb-3 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
                                 <span className="font-bold text-slate-700 block mb-1">Impacto Esperado:</span>
@@ -348,12 +348,12 @@ const InsightCardsModule = ({ modulo }) => (
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                    <h4 className="text-slate-800 font-bold text-sm tracking-tight">{item.titulo}</h4>
+                                    <h4 className="text-slate-800 font-bold text-sm tracking-tight m-0">{item.titulo}</h4>
                                     <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest ${pri.badge} shadow-sm border border-black/5`}>
                                         {pri.label}
                                     </span>
                                 </div>
-                                <p className="text-slate-600 text-xs leading-relaxed font-medium">{item.descricao}</p>
+                                <p className="text-slate-600 text-xs leading-relaxed font-medium m-0">{item.descricao}</p>
                             </div>
                         </div>
                     </div>
@@ -373,7 +373,7 @@ const TextSectionModule = ({ modulo }) => {
                 <span className={`text-xs font-bold uppercase tracking-widest ${cfg.text}`}>{cfg.label}</span>
                 {modulo.titulo && <span className="text-gray-700 font-semibold text-sm ml-1">— {modulo.titulo}</span>}
             </div>
-            <p className="text-gray-600 leading-relaxed text-sm">{modulo.conteudo}</p>
+            <p className="text-gray-600 leading-relaxed text-sm m-0">{modulo.conteudo}</p>
         </div>
     );
 };
@@ -638,13 +638,19 @@ const ActionStepsModule = ({ modulo }) => {
             </div>
             <div className="flex flex-col gap-4">
                 {(modulo.passos || []).map((passo, i) => (
-                    <div key={i} className="flex gap-4">
-                        <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex-shrink-0 flex items-center justify-center font-black text-sm shadow-md">
-                            {passo.numero || (i + 1)}
-                        </div>
-                        <div className="flex-1 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                            <h4 className="text-slate-800 font-bold text-sm mb-1">{passo.titulo}</h4>
-                            <p className="text-slate-600 text-xs font-medium leading-relaxed">{passo.descricao}</p>
+                    <div key={i} style={{ display: 'table', width: '100%' }}>
+                        <div style={{ display: 'table-row' }}>
+                            <div style={{ display: 'table-cell', width: '32px', verticalAlign: 'top', paddingRight: '16px' }}>
+                                <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-sm shadow-md" style={{ marginTop: '8px' }}>
+                                    {passo.numero || (i + 1)}
+                                </div>
+                            </div>
+                            <div style={{ display: 'table-cell', verticalAlign: 'top' }}>
+                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                    <h4 className="text-slate-800 font-bold text-sm m-0 mb-1">{passo.titulo}</h4>
+                                    <p className="text-slate-600 text-xs font-medium leading-relaxed m-0">{passo.descricao}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 ))}
@@ -746,8 +752,10 @@ const ModuleRenderer = ({ modulo, index }) => {
         transition: `opacity 0.35s ease ${index * 0.07}s, transform 0.35s ease ${index * 0.07}s`,
     };
 
+    const tipo = modulo.tipo || modulo.type;
+
     const node = (() => {
-        switch (modulo.tipo) {
+        switch (tipo) {
             case 'hero_stat': return <HeroStatModule modulo={modulo} />;
             case 'metric_grid': return <MetricGridModule modulo={modulo} />;
             case 'pie_chart': return <PieChartModule modulo={modulo} />;
@@ -768,8 +776,9 @@ const ModuleRenderer = ({ modulo, index }) => {
             case 'key_value_list': return <KeyValueListModule modulo={modulo} />;
             default:
                 return (
-                    <div className="rounded-2xl p-4" style={{ background: 'rgba(248,250,255,0.8)' }}>
-                        <p className="text-slate-400 text-sm font-mono">Módulo desconhecido: {modulo.tipo}</p>
+                    <div className="rounded-2xl p-4 border border-dashed border-slate-200 bg-slate-50/50">
+                        <p className="text-slate-400 text-sm font-semibold mb-1">Módulo desconhecido: {tipo || 'sem tipo'}</p>
+                        <p className="text-slate-400 text-[10px] font-mono whitespace-pre-wrap break-all">{JSON.stringify(modulo)}</p>
                     </div>
                 );
         }
@@ -786,30 +795,102 @@ const AnalysisReport = ({ analysisData }) => {
     const resposta_direta = analysisData?.resposta_direta || '';
     const modulos = analysisData?.modulos || [];
 
-    // Compatibilidade com formato antigo
+    // Compatibilidade com formato antigo e sanitização de typos do LLM
     const normalizedModulos = useMemo(() => {
-        if (modulos.length > 0) return modulos;
-        const ac = analysisData?.analise_de_conversao;
-        if (!ac) return [];
-        const fallback = [];
-        if (ac.diagnostico_geral) fallback.push({ tipo: 'text_section', titulo: 'Diagnóstico', conteudo: ac.diagnostico_geral, estilo: 'diagnostico' });
-        if (ac.principais_pontos_de_friccao?.length) fallback.push({
-            tipo: 'friction_cards', titulo: 'Pontos de Fricção',
-            itens: ac.principais_pontos_de_friccao.map(p => ({ area: p.area, observacoes: p.observacoes, impacto: p.impacto_na_conversao }))
-        });
-        if (ac.insights_acionaveis?.length) fallback.push({
-            tipo: 'insight_cards', titulo: 'Insights',
-            itens: ac.insights_acionaveis.map(ins => ({ titulo: ins.titulo, descricao: (ins.sugestoes || []).join(' '), prioridade: 'media', icone: 'lightbulb' }))
-        });
-        if (ac.proximos_passos_recomendados) fallback.push({ tipo: 'text_section', titulo: 'Próximos Passos', conteudo: ac.proximos_passos_recomendados, estilo: 'conclusao' });
-        return fallback;
+        const VALID_TYPES = [
+            'hero_stat', 'metric_grid', 'pie_chart', 'bar_chart', 'friction_cards', 
+            'insight_cards', 'text_section', 'timeline_events', 'line_chart', 
+            'area_chart', 'radar_chart', 'progress_list', 'swot_analysis', 
+            'sentiment_meter', 'action_steps', 'highlight_quotes', 'comparative_table', 
+            'key_value_list'
+        ];
+
+        let list = [];
+        if (modulos && modulos.length > 0) {
+            list = modulos.map(m => {
+                let tipo = String(m.tipo || m.type || '').trim().toLowerCase();
+                // Encontra se algum dos tipos válidos é substring (corrige typos como "action_steps',titulo:")
+                const matchedType = VALID_TYPES.find(t => tipo.includes(t));
+                return {
+                    ...m,
+                    tipo: matchedType || m.tipo || m.type || ''
+                };
+            });
+        } else {
+            const ac = analysisData?.analise_de_conversao;
+            if (ac) {
+                const fallback = [];
+                if (ac.diagnostico_geral) fallback.push({ tipo: 'text_section', titulo: 'Diagnóstico', conteudo: ac.diagnostico_geral, estilo: 'diagnostico' });
+                if (ac.principais_pontos_de_friccao?.length) fallback.push({
+                    tipo: 'friction_cards', titulo: 'Pontos de Fricção',
+                    itens: ac.principais_pontos_de_friccao.map(p => ({ area: p.area, observacoes: p.observacoes, impacto: p.impacto_na_conversao }))
+                });
+                if (ac.insights_acionaveis?.length) fallback.push({
+                    tipo: 'insight_cards', titulo: 'Insights',
+                    itens: ac.insights_acionaveis.map(ins => ({ titulo: ins.titulo, descricao: (ins.sugestoes || []).join(' '), prioridade: 'media', icone: 'lightbulb' }))
+                });
+                if (ac.proximos_passos_recomendados) fallback.push({ tipo: 'text_section', titulo: 'Próximos Passos', conteudo: ac.proximos_passos_recomendados, estilo: 'conclusao' });
+                list = fallback;
+            }
+        }
+        return list;
     }, [modulos, analysisData]);
 
     const handleDownloadPdf = async () => {
         if (!reportRef.current) return;
         setIsDownloading(true);
         try {
-            const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+            const canvas = await html2canvas(reportRef.current, {
+                scale: 3, // Higher scale for pristine resolution text
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                onclone: (clonedDoc) => {
+                    // 1. Inject style tag as a global stylesheet override
+                    const styleTag = clonedDoc.createElement('style');
+                    styleTag.innerHTML = `
+                        #analysis-report-root, #analysis-report-root * {
+                            transition: none !important;
+                            transform: none !important;
+                            animation: none !important;
+                        }
+                    `;
+                    clonedDoc.head.appendChild(styleTag);
+
+                    const root = clonedDoc.getElementById('analysis-report-root');
+                    if (root) {
+                        // 2. Remove animations/transitions classes from root
+                        root.classList.remove('animate-fade-in-up');
+                        
+                        // 3. Process all children nodes recursively
+                        const allNodes = root.getElementsByTagName('*');
+                        for (let i = 0; i < allNodes.length; i++) {
+                            const node = allNodes[i];
+                            
+                            // Remove class names triggering animation/transition
+                            if (typeof node.className === 'string') {
+                                node.className = node.className
+                                    .replace(/\banimate-\S+/g, '')
+                                    .replace(/\btransition-\S+/g, '');
+                            } else if (node.className && typeof node.className.baseVal === 'string') {
+                                node.className.baseVal = node.className.baseVal
+                                    .replace(/\banimate-\S+/g, '')
+                                    .replace(/\btransition-\S+/g, '');
+                            }
+                            
+                            // Override inline styles with !important priority
+                            node.style.setProperty('transform', 'none', 'important');
+                            node.style.setProperty('transition', 'none', 'important');
+                            node.style.setProperty('animation', 'none', 'important');
+                            node.style.setProperty('transition-property', 'none', 'important');
+                            
+                            // If opacity was set to 0 due to entrance delay, force it to 1
+                            if (node.style.opacity === '0' || node.style.opacity === '0.0' || node.style.opacity === '0.1') {
+                                node.style.setProperty('opacity', '1', 'important');
+                            }
+                        }
+                    }
+                }
+            });
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
             const pdfW = pdf.internal.pageSize.getWidth();
@@ -827,24 +908,28 @@ const AnalysisReport = ({ analysisData }) => {
                 heightLeft -= (pdfH - 20);
             }
             pdf.save(`relatorio-ia-${format(new Date(), 'dd-MM-yyyy')}.pdf`);
-        } catch { alert("Erro ao gerar PDF."); }
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao gerar PDF.");
+        }
         finally { setIsDownloading(false); }
     };
 
     return (
-        <div className="mt-6 animate-fade-in-up">
-            {/* Header do relatório */}
-            <div className="flex items-center justify-between mb-4">
+        <div id="analysis-report-root" ref={reportRef} className="mt-6 animate-fade-in-up bg-white rounded-3xl p-6 flex flex-col gap-5 border border-slate-100/50 shadow-sm">
+            {/* Header único do relatório (o botão de ação é excluído do PDF usando o atributo de ignore) */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-2">
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow">
-                        <Brain size={17} className="text-white" />
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow">
+                        <Brain size={20} className="text-white" />
                     </div>
                     <div>
-                        <h2 className="text-slate-800 font-bold text-base leading-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Relatório de Análise IA</h2>
+                        <h2 className="text-slate-900 font-bold text-base leading-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Relatório de Análise IA</h2>
                         <p className="text-slate-400 text-xs">{format(new Date(), "d MMM yyyy 'às' HH:mm", { locale: ptBR })}</p>
                     </div>
                 </div>
                 <button
+                    data-html2canvas-ignore="true"
                     onClick={handleDownloadPdf}
                     disabled={isDownloading}
                     className="flex items-center gap-2 px-4 py-2 bg-white text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-all disabled:opacity-50"
@@ -857,17 +942,17 @@ const AnalysisReport = ({ analysisData }) => {
 
             {/* Resposta Direta */}
             {resposta_direta && (
-                <div className="mb-5 p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 flex items-start gap-3" style={{ border: '1px solid rgba(147,197,253,0.4)' }}>
-                    <Sparkles size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
+                <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-50/50 to-indigo-50/50 flex items-start gap-3 border border-blue-100/80">
+                    <Sparkles size={18} className="text-blue-500 flex-shrink-0 mt-0.5" />
                     <div>
-                        <p className="text-blue-600 text-xs font-bold uppercase tracking-widest mb-1">Resposta Direta</p>
+                        <p className="text-blue-600 text-xs font-black uppercase tracking-widest mb-1.5">Resposta Direta</p>
                         <p className="text-slate-800 font-semibold text-sm leading-relaxed">{resposta_direta}</p>
                     </div>
                 </div>
             )}
 
             {/* Módulos */}
-            <div ref={reportRef} className="flex flex-col gap-4 rounded-2xl p-5" style={{ background: 'rgba(248,250,255,0.8)', border: '1px solid rgba(203,213,225,0.3)' }}>
+            <div className="flex flex-col gap-4 rounded-2xl p-5" style={{ background: 'rgba(248,250,255,0.8)', border: '1px solid rgba(203,213,225,0.3)' }}>
                 {normalizedModulos.length === 0 ? (
                     <div className="text-center py-10 text-slate-400">
                         <Info size={28} className="mx-auto mb-3 opacity-50" />
