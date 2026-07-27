@@ -21,22 +21,38 @@ class MessageSendError(Exception):
     """Exceção customizada para falhas no envio de mensagens."""
     pass
 
+def toggle_brazilian_9th_digit(number: str) -> Optional[str]:
+    """
+    Alterna o formato do número brasileiro entre 12 e 13 dígitos:
+    - Se tiver 12 dígitos (55 + DD + 8 dígitos), insere '9' no meio (virando 13 dígitos).
+    - Se tiver 13 dígitos (55 + DD + 9 + 8 dígitos), remove o '9' (virando 12 dígitos).
+    Retorna o número alterado, ou None se não for um número BR conversível.
+    """
+    if not number:
+        return None
+    clean_number = "".join(filter(str.isdigit, str(number)))
+    if not clean_number.startswith("55"):
+        return None
+    
+    if len(clean_number) == 12:
+        return clean_number[:4] + "9" + clean_number[4:]
+    elif len(clean_number) == 13 and clean_number[4] == '9':
+        return clean_number[:4] + clean_number[5:]
+        
+    return None
+
 def format_whatsapp_number(number: str) -> str:
     """
-    Limpa o número, adiciona o prefixo 55 se necessário e remove o nono dígito de números brasileiros.
+    Limpa o número e garante DDI 55 para números BR de 10 ou 11 dígitos.
+    Nota: Preserva o formato enviado pela Meta Cloud API (12 ou 13 dígitos) para evitar o erro 131026.
     """
     if not number:
         return ""
-    # Remove tudo que não for dígito
     clean_number = "".join(filter(str.isdigit, str(number)))
     
     # Adiciona 55 se o número tiver 10 ou 11 dígitos (DDD + número)
     if not clean_number.startswith("55") and len(clean_number) in [10, 11]:
         clean_number = "55" + clean_number
-        
-    # Remove o nono dígito (55 + DD + 9 + 8 dígitos)
-    if len(clean_number) == 13 and clean_number.startswith("55") and clean_number[4] == '9':
-        clean_number = clean_number[:4] + clean_number[5:]
         
     return clean_number
 
@@ -135,59 +151,69 @@ class WhatsAppService:
             return None
 
     async def send_text_message_official(self, phone_number_id: str, access_token: str, to_number: str, text: str) -> Dict[str, Any]:
-        """Envia mensagem de texto via API Oficial (WBP) e retorna o ID."""
+        """Envia mensagem de texto via API Oficial (WBP) com fallback do 9º dígito e retorna o ID."""
         if not all([phone_number_id, access_token, to_number, text]):
             raise ValueError("WBP: phone_number_id, access_token, to_number, and text must be provided.")
         text = text.replace("**", "*")
         url = f"{self.wbp_graph_url_base}/{self.wbp_api_version}/{phone_number_id}/messages"
         headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-        # Usa _normalize_number da classe, que *não* remove o 9
+        
         clean_to_number = self._normalize_number(to_number)
-        payload = {
-            "messaging_product": "whatsapp",
-            "recipient_type": "individual",
-            "to": clean_to_number,
-            "type": "text",
-            "text": {"preview_url": False, "body": text}
-        }
-        logger.debug(f"WBP Send Payload to {clean_to_number}: {json.dumps(payload)}")
+        
+        # Monta lista de variações de número a tentar (original + alternativo BR com/sem 9 se aplicável)
+        numbers_to_try = [clean_to_number]
+        alt_number = toggle_brazilian_9th_digit(clean_to_number)
+        if alt_number and alt_number not in numbers_to_try:
+            numbers_to_try.append(alt_number)
 
-        max_retries = 3
         last_exception = None
-        for attempt in range(max_retries):
-            try:
-                async with httpx.AsyncClient() as client:
-                    response = await client.post(url, headers=headers, json=payload, timeout=30.0)
-                    if response.status_code == 400:
-                         logger.error(f"WBP: Erro 400 Bad Request ao enviar para {clean_to_number}. Payload: {json.dumps(payload)}. Resposta API: {response.text}")
-                    response.raise_for_status()
-                    response_data = response.json()
-                    message_id = response_data.get("messages", [{}])[0].get("id")
-                    logger.info(f"WBP: Mensagem enviada para {clean_to_number} (ID: {message_id}, Tentativa {attempt + 1}).")
-                    return {"id": message_id}
-            except (httpx.RequestError, httpx.HTTPStatusError) as e:
-                last_exception = e
-                error_detail = "Erro de conexão/requisição"
-                status_code = None
-                if isinstance(e, httpx.HTTPStatusError):
-                    status_code = e.response.status_code
-                    error_detail = e.response.text if e.response else str(e)
-                    if status_code == 401 or status_code == 403:
-                        logger.error(f"WBP: Erro de Autenticação ({status_code}) ao enviar para {clean_to_number}. Token inválido ou expirado? Detalhe: {error_detail}")
-                        raise MessageSendError(f"WBP: Erro de Autenticação ({status_code}) ao enviar: {error_detail}") from e
-                logger.warning(f"WBP: Falha envio {clean_to_number} (Tentativa {attempt + 1}/{max_retries}). Status: {status_code}. Erro: {error_detail}")
-                if attempt < max_retries - 1:
-                    wait_time = 5 * (attempt + 2)
-                    await asyncio.sleep(wait_time)
-                    continue
-                else:
-                    logger.error(f"WBP: Falha CRÍTICA envio {clean_to_number} após {max_retries} tentativas.")
-                    raise MessageSendError(f"WBP: Falha envio após {max_retries} tentativas: {last_exception}") from last_exception
-            except Exception as e:
-                last_exception = e
-                logger.error(f"WBP: Erro inesperado envio {clean_to_number}: {e}", exc_info=True)
-                raise MessageSendError(f"WBP: Erro inesperado envio: {e}") from e
-        raise MessageSendError(f"WBP: Falha no envio para {clean_to_number} após {max_retries} tentativas. Último erro: {last_exception}")
+
+        for num_idx, current_num in enumerate(numbers_to_try):
+            payload = {
+                "messaging_product": "whatsapp",
+                "recipient_type": "individual",
+                "to": current_num,
+                "type": "text",
+                "text": {"preview_url": False, "body": text}
+            }
+            logger.debug(f"WBP Send Payload to {current_num}: {json.dumps(payload)}")
+
+            max_retries = 2
+            for attempt in range(max_retries):
+                try:
+                    async with httpx.AsyncClient() as client:
+                        response = await client.post(url, headers=headers, json=payload, timeout=30.0)
+                        if response.status_code == 400:
+                            logger.error(f"WBP: Erro 400 Bad Request ao enviar para {current_num}. Resposta API: {response.text}")
+                            # Se a Meta respondeu 400 com 131026 (Message undeliverable), verifica se há número alternativo para testar
+                            if "131026" in response.text and num_idx < len(numbers_to_try) - 1:
+                                logger.warning(f"WBP: Erro 131026 (Message undeliverable) ao enviar para {current_num}. Tentando formato alternativo: {numbers_to_try[num_idx + 1]}")
+                                break # Sai do loop de retries desta variação e pula para o próximo número em numbers_to_try
+                        
+                        response.raise_for_status()
+                        response_data = response.json()
+                        message_id = response_data.get("messages", [{}])[0].get("id")
+                        logger.info(f"WBP: Mensagem enviada para {current_num} (ID: {message_id}, Tentativa {attempt + 1}).")
+                        return {"id": message_id}
+                except (httpx.RequestError, httpx.HTTPStatusError) as e:
+                    last_exception = e
+                    error_detail = "Erro de conexão/requisição"
+                    status_code = None
+                    if isinstance(e, httpx.HTTPStatusError):
+                        status_code = e.response.status_code
+                        error_detail = e.response.text if e.response else str(e)
+                        if status_code in [401, 403]:
+                            logger.error(f"WBP: Erro de Autenticação ({status_code}) ao enviar para {current_num}. Token inválido ou expirado? Detalhe: {error_detail}")
+                            raise MessageSendError(f"WBP: Erro de Autenticação ({status_code}) ao enviar: {error_detail}") from e
+                        if "131026" in error_detail and num_idx < len(numbers_to_try) - 1:
+                            logger.warning(f"WBP: Erro 131026 ao enviar para {current_num}. Tentando formato alternativo: {numbers_to_try[num_idx + 1]}")
+                            break
+                    logger.warning(f"WBP: Falha envio {current_num} (Tentativa {attempt + 1}/{max_retries}). Status: {status_code}. Erro: {error_detail}")
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(2 * (attempt + 1))
+                        continue
+
+        raise MessageSendError(f"WBP: Falha no envio para {clean_to_number} (Cód 131026 / Undeliverable ou Janela 24h Expirada). Último erro: {last_exception}")
 
     def _guess_mimetype_from_bytes(self, file_bytes: bytes) -> Optional[str]:
         """Tenta adivinhar o mimetype a partir dos bytes iniciais (magic numbers)."""
@@ -464,47 +490,72 @@ class WhatsAppService:
         if not media_id:
             raise MessageSendError(f"WBP: Falha ao fazer upload da mídia ({filename}) antes do envio.")
 
-        # Etapa 2: Envio (Código restante sem alterações)
+        # Etapa 2: Envio com fallback do 9º dígito
         url = f"{self.wbp_graph_url_base}/{self.wbp_api_version}/{phone_number_id}/messages"
         headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
         clean_to_number = self._normalize_number(to_number)
         
-        payload = {
-            "messaging_product": "whatsapp",
-            "recipient_type": "individual",
-            "to": clean_to_number,
-            "type": media_type,
-        }
-        
-        media_payload = {"id": media_id}
-        if media_type == 'document':
-            media_payload["filename"] = filename
-        if caption and media_type != 'audio': # Áudio não suporta legenda
-             media_payload["caption"] = caption
-             
-        payload[media_type] = media_payload
+        numbers_to_try = [clean_to_number]
+        alt_number = toggle_brazilian_9th_digit(clean_to_number)
+        if alt_number and alt_number not in numbers_to_try:
+            numbers_to_try.append(alt_number)
 
-        logger.debug(f"WBP Send Media Payload to {clean_to_number}: {json.dumps(payload)}")
-        
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(url, headers=headers, json=payload, timeout=30.0)
-                response.raise_for_status()
-                response_data = response.json()
-                message_id = response_data.get("messages", [{}])[0].get("id")
+        last_exception = None
+
+        for num_idx, current_num in enumerate(numbers_to_try):
+            payload = {
+                "messaging_product": "whatsapp",
+                "recipient_type": "individual",
+                "to": current_num,
+                "type": media_type,
+            }
+            
+            media_payload = {"id": media_id}
+            if media_type == 'document':
+                media_payload["filename"] = filename
+            if caption and media_type != 'audio':
+                 media_payload["caption"] = caption
+                 
+            payload[media_type] = media_payload
+
+            logger.debug(f"WBP Send Media Payload to {current_num}: {json.dumps(payload)}")
+            
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    async with httpx.AsyncClient() as client:
+                        response = await client.post(url, headers=headers, json=payload, timeout=30.0)
+                        if response.status_code == 400 and "131026" in response.text and num_idx < len(numbers_to_try) - 1:
+                            logger.warning(f"WBP: Erro 131026 ao enviar mídia para {current_num}. Tentando formato alternativo: {numbers_to_try[num_idx + 1]}")
+                            break
+                        
+                        response.raise_for_status()
+                        response_data = response.json()
+                        message_id = response_data.get("messages", [{}])[0].get("id")
+                        
+                        logger.info(f"WBP: Mídia ({media_type}) enviada para {current_num} (ID: {message_id}, Tentativa {attempt + 1}).")
+                        return {"id": message_id, "media_id": media_id}
+                        
+                except (httpx.RequestError, httpx.HTTPStatusError) as e:
+                    last_exception = e
+                    error_detail = str(e)
+                    if isinstance(e, httpx.HTTPStatusError) and e.response:
+                        error_detail = f"{e} - Response: {e.response.text}"
+                        if "131026" in error_detail and num_idx < len(numbers_to_try) - 1:
+                            logger.warning(f"WBP: Erro 131026 ao enviar mídia para {current_num}. Tentando formato alternativo: {numbers_to_try[num_idx + 1]}")
+                            break
+                    logger.warning(f"WBP: Falha ao enviar mídia ({media_type}) para {current_num} (Tentativa {attempt + 1}/{max_retries}). Erro: {error_detail}")
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(2 * (attempt + 1))
+                        continue
+                except Exception as e:
+                    last_exception = e
+                    logger.error(f"WBP: Erro inesperado ao enviar mídia ({media_type}) para {current_num}: {e}", exc_info=True)
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(2 * (attempt + 1))
+                        continue
                 
-                logger.info(f"WBP: Mídia ({media_type}) enviada para {clean_to_number} (ID: {message_id}).")
-                return {"id": message_id, "media_id": media_id}
-                
-        except (httpx.RequestError, httpx.HTTPStatusError) as e:
-            error_detail = str(e)
-            if isinstance(e, httpx.HTTPStatusError) and e.response:
-                error_detail = f"{e} - Response: {e.response.text}"
-            logger.error(f"WBP: Falha ao enviar mídia ({media_type}) para {clean_to_number}. Erro: {error_detail}", exc_info=True)
-            raise MessageSendError(f"WBP: Falha ao enviar mídia: {error_detail}") from e
-        except Exception as e:
-            logger.error(f"WBP: Erro inesperado ao enviar mídia ({media_type}) para {clean_to_number}: {e}", exc_info=True)
-            raise MessageSendError(f"WBP: Erro inesperado no envio de mídia: {e}") from e
+        raise MessageSendError(f"WBP: Falha no envio de mídia para {clean_to_number} (Cód 131026 / Undeliverable ou Janela 24h Expirada). Último erro: {last_exception}")
 
     async def send_template_message_official(
         self,
@@ -533,30 +584,61 @@ class WhatsAppService:
         if components:
             template_payload["components"] = components
 
-        payload = {
-            "messaging_product": "whatsapp",
-            "to": clean_to_number,
-            "type": "template",
-            "template": template_payload
-        }
+        numbers_to_try = [clean_to_number]
+        alt_number = toggle_brazilian_9th_digit(clean_to_number)
+        if alt_number and alt_number not in numbers_to_try:
+            numbers_to_try.append(alt_number)
 
-        logger.debug(f"WBP Send Template Payload to {clean_to_number}: {json.dumps(payload)}")
+        last_exception = None
 
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(url, headers=headers, json=payload, timeout=30.0)
-                response.raise_for_status()
-                response_data = response.json()
-                message_id = response_data.get("messages", [{}])[0].get("id")
-                logger.info(f"WBP: Mensagem de template '{template_name}' enviada para {clean_to_number} (ID: {message_id}).")
-                return {"id": message_id}
-        except httpx.HTTPStatusError as e:
-            error_body = e.response.text if e.response else "N/A"
-            logger.error(f"WBP: Erro HTTP {e.response.status_code} ao enviar template '{template_name}' para {clean_to_number}: {error_body}")
-            raise MessageSendError(f"WBP: Falha ao enviar template: {error_body}") from e
-        except Exception as e:
-            logger.error(f"WBP: Erro inesperado ao enviar template para {clean_to_number}: {e}", exc_info=True)
-            raise MessageSendError(f"WBP: Erro inesperado no envio de template: {e}") from e
+        for num_idx, current_num in enumerate(numbers_to_try):
+            payload = {
+                "messaging_product": "whatsapp",
+                "to": current_num,
+                "type": "template",
+                "template": template_payload
+            }
+
+            logger.debug(f"WBP Send Template Payload to {current_num}: {json.dumps(payload)}")
+
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    async with httpx.AsyncClient() as client:
+                        response = await client.post(url, headers=headers, json=payload, timeout=30.0)
+                        if response.status_code == 400 and "131026" in response.text and num_idx < len(numbers_to_try) - 1:
+                            logger.warning(f"WBP: Erro 131026 ao enviar template para {current_num}. Tentando formato alternativo: {numbers_to_try[num_idx + 1]}")
+                            break
+                        response.raise_for_status()
+                        response_data = response.json()
+                        message_id = response_data.get("messages", [{}])[0].get("id")
+                        logger.info(f"WBP: Mensagem de template '{template_name}' enviada para {current_num} (ID: {message_id}, Tentativa {attempt + 1}).")
+                        return {"id": message_id}
+                except (httpx.RequestError, httpx.HTTPStatusError) as e:
+                    last_exception = e
+                    error_detail = "Erro de conexão/requisição"
+                    status_code = None
+                    if isinstance(e, httpx.HTTPStatusError):
+                        status_code = e.response.status_code
+                        error_detail = e.response.text if e.response else str(e)
+                        if status_code in [401, 403]:
+                            logger.error(f"WBP: Erro de Autenticação ({status_code}) ao enviar template '{template_name}' para {current_num}. Detalhe: {error_detail}")
+                            raise MessageSendError(f"WBP: Erro de Autenticação ({status_code}) ao enviar template: {error_detail}") from e
+                        if "131026" in error_detail and num_idx < len(numbers_to_try) - 1:
+                            logger.warning(f"WBP: Erro 131026 ao enviar template para {current_num}. Tentando formato alternativo: {numbers_to_try[num_idx + 1]}")
+                            break
+                    logger.warning(f"WBP: Falha ao enviar template '{template_name}' para {current_num} (Tentativa {attempt + 1}/{max_retries}). Status: {status_code}. Erro: {error_detail}")
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(2 * (attempt + 1))
+                        continue
+                except Exception as e:
+                    last_exception = e
+                    logger.error(f"WBP: Erro inesperado ao enviar template para {current_num}: {e}", exc_info=True)
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(2 * (attempt + 1))
+                        continue
+
+        raise MessageSendError(f"WBP: Falha ao enviar template '{template_name}' para {clean_to_number} após retentativas. Último erro: {last_exception}")
 
     async def send_text_message(self, company: models.Company, number: str, text: str) -> Dict[str, Any]:
         if not company or not number or not text:

@@ -264,9 +264,18 @@ class ConfigService:
                 else:
                     category = 'document'
                     
+                subfolder_path = ""
+                if " > " in current_path:
+                    parts = [p.strip() for p in current_path.split(" > ") if p.strip()]
+                    subfolder_path = " > ".join(parts[1:]) if len(parts) > 1 else ""
+                elif current_path:
+                    subfolder_path = current_path.strip()
+
                 raw_data = {
                     "id_arquivo": f.get('id'),
                     "nome_exato": file_name,
+                    "subpastas": subfolder_path,
+                    "caminho_completo": file_path,
                     "mime_type": f.get('mimeType'),
                     "tipo": f.get('tipo')
                 }
@@ -811,14 +820,18 @@ class ConfigService:
             if db_config:
                 company_id = db_config.company_id
                 
-                if settings.ENVIRONMENT == "development":
-                    from sqlalchemy.orm import joinedload
-                    stmt = select(models.Company).where(models.Company.id == company_id).options(joinedload(models.Company.users))
-                    res_comp = await db.execute(stmt)
-                    company = res_comp.scalars().first()
-                    if not company or "cjstestes@gmail.com" not in [u.email for u in company.users]:
-                        logger.info(f"Drive Webhook [DEV]: Ignorando webhook da config {config_id}. Permitido apenas para cjstestes@gmail.com.")
-                        return {"status": "ignored_dev"}
+                try:
+                    env = (getattr(settings, "ENVIRONMENT", None) or "production").lower()
+                    if env in ["development", "dev"]:
+                        from sqlalchemy.orm import joinedload
+                        stmt = select(models.Company).where(models.Company.id == company_id).options(joinedload(models.Company.users))
+                        res_comp = await db.execute(stmt)
+                        company = res_comp.unique().scalars().first()
+                        if not company or "cjstestes@gmail.com" not in [u.email for u in company.users]:
+                            logger.info(f"Drive Webhook [DEV]: Ignorando webhook da config {config_id}. Permitido apenas para cjstestes@gmail.com.")
+                            return {"status": "ignored_dev"}
+                except Exception as filter_err:
+                    logger.warning(f"Drive Webhook: Erro na checagem de ambiente ({filter_err}). Prosseguindo por fallback.")
 
                 if resource_type == "system" and db_config.spreadsheet_id:
                     background_tasks.add_task(

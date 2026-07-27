@@ -24,188 +24,87 @@ from pydantic_ai.messages import ModelRequest, ModelResponse, UserPromptPart, Te
 
 logger = logging.getLogger(__name__)
 
-# Conjunto global para evitar que o mesmo atendimento seja processado concorrentemente por múltiplas tasks
-_active_processing_ids = set()
+# Dicionário global para controlar e permitir cancelamento de tasks de atendimento ativas por ID
+_active_processing_tasks: Dict[int, asyncio.Task] = {}
 
-def build_prompt_from_persona_form(persona_form: Dict[str, Any]) -> str:
+def cancel_active_atendimento_task(atendimento_id: int) -> bool:
     """
-    Compila os dados estruturados do formulário de persona em um system prompt
-    textual rico e pronto para ser enviado à IA.
-    Retorna string vazia se o formulário não tiver dados relevantes.
+    Interrompe a task de IA em andamento para o atendimento_id fornecido se ela estiver rodando.
+    Retorna True se uma task ativa foi cancelada, False caso contrário.
     """
-    if not persona_form:
-        return ""
-
-    parts = []
-
-    # --- Identidade ---
-    ai_name = persona_form.get("ai_name", "").strip()
-    company_name = persona_form.get("company_name", "").strip()
-    role = persona_form.get("role", "").strip()
-    segment = persona_form.get("segment", "").strip()
-
-    identity_parts = []
-    if ai_name:
-        identity_parts.append(f"Seu nome é **{ai_name}**.")
-    if role:
-        identity_parts.append(f"Você é {role}.")
-    if company_name:
-        identity_parts.append(f"Você representa a empresa **{company_name}**.")
-    if segment:
-        identity_parts.append(f"O segmento de atuação é: {segment}.")
-
-    nature_identity = str(persona_form.get("nature_identity", "human")).lower()
-    if nature_identity == "ai":
-        identity_parts.append("Caso o usuário pergunte diretamente se você é um robô ou inteligência artificial, confirme abertamente e de forma transparente que você é um assistente virtual da empresa.")
-    elif nature_identity == "ignore":
-        identity_parts.append("Caso o usuário pergunte se você é um robô ou inteligência artificial, desvie de forma evasiva e cordial sem confirmar e nem negar, mantendo o foco em tirar as dúvidas do cliente.")
-    else:  # 'human'
-        identity_parts.append("REGRA ESTREITA DE OCULTAÇÃO DA NATUREZA ARTIFICIAL: Adote uma persona estritamente humana em todas as interações. Caso o usuário pergunte diretamente se você é um robô ou inteligência artificial, afirme categoricamente ser um atendente humano da equipe e contorne qualquer questionamento com naturalidade.")
-
-    if identity_parts:
-        parts.append("## IDENTIDADE\n" + "\n".join(identity_parts))
-
-    # --- Missão / Objetivo ---
-    objective = persona_form.get("objective", "").strip()
-    if objective:
-        parts.append(f"## MISSÃO\n{objective}")
-
-    # --- Tom de Voz e Estilo de Comunicação ---
-    formality_raw = persona_form.get("formality")
-    if formality_raw is None:
-        formality_raw = persona_form.get("tone", "formal")
-    
-    if isinstance(formality_raw, (int, float)):
-        is_informal = formality_raw > 0.5
-    else:
-        is_informal = str(formality_raw).lower() in ("informal", "1", "1.0", "true")
-
-    objectivity_raw = persona_form.get("objectivity", "direto")
-    if isinstance(objectivity_raw, (int, float)):
-        is_detailed = objectivity_raw > 0.5
-    else:
-        is_detailed = str(objectivity_raw).lower() in ("detalhado", "explicativo", "1", "1.0", "true")
-
-    qualities = persona_form.get("qualities") or []
-
-    tone_lines = []
-    if is_informal:
-        tone_lines.append("- Linguagem informal, amigável, descontraída e próxima do cliente.")
-    else:
-        tone_lines.append("- Linguagem formal, profissional, respeitosa e sem gírias.")
-
-    if is_detailed:
-        tone_lines.append("- Comunicação detalhada, explicativa e didática, fornecendo informações completas.")
-    else:
-        tone_lines.append("- Comunicação direta, objetiva, concisa e focada na solução rápida.")
-
-    if isinstance(qualities, list) and qualities:
-        tone_lines.append(f"- Qualidades e atributos de personalidade: {', '.join(qualities)}.")
-    elif isinstance(qualities, str) and qualities:
-        tone_lines.append(f"- Qualidades e atributos de personalidade: {qualities}.")
-
-    if tone_lines:
-        parts.append("## TOM DE VOZ E ESTILO DE COMUNICAÇÃO\n" + "\n".join(tone_lines))
-
-    # --- Idioma ---
-    language = persona_form.get("language", "").strip()
-    if language and language.lower() not in ("português", "pt-br", ""):
-        parts.append(f"## IDIOMA\nResponda SEMPRE em {language}. Nunca mude de idioma mesmo que o cliente escreva em outro.")
-    elif language.lower() in ("português", "pt-br"):
-        parts.append("## IDIOMA\nResponda SEMPRE em português brasileiro.")
-
-    # --- Apresentação inicial ---
-    greeting = persona_form.get("greeting", "").strip()
-    if greeting:
-        parts.append(f"## SAUDAÇÃO INICIAL\nUse como saudação/apresentação: \"{greeting}\"")
-
-    # --- Produtos e Serviços ---
-    products = persona_form.get("products", "").strip()
-    if products:
-        parts.append(f"## PRODUTOS E SERVIÇOS\n{products}")
-
-    # --- Informações da Empresa ---
-    company_info = persona_form.get("company_info", "").strip()
-    if company_info:
-        parts.append(f"## SOBRE A EMPRESA\n{company_info}")
-
-    # --- Perguntas Frequentes Inline (FAQ rápido) ---
-    faq = persona_form.get("faq", "").strip()
-    if faq:
-        parts.append(f"## FAQ RÁPIDO\n{faq}")
-
-    # --- Regras e Restrições ---
-    restrictions = persona_form.get("restrictions")
-    if isinstance(restrictions, list) and restrictions:
-        rest_lines = [f"- {r.strip()}" for r in restrictions if str(r).strip()]
-        if rest_lines:
-            parts.append("## REGRAS E RESTRIÇÕES\n" + "\n".join(rest_lines))
-    elif isinstance(restrictions, str) and restrictions.strip():
-        parts.append(f"## REGRAS E RESTRIÇÕES\n{restrictions.strip()}")
-
-    # --- Regras de Transferência para Humano ---
-    handoff_rules = persona_form.get("handoff_rules")
-    if isinstance(handoff_rules, list) and handoff_rules:
-        handoff_lines = [f"- {h.strip()}" for h in handoff_rules if str(h).strip()]
-        if handoff_lines:
-            parts.append("## REGRAS DE TRANSFERÊNCIA\n" + "\n".join(handoff_lines))
-    elif isinstance(handoff_rules, str) and handoff_rules.strip():
-        parts.append(f"## REGRAS DE TRANSFERÊNCIA\n{handoff_rules.strip()}")
-
-    # --- Horário de Funcionamento (texto livre) ---
-    business_hours = persona_form.get("business_hours", "").strip()
-    if business_hours:
-        parts.append(f"## HORÁRIO DE ATENDIMENTO\n{business_hours}")
-
-    # --- Instruções Adicionais ---
-    extra_instructions = persona_form.get("extra_instructions", "").strip()
-    if extra_instructions:
-        parts.append(f"## INSTRUÇÕES ADICIONAIS\n{extra_instructions}")
-
-    return "\n\n".join(parts)
+    task = _active_processing_tasks.get(atendimento_id)
+    if task and not task.done():
+        logger.info(f"[BARRAMENTO AMBIENTE] Interrompendo task de IA ativa para Atendimento ID {atendimento_id} devido a nova mensagem recebida.")
+        task.cancel()
+        return True
+    return False
 
 
-def converter_historico_para_pydantic(historico_db: List[Dict[str, Any]]) -> list:
+def converter_historico_para_pydantic(historico_db: List[Dict[str, Any]]) -> List[Any]:
     """
-    Converte o histórico JSON salvo no banco para a estrutura nativa de memória do PydanticAI.
+    Converte o histórico de conversa do banco de dados (lista de dicts)
+    para o formato de mensagens nativo do PydanticAI (ModelRequest / ModelResponse),
+    agrupando mensagens consecutivas do mesmo papel ("user" / "assistant")
+    para manter a alternância correta exigida pelas LLMs.
     """
-    pydantic_history = []
-    
-    # Se a conversa estiver vazia, retorna lista vazia
     if not historico_db:
-        return pydantic_history
+        return []
 
-    # Separamos a ÚLTIMA mensagem se for do user
-    if historico_db[-1].get('role') == 'user':
-        mensagens_de_contexto = historico_db[:-1]
-    else:
-        mensagens_de_contexto = historico_db
+    pydantic_messages = []
+    grouped_turns: List[Dict[str, Any]] = []
 
-    for msg in mensagens_de_contexto:
-        role = msg.get('role')
-        conteudo = msg.get('content') or "[Mídia ou mensagem sem texto]"
-        
-        if role == 'user':
-            pydantic_history.append(
-                ModelRequest(parts=[UserPromptPart(content=conteudo)])
+    for msg in historico_db:
+        role = msg.get("role") or "user"
+        content = msg.get("content") or ""
+        caption = msg.get("caption")
+
+        if caption and caption.strip():
+            content = f"{content}\n[Legenda: {caption}]"
+
+        content_clean = str(content).strip()
+        if not content_clean:
+            continue
+
+        # Normaliza o papel do emissor
+        role_normalized = "user" if role in ["user", "client"] else "assistant"
+
+        if grouped_turns and grouped_turns[-1]["role"] == role_normalized:
+            grouped_turns[-1]["contents"].append(content_clean)
+        else:
+            grouped_turns.append({"role": role_normalized, "contents": [content_clean]})
+
+    for turn in grouped_turns:
+        full_text = "\n".join(turn["contents"]).strip()
+        if not full_text:
+            continue
+
+        if turn["role"] == "user":
+            pydantic_messages.append(
+                ModelRequest(parts=[UserPromptPart(content=full_text)])
             )
-        elif role == 'assistant':
-            pydantic_history.append(
-                ModelResponse(parts=[TextPart(content=conteudo)])
+        else:
+            pydantic_messages.append(
+                ModelResponse(parts=[TextPart(content=full_text)])
             )
 
-    return pydantic_history
+    return pydantic_messages
 
 async def process_single_atendimento(atendimento_id: int, company: models.Company):
-    if atendimento_id in _active_processing_ids:
-        logger.warning(f"Atendimento {atendimento_id} já está sendo processado em outra task. Pulando redundância.")
+    current_task = asyncio.current_task()
+    existing_task = _active_processing_tasks.get(atendimento_id)
+    
+    if existing_task and not existing_task.done():
+        logger.warning(f"Atendimento {atendimento_id} já está sendo processado em outra task ativa. Pulando redundância.")
         return
 
-    _active_processing_ids.add(atendimento_id)
+    if current_task:
+        _active_processing_tasks[atendimento_id] = current_task
+        
     try:
         await _process_single_atendimento_inner(atendimento_id, company)
     finally:
-        _active_processing_ids.discard(atendimento_id)
+        if _active_processing_tasks.get(atendimento_id) == current_task:
+            _active_processing_tasks.pop(atendimento_id, None)
 
 
 async def _process_single_atendimento_inner(atendimento_id: int, company: models.Company):
@@ -314,6 +213,8 @@ async def _process_single_atendimento_inner(atendimento_id: int, company: models
             # 0. Coleta os dados do banco em uma transação curta para liberar a conexão antes de chamar a IA
             async with SessionLocal() as db_gemini_deduct:
                 company_for_gemini = await db_gemini_deduct.get(models.Company, company.id)
+                # Re-busca a persona_config para garantir os valores mais recentes da transação do banco
+                persona_config = await db_gemini_deduct.get(models.Config, persona_config.id)
                 workflow_context = gemini_service._format_workflow_to_markdown(persona_config.workflow_json)
                 available_tags = await crud_atendimento.get_all_user_tags(db_gemini_deduct, company_id=company.id)
                 available_tags_names = [t['name'] for t in available_tags]
@@ -415,12 +316,13 @@ async def _process_single_atendimento_inner(atendimento_id: int, company: models
                 drive_ativo=bool(persona_config.drive_id),
                 calendar_ativo=bool(persona_config.is_calendar_active),
                 # --- Configuracoes de inferencia vindas da Config do cliente ---
-                temperature=float(persona_config.temperature or 0.1),
-                top_p=float(persona_config.top_p or 0.95),
-                top_k=int(persona_config.top_k or 40),
+                temperature=float(persona_config.temperature if persona_config.temperature is not None else 0.5),
+                top_p=float(persona_config.top_p if persona_config.top_p is not None else 0.95),
+                top_k=int(persona_config.top_k if persona_config.top_k is not None else 40),
                 thinking_budget=persona_config.thinking_budget,
                 thinking_level=str(persona_config.thinking_level or "medium").strip("'\"").strip().lower(),
                 tts_voice=str(persona_config.tts_voice or "").strip("'\"").strip(),
+                allow_send_values=bool(getattr(persona_config, 'allow_send_values', True) if getattr(persona_config, 'allow_send_values', None) is not None else True),
                 # --- Micro-tools ---
                 empresa=company_for_gemini,
                 atendimento=atendimento_for_gemini,
@@ -429,11 +331,36 @@ async def _process_single_atendimento_inner(atendimento_id: int, company: models
             )
             
             # 6. Executa o Agente do Pydantic AI com histórico de mensagens nativo
-            if conversation_history and conversation_history[-1].get("role") == "user":
-                ultima_mensagem = conversation_history[-1].get("content", "") or "Olá"
+            # Coleta TODAS as mensagens consecutivas do usuário no final da conversa
+            user_msgs_tail = []
+            idx_split = len(conversation_history)
+            
+            while idx_split > 0 and conversation_history[idx_split - 1].get("role") in ["user", "client"]:
+                idx_split -= 1
+                msg_item = conversation_history[idx_split]
+                c_text = str(msg_item.get("content") or "").strip()
+                if msg_item.get("caption"):
+                    c_text = f"{c_text}\n[Legenda: {msg_item.get('caption')}]".strip()
+                if c_text:
+                    user_msgs_tail.insert(0, c_text)
+
+            if user_msgs_tail:
+                ultima_mensagem = "\n".join(user_msgs_tail)
+                historico_previo = conversation_history[:idx_split]
             else:
                 ultima_mensagem = "Olá"
-            memoria_ia = converter_historico_para_pydantic(conversation_history)
+                historico_previo = conversation_history
+                
+            # Otimização de Tokens: Limita o histórico bruto às últimas 10 mensagens e injeta a síntese CRM
+            resumo_crm_extra = None
+            MAX_HISTORICO = 10
+            if len(historico_previo) > MAX_HISTORICO:
+                resumo_crm_extra = (atendimento_context.resumo or "").strip() or None
+                historico_previo = historico_previo[-MAX_HISTORICO:]
+                logger.info(f"[Passo 3/5 - IA] Histórico prévio truncado para as últimas {MAX_HISTORICO} mensagens. Síntese CRM injetada no prompt.")
+
+            contexto.resumo_crm_context = resumo_crm_extra
+            memoria_ia = converter_historico_para_pydantic(historico_previo)
             
             model_to_use = contexto.model_name
             if not model_to_use.startswith("google:") and not model_to_use.startswith("google-cloud:"):
@@ -474,107 +401,141 @@ async def _process_single_atendimento_inner(atendimento_id: int, company: models
                 f"thinking_config={thinking_cfg}"
             )
 
+            from pydantic_ai.usage import UsageLimits
+
             resultado_ia = await agente_atendimento.run(
                 ultima_mensagem,
                 deps=contexto,
                 message_history=memoria_ia,
                 model=model_to_use,
-                model_settings=model_settings
+                model_settings=model_settings,
+                usage_limits=UsageLimits(request_limit=15)
             )
             
             # 7. Converte a resposta estruturada para o formato esperado pelo restante do agent_processor
             dados = resultado_ia.output
             logger.info(f"[Passo 3/5 - IA] Retorno recebido com sucesso do LLM. Output Resumo: '{dados.resumo}'")
 
-            # Escreve o input e output detalhado em last_prompt.txt de forma humanizada e amigável
+            # Escreve o input e output detalhado em last_prompt.txt de forma clara, ordenada e de fácil leitura
             try:
                 from pydantic_core import to_jsonable_python
+                from app.services.agent_service import construir_prompt_base
+
                 parts = []
                 parts.append("=" * 80)
-                parts.append(f"🕒 CICLO DO AGENTE: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-                parts.append(f"🤖 MODELO UTILIZADO: {model_to_use}")
+                parts.append("📌 REGISTRO DETALHADO DO ÚLTIMO PROMPT E ORDEM DE EXECUÇÃO DA IA (LAST PROMPT)")
+                parts.append("=" * 80)
+                parts.append(f"🕒 Data/Hora do Ciclo: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+                parts.append(f"👤 Atendimento ID: {atendimento_id} | Contato: {atendimento_contato_num_log}")
+                parts.append(f"🤖 Modelo Utilizado: {model_to_use}")
                 parts.append("=" * 80)
                 parts.append("")
 
+                # 1. OBTER O PROMPT DO SISTEMA (SYSTEM PROMPT / PERSONA & REGRAS)
+                class MockRunContext:
+                    def __init__(self, deps):
+                        self.deps = deps
+
+                try:
+                    system_prompt_str = construir_prompt_base(MockRunContext(contexto))
+                except Exception as sys_err:
+                    system_prompt_str = f"Erro ao renderizar system prompt: {sys_err}"
+
+                parts.append("--------------------------------------------------------------------------------")
+                parts.append("🧠 1. PROMPT DO SISTEMA (SYSTEM PROMPT / PERSONA, FLUXO & REGRAS)")
+                parts.append("--------------------------------------------------------------------------------")
+                parts.append(system_prompt_str.strip())
+                parts.append("")
+                parts.append("-" * 80)
+                parts.append("")
+
+                # 2. OBTER A SEQUÊNCIA CRONOLÓGICA DAS MENSAGENS E AÇÕES (ORDEM EXATA DE ENVIO)
+                parts.append("--------------------------------------------------------------------------------")
+                parts.append("💬 2. SEQUÊNCIA CRONOLÓGICA DE MENSAGENS E AÇÕES (ORDEM EXATA DE ENVIO)")
+                parts.append("--------------------------------------------------------------------------------")
+
                 messages = resultado_ia.all_messages()
-                system_prompt_content = ""
-                conversation_parts = []
-                
-                for msg in messages:
+                ordem_count = 1
+
+                for msg_idx, msg in enumerate(messages):
                     msg_dict = to_jsonable_python(msg)
-                    role = msg_dict.get("role", "unknown")
                     parts_list = msg_dict.get("parts", [])
-                    
+
                     for p in parts_list:
                         part_kind = p.get("part_kind")
                         content = p.get("content") or p.get("text")
-                        
-                        if part_kind in ["system-prompt", "system"] or (content and ("--- CONTEXTO DO ATENDIMENTO ---" in str(content) or "Assistente virtual" in str(content))):
-                            system_prompt_content = str(content)
-                        elif part_kind == "user-prompt":
-                            conversation_parts.append(f"[Cliente 👤] {content}")
+
+                        # Ignora o system prompt no fluxo de conversa pois ele já está na Seção 1
+                        if part_kind in ["system-prompt", "system"]:
+                            continue
+
+                        if part_kind == "user-prompt":
+                            is_latest = (content == ultima_mensagem)
+                            tag_label = "MENSAGEM ATUAL DA RODADA" if is_latest else "HISTÓRICO"
+                            parts.append(f"[Ordem #{ordem_count:02d}] 👤 CLIENTE ({tag_label})")
+                            parts.append(f"{content}")
+                            parts.append("")
+                            ordem_count += 1
+
                         elif part_kind == "tool-call" or ("tool_name" in p and "args" in p):
                             tool_name = p.get("tool_name")
                             args = p.get("args") or {}
-                            args_str = ", ".join(f"{k}={repr(v)}" for k, v in args.items())
-                            conversation_parts.append(f"[Ação da IA 🛠️] Executar ferramenta '{tool_name}' com: {args_str}")
+                            try:
+                                args_formatted = json.dumps(args, ensure_ascii=False, indent=2)
+                            except Exception:
+                                args_formatted = str(args)
+                            parts.append(f"[Ordem #{ordem_count:02d}] 🛠️ AÇÃO DA IA (CHAMADA DE FERRAMENTA)")
+                            parts.append(f"Ferramenta: {tool_name}")
+                            parts.append(f"Parâmetros:\n{args_formatted}")
+                            parts.append("")
+                            ordem_count += 1
+
                         elif part_kind == "tool-return" or "outcome" in p:
                             tool_name = p.get("tool_name")
-                            conversation_parts.append(f"[Resultado da Ferramenta '{tool_name}' 📥] {content}")
-                        elif part_kind == "text" or role == "model":
-                            conversation_parts.append(f"[IA 🤖] {content}")
-                        else:
+                            parts.append(f"[Ordem #{ordem_count:02d}] 📥 RETORNO DA FERRAMENTA ('{tool_name}')")
+                            parts.append(f"Retorno:\n{content}")
+                            parts.append("")
+                            ordem_count += 1
+
+                        elif part_kind == "text" or msg_dict.get("role") == "model":
                             if content:
-                                conversation_parts.append(f"[{role.upper()}] {content}")
+                                parts.append(f"[Ordem #{ordem_count:02d}] 🤖 RESPOSTA DA IA")
+                                parts.append(f"{content}")
+                                parts.append("")
+                                ordem_count += 1
 
-                # Fallback de garantia: se o prompt do sistema não veio nas partes da mensagem, gera via construir_prompt_base
-                if not system_prompt_content:
-                    try:
-                        from app.services.agent_service import construir_prompt_base
-                        class MockRunContext:
-                            def __init__(self, deps):
-                                self.deps = deps
-                        system_prompt_content = construir_prompt_base(MockRunContext(contexto))
-                    except Exception as sys_err:
-                        logger.warning(f"Não foi possível obter o prompt do sistema dinamicamente: {sys_err}")
+                parts.append("-" * 80)
+                parts.append("")
 
-                if system_prompt_content:
-                    parts.append("--- 🧠 PROMPT DO SISTEMA (INSTRUÇÕES DO AGENTE) ---")
-                    parts.append(system_prompt_content.strip())
-                    parts.append("")
-                    parts.append("-" * 80)
-                    parts.append("")
-
-                if conversation_parts:
-                    parts.append("--- 💬 FLUXO DE CONVERSA E AÇÕES DA RODADA ---")
-                    parts.append("\n".join(conversation_parts))
-                    parts.append("")
-                    parts.append("-" * 80)
-                    parts.append("")
-
-                parts.append("--- 📝 RESUMO FINAL / STATUS ---")
-                parts.append(f"Resumo da Rodada: {dados.resumo}")
+                # 3. SAÍDA E RESUMO FINAL DA RODADA
+                parts.append("--------------------------------------------------------------------------------")
+                parts.append("📝 3. RESUMO CONSOLIDADO E STATUS DA RODADA")
+                parts.append("--------------------------------------------------------------------------------")
+                parts.append(f"Resumo CRM: {dados.resumo}")
                 parts.append("Próximo Status: Aguardando Resposta")
                 parts.append("")
                 parts.append("-" * 80)
                 parts.append("")
 
+                # 4. CONSUMO DE TOKENS DO CICLO
                 if resultado_ia.usage:
                     u = resultado_ia.usage
-                    parts.append("--- 📊 CONSUMO DE TOKENS DO CICLO ---")
-                    parts.append(f"Tokens de Entrada (Prompt): {getattr(u, 'input_tokens', 0)}")
-                    parts.append(f"Tokens de Saída (Resposta): {getattr(u, 'output_tokens', 0)}")
-                    parts.append(f"Total de Tokens Consumidos: {getattr(u, 'total_tokens', getattr(u, 'input_tokens', 0) + getattr(u, 'output_tokens', 0))}")
-                    parts.append("")
-                    parts.append("-" * 80)
+                    in_t = getattr(u, 'input_tokens', getattr(u, 'request_tokens', 0)) or 0
+                    out_t = getattr(u, 'output_tokens', getattr(u, 'response_tokens', 0)) or 0
+                    tot_t = getattr(u, 'total_tokens', in_t + out_t) or (in_t + out_t)
+                    parts.append("--------------------------------------------------------------------------------")
+                    parts.append("📊 4. CONSUMO DE TOKENS DO CICLO")
+                    parts.append("--------------------------------------------------------------------------------")
+                    parts.append(f"- Tokens de Entrada (Prompt + Histórico): {in_t:,}")
+                    parts.append(f"- Tokens de Saída (Respostas + Ações): {out_t:,}")
+                    parts.append(f"- Total de Tokens Consumidos: {tot_t:,}")
                     parts.append("")
 
-                # Adiciona o ciclo formatado ao last_prompt.txt (modo append 'a')
                 parts.append("=" * 80)
-                parts.append("\n")
 
+                # Adiciona ao 'last_prompt.txt' (modo 'a') para acumular os registros de cada ciclo
                 with open("last_prompt.txt", "a", encoding="utf-8") as f:
-                    f.write("\n".join(parts))
+                    f.write("\n".join(parts) + "\n\n")
             except Exception as f_err:
                 logger.error(f"Erro ao gravar last_prompt.txt: {f_err}", exc_info=True)
             
@@ -638,6 +599,17 @@ async def _process_single_atendimento_inner(atendimento_id: int, company: models
             logger.error(f"[Passo 5/5 - Finalização] Erro ao persistir atualizações finais: {final_err}")
 
     # Bloco de captura para erros inesperados e graves durante todo o processo.
+    except asyncio.CancelledError:
+        logger.info(f"[BARRAMENTO AMBIENTE] Atendimento ID {atendimento_id} teve sua geração de IA cancelada por nova mensagem. Revertendo status para 'Mensagem Recebida'.")
+        try:
+            async with SessionLocal() as db_cancel:
+                async with db_cancel.begin():
+                    at_cancel = await db_cancel.get(models.Atendimento, atendimento_id)
+                    if at_cancel and at_cancel.status == "Gerando Resposta":
+                        at_cancel.status = "Mensagem Recebida"
+                        at_cancel.updated_at = datetime.now(timezone.utc)
+        except Exception: pass
+        raise
     except Exception as outer_err:
         logger.error(f"[ATENDIMENTO ERRO] ERRO CRÍTICO GERAL no processamento do atendimento {atendimento_id}: {outer_err}", exc_info=True)
         # Tenta reverter o status para "Erro IA" para que o atendimento possa ser analisado manualmente.
@@ -683,7 +655,8 @@ async def run_agent_cycle():
             if atendimentos_para_processar:
                 logger.info(f"Agente (Ciclo): Disparando {len(atendimentos_para_processar)} tarefa(s) em background.")
                 for at in atendimentos_para_processar.values():
-                    if at.id in _active_processing_ids:
+                    task = _active_processing_tasks.get(at.id)
+                    if task and not task.done():
                         logger.info(f"Agente (Ciclo): Atendimento {at.id} já está em processamento ativo. Pulando disparo.")
                         continue
                     if at.company:

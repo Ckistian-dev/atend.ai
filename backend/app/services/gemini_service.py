@@ -345,14 +345,13 @@ class GeminiService:
         # Lógica para Imagem/Documento (Análise Visual)
         else:
             system_instruction = (
-                "Você é um especialista em análise visual e interpretação de conteúdo.\n\n"
-                "## INSTRUÇÃO DE ANÁLISE\n"
-                "Analise a mídia fornecida e descreva seu conteúdo de forma abrangente e detalhada. Capture todos os aspectos importantes para que a IA de conversação compreenda o contexto completo.\n\n"
-                "1. *Descrição Geral:* Inicie com uma descrição global do que a mídia apresenta.\n"
-                "2. *Detalhes Visuais:* Descreva elementos principais, cores, ambiente, pessoas, objetos, texto visível e detalhes pertinentes ao contexto da conversa.\n"
-                "3. *Extração de Dados:* Extraia dados estruturados como nomes, endereços, datas e valores. **Caso existam tabelas ou listas de preços, utilize estritamente a sintaxe de tabela Markdown (| Categoria | Valor |).**\n"
-                "4. *Contexto e Intenção:* Infira a intenção do usuário ao enviar a mídia com base no histórico.\n"
-                "5. *Formato da Resposta:* Forneça um texto claro e bem estruturado. Utilize marcadores para listas. Proibido dialogar, forneça apenas a análise."
+                "Você é um especialista em análise visual e interpretação de conteúdo em um atendimento comercial.\n\n"
+                "## INSTRUÇÃO DE ANÁLISE OBJETIVA\n"
+                "Analise a mídia fornecida e forneça um resumo extremamente conciso, direto e objetivo em no máximo 3 a 5 tópicos curtos. Foque EXCLUSIVAMENTE em:\n"
+                "1. *Ambiente/Espaço ou Produto:* Identifique o objeto, parede ou item principal da imagem.\n"
+                "2. *Dados/Medidas Visíveis:* Extraia apenas textos, números, marcas, tabelas ou medidas visíveis de forma direta (se houver).\n"
+                "3. *Intenção/Dúvida do Usuário:* Infira a intenção direta do cliente ao enviar a mídia com base no histórico recente.\n\n"
+                "PROIBIDO descrever detalhes estéticos secundários irrelevantes (plantas, quadros, decorações, livros ou objetos de fundo). Forneça apenas os tópicos objetivos, sem saudações ou diálogos."
             )
             
             history_str = self._format_history_optimized(db_history, include_timestamps=True)
@@ -853,9 +852,12 @@ class GeminiService:
 
             system_instruction = (
                 "Você é um assistente especialista em reengajamento. Analise o histórico e decida se deve enviar um follow-up.\n\n"
-                "## REGRAS\n"
+                "## REGRAS DE FORMATO E SINTAXE DO WHATSAPP\n"
+                "1. *NEGRITO:* Para destacar texto em negrito, utilize ESTRITAMENTE a sintaxe do WhatsApp com asterisco único (*texto em negrito*).\n"
+                "2. *NUNCA USE* o negrito do Markdown padrão com asteriscos duplos (**texto**), pois no WhatsApp os asteriscos duplos são exibidos como texto literal sem formatar.\n\n"
+                "## REGRAS GERAIS\n"
                 "1. *DECISÃO DE ENVIO:* A única condição para omitir o envio é a solicitação explícita do cliente para interrupção do contato. Nos demais casos, prossiga com o follow-up.\n"
-                "2. *EXECUÇÃO:* Utilize a mensagem configurada como base, ajustando-a para garantir naturalidade. Utilize formatação de negrito para destaque.\n"
+                "2. *EXECUÇÃO:* Utilize a mensagem configurada como base, ajustando-a para garantir naturalidade. Use a formatação de negrito do WhatsApp (*texto*) para dar destaque a termos importantes.\n"
                 "3. *SAUDAÇÕES:* Evite cumprimentar o usuário caso já existam saudações prévias no histórico.\n"
                 "4. *FORMATO:* Retorne estritamente um JSON válido contendo a ação decidida e a respectiva mensagem."
             )
@@ -869,7 +871,13 @@ class GeminiService:
             
             response = await self._generate_with_retry(prompt_text, db, company, system_instruction=system_instruction, atendimento_id=whatsapp.id, persona=whatsapp.active_persona)
             
-            return self._parse_json_response(response.text)
+            res = self._parse_json_response(response.text)
+            if isinstance(res, dict):
+                for key in ["mensagem_para_enviar", "mensagem"]:
+                    if key in res and isinstance(res[key], str):
+                        # Converte negrito Markdown (**texto**) para negrito WhatsApp (*texto*)
+                        res[key] = re.sub(r'\*\*(.*?)\*\*', r'*\1*', res[key])
+            return res
 
         except Exception as e:
             logger.error(f"Erro ao gerar ação de follow-up com Gemini: {e}", exc_info=True)
@@ -1082,8 +1090,8 @@ class GeminiService:
                 f"Seu objetivo é escrever um 'System Prompt' (Persona) para um assistente de WhatsApp que deve parecer 100% humano.\n\n"
                 f"DIRETRIZES PARA O PROMPT GERADO:\n"
                 f"1. TOM E ESTILO: Adote linguagem natural e amigável típica de aplicativos de mensagens instantâneas. Evite formalismos excessivos ou padrões de atendimento robótico. Proibido admitir a natureza de inteligência artificial.\n"
-                f"2. ABERTURA OBRIGATÓRIA: Inicie a primeira interação identificando-se pelo nome e representando a empresa, solicitando em seguida o nome do contato para personalização do atendimento.\n"
-                f"3. GESTÃO DE CATÁLOGO: Caso a descrição da empresa seja incompleta, infira produtos, serviços e valores pertinentes ao nicho de mercado, apresentando-os com autoridade e naturalidade.\n"
+                f"2. ABERTURA E CONTINUIDADE: Inicie APENAS a PRIMEIRA MENSAGEM de um novo atendimento se apresentando pelo nome e representando a empresa. Em mensagens subsequentes de uma conversa em andamento, vá direto ao ponto, PROIBIDO repetir saudações ('Olá', 'Tudo bem?', 'Boa noite') ou reapresentar-se.\n"
+                f"3. GESTÃO DE CATÁLOGO: Caso a descrição da empresa seja incompleta, estruture as regras dos produtos e serviços do nicho de mercado com clareza. É PROIBIDO inferir ou inventar preços, fretes ou valores monetários que não estejam explicitamente declarados na base de conhecimento.\n"
                 f"4. FLUXO DE CONVERSA: Priorize a compreensão das necessidades do cliente para oferecer soluções adequadas e conduzir ao fechamento ou agendamento.\n"
                 f"5. REGRAS: Mantenha a consistência da persona integralmente. Contorne solicitações fora de escopo com respostas humanas e plausíveis.\n\n"
                 f"Informações para basear a criação:\n{company_description}\n\n"

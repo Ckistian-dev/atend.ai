@@ -130,6 +130,7 @@ const initialFormData = {
     thinking_budget: 1024,
     thinking_level: 'medium',
     tts_voice: 'Aoede',
+    allow_send_values: true,
     persona_form: null,
 };
 
@@ -912,7 +913,8 @@ function Configs() {
             top_k: config.top_k ?? 40,
             thinking_budget: config.thinking_budget ?? 1024,
             thinking_level: config.thinking_level ? String(config.thinking_level).replace(/['"]/g, '').trim().toLowerCase() : 'medium',
-            tts_voice: config.tts_voice ? String(config.tts_voice).replace(/['"]/g, '').trim() : 'Aoede'
+            tts_voice: config.tts_voice ? String(config.tts_voice).replace(/['"]/g, '').trim() : 'Aoede',
+            allow_send_values: config.allow_send_values ?? true
         });
 
         // Parse Schedule
@@ -1039,6 +1041,7 @@ function Configs() {
             thinking_budget: formData.thinking_budget,
             thinking_level: formData.thinking_level,
             tts_voice: formData.tts_voice,
+            allow_send_values: formData.allow_send_values,
             persona_form: formData.persona_form,
         };
         try {
@@ -1991,6 +1994,32 @@ function Configs() {
                                                         <Bot size={11} className="text-blue-500" /> Voz utilizada quando a IA gera áudios de resposta
                                                     </p>
                                                 </div>
+                                            </div>
+                                        </FormSection>
+
+                                        {/* SEÇÃO 1.5: Envio de Valores & Orçamentos */}
+                                        <FormSection icon={Shield} title="Regras de Envio de Valores & Orçamentos">
+                                            <div className="p-4 bg-slate-50/80 border border-slate-200/60 rounded-2xl flex items-center justify-between gap-4">
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-bold text-slate-800">Permitir que a IA informe ou calcule valores monetários ao cliente</span>
+                                                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${formData.allow_send_values ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                                            {formData.allow_send_values ? 'Ativado' : 'Bloqueado'}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                                                        {formData.allow_send_values
+                                                            ? 'A IA poderá consultar a base de conhecimento e informar valores monetários em qualquer moeda (R$, $, €, £, etc.) ao cliente quando constarem na busca.'
+                                                            : 'A IA será rigorosamente PROIBIDA de enviar valores numéricos em dinheiro, preços, orçamentos calculados ou fretes (R$, $, €, £, etc.), devendo direcionar o cliente ao canal oficial ou atendente.'}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData(p => ({ ...p, allow_send_values: !p.allow_send_values }))}
+                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0 ${formData.allow_send_values ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                                                >
+                                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${formData.allow_send_values ? 'translate-x-6' : 'translate-x-1'}`} />
+                                                </button>
                                             </div>
                                         </FormSection>
 

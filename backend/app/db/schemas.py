@@ -23,6 +23,7 @@ class ConfigBase(BaseModel):
     thinking_budget: Optional[int] = 1024
     thinking_level: Optional[str] = "medium"
     tts_voice: Optional[str] = "Aoede"
+    allow_send_values: Optional[bool] = True
     persona_form: Optional[Dict[str, Any]] = None
 
     @field_validator("thinking_level", mode="before")
@@ -68,6 +69,7 @@ class ConfigUpdate(BaseModel):
     thinking_budget: Optional[int] = None
     thinking_level: Optional[str] = None
     tts_voice: Optional[str] = None
+    allow_send_values: Optional[bool] = None
     persona_form: Optional[Dict[str, Any]] = None
 
     @field_validator("thinking_level", mode="before")

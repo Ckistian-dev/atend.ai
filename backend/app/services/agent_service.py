@@ -26,7 +26,7 @@ from app.services.google_calendar_service import get_google_calendar_service
 logger = logging.getLogger(__name__)
 
 # Locks globais para garantir ordem sequencial no envio de mensagens por atendimento
-_atendimento_locks = weakref.WeakValueDictionary()
+_atendimento_locks: Dict[int, asyncio.Lock] = {}
 _locks_lock = asyncio.Lock()
 
 async def get_atendimento_lock(atendimento_id: int) -> asyncio.Lock:
@@ -97,6 +97,7 @@ class ContextoSaaS:
     drive_ativo: bool = False
     calendar_ativo: bool = False
     categorias_conhecimento: Optional[List[str]] = None
+    resumo_crm_context: Optional[str] = None
 
     # --- CAMPOS DE CONFIGURAÇÃO DE INFERÊNCIA (vindos do persona_config do cliente) ---
     temperature: float = 0.1
@@ -105,6 +106,7 @@ class ContextoSaaS:
     thinking_budget: Optional[int] = None
     thinking_level: Optional[str] = "medium"
     tts_voice: str = "Aoede"
+    allow_send_values: bool = True
 
     # --- CAMPOS PARA MICRO-TOOLS ---
     empresa: Optional[models.Company] = None
@@ -131,118 +133,100 @@ agente_atendimento = Agent(
 
 @agente_atendimento.system_prompt
 def construir_prompt_base(ctx: RunContext[ContextoSaaS]) -> str:
-    """Monta o cérebro da IA sob demanda, isolando as regras e o contexto da empresa."""
+    """Monta o cérebro da IA sob demanda, isolando as regras e o contexto da empresa de forma limpa e sem duplicações."""
     deps = ctx.deps
     
-    # 1. Workflow
-    workflow_sec = (
-        f"### FLUXO DE ATENDIMENTO (ROTEIRO OBRIGATÓRIO)\n"
-        f"Você DEVE seguir o roteiro abaixo como um script de conversa:\n"
-        f"1. Analise o histórico recente da conversa e identifique a etapa numerada atual.\n"
-        f"2. Execute a instrução da etapa atual antes de avançar.\n"
-        f"3. Avance para a próxima etapa SOMENTE quando a condição em 'Próximo passo' for plenamente satisfeita.\n"
-        f"4. NUNCA pule etapas nem retorne a etapas já concluídas.\n"
-        f"5. Caso o cliente faça uma pergunta fora do roteiro, responda com base no RAG e retome o fluxo em seguida.\n\n"
-        f"{deps.workflow_context}\n\n"
-    ) if deps.workflow_context else ""
-
-    # 2. Tags disponíveis no CRM
-    tags_rule = f"### TAGS DISPONÍVEIS NO CRM\n{' | '.join(deps.available_tags)}\n\n" if deps.available_tags else ""
-    
-    # 3. Contexto da Agenda
-    calendar_sec = f"{deps.calendar_context}\n\n" if deps.calendar_context else ""
-    
-    # 4. Drive (somente se ativo)
-    drive_rule = (
-        "### DRIVE - ENVIO DE MÍDIAS E ARQUIVOS:\n"
-        "- Envie arquivos APENAS quando o cliente solicitar expressamente.\n"
-        "- Use SOMENTE IDs de arquivos que existam no retorno literal de `pesquisar_base_de_dados` pesquisando nas categorias `image` e `video`. PROIBIDO inventar IDs.\n\n"
-    ) if deps.drive_ativo else ""
-
-    # 5. Agendamento (somente se ativo)
-    sched_rule = (
-        "### REGRAS DE AGENDAMENTO:\n"
-        "1. ANTES de sugerir ou propor qualquer horário, chame obrigatoriamente `consultar_agenda_google`.\n"
-        "2. Ao confirmar um horário desejado pelo cliente, solicite o e-mail dele para o convite.\n"
-        "3. Com o horário ISO e o e-mail em mãos, execute imediatamente a ferramenta `agendar_reuniao`.\n\n"
-    ) if deps.calendar_ativo else ""
-
-    # 6. Categorias do RAG
-    categorias_sec = (
-        f"### CATEGORIAS DA BASE DE CONHECIMENTO\n"
-        f"Ao utilizar a ferramenta `pesquisar_base_de_dados`, você DEVE utilizar o parâmetro 'categoria_alvo' especificando a categoria mais relevante da busca sempre que aplicável. Categorias disponíveis: {', '.join(deps.categorias_conhecimento)}\n\n"
-    ) if deps.categorias_conhecimento else ""
-
-    # 7. Regra de áudio
-    audio_rule = (
-        "- ÁUDIOS: Use `enviar_mensagem_audio` preferencialmente se o cliente solicitou ou esteja na instrução inicial.\n"
-    ) if deps.tts_voice else ""
-
-    # 8. Ferramentas de envio disponíveis
+    # 1. Ferramentas ativas de envio
     ferramenta_audio_txt = ", `enviar_mensagem_audio` (voz)" if deps.tts_voice else ""
     ferramenta_drive_txt = " ou `enviar_arquivo_do_drive` (mídias/documentos)" if deps.drive_ativo else ""
 
-    # 9. Diretriz de Nome do Cliente (CRM)
-    if deps.nome_cliente and deps.nome_cliente != "Desconhecido":
-        pedir_nome_permitido = (
-            f"O nome do cliente já está cadastrado no CRM: '{deps.nome_cliente}'. "
-            f"Trate-o naturalmente por esse nome e NUNCA pergunte o nome novamente."
+    # 2. Tratamento de Nome do Cliente
+    nome_conhecido = bool(deps.nome_cliente and deps.nome_cliente.strip() and deps.nome_cliente.strip().lower() != "desconhecido")
+    if nome_conhecido:
+        pedir_nome_rule = (
+            f"O nome do cliente já é conhecido no CRM: '{deps.nome_cliente}'. Trate-o por esse nome. "
+            "É EXPRESSAMENTE PROIBIDO perguntar o nome do cliente ou como ele se chama (esta regra anula e substitui qualquer instrução de solicitar nome descrita na Persona)."
         )
     else:
-        pedir_nome_permitido = (
-            "O nome do cliente é desconhecido. Pergunte gentilmente como ele se chama "
-            "para salvá-lo no CRM via `atualizar_nome_contato`.\n"
-            "LIMITAÇÃO DE SEGURANÇA: Limite-se a no máximo 2 tentativas de obter o nome ao longo de todo o histórico da conversa. "
-            "Se o cliente ignorou, mudou de assunto ou preferiu não informar, NÃO pergunte novamente sob hipótese alguma e prossiga o atendimento normalmente."
+        pedir_nome_rule = (
+            "O nome do cliente ainda não consta no CRM. Se o cliente informar o nome dele voluntariamente ou durante a saudação inicial, registre-o imediatamente via `atualizar_nome_contato`.\n"
+            "IMPORTANTE: Se o cliente já estiver fazendo perguntas sobre produtos, orçamentos, medidas ou outros assuntos, FOCALIZE TOTALMENTE na dúvida do cliente e NÃO fique repetindo ou insistindo na pergunta do nome. Priorize a ajuda e o atendimento ao cliente."
+        )
+
+    # 3. Seções Condicionais
+    categorias_str = ", ".join(deps.categorias_conhecimento) if deps.categorias_conhecimento else "Nenhuma"
+    
+    resumo_crm_sec = (
+        f"### 📌 SÍNTESE DO HISTÓRICO ANTERIOR (RESUMO CONSOLIDADO)\n"
+        f"{deps.resumo_crm_context}\n"
+        f"*Nota: O histórico de mensagens brutas abaixo contém apenas os 10 turnos mais recentes. Use a síntese acima para manter a continuidade de acordos, escolhas de produtos ou especificações passadas pelo cliente anteriormente.*\n\n"
+    ) if deps.resumo_crm_context else ""
+
+    workflow_sec = (
+        f"### ROTEIRO DE ATENDIMENTO (WORKFLOW)\n"
+        f"{deps.workflow_context}\n\n"
+    ) if deps.workflow_context else ""
+
+    tags_sec = f"### TAGS DISPONÍVEIS NO CRM\n{' | '.join(deps.available_tags)}\n\n" if deps.available_tags else ""
+    calendar_sec = f"### CONTEXTO DE AGENDA\n{deps.calendar_context}\n\n" if deps.calendar_context else ""
+    
+    drive_sec = (
+        "### REGRA DE MÍDIAS E ARQUIVOS (DRIVE):\n"
+        "- Envie mídias/arquivos APENAS quando o cliente solicitar expressamente.\n"
+        "- Use OBRIGATORIAMENTE o 'id_arquivo' retornado da busca nas categorias 'image' ou 'video'. PROIBIDO inventar IDs.\n\n"
+    ) if deps.drive_ativo else ""
+
+    sched_sec = (
+        "### REGRA DE AGENDAMENTO DE REUNIÕES:\n"
+        "1. ANTES de sugerir horários, chame `consultar_agenda_google`.\n"
+        "2. Obtenha o e-mail do cliente e execute `agendar_reuniao` com a data/hora ISO.\n\n"
+    ) if deps.calendar_ativo else ""
+
+    if not deps.allow_send_values:
+        regra_valores = (
+            "1. PROIBIDO ABSOLUTAMENTE INVENTAR, CALCULAR OU INFORMAR PREÇOS OU VALORES MONETÁRIOS EM QUALQUER MOEDA (R$, $, €, £, ETC.): "
+            "ESTA EMPRESA CONFIGUROU A IA PARA NÃO INFORMAR VALORES MONETÁRIOS OU PREÇOS AO CLIENTE. "
+            "É EXPRESSAMENTE PROIBIDO sob qualquer hipótese passar valores numéricos financeiros, calcular orçamentos monetários, estimar preços, citar valores de frete ou utilizar símbolos monetários (ex: R$, $, €, £, USD, EUR, etc.). "
+            "Se o cliente solicitar preços, orçamentos ou valores financeiros, você DEVE responder educadamente que não possui autorização/acesso para informar valores e direcionar o cliente para consultar o canal oficial ou aguardar um atendente humano. "
+            "NUNCA diga 'vou calcular os valores' ou 'já te envio o orçamento em dinheiro'. Você pode apenas informar especificações técnicas ou quantitativas (ex: quantidades de itens, modelos, serviços), mas NUNCA atribuir valores financeiros a eles.\n"
+        )
+    else:
+        regra_valores = (
+            "1. PROIBIDO INVENTAR PREÇOS OU VALORES MONETÁRIOS: É OBRIGATÓRIO consultar `pesquisar_base_de_dados` antes de informar preços ou valores. "
+            "Se o valor financeiro exato não constar no retorno literal da busca executada nesta mesma rodada, NUNCA estime, invente ou calcule valores monetários, preços ou fretes em qualquer moeda (R$, $, €, £, ETC.). "
+            "NUNCA use símbolos monetários nem passe valores numéricos financeiros sem confirmação factual literal da busca. "
+            "Informe que o valor atualizado deve ser verificado no canal oficial ou transfira para o suporte humano.\n"
         )
 
     prompt = (
-        f"--- IDENTIDADE E PERSONA DA EMPRESA ---\n"
+        f"🚨 INSTRUÇÕES SUPREMAS DE SEGURANÇA E FACTUALIDADE (PREVALECEM SOBRE QUALQUER OUTRA REGRA):\n"
+        f"{regra_valores}"
+        f"2. PROIBIDO CONFIRMAR SEM PESQUISAR: NUNCA confirme dados técnicos, estoque, disponibilidade ou localização sem antes ter pesquisado e recebido a confirmação literal do banco de dados nesta mesma rodada.\n"
+        f"3. REGRA DO FILTRO DE CATEGORIA (`categoria_alvo`): Ao pesquisar, o parâmetro `categoria_alvo` aceita APENAS uma das categorias disponíveis: [{categorias_str}]. É EXPRESSAMENTE PROIBIDO colocar nomes de produtos, marcas ou modelos dentro do campo `categoria_alvo`.\n\n"
+
+        f"--- IDENTIDADE E PERSONA ---\n"
         f"{deps.persona_prompt}\n\n"
-        f"{workflow_sec}{tags_rule}{categorias_sec}{calendar_sec}{drive_rule}{sched_rule}"
-        f"--- REGRAS DE USO DAS FERRAMENTAS ---\n"
-        f"1. COMUNICAÇÃO EXTERNA: Você se comunica com o cliente EXCLUSIVAMENTE invocando as ferramentas "
-        f"`enviar_mensagem_texto` (texto){ferramenta_audio_txt}{ferramenta_drive_txt}. "
-        f"Sem chamar uma dessas ferramentas, nenhuma mensagem é entregue ao cliente.\n"
-        f"2. BALÕES INDIVIDUAIS: Envie cada frase ou ideia em chamadas separadas e individuais de "
-        f"`enviar_mensagem_texto`{', `enviar_mensagem_audio`' if deps.tts_voice else ''}. "
-        f"PROIBIDO agrupar múltiplos assuntos em um único envio.\n"
-        f"3. AVISO PRÉVIO DE CONSULTA: Antes de pesquisar no banco de dados ou checar a agenda, avise brevemente o cliente "
-        f"enviando um balão rápido via `enviar_mensagem_texto` antes de chamar a busca.\n"
-        f"4. DATA E HORA LOCAL: Para consultar a data, a hora exata e o dia da semana atual no horário local, chame a ferramenta `obter_data_hora_atual`.\n"
-        f"{audio_rule}\n"
-        f"--- CRM E GESTÃO DE ATENDIMENTO ---\n"
-        f"- NOME DO CLIENTE: {pedir_nome_permitido}\n"
-        f"são atualizados automaticamente pelas ferramentas do backend. NUNCA envie o texto desses status como mensagem para o cliente.\n"
-        f"- RESUMO CONSOLIDADO: O campo 'resumo' do resultado final da IA DEVE conter uma síntese acumulada de TODA a conversa "
-        f"realizada com o cliente até o momento (histórico completo + nova interação), destacando os assuntos tratados, dúvidas, produtos de interesse e o status atual. "
-        f"NUNCA limite o resumo apenas à última mensagem trocada.\n"
-        f"- GESTÃO DE TAGS: As tags disponíveis no CRM estão listadas na seção 'TAGS DISPONÍVEIS NO CRM' deste prompt. Para aplicar uma tag ao cliente, acione diretamente a ferramenta `adicionar_tag_ao_cliente(nome_da_tag)`.\n"
-        f"- PROTOCOLO DE TRANSBORDO DO ATENDIMENTO:\n"
-        f"  1. Verifique regras de transferência nas INSTRUÇÕES ADICIONAIS e respeite todas as condições.\n"
-        f"  2. Envie um aviso amigável via `enviar_mensagem_texto`{' ou `enviar_mensagem_audio`' if deps.tts_voice else ''}.\n"
-        f"  3. Execute a ferramenta `transferir_para_atendente`.\n"
-        f"- CONCLUSÃO: Quando a solicitação for finalizada com sucesso -> execute `concluir_atendimento`.\n\n"
-        f"--- DIRETRIZES DE HUMANIZAÇÃO E FORMATO ---\n"
-        f"- BALÕES CURTOS E DIRETOS: Escreva frases curtas, objetivas e conversacionais (máximo de 1 a 2 frases por balão). "
-        f"EVITE parágrafos longos, explicações prolixas ou blocos massivos de texto.\n"
-        f"- TOM NATURAL E ADEQUADO: Espelhe a formalidade e pontuação do cliente. Evite jargões corporativos e saudações repetitivas.\n"
-        f"- FORMATO WHATSAPP: Use exclusivamente `*negrito*` (1 asterisco), `_itálico_` e `~tachado~`. "
-        f"PROIBIDO usar `**duplo asterisco**` (marcação Markdown padrão não funciona no WhatsApp).\n\n"
-        f"--- PESQUISA E CONSTRUÇÃO DO TERMO DE BUSCA (RAG) ---\n"
-        f"1. BUSCA POR TEXTO ('texto'): Extraia APENAS de 1 a 3 palavras-chave substantivas exatas (nomes de produtos, modelos, materiais, cores).\n"
-        f"   - PROIBIDO incluir verbos (como 'custa', 'quero', 'tem', 'saber'), artigos, preposições ou saudações.\n"
-        f"2. BUSCA SEMÂNTICA ('semantica'): Utilize para dúvidas conceituais, termos explicativos, políticas da empresa ou perguntas completas.\n"
-        f"3. FILTRO DE CATEGORIA ('categoria_alvo'): Sempre que houver categorias disponíveis na base de conhecimento ({', '.join(deps.categorias_conhecimento) if deps.categorias_conhecimento else 'nenhuma'}), preencha OBRIGATORIAMENTE o parâmetro `categoria_alvo` com a categoria mais adequada para refinar e direcionar a pesquisa.\n"
-        f"4. BUSCA ECONÔMICA E SELETIVA: Na ferramenta `pesquisar_base_de_dados`, você pode definir `quantidade_resultados` (entre 1 e 5). "
-        f"Solicite apenas a quantidade estritamente necessária (ex: 2 a 3 resultados) para responder ao cliente de forma eficiente.\n\n"
-        f"--- PROTOCOLO ANTI-ALUCINAÇÃO (PRIORIDADE MÁXIMA) ---\n"
-        f"1. DADOS FACTUAIS REAIS: Preços, estoques, especificações técnicas, prazos, mídias e horários DEVEM vir do retorno literal de "
-        f"`pesquisar_base_de_dados` ou `consultar_agenda_google`. PROIBIDO inventar ou inferir dados inexistentes.\n"
-        f"2. OBRIGATORIEDADE DE PESQUISA: Antes de responder a qualquer dúvida sobre produtos ou serviços, chame `pesquisar_base_de_dados`.\n"
-        f"3. ADMISSÃO DE IGNORÂNCIA E ESCALAÇÃO: Se após ambas as buscas os dados não forem encontrados, admita honestamente que não possui a informação, verifique se precisa de mais algo ou então realize o protocolo de TRANSBORDO.\n"
-        f"   - PROIBIDO usar termos de incerteza como: 'acredito que', 'provavelmente', 'deve ser cerca de'.\n"
-        f"4. VALORES E PREÇOS EXATOS: Informe sempre o valor exato retornado da base de dados. Calcule passo a passo qualquer valor solicitado pelo cliente .\n"
+
+        f"{resumo_crm_sec}{workflow_sec}{tags_sec}{calendar_sec}{drive_sec}{sched_sec}"
+
+        f"--- FERRAMENTAS E COMUNICAÇÃO EXTERNA ---\n"
+        f"1. CANAL EXCLUSIVO: Você se comunica com o cliente EXCLUSIVAMENTE invocando `enviar_mensagem_texto`{ferramenta_audio_txt}{ferramenta_drive_txt}. Sem chamar uma dessas ferramentas, NENHUMA mensagem chega ao cliente.\n"
+        f"2. BALÕES INDIVIDUAIS: Envie cada frase ou ideia em chamadas separadas e individuais. PROIBIDO agrupar múltiplos assuntos em um único envio de texto ou áudio.\n"
+        f"3. AVISO PRÉVIO: Antes de acionar ferramentas de busca ou agenda, envie uma mensagem curta avisando o cliente.\n"
+        f"4. DATA E HORA: Chame `obter_data_hora_atual` sempre que precisar validar o momento atual do atendimento.\n"
+        f"5. CÁLCULOS MATEMÁTICOS: Sempre que precisar somar medidas, calcular áreas (m²), estimar quantidade de itens/peças ou realizar contas numéricas, invoque OBRIGATORIAMENTE a ferramenta `executar_calculo_matematico` para garantir precisão exata.\n\n"
+
+        f"--- GESTÃO DO CRM E CONTATO ---\n"
+        f"- NOME DO CONTATO: {pedir_nome_rule}\n"
+        f"- RESUMO DO ATENDIMENTO: O campo 'resumo' do resultado final DEVE conter uma síntese consolidada e acumulada de TODA a conversa até o momento.\n"
+        f"- TAGS: Para aplicar tags ao contato, execute `adicionar_tag_ao_cliente` com uma das tags listadas acima.\n"
+        f"- TRANSBORDO HUMANO: Quando necessário, avise o cliente amigavelmente e invoque a ferramenta `transferir_para_atendente`.\n"
+        f"- CONCLUSÃO: Se o atendimento for finalizado com sucesso, invoque `concluir_atendimento`.\n\n"
+
+        f"--- DIRETRIZES DE FORMATO E HUMANIZAÇÃO ---\n"
+        f"- CONTINUIDADE: Se já houver histórico trocado, NUNCA repita saudações iniciais (ex: 'Olá', 'Tudo bem?', 'Eu sou o Téo'). Responda diretamente à dúvida.\n"
+        f"- TAMANHO DAS MENSAGENS: Escreva mensagens curtas e conversacionais (máximo de 1 a 2 frases por balão).\n"
+        f"- FORMATO DO WHATSAPP: Use exclusivamente `*negrito*` (1 asterisco), `_itálico_` e `~tachado~`. PROIBIDO usar `**duplo asterisco**`.\n"
     )
 
     if deps.regras_adicionais:
@@ -254,6 +238,80 @@ def construir_prompt_base(ctx: RunContext[ContextoSaaS]) -> str:
 # =====================================================================
 # 4. FERRAMENTAS DO AGENTE (MICRO-TOOLS)
 # =====================================================================
+
+import ast
+import operator
+
+_MATH_OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+    ast.Pow: operator.pow,
+    ast.USub: operator.neg,
+    ast.UAdd: operator.pos,
+}
+
+def _eval_expr_node(node):
+    if isinstance(node, ast.Expression):
+        return _eval_expr_node(node.body)
+    elif isinstance(node, ast.Constant):
+        if isinstance(node.value, (int, float)):
+            return node.value
+        raise ValueError("Constantes não numéricas não são permitidas.")
+    elif isinstance(node, ast.BinOp):
+        op_type = type(node.op)
+        if op_type in _MATH_OPERATORS:
+            left = _eval_expr_node(node.left)
+            right = _eval_expr_node(node.right)
+            return _MATH_OPERATORS[op_type](left, right)
+        raise ValueError(f"Operador binário não suportado: {op_type}")
+    elif isinstance(node, ast.UnaryOp):
+        op_type = type(node.op)
+        if op_type in _MATH_OPERATORS:
+            operand = _eval_expr_node(node.operand)
+            return _MATH_OPERATORS[op_type](operand)
+        raise ValueError(f"Operador unário não suportado: {op_type}")
+    else:
+        raise ValueError(f"Expressão não suportada: {type(node)}")
+
+
+@agente_atendimento.tool
+async def executar_calculo_matematico(
+    ctx: RunContext[ContextoSaaS],
+    expressao: str
+) -> str:
+    """
+    Use esta ferramenta para realizar cálculos matemáticos e aritméticos com 100% de precisão.
+    Chame esta ferramenta sempre que precisar realizar somas de medidas, cálculo de áreas (m²), 
+    proporções, porcentagens, divisão para quantidade de peças/unidades ou qualquer conta numérica.
+    
+    IMPORTANTE: Se o cálculo ou a soma de medidas já foi realizada e registrada em mensagens anteriores do histórico da conversa, 
+    NÃO chame esta ferramenta novamente; utilize diretamente o valor numérico já obtido.
+    
+    Exemplos de `expressao`: "2.60 + 0.83 + 1.00", "4.43 / 2.70", "3.0 * 2.5", "(120 + 300) * 2".
+    PROIBIDO passar caracteres não matemáticos ou texto. Passe apenas expressões numéricas válidas.
+    """
+    logger.info(f"[Tool Executada] executar_calculo_matematico | expressao='{expressao}'")
+    try:
+        expressao_clean = expressao.replace(",", ".").strip()
+        parsed = ast.parse(expressao_clean, mode='eval')
+        resultado_val = _eval_expr_node(parsed.body)
+        
+        if isinstance(resultado_val, float) and resultado_val.is_integer():
+            resultado_val = int(resultado_val)
+        elif isinstance(resultado_val, float):
+            resultado_val = round(resultado_val, 4)
+
+        retorno = f"Resultado do cálculo ({expressao}): {resultado_val}"
+        logger.info(f"[Tool Executada] executar_calculo_matematico | {retorno}")
+        return retorno
+    except Exception as e:
+        logger.error(f"Erro ao executar cálculo matemático para '{expressao}': {e}")
+        return f"Erro ao calcular '{expressao}': certifique-se de passar uma expressão matemática válida (ex: '2.60 + 0.83 + 1.00' ou '4.43 / 2.70')."
+
 
 @agente_atendimento.tool
 async def obter_data_hora_atual(ctx: RunContext[ContextoSaaS]) -> str:
@@ -292,7 +350,8 @@ async def pesquisar_base_de_dados(
     termo_busca: str,
     tipo_busca: Literal['texto', 'semantica'],
     categoria_alvo: Optional[str] = None,
-    quantidade_resultados: int = 3
+    quantidade_resultados: int = 5,
+    pagina: int = 1
 ) -> str:
     """
     Pesquisa a base de conhecimento da empresa (planilhas e mídias do Drive).
@@ -306,66 +365,65 @@ async def pesquisar_base_de_dados(
       Exemplo: "Qual a politica de entrega?"
 
     REGRA CRÍTICA - 'categoria_alvo':
-    - Nome exato de uma categoria disponível listada no prompt.
-    - SEMPRE que a pesquisa pertencer a uma categoria específica, você DEVE informar este parâmetro para refinar e filtrar a busca.
-    - Se não houver categoria adequada ou para pesquisar em toda a base, passe null.
-    - Para pesquisar mídias, use as categorias `image` e `video`.
+    - Deve ser EXATAMENTE uma das categorias disponíveis informadas no prompt na seção 'CATEGORIAS DA BASE DE CONHECIMENTO' (ex: 'Produtos', 'Dados da Empresa', 'image', 'video').
+    - PROIBIDO passar nomes de modelos ou produtos (como 'Painel Ripado Versátil') no campo `categoria_alvo`. O modelo/produto vai no `termo_busca`.
+    - Se a busca for sobre produtos, use `categoria_alvo='Produtos'`.
+    - Se for sobre fotos/vídeos, use `categoria_alvo='image'` ou `categoria_alvo='video'`.
+    - Se for sobre a empresa/horários, use `categoria_alvo='Dados da Empresa'`.
+    - Se estiver em dúvida, passe `categoria_alvo=null`.
 
-    'quantidade_resultados': número de resultados a retornar (entre 1 e 5). SEJA ECONÔMICO: peça apenas a quantidade estritamente necessária.
+    'quantidade_resultados': número de resultados por página (entre 1 e 15).
+    - Para buscas GENÉRICAS ou EXPLORATÓRIAS (ex: o cliente faz uma pergunta ampla, quer conhecer as opções, catálogo geral ou categorias):
+      Solicite uma quantidade MAIOR de resultados (ex: 8 a 15) para obter uma visão ampla das opções disponíveis.
+    - Para buscas ESPECÍFICAS ou DIRETAS (ex: o cliente pergunta sobre um modelo/medida específica ou dúvida pontual):
+      Solicite uma quantidade MENOR e focada de resultados (ex: 2 a 5).
+
+    'pagina': número da página a consultar (padrão: 1).
+    - Use para PAGINAR e varrer os resultados da busca aos poucos quando existirem mais registros na base (informado no campo 'Total de registros encontrados').
+    - Para consultar a página seguinte, invoque novamente esta ferramenta passando pagina=2, pagina=3, etc.
     """
-    limite_real = min(max(quantidade_resultados, 1), 5)
-    logger.info(f"[Tool Executada] pesquisar_base_de_dados | termo_busca='{termo_busca}', tipo_busca='{tipo_busca}', categoria_alvo='{categoria_alvo}', quantidade_resultados={limite_real}")
+    import math
+    limite_real = min(max(quantidade_resultados, 1), 15)
+    pagina_real = max(pagina, 1)
+    offset_real = (pagina_real - 1) * limite_real
+
+    logger.info(f"[Tool Executada] pesquisar_base_de_dados | termo_busca='{termo_busca}', tipo_busca='{tipo_busca}', categoria_alvo='{categoria_alvo}', quantidade_resultados={limite_real}, pagina={pagina_real}")
     config_id = ctx.deps.config_id
 
     from app.db.database import SessionLocal
     async with SessionLocal() as db:
         from sqlalchemy import func
-        # LOG DE DIAGNÓSTICO: Verifica se existem registros de KnowledgeVector para esta persona
-        try:
-            count_stmt = select(func.count(models.KnowledgeVector.id)).where(models.KnowledgeVector.config_id == config_id)
-            res_count = await db.execute(count_stmt)
-            total_records = res_count.scalar() or 0
-            logger.info(f"[Diagnóstico Busca] Total de vetores de conhecimento cadastrados para a config_id {config_id}: {total_records}")
-            
-            if total_records > 0 and categoria_alvo:
-                count_cat_stmt = select(func.count(models.KnowledgeVector.id)).where(
-                    models.KnowledgeVector.config_id == config_id,
-                    models.KnowledgeVector.category.ilike(categoria_alvo.strip())
-                )
-                res_cat_count = await db.execute(count_cat_stmt)
-                total_cat_records = res_cat_count.scalar() or 0
-                logger.info(f"[Diagnóstico Busca] Total de vetores mapeados em '{categoria_alvo}' para a config_id {config_id}: {total_cat_records}")
-        except Exception as diag_err:
-            logger.error(f"[Diagnóstico Busca] Erro ao contar vetores de conhecimento: {diag_err}")
-
-        # Inicia a query filtrando estritamente pela persona atual
+        
         query = select(models.KnowledgeVector).where(models.KnowledgeVector.config_id == config_id)
         if categoria_alvo and categoria_alvo.strip():
             query = query.where(models.KnowledgeVector.category.ilike(categoria_alvo.strip()))
 
+        total_encontrados = 0
         try:
             vetores_encontrados = []
             if tipo_busca == 'texto':
-                logger.info(f"Busca TEXTUAL acionada para: '{termo_busca}' na config {config_id}")
-                
-                # Divisão simples por palavras sem stopwords hardcoded na aplicação
+                logger.info(f"Busca TEXTUAL acionada para: '{termo_busca}' (pág {pagina_real}) na config {config_id}")
                 termos = [t for t in termo_busca.replace("?", "").replace("!", "").replace(",", "").replace(".", "").split() if len(t) > 1]
                 
                 text_query = query
                 for t in termos:
                     text_query = text_query.where(models.KnowledgeVector.content.ilike(f"%{t}%"))
-                text_query = text_query.limit(limite_real)
                 
-                result = await db.execute(text_query)
+                count_stmt = select(func.count()).select_from(text_query.subquery())
+                res_count = await db.execute(count_stmt)
+                total_encontrados = res_count.scalar() or 0
+
+                paginated_query = text_query.offset(offset_real).limit(limite_real)
+                result = await db.execute(paginated_query)
                 vetores_encontrados = result.scalars().all()
-                logger.info(f"Busca TEXTUAL para '{termo_busca}' (categoria: '{categoria_alvo}') retornou {len(vetores_encontrados)} registros.")
+                logger.info(f"Busca TEXTUAL para '{termo_busca}' retornou {len(vetores_encontrados)} de {total_encontrados} registros (pág {pagina_real}).")
                 
-                if not vetores_encontrados:
+                if not vetores_encontrados and pagina_real == 1:
                     logger.info(f"Busca TEXTUAL para '{termo_busca}' retornou zero resultados. Iniciando fallback automático para SEMÂNTICA...")
                     tipo_busca = 'semantica'
 
             if tipo_busca == 'semantica':
-                logger.info(f"Busca SEMÂNTICA acionada para: '{termo_busca}' na config {config_id}")
+                logger.info(f"Busca SEMÂNTICA acionada para: '{termo_busca}' (pág {pagina_real}) na config {config_id}")
                 gemini_svc = get_gemini_service()
                 query_embedding = await gemini_svc.generate_embedding(termo_busca)
                 
@@ -373,39 +431,24 @@ async def pesquisar_base_de_dados(
                     logger.error("Busca SEMÂNTICA falhou: Não foi possível gerar o vetor/embedding no Gemini.")
                     return "Erro interno: Não foi possível gerar o vetor para a busca."
 
-                # Para diagnóstico, vamos pesquisar os mais próximos sem threshold de corte primeiro para logar a distância
-                diag_query = select(
-                    models.KnowledgeVector,
-                    models.KnowledgeVector.embedding.cosine_distance(query_embedding).label("distancia")
-                ).where(
-                    models.KnowledgeVector.config_id == config_id
-                )
-                if categoria_alvo and categoria_alvo.strip():
-                    diag_query = diag_query.where(models.KnowledgeVector.category.ilike(categoria_alvo.strip()))
-                
-                diag_query = diag_query.order_by("distancia").limit(3)
-                diag_res = await db.execute(diag_query)
-                proximos = diag_res.all()
-                
-                if proximos:
-                    logger.info(f"Busca SEMÂNTICA - Top 3 distâncias de cosseno para '{termo_busca}':")
-                    for idx, row in enumerate(proximos):
-                        v_item, dist = row
-                        logger.info(f"  {idx+1}. ID: {v_item.id} | Distância: {dist:.4f} | Conteúdo preliminar: {v_item.content[:80]}...")
-                
-                # Busca pgvector real com threshold de similaridade de cosseno < 0.65 e limite_real definido
-                semantic_query = query.where(
+                semantic_base = query.where(
                     models.KnowledgeVector.embedding.cosine_distance(query_embedding) < 0.65
-                ).order_by(
+                )
+
+                count_stmt = select(func.count()).select_from(semantic_base.subquery())
+                res_count = await db.execute(count_stmt)
+                total_encontrados = res_count.scalar() or 0
+
+                paginated_semantic = semantic_base.order_by(
                     models.KnowledgeVector.embedding.cosine_distance(query_embedding)
-                ).limit(limite_real)
+                ).offset(offset_real).limit(limite_real)
 
-                result = await db.execute(semantic_query)
+                result = await db.execute(paginated_semantic)
                 vetores_encontrados = result.scalars().all()
-                logger.info(f"Busca SEMÂNTICA com threshold < 0.65 para '{termo_busca}' (categoria: '{categoria_alvo}') retornou {len(vetores_encontrados)} registros.")
+                logger.info(f"Busca SEMÂNTICA para '{termo_busca}' retornou {len(vetores_encontrados)} de {total_encontrados} registros (pág {pagina_real}).")
 
-            # Fallback automático: se a busca com categoria_alvo retornou zero resultados, tenta sem o filtro de categoria
-            if not vetores_encontrados and categoria_alvo:
+            # Fallback automático: se a busca com categoria_alvo retornou zero resultados na pág 1, tenta sem o filtro de categoria
+            if not vetores_encontrados and categoria_alvo and pagina_real == 1:
                 logger.info(f"Busca com categoria_alvo='{categoria_alvo}' retornou zero resultados. Executando fallback automático sem filtro de categoria...")
                 fallback_query = select(models.KnowledgeVector).where(models.KnowledgeVector.config_id == config_id)
                 
@@ -414,7 +457,12 @@ async def pesquisar_base_de_dados(
                     fb_text = fallback_query
                     for t in termos:
                         fb_text = fb_text.where(models.KnowledgeVector.content.ilike(f"%{t}%"))
-                    fb_text = fb_text.limit(limite_real)
+                    
+                    count_fb = select(func.count()).select_from(fb_text.subquery())
+                    res_fb_count = await db.execute(count_fb)
+                    total_encontrados = res_fb_count.scalar() or 0
+
+                    fb_text = fb_text.offset(offset_real).limit(limite_real)
                     res_fb = await db.execute(fb_text)
                     vetores_encontrados = res_fb.scalars().all()
                 
@@ -424,39 +472,47 @@ async def pesquisar_base_de_dados(
                     if query_embedding_fb:
                         fb_semantic = fallback_query.where(
                             models.KnowledgeVector.embedding.cosine_distance(query_embedding_fb) < 0.65
-                        ).order_by(
+                        )
+                        count_fb = select(func.count()).select_from(fb_semantic.subquery())
+                        res_fb_count = await db.execute(count_fb)
+                        total_encontrados = res_fb_count.scalar() or 0
+
+                        fb_semantic = fb_semantic.order_by(
                             models.KnowledgeVector.embedding.cosine_distance(query_embedding_fb)
-                        ).limit(limite_real)
+                        ).offset(offset_real).limit(limite_real)
                         res_fb = await db.execute(fb_semantic)
                         vetores_encontrados = res_fb.scalars().all()
-                        logger.info(f"Fallback semântico sem categoria retornou {len(vetores_encontrados)} registros.")
 
             if not vetores_encontrados:
-                return "Nenhum resultado encontrado para esta busca na base de dados."
+                return f"Nenhum resultado encontrado para a busca '{termo_busca}' (página {pagina_real}, total na base: {total_encontrados})."
 
-            # Prepara a resposta para a IA de forma bem estruturada e limpa (Markdown)
-            resposta_formatada = []
-            for idx, v in enumerate(vetores_encontrados, 1):
-                origem_str = (v.origin or "Base").lower()
+            total_paginas = max(1, math.ceil(total_encontrados / limite_real)) if total_encontrados > 0 else 1
+            inicio_num = offset_real + 1
+            fim_num = min(offset_real + len(vetores_encontrados), total_encontrados)
+
+            # Cabeçalho ultracompacto e direto
+            meta_header = f"📌 BUSCA: '{termo_busca}' | Categoria: '{categoria_alvo or 'Todas'}' | Total na Base: {total_encontrados} | Pág {pagina_real}/{total_paginas} (Itens {inicio_num}-{fim_num})"
+            if total_paginas > pagina_real:
+                meta_header += f"\n💡 Próxima página disponível ({total_encontrados - fim_num} itens restantes): chame `pesquisar_base_de_dados` com pagina={pagina_real + 1}"
+
+            resposta_formatada = [meta_header]
+
+            for idx, v in enumerate(vetores_encontrados, inicio_num):
                 categoria_str = v.category or "Geral"
-                
-                bloco = []
-                bloco.append(f"### REGISTRO {idx} (Origem: {origem_str} | Categoria: {categoria_str})")
+                bloco = [f"--- [REGISTRO #{idx} | Categoria: {categoria_str}] ---"]
                 
                 if v.raw_data and isinstance(v.raw_data, dict):
-                    bloco.append("Dados:")
                     for chave, valor in v.raw_data.items():
                         if valor is not None:
                             val_clean = str(valor).strip()
                             if val_clean:
-                                bloco.append(f"  - {chave}: {val_clean}")
+                                bloco.append(f"• {chave}: {val_clean}")
                 elif v.content:
-                    bloco.append("Conteúdo:")
-                    bloco.append(f"  {str(v.content).strip()}")
+                    bloco.append(f"• Conteúdo: {str(v.content).strip()}")
                     
                 resposta_formatada.append("\n".join(bloco))
 
-            return "\n\n---\n\n".join(resposta_formatada)
+            return "\n\n".join(resposta_formatada)
 
         except Exception as e:
             logger.error(f"Erro na tool de busca: {e}", exc_info=True)
@@ -738,6 +794,26 @@ async def enviar_mensagem_texto(ctx: RunContext[ContextoSaaS], texto: str) -> st
         logger.warning(f"IA tentou enviar mensagem de status proibida: '{texto}'")
         return "Erro: O status do sistema é alterado automaticamente pelo backend. Não envie o nome do status ou comandos de status via mensagem para o cliente. Se você não tem mais mensagens para o cliente, encerre o processamento retornando o resultado final (final_result)."
 
+    # Validação de filtro Regex contra envio de valores monetários em qualquer moeda (R$, $, €, £, USD, EUR, etc.) quando desativado
+    if not ctx.deps.allow_send_values:
+        padrao_valor = re.compile(
+            r'(?:'
+            r'(?:R\$|US\$|CA\$|AU\$|\$|€|£|¥)\s*\d+(?:[\.,]\d+)*'
+            r'|'
+            r'\b\d+(?:[\.,]\d+)*\s*(?:reais|real|dólares|dólar|dollars|dollar|euros|euro|centavos|cents|usd|eur|brl|gbp)\b'
+            r'|'
+            r'\b(?:usd|eur|brl|gbp|cad|aud)\s*\d+(?:[\.,]\d+)*\b'
+            r')',
+            re.IGNORECASE
+        )
+        if padrao_valor.search(texto):
+            logger.warning(f"IA tentou enviar mensagem contendo valores monetários enquanto allow_send_values está DESATIVADO: '{texto}'")
+            return (
+                "Erro: A empresa configurou a IA para NÃO passar valores monetários ou preços ao cliente. "
+                "É proibido enviar qualquer valor financeiro, preços, orçamentos em dinheiro ou usar símbolos monetários (ex: R$, $, €, £, USD, EUR, etc.). "
+                "Reescreva sua mensagem SEM NENHUM VALOR OU PREÇO monetário, informando educadamente que os valores devem ser verificados no canal oficial ou com o atendente humano."
+            )
+
     partes = [p.strip() for p in texto.split("\n") if p.strip()]
     if not partes:
         return "Erro: O texto da mensagem está vazio."
@@ -745,18 +821,43 @@ async def enviar_mensagem_texto(ctx: RunContext[ContextoSaaS], texto: str) -> st
     lock = await get_atendimento_lock(ctx.deps.atendimento_id)
     async with lock:
         for idx, parte in enumerate(partes):
+            # 1. Verifica barramento local de asyncio
+            curr_task = asyncio.current_task()
+            if curr_task and curr_task.cancelling() > 0:
+                logger.info(f"Interrupção (Barramento Memória) detectada em enviar_mensagem_texto para Atendimento {ctx.deps.atendimento_id}. Abortando envio.")
+                raise asyncio.CancelledError()
+
+            # 2. VERIFICAÇÃO DE SEGURANÇA CROSS-PROCESS (BANCO DE DADOS)
+            # Se uma nova mensagem chegou enquanto a IA processava, o webhook alterou o status para 'Mensagem Recebida'.
+            from app.db.database import SessionLocal
+            async with SessionLocal() as db_check:
+                at_check = await db_check.get(models.Atendimento, ctx.deps.atendimento_id)
+                if at_check and at_check.status != "Gerando Resposta":
+                    logger.info(f"[BARRAMENTO BANCO] Atendimento ID {ctx.deps.atendimento_id} teve status alterado para '{at_check.status}'. Abortando envio da IA.")
+                    raise asyncio.CancelledError()
+
             # Simulação realista de digitação para cada balão
             import random
-            import asyncio
-            chars_per_sec = random.uniform(0.10, 0.20)
-            typing_delay = min(max(len(parte) * chars_per_sec, 2.5), 15.0)
+            chars_per_sec = random.uniform(0.05, 0.10)
+            typing_delay = min(max(len(parte) * chars_per_sec, 1.5), 5.0)
             
             logger.info(f"IA simulando digitação por {typing_delay:.1f}s antes de enviar: {parte}")
             await asyncio.sleep(typing_delay)
 
+            # 3. Re-checa o estado local e do banco de dados após o tempo de digitação
+            if curr_task and curr_task.cancelling() > 0:
+                logger.info(f"Interrupção (Barramento Memória) detectada durante digitação para Atendimento {ctx.deps.atendimento_id}. Abortando envio.")
+                raise asyncio.CancelledError()
+
+            async with SessionLocal() as db_check2:
+                at_check2 = await db_check2.get(models.Atendimento, ctx.deps.atendimento_id)
+                if at_check2 and at_check2.status != "Gerando Resposta":
+                    logger.info(f"[BARRAMENTO BANCO PÓS-DIGITAÇÃO] Atendimento ID {ctx.deps.atendimento_id} teve status alterado para '{at_check2.status}'. Abortando envio da IA.")
+                    raise asyncio.CancelledError()
+
             try:
                 # Envia via WhatsApp real (fora da transação de banco)
-                await ctx.deps.whatsapp_service.send_text_message(
+                sent_info = await ctx.deps.whatsapp_service.send_text_message(
                     company=ctx.deps.empresa,
                     number=ctx.deps.atendimento.whatsapp,
                     text=parte
@@ -767,25 +868,31 @@ async def enviar_mensagem_texto(ctx: RunContext[ContextoSaaS], texto: str) -> st
                 from datetime import datetime
                 import json
                 
+                msg_id = (sent_info.get("id") if isinstance(sent_info, dict) and sent_info.get("id") else None) or f"ai_{int(datetime.now().timestamp())}_{random.randint(100, 999)}"
+                
                 async with SessionLocal() as db_write:
                     async with db_write.begin():
                         at = await db_write.get(models.Atendimento, ctx.deps.atendimento_id, with_for_update=True)
                         if at:
                             historico_db = json.loads(at.conversa or "[]")
-                            nova_msg = {
-                                "id": f"ai_{int(datetime.now().timestamp())}_{random.randint(100, 999)}",
-                                "role": "assistant",
-                                "content": parte,
-                                "timestamp": int(datetime.now().timestamp()),
-                                "is_ai": True
-                            }
-                            historico_db.append(nova_msg)
-                            at.conversa = json.dumps(historico_db, ensure_ascii=False)
-                            db_write.add(at)
-                            
-                            # Atualiza em memória
-                            ctx.deps.atendimento.conversa = at.conversa
+                            if not any(m.get("id") == msg_id for m in historico_db):
+                                nova_msg = {
+                                    "id": msg_id,
+                                    "role": "assistant",
+                                    "content": parte,
+                                    "timestamp": int(datetime.now().timestamp()),
+                                    "status": "sent",
+                                    "is_ai": True
+                                }
+                                historico_db.append(nova_msg)
+                                at.conversa = json.dumps(historico_db, ensure_ascii=False)
+                                db_write.add(at)
+                                
+                                # Atualiza em memória
+                                ctx.deps.atendimento.conversa = at.conversa
 
+            except asyncio.CancelledError:
+                raise
             except Exception as e:
                 logger.error(f"Erro ao enviar parte da mensagem na tool (parte {idx}): {e}", exc_info=True)
                 return f"Erro ao enviar a mensagem: {str(e)}"
@@ -820,13 +927,21 @@ async def enviar_mensagem_audio(ctx: RunContext[ContextoSaaS], texto: str) -> st
     async with lock:
         gemini_svc = get_gemini_service()
         for idx, parte in enumerate(partes):
+            curr_task = asyncio.current_task()
+            if curr_task and curr_task.cancelling() > 0:
+                logger.info(f"Interrupção (Barramento) detectada em enviar_mensagem_audio para Atendimento {ctx.deps.atendimento_id}. Abortando envio.")
+                raise asyncio.CancelledError()
+
             import random
-            import asyncio
             chars_per_sec = random.uniform(0.08, 0.15)
             recording_delay = min(max(len(parte) * chars_per_sec, 2.0), 12.0)
             
             logger.info(f"IA simulando gravação de áudio por {recording_delay:.1f}s antes de enviar...")
             await asyncio.sleep(recording_delay)
+
+            if curr_task and curr_task.cancelling() > 0:
+                logger.info(f"Interrupção (Barramento) detectada durante gravação de áudio para Atendimento {ctx.deps.atendimento_id}. Abortando envio.")
+                raise asyncio.CancelledError()
 
             try:
                 # 1. Gera áudio via Gemini TTS em transação isolada
@@ -873,12 +988,14 @@ async def enviar_mensagem_audio(ctx: RunContext[ContextoSaaS], texto: str) -> st
                             db_write.add(at)
                             
                             ctx.deps.atendimento.conversa = at.conversa
-                            
+
+            except asyncio.CancelledError:
+                raise
             except Exception as e:
                 logger.error(f"Erro ao enviar parte do áudio na tool (parte {idx}): {e}", exc_info=True)
                 return f"Erro ao enviar o áudio: {str(e)}"
         
-        return "Áudios gerados, enviados e salvos com sucesso."
+        return "Áudios enviados e salvos com sucesso."
 
 
 @agente_atendimento.tool
@@ -898,7 +1015,6 @@ async def enviar_arquivo_do_drive(
         return "Erro: O serviço de mensagens ou dados da empresa não está disponível neste contexto."
 
     from app.services.google_drive_service import get_drive_service
-    import asyncio
     
     from app.core.config import settings
     if not settings.GOOGLE_SERVICE_ACCOUNT_JSON:
@@ -963,6 +1079,48 @@ async def enviar_arquivo_do_drive(
             from datetime import datetime
             import json
             
+            display_path = filename
+            if kv_record:
+                if kv_record.raw_data:
+                    sub_p = kv_record.raw_data.get("subpastas") or ""
+                    full_p = kv_record.raw_data.get("caminho_completo") or ""
+                    if sub_p:
+                        display_path = f"{sub_p} > {filename}"
+                    elif full_p:
+                        display_path = full_p
+                elif kv_record.content and "Arquivo: " in kv_record.content:
+                    # Fallback extraindo da string de conteúdo "Arquivo: Pasta > Subpasta > Nome.jpeg"
+                    try:
+                        part_file = kv_record.content.split("Arquivo: ")[1].split(" | ")[0].strip()
+                        parts_path = [p.strip() for p in part_file.split(" > ") if p.strip()]
+                        if len(parts_path) > 1:
+                            display_path = " > ".join(parts_path[1:])
+                    except Exception: pass
+
+            # Se a mídia enviada for imagem, realiza transcrição visual automática via Gemini Vision
+            transcricao_imagem = ""
+            if media_type == "image" or (mimetype and "image" in mimetype):
+                try:
+                    from app.services.gemini_service import get_gemini_service
+                    gemini_svc = get_gemini_service()
+                    async with SessionLocal() as db_vision:
+                        transcricao_imagem = await gemini_svc.transcribe_and_analyze_media(
+                            media_data={"data": file_bytes, "mime_type": mimetype or "image/jpeg"},
+                            db_history=[],
+                            persona=None,
+                            db=db_vision,
+                            company=ctx.deps.empresa,
+                            atendimento_id=ctx.deps.atendimento_id
+                        )
+                    if transcricao_imagem:
+                        logger.info(f"[Vision IA] Imagem enviada pela IA transcrita com sucesso: {transcricao_imagem[:100]}...")
+                except Exception as vision_err:
+                    logger.warning(f"Erro ao transcrever imagem enviada pela IA: {vision_err}")
+
+            msg_content = f"[Arquivo Enviado: {display_path}]"
+            if transcricao_imagem and not transcricao_imagem.startswith("[Erro"):
+                msg_content += f"\n\n[Transcrição da Imagem Enviada pela IA]:\n{transcricao_imagem.strip()}"
+
             async with SessionLocal() as db_write:
                 async with db_write.begin():
                     at = await db_write.get(models.Atendimento, ctx.deps.atendimento_id, with_for_update=True)
@@ -971,7 +1129,7 @@ async def enviar_arquivo_do_drive(
                         nova_msg = {
                             "id": sent_info.get("id") or f"media_{int(datetime.now().timestamp())}",
                             "role": "assistant",
-                            "content": f"[Arquivo Enviado: {filename}]",
+                            "content": msg_content,
                             "timestamp": int(datetime.now().timestamp()),
                             "type": media_type,
                             "media_id": sent_info.get("media_id") or id_arquivo,
@@ -985,7 +1143,7 @@ async def enviar_arquivo_do_drive(
                         
                         ctx.deps.atendimento.conversa = at.conversa
             
-            return f"Arquivo '{filename}' enviado com sucesso para o cliente."
+            return f"Arquivo '{display_path}' enviado com sucesso para o cliente."
     except Exception as e:
         logger.error(f"Erro ao enviar arquivo do Drive via tool: {e}", exc_info=True)
         return f"Erro ao enviar o arquivo do Drive: {str(e)}"
@@ -1058,6 +1216,7 @@ async def atualizar_nome_contato(ctx: RunContext[ContextoSaaS], novo_nome: str) 
                 at.nome_contato = novo_nome
                 db_write.add(at)
                 ctx.deps.atendimento.nome_contato = novo_nome
+                ctx.deps.nome_cliente = novo_nome
                 
     return f"Nome atualizado no CRM para '{novo_nome}'."
 

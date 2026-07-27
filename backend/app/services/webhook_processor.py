@@ -239,6 +239,10 @@ async def _process_single_message(message_data: Dict[str, Any], company: models.
                             if deve_mudar_status: atend.status = "Mensagem Recebida"
                             atend.updated_at = datetime.now(timezone.utc)
                             logger.info(f"WBP Webhook: Msg {msg_id_wamid} salva.")
+                            
+                            # BARRAMENTO: Cancela a resposta da IA que estava sendo gerada para reiniciar com a mensagem atualizada
+                            from app.services.agent_processor import cancel_active_atendimento_task
+                            cancel_active_atendimento_task(atendimento_id)
 
 
 
@@ -264,30 +268,22 @@ async def process_official_message_task(value_payload: dict): # Recebe 'value'
             return
 
         company: Optional[models.Company] = None
+        company_emails = []
         async with SessionLocal() as db_read:
             result = await db_read.execute(
                 select(models.Company)
                 .where(models.Company.wbp_phone_number_id == phone_number_id)
                 .options(joinedload(models.Company.users))
             )
-            company = result.scalars().first()
+            company = result.unique().scalars().first()
+            if company and company.users:
+                company_emails = [u.email for u in company.users]
 
         if not company:
             logger.warning(f"WBP Webhook (Worker): Empresa não encontrada para wbp_phone_number_id {phone_number_id}")
             return
             
-        # Em ambiente de desenvolvimento, só processa webhooks se a empresa pertencer ao cjstestes@gmail.com
-        if settings.ENVIRONMENT == "development":
-            company_emails = [u.email for u in company.users]
-            if "cjstestes@gmail.com" not in company_emails:
-                logger.info(f"WBP Webhook (Worker) [DEV]: Ignorando webhook da empresa '{company.name}' (ID: {company.id}). Permitido apenas para cjstestes@gmail.com.")
-                return
-
-        user = company.users[0] if company.users else None
-        if not user:
-            logger.warning(f"WBP Webhook (Worker): Nenhum usuário encontrado para a empresa {company.name} (ID: {company.id})")
-            return
-        user_id_log = user.id
+        user_id_log = company.users[0].id if company.users else None
 
         for message_data in messages:
             # Chama a função isolada para cada mensagem.
@@ -319,30 +315,22 @@ async def process_official_status_task(value_payload: dict):
 
         # --- SESSÃO 1: Obter Empresa ---
         company: Optional[models.Company] = None
+        company_emails = []
         async with SessionLocal() as db_read:
             result = await db_read.execute(
                 select(models.Company)
                 .where(models.Company.wbp_phone_number_id == phone_number_id)
                 .options(joinedload(models.Company.users))
             )
-            company = result.scalars().first()
+            company = result.unique().scalars().first()
+            if company and company.users:
+                company_emails = [u.email for u in company.users]
 
         if not company:
             logger.warning(f"WBP Webhook (Status): Empresa não encontrada para wbp_phone_number_id {phone_number_id}")
             return
             
-        # Em ambiente de desenvolvimento, só processa webhooks se a empresa pertencer ao cjstestes@gmail.com
-        if settings.ENVIRONMENT == "development":
-            company_emails = [u.email for u in company.users]
-            if "cjstestes@gmail.com" not in company_emails:
-                logger.info(f"WBP Webhook (Status) [DEV]: Ignorando status da empresa '{company.name}' (ID: {company.id}). Permitido apenas para cjstestes@gmail.com.")
-                return
-
-        user = company.users[0] if company.users else None
-        if not user:
-            logger.warning(f"WBP Webhook (Status): Nenhum usuário encontrado para a empresa {company.name} (ID: {company.id})")
-            return
-        user_id_log = user.id
+        user_id_log = company.users[0].id if company.users else None
 
         # --- Processa cada status no payload ---
         for status_data in status_data_list:

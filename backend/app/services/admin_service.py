@@ -228,6 +228,9 @@ class AdminService:
         db_company = await db.get(models.Company, company_id)
         if not db_company:
             raise LookupError("Company not found")
+        db_company.default_persona_id = None
+        db_company.default_persona = None
+        await db.flush()
         await db.delete(db_company)
         await db.commit()
 

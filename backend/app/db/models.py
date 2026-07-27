@@ -30,7 +30,7 @@ class Company(Base):
     users: Mapped[List["User"]] = relationship(back_populates="company", cascade="all, delete-orphan")
     configs: Mapped[List["Config"]] = relationship(back_populates="company", foreign_keys="[Config.company_id]", cascade="all, delete-orphan")
     atendimentos: Mapped[List["Atendimento"]] = relationship(back_populates="company", cascade="all, delete-orphan")
-    default_persona: Mapped[Optional["Config"]] = relationship(foreign_keys=[default_persona_id])
+    default_persona: Mapped[Optional["Config"]] = relationship(foreign_keys=[default_persona_id], post_update=True)
 
 class User(Base):
     __tablename__ = "users"
@@ -74,6 +74,7 @@ class Config(Base):
     thinking_budget: Mapped[Optional[int]] = mapped_column(Integer, default=1024, server_default="1024", nullable=True)
     thinking_level: Mapped[Optional[str]] = mapped_column(String(50), default="medium", server_default="medium", nullable=True)
     tts_voice: Mapped[Optional[str]] = mapped_column(String(50), default="Aoede", server_default="Aoede", nullable=True)
+    allow_send_values: Mapped[bool] = mapped_column(default=True, server_default="true", nullable=False, comment="Permitir ou não a IA calcular ou passar valores monetários ao cliente")
 
     # Formulário de Persona
     persona_form: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Dados estruturados do formulário de persona (Aba Persona)")
