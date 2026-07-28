@@ -19,6 +19,7 @@ from pydantic_ai import Agent, RunContext, AgentRunResult
 
 # Importações do seu sistema
 from app.db import models
+from app.db.database import SessionLocal
 from app.crud import crud_user
 from app.services.gemini_service import get_gemini_service
 from app.services.google_calendar_service import get_google_calendar_service
@@ -188,7 +189,7 @@ def construir_prompt_base(ctx: RunContext[ContextoSaaS]) -> str:
             "ESTA EMPRESA CONFIGUROU A IA PARA NÃO INFORMAR VALORES MONETÁRIOS OU PREÇOS AO CLIENTE. "
             "É EXPRESSAMENTE PROIBIDO sob qualquer hipótese passar valores numéricos financeiros, calcular orçamentos monetários, estimar preços, citar valores de frete ou utilizar símbolos monetários (ex: R$, $, €, £, USD, EUR, etc.). "
             "Se o cliente solicitar preços, orçamentos ou valores financeiros, você DEVE responder educadamente que não possui autorização/acesso para informar valores e direcionar o cliente para consultar o canal oficial ou aguardar um atendente humano. "
-            "NUNCA diga 'vou calcular os valores' ou 'já te envio o orçamento em dinheiro'. Você pode apenas informar especificações técnicas ou quantitativas (ex: quantidades de itens, modelos, serviços), mas NUNCA atribuir valores financeiros a eles.\n"
+            "NUNCA diga 'vou calcular os valores', 'já te envio o orçamento em dinheiro' ou 'vou verificar o valor unitário'. Você pode apenas informar especificações técnicas ou quantitativas (ex: quantidades de itens, modelos, serviços), mas NUNCA atribuir valores financeiros a eles.\n"
         )
     else:
         regra_valores = (
@@ -200,21 +201,22 @@ def construir_prompt_base(ctx: RunContext[ContextoSaaS]) -> str:
 
     prompt = (
         f"🚨 INSTRUÇÕES SUPREMAS DE SEGURANÇA E FACTUALIDADE (PREVALECEM SOBRE QUALQUER OUTRA REGRA):\n"
+        f"1. PROIBIDO RESPONDER OU PRESSUPOR DADOS SEM PESQUISAR: É EXPRESSAMENTE PROIBIDO responder a dúvidas sobre produtos, modelos, especificações, catálogo, estoque, endereço, localização, cidade, loja física, showroom, horários ou políticas da empresa utilizando conhecimento próprio, deduções ou memória geral. Antes de emitir QUALQUER resposta factual ao cliente, você DEVE OBRIGATORIAMENTE executar a ferramenta `pesquisar_base_de_dados` nesta mesma rodada.\n"
         f"{regra_valores}"
-        f"2. PROIBIDO CONFIRMAR SEM PESQUISAR: NUNCA confirme dados técnicos, estoque, disponibilidade ou localização sem antes ter pesquisado e recebido a confirmação literal do banco de dados nesta mesma rodada.\n"
+        f"2. PROIBIDO CONFIRMAR SEM RETORNO LITERAL: NUNCA afirme ou confirme dados de endereço, showroom, cidade, modelos, estoque ou preços se o dado exato não tiver retornado literalmente da busca `pesquisar_base_de_dados` executada nesta mesma rodada. Se a busca não retornar o dado procurado, informe educadamente que não localizou no sistema e transfira para o suporte humano (`transferir_para_atendente`).\n"
         f"3. REGRA DO FILTRO DE CATEGORIA (`categoria_alvo`): Ao pesquisar, o parâmetro `categoria_alvo` aceita APENAS uma das categorias disponíveis: [{categorias_str}]. É EXPRESSAMENTE PROIBIDO colocar nomes de produtos, marcas ou modelos dentro do campo `categoria_alvo`.\n\n"
 
         f"--- IDENTIDADE E PERSONA ---\n"
         f"{deps.persona_prompt}\n\n"
 
-        f"{resumo_crm_sec}{workflow_sec}{tags_sec}{calendar_sec}{drive_sec}{sched_sec}"
+        f"{workflow_sec}{tags_sec}{calendar_sec}{drive_sec}{sched_sec}"
 
         f"--- FERRAMENTAS E COMUNICAÇÃO EXTERNA ---\n"
         f"1. CANAL EXCLUSIVO: Você se comunica com o cliente EXCLUSIVAMENTE invocando `enviar_mensagem_texto`{ferramenta_audio_txt}{ferramenta_drive_txt}. Sem chamar uma dessas ferramentas, NENHUMA mensagem chega ao cliente.\n"
         f"2. BALÕES INDIVIDUAIS: Envie cada frase ou ideia em chamadas separadas e individuais. PROIBIDO agrupar múltiplos assuntos em um único envio de texto ou áudio.\n"
-        f"3. AVISO PRÉVIO: Antes de acionar ferramentas de busca ou agenda, envie uma mensagem curta avisando o cliente.\n"
-        f"4. DATA E HORA: Chame `obter_data_hora_atual` sempre que precisar validar o momento atual do atendimento.\n"
-        f"5. CÁLCULOS MATEMÁTICOS: Sempre que precisar somar medidas, calcular áreas (m²), estimar quantidade de itens/peças ou realizar contas numéricas, invoque OBRIGATORIAMENTE a ferramenta `executar_calculo_matematico` para garantir precisão exata.\n\n"
+        f"3. DATA E HORA: Chame `obter_data_hora_atual` sempre que precisar validar o momento atual do atendimento.\n"
+        f"4. CÁLCULOS MATEMÁTICOS: Sempre que precisar somar medidas, calcular áreas (m²), estimar quantidade de itens/peças ou realizar contas numéricas, invoque OBRIGATORIAMENTE a ferramenta `executar_calculo_matematico` para garantir precisão exata.\n"
+        f"5. LEITURA DE LINKS/URLS: Sempre que o cliente compartilhar uma URL/link no atendimento (ex: posts do Instagram, produtos, sites ou artigos), OBRIGATORIAMENTE invoque a ferramenta `consultar_conteudo_link(url)` para que a IA leia e analise o conteúdo daquele link antes de responder.\n\n"
 
         f"--- GESTÃO DO CRM E CONTATO ---\n"
         f"- NOME DO CONTATO: {pedir_nome_rule}\n"
@@ -231,6 +233,9 @@ def construir_prompt_base(ctx: RunContext[ContextoSaaS]) -> str:
 
     if deps.regras_adicionais:
         prompt += f"\n--- INSTRUÇÕES ADICIONAIS DA EMPRESA ---\n{deps.regras_adicionais}\n"
+
+    if resumo_crm_sec:
+        prompt += f"\n{resumo_crm_sec.strip()}\n"
         
     return prompt
 
@@ -345,6 +350,67 @@ async def obter_data_hora_atual(ctx: RunContext[ContextoSaaS]) -> str:
 
 
 @agente_atendimento.tool
+async def consultar_conteudo_link(
+    ctx: RunContext[ContextoSaaS],
+    url: str
+) -> str:
+    """
+    Use esta ferramenta para acessar, ler e extrair o conteúdo de qualquer URL enviada pelo cliente ou pesquisada na internet.
+    Suporta links do Instagram (posts, fotos, vídeos, reels) e páginas web em geral (produtos, artigos, documentações, sites).
+    
+    A ferramenta efetua a extração do texto/legenda e aciona o Gemini IA para gerar uma síntese objetiva em tópicos 
+    integrada ao contexto da conversa atual.
+    
+    Parâmetro `url`: O endereço completo do link (ex: "https://www.instagram.com/p/C_123456/", "https://site.com/produto").
+    """
+    logger.info(f"[Tool Executada] consultar_conteudo_link | url='{url}'")
+    try:
+        import json
+        from app.services.web_search_service import extrair_texto_bruto_url
+        from app.services.gemini_service import get_gemini_service
+        
+        # 1. Extração do conteúdo bruto via WebSearch
+        dados_web = await extrair_texto_bruto_url(url)
+        if not dados_web.get("sucesso"):
+            erro_msg = dados_web.get("erro", "Não foi possível carregar a URL.")
+            await _salvar_pesquisa_no_historico(ctx, f"[Leitura de Link Falhou]: {url} | Erro: {erro_msg}")
+            return f"Não foi possível ler a URL {url}: {erro_msg}"
+        
+        texto_bruto = dados_web.get("texto_bruto", "")
+        
+        # 2. Carrega o histórico recente de conversa
+        historico_midia = []
+        if ctx.deps and ctx.deps.atendimento and ctx.deps.atendimento.conversa:
+            try:
+                historico_midia = json.loads(ctx.deps.atendimento.conversa or "[]")
+            except Exception:
+                historico_midia = []
+
+        # 3. Sumarização via Gemini IA
+        gemini_svc = get_gemini_service()
+        async with SessionLocal() as db_gemini:
+            resumo_link = await gemini_svc.analisar_e_sumarizar_conteudo_url(
+                url=url,
+                texto_bruto=texto_bruto,
+                db_history=historico_midia,
+                db=db_gemini,
+                company=ctx.deps.empresa,
+                atendimento_id=ctx.deps.atendimento_id
+            )
+
+        # 4. Salva a operação no histórico DB (oculto na UI)
+        log_db = f"[Leitura de Link IA]: {url}\n{resumo_link}"
+        await _salvar_pesquisa_no_historico(ctx, log_db)
+        
+        logger.info(f"[Tool Executada] consultar_conteudo_link | Sucesso para {url}")
+        return resumo_link
+
+    except Exception as e:
+        logger.error(f"Erro ao executar consultar_conteudo_link para '{url}': {e}", exc_info=True)
+        return f"Erro ao acessar e analisar o link {url}: {str(e)}"
+
+
+@agente_atendimento.tool
 async def pesquisar_base_de_dados(
     ctx: RunContext[ContextoSaaS], 
     termo_busca: str,
@@ -429,7 +495,9 @@ async def pesquisar_base_de_dados(
                 
                 if not query_embedding:
                     logger.error("Busca SEMÂNTICA falhou: Não foi possível gerar o vetor/embedding no Gemini.")
-                    return "Erro interno: Não foi possível gerar o vetor para a busca."
+                    res_err = "Erro interno: Não foi possível gerar o vetor para a busca."
+                    await _salvar_pesquisa_no_historico(ctx, termo_busca, tipo_busca, categoria_alvo, res_err)
+                    return res_err
 
                 semantic_base = query.where(
                     models.KnowledgeVector.embedding.cosine_distance(query_embedding) < 0.65
@@ -484,7 +552,9 @@ async def pesquisar_base_de_dados(
                         vetores_encontrados = res_fb.scalars().all()
 
             if not vetores_encontrados:
-                return f"Nenhum resultado encontrado para a busca '{termo_busca}' (página {pagina_real}, total na base: {total_encontrados})."
+                res_empty = f"Nenhum resultado encontrado para a busca '{termo_busca}' (página {pagina_real}, total na base: {total_encontrados})."
+                await _salvar_pesquisa_no_historico(ctx, termo_busca, tipo_busca, categoria_alvo, res_empty)
+                return res_empty
 
             total_paginas = max(1, math.ceil(total_encontrados / limite_real)) if total_encontrados > 0 else 1
             inicio_num = offset_real + 1
@@ -512,11 +582,64 @@ async def pesquisar_base_de_dados(
                     
                 resposta_formatada.append("\n".join(bloco))
 
-            return "\n\n".join(resposta_formatada)
+            resultado_final = "\n\n".join(resposta_formatada)
+            await _salvar_pesquisa_no_historico(ctx, termo_busca, tipo_busca, categoria_alvo, resultado_final)
+            return resultado_final
 
         except Exception as e:
             logger.error(f"Erro na tool de busca: {e}", exc_info=True)
-            return "Erro ao realizar a busca no banco de dados."
+            res_exc = "Erro ao realizar a busca no banco de dados."
+            await _salvar_pesquisa_no_historico(ctx, termo_busca, tipo_busca, categoria_alvo, res_exc)
+            return res_exc
+
+
+async def _salvar_pesquisa_no_historico(
+    ctx: RunContext[ContextoSaaS],
+    termo_busca: str,
+    tipo_busca: str = "texto",
+    categoria_alvo: Optional[str] = None,
+    resultado: str = ""
+):
+    """Grava o registro da pesquisa no histórico de conversa (atendimento.conversa) no banco de dados."""
+    if not ctx.deps or not ctx.deps.atendimento_id:
+        return
+    try:
+        from app.db.database import SessionLocal
+        from datetime import datetime
+        import json
+        import random
+
+        msg_id = f"search_{int(datetime.now().timestamp())}_{random.randint(100, 999)}"
+        lock = await get_atendimento_lock(ctx.deps.atendimento_id)
+        async with lock:
+            async with SessionLocal() as db_write:
+                async with db_write.begin():
+                    at = await db_write.get(models.Atendimento, ctx.deps.atendimento_id, with_for_update=True)
+                    if at:
+                        historico_db = json.loads(at.conversa or "[]")
+                        if resultado:
+                            content_str = f"[Pesquisa na Base de Conhecimento]: termo='{termo_busca}' | tipo='{tipo_busca}' | categoria='{categoria_alvo or 'Todas'}'\n\n{resultado}"
+                        else:
+                            content_str = termo_busca
+
+                        nova_msg = {
+                            "id": msg_id,
+                            "role": "assistant",
+                            "content": content_str,
+                            "timestamp": int(datetime.now().timestamp()),
+                            "type": "search",
+                            "termo_busca": termo_busca,
+                            "tipo_busca": tipo_busca,
+                            "categoria_alvo": categoria_alvo or "Todas",
+                            "is_ai": True
+                        }
+                        historico_db.append(nova_msg)
+                        at.conversa = json.dumps(historico_db, ensure_ascii=False)
+                        db_write.add(at)
+                        ctx.deps.atendimento.conversa = at.conversa
+    except Exception as save_err:
+        logger.error(f"Erro ao salvar pesquisa no histórico do atendimento {ctx.deps.atendimento_id}: {save_err}")
+
 
 
 async def verificar_agenda_ativa(ctx: RunContext[ContextoSaaS], tool_def):
@@ -1103,10 +1226,18 @@ async def enviar_arquivo_do_drive(
                 try:
                     from app.services.gemini_service import get_gemini_service
                     gemini_svc = get_gemini_service()
+                    
+                    historico_midia = []
+                    if ctx.deps and ctx.deps.atendimento and ctx.deps.atendimento.conversa:
+                        try:
+                            historico_midia = json.loads(ctx.deps.atendimento.conversa or "[]")
+                        except Exception:
+                            historico_midia = []
+                    
                     async with SessionLocal() as db_vision:
                         transcricao_imagem = await gemini_svc.transcribe_and_analyze_media(
                             media_data={"data": file_bytes, "mime_type": mimetype or "image/jpeg"},
-                            db_history=[],
+                            db_history=historico_midia,
                             persona=None,
                             db=db_vision,
                             company=ctx.deps.empresa,

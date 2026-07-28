@@ -37,7 +37,35 @@ def cancel_active_atendimento_task(atendimento_id: int) -> bool:
         logger.info(f"[BARRAMENTO AMBIENTE] Interrompendo task de IA ativa para Atendimento ID {atendimento_id} devido a nova mensagem recebida.")
         task.cancel()
         return True
-    return False
+def selecionar_ultimas_mensagens_historico(historico_previo: List[Dict[str, Any]], max_dialogo: int = 10) -> List[Dict[str, Any]]:
+    """
+    Seleciona as mensagens do histórico anterior garantindo que até `max_dialogo`
+    mensagens reais de diálogo (mensagens do usuário ou respostas principais da IA) 
+    sejam mantidas, junto com suas respectivas pesquisas associadas.
+    """
+    if not historico_previo:
+        return []
+
+    dialogo_count = 0
+    cut_index = 0
+
+    # Percorre de trás para frente contando mensagens de diálogo reais
+    for i in range(len(historico_previo) - 1, -1, -1):
+        msg = historico_previo[i]
+        role = msg.get("role") or "user"
+        msg_type = msg.get("type") or "text"
+
+        # Mensagens de diálogo são mensagens do usuário ou mensagens de resposta da IA (excluindo registros de busca interna)
+        is_dialogue = (role in ["user", "client"]) or (role == "assistant" and msg_type != "search")
+
+        if is_dialogue:
+            dialogo_count += 1
+
+        if dialogo_count > max_dialogo:
+            cut_index = i + 1
+            break
+
+    return historico_previo[cut_index:]
 
 
 def converter_historico_para_pydantic(historico_db: List[Dict[str, Any]]) -> List[Any]:
@@ -351,13 +379,15 @@ async def _process_single_atendimento_inner(atendimento_id: int, company: models
                 ultima_mensagem = "Olá"
                 historico_previo = conversation_history
                 
-            # Otimização de Tokens: Limita o histórico bruto às últimas 10 mensagens e injeta a síntese CRM
+            # Otimização de Tokens: Limita o histórico prévio às últimas 10 mensagens de diálogo reais (mantendo buscas associadas) e injeta a síntese CRM se houver histórico mais antigo
             resumo_crm_extra = None
-            MAX_HISTORICO = 10
-            if len(historico_previo) > MAX_HISTORICO:
+            MAX_DIALOGO = 10
+            historico_filtrado = selecionar_ultimas_mensagens_historico(historico_previo, max_dialogo=MAX_DIALOGO)
+            
+            if len(historico_filtrado) < len(historico_previo):
                 resumo_crm_extra = (atendimento_context.resumo or "").strip() or None
-                historico_previo = historico_previo[-MAX_HISTORICO:]
-                logger.info(f"[Passo 3/5 - IA] Histórico prévio truncado para as últimas {MAX_HISTORICO} mensagens. Síntese CRM injetada no prompt.")
+                historico_previo = historico_filtrado
+                logger.info(f"[Passo 3/5 - IA] Histórico prévio truncado para as últimas {MAX_DIALOGO} mensagens de diálogo ({len(historico_previo)} registros brutos). Síntese CRM injetada no prompt.")
 
             contexto.resumo_crm_context = resumo_crm_extra
             memoria_ia = converter_historico_para_pydantic(historico_previo)

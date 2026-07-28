@@ -96,6 +96,10 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
             className="flex-1 p-4 md:p-6 overflow-y-auto space-y-6 custom-scrollbar bg-slate-50/20"
         >
             {messages.map((msg, index) => {
+                if (msg.type === 'search') {
+                    return null;
+                }
+
                 if (msg.role === 'system' || msg.type === 'followup_skipped') {
                     return (
                         <div key={msg.id} className="flex justify-center my-3 animate-fade-in">

@@ -345,17 +345,18 @@ class GeminiService:
         # Lógica para Imagem/Documento (Análise Visual)
         else:
             system_instruction = (
-                "Você é um especialista em análise visual e interpretação de conteúdo em um atendimento comercial.\n\n"
-                "## INSTRUÇÃO DE ANÁLISE OBJETIVA\n"
-                "Analise a mídia fornecida e forneça um resumo extremamente conciso, direto e objetivo em no máximo 3 a 5 tópicos curtos. Foque EXCLUSIVAMENTE em:\n"
-                "1. *Ambiente/Espaço ou Produto:* Identifique o objeto, parede ou item principal da imagem.\n"
-                "2. *Dados/Medidas Visíveis:* Extraia apenas textos, números, marcas, tabelas ou medidas visíveis de forma direta (se houver).\n"
-                "3. *Intenção/Dúvida do Usuário:* Infira a intenção direta do cliente ao enviar a mídia com base no histórico recente.\n\n"
-                "PROIBIDO descrever detalhes estéticos secundários irrelevantes (plantas, quadros, decorações, livros ou objetos de fundo). Forneça apenas os tópicos objetivos, sem saudações ou diálogos."
+                "Você é um especialista em análise visual e interpretação de conteúdo multimodal para atendimentos de suporte e vendas.\n\n"
+                "## INSTRUÇÃO DE ANÁLISE OBJETIVA E GENÉRICA\n"
+                "Analise a mídia fornecida (imagem, documento ou foto) em conjunto com o histórico recente da conversa.\n"
+                "Forneça um resumo extremamente direto, factual e objetivo em no máximo 3 a 5 tópicos curtos. Foque EXCLUSIVAMENTE em:\n"
+                "1. *Elemento/Item Principal:* Identifique o produto, documento, objeto, local, comprovante ou item central demonstrado na mídia.\n"
+                "2. *Dados e Informações Visíveis:* Extraia apenas textos, números, especificações, códigos, marcas, tabelas ou medidas visíveis de forma direta e literal (se houver).\n"
+                "3. *Contexto do Atendimento:* Relacione a mídia apresentada ao histórico recente da conversa e à necessidade do cliente.\n\n"
+                "PROIBIDO descrever detalhes estéticos secundários irrelevantes de fundo. Mantenha a descrição genérica, concisa e aplicável a qualquer segmento de empresa, sem fazer suposições não fundamentadas."
             )
             
             history_str = self._format_history_optimized(db_history, include_timestamps=True)
-            prompt_text = f"## HISTÓRICO RECENTE\n{history_str}\n\n## TAREFA\nAnalise a mídia enviada."
+            prompt_text = f"## HISTÓRICO RECENTE DA CONVERSA\n{history_str}\n\n## TAREFA DE ANÁLISE\nAnalise a mídia enviada em contexto com o histórico acima."
             
             # Ordem: Prompt de texto primeiro, Mídia depois (ou vice-versa, Gemini entende ambos)
             prompt_contents = [prompt_text, media_part]
@@ -378,6 +379,53 @@ class GeminiService:
         except Exception as e:
             logger.error(f"Erro ao transcrever/analisar mídia com Gemini: {e}", exc_info=True)
             return f"[Erro ao processar mídia: {mime_type}]"
+
+    async def analisar_e_sumarizar_conteudo_url(
+        self,
+        url: str,
+        texto_bruto: str,
+        db_history: Optional[List[Dict[str, Any]]] = None,
+        db: Optional[AsyncSession] = None,
+        company: Optional[models.Company] = None,
+        atendimento_id: Optional[int] = None
+    ) -> str:
+        """
+        Analisa e sumariza o conteúdo bruto extraído de uma URL (Instagram ou Web Page)
+        utilizando o Gemini, integrando o histórico recente de conversa.
+        """
+        try:
+            system_instruction = (
+                "Você é um especialista em análise e síntese de conteúdo web e redes sociais para atendimentos comerciais.\n\n"
+                "## INSTRUÇÃO DE SÍNTESE OBJETIVA E GENÉRICA\n"
+                "Analise o texto e os metadados extraídos da URL em conjunto com o histórico recente da conversa.\n"
+                "Forneça um resumo extremamente direto, factual e objetivo em no máximo 3 a 5 tópicos curtos. Foque EXCLUSIVAMENTE em:\n"
+                "1. *Conteúdo/Item Principal:* Identifique o produto, publicação do Instagram, serviço, assunto ou documento abordado no link.\n"
+                "2. *Informações e Especificações Visíveis:* Extraia apenas textos, números, valores, modelos ou detalhes específicos contidos na página/legenda (se houver).\n"
+                "3. *Contexto do Atendimento:* Relacione o conteúdo do link ao histórico recente da conversa e à necessidade demonstrada pelo cliente.\n\n"
+                "Mantenha a descrição concisa, factual e aplicável a qualquer segmento de empresa, sem fazer suposições não fundamentadas."
+            )
+
+            history_str = self._format_history_optimized(db_history or [], include_timestamps=True)
+            prompt_text = (
+                f"## HISTÓRICO RECENTE DA CONVERSA\n{history_str}\n\n"
+                f"## CONTEÚDO EXTRAÍDO DA URL ({url})\n{texto_bruto}\n\n"
+                f"## TAREFA DE ANÁLISE\nAnalise o conteúdo da URL acima e forneça a síntese em 3 a 5 tópicos."
+            )
+
+            response = await self._generate_with_retry(
+                prompt=prompt_text,
+                db=db,
+                company=company,
+                system_instruction=system_instruction,
+                atendimento_id=atendimento_id
+            )
+
+            resumo = (response.text or "").strip()
+            return resumo if resumo else f"[Conteúdo lido do link {url}]"
+
+        except Exception as e:
+            logger.error(f"Erro ao analisar e sumarizar URL {url} com Gemini: {e}", exc_info=True)
+            return f"[Erro ao analisar link {url}: {str(e)}]"
 
     async def generate_tts(
         self, 
