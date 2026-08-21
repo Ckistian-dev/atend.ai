@@ -54,8 +54,11 @@ const AudioPlayer = ({ atendimentoId, mediaId, transcription, isAssistant }) => 
         };
     }, [loadState]); // A dependência garante que não vamos re-observar desnecessariamente
 
-    // --- ALTERADO: A função agora não precisa de 'autoPlay' e gerencia estados de erro ---
     const loadAudio = async () => {
+        if (!mediaId || mediaId === 'null' || mediaId === 'undefined' || !atendimentoId) {
+            setLoadState('error');
+            return;
+        }
         // Previne múltiplos carregamentos
         if (loadState !== 'idle') return;
 
@@ -79,7 +82,7 @@ const AudioPlayer = ({ atendimentoId, mediaId, transcription, isAssistant }) => 
         // --- ALTERADO: Adicionada a ref ao container principal e min-width para evitar colapso ---
         <div
             ref={playerRef}
-            className="space-y-2 p-1 rounded-xl transition-all duration-300 min-w-[200px] w-full max-w-[260px] md:max-w-[300px] bg-white/50 backdrop-blur-sm shadow-sm"
+            className="transition-all duration-300 min-w-[300px] w-full max-w-[300px] md:max-w-[600px]"
         >
             <div className="w-full h-11 flex items-center">
                 {loadState === 'loading' || loadState === 'idle' ? (
@@ -88,7 +91,7 @@ const AudioPlayer = ({ atendimentoId, mediaId, transcription, isAssistant }) => 
                         <span className="text-[11px] font-black uppercase tracking-widest">Carregando...</span>
                     </div>
                 ) : loadState === 'error' ? (
-                    <div className="flex items-center justify-center w-full h-11 rounded-xl border border-red-100 bg-red-50 text-red-500 text-[11px] font-black uppercase tracking-widest">
+                    <div className="flex items-center justify-center w-full h-11 rounded-xl bg-red-50 text-red-500 text-[11px] font-black uppercase tracking-widest">
                         Falha no carregamento
                     </div>
                 ) : (
@@ -101,7 +104,7 @@ const AudioPlayer = ({ atendimentoId, mediaId, transcription, isAssistant }) => 
             </div>
 
             {transcription && (
-                <div className={`pt-2 border-t ${isAssistant ? 'border-white/10' : 'border-slate-200/60'}`}>
+                <div className={`pt-2`}>
                     <p className={`text-[13px] leading-relaxed font-medium italic break-words ${isAssistant ? 'text-white/90' : 'text-slate-600'}`}>
                         "{transcription}"
                     </p>

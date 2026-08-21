@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MoreVertical, Tag, CheckCircle2, MailWarning, Edit, Headset } from 'lucide-react';
+import { MoreVertical, Tag, CheckCircle2, MailWarning, Edit, Headset, Bot } from 'lucide-react';
 import { format } from 'date-fns';
 import TagEditor from './TagEditor';
-import NameEditor from './NameEditor'; // Importa o novo componente
-import { stripWhatsAppFormatting } from '../../utils/formatters';
+import NameEditor from './NameEditor';
+import TransferModal from '../common/TransferModal';
+import api from '../../api/axiosConfig';
+import toast from 'react-hot-toast';
+import { formatLastMessagePreview } from '../../utils/formatters';
 
 // --- Componente: Item de Contato na Lista (MODIFICADO) ---
 const ContactItem = ({
@@ -16,6 +19,7 @@ const ContactItem = ({
     const [isMainMenuOpen, setIsMainMenuOpen] = useState(false);
     // Controla qual submenu/popup está ativo: 'status', 'tags' ou null
     const [activeSubMenu, setActiveSubMenu] = useState(null);
+    const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
 
     // --- REFS PARA FECHAR AO CLICAR FORA ---
     const menuRef = useRef(null); // Ref para todos os menus
@@ -26,7 +30,13 @@ const ContactItem = ({
     useEffect(() => {
         let parsedConversa = [];
         try {
-            parsedConversa = JSON.parse(mensagem.conversa || '[]');
+            if (Array.isArray(mensagem.mensagens) && mensagem.mensagens.length > 0) {
+                parsedConversa = mensagem.mensagens;
+            } else if (typeof mensagem.conversa === 'string') {
+                parsedConversa = JSON.parse(mensagem.conversa || '[]');
+            } else if (Array.isArray(mensagem.conversa)) {
+                parsedConversa = mensagem.conversa;
+            }
         } catch (e) {
             console.error("Erro ao parsear conversa no ContactItem (para unread):", e);
         }
@@ -40,7 +50,7 @@ const ContactItem = ({
         ).length;
         setUnreadCount(count);
 
-    }, [mensagem.conversa]);
+    }, [mensagem.mensagens, mensagem.conversa]);
 
     const hasUnreadMessages = unreadCount > 0;
 
@@ -68,26 +78,18 @@ const ContactItem = ({
     let lastMessageTime = mensagem.updated_at;
 
     try {
-        const conversa = JSON.parse(mensagem.conversa || '[]');
-        if (conversa.length > 0) {
-            const lastMsgObj = conversa[conversa.length - 1];
+        let conv = [];
+        if (Array.isArray(mensagem.mensagens) && mensagem.mensagens.length > 0) {
+            conv = mensagem.mensagens;
+        } else if (typeof mensagem.conversa === 'string') {
+            conv = JSON.parse(mensagem.conversa || '[]');
+        } else if (Array.isArray(mensagem.conversa)) {
+            conv = mensagem.conversa;
+        }
 
-            const msgType = lastMsgObj.type || 'text';
-            if (msgType === 'image') {
-                lastMessage = lastMsgObj.content ? `[Imagem] ${lastMsgObj.content}` : '[Imagem]';
-            } else if (msgType === 'audio') {
-                lastMessage = '[Mensagem de áudio]';
-            } else if (msgType === 'video') {
-                lastMessage = '[Vídeo]';
-            } else if (msgType === 'document') {
-                lastMessage = `[Documento] ${lastMsgObj.filename || 'arquivo'}`;
-            } else {
-                lastMessage = stripWhatsAppFormatting(lastMsgObj.content) || '[Mídia]';
-            }
-
-            if (lastMsgObj.role === 'assistant') {
-                lastMessage = `Você: ${lastMessage}`;
-            }
+        if (conv.length > 0) {
+            const lastMsgObj = conv[conv.length - 1];
+            lastMessage = formatLastMessagePreview(lastMsgObj);
 
             if (lastMsgObj.timestamp) {
                 const ts = lastMsgObj.timestamp;
@@ -95,7 +97,6 @@ const ContactItem = ({
                 const dateObj = (typeof ts === 'number') ? new Date(ts * 1000) : new Date(ts);
                 lastMessageTime = dateObj.toISOString(); // Passa ISO string para a formatTimestamp
             }
-
         }
     } catch (e) {
         console.error("Erro ao parsear conversa no ContactItem:", e);
@@ -254,25 +255,30 @@ const ContactItem = ({
 
             <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center mb-0.5">
-                    <div className="truncate pr-2 flex-1">
+                    <div className="truncate pr-2 flex-1 flex items-center gap-1.5">
                         <h3 className={`text-[13px] font-black executive-title truncate ${isSelected ? 'text-slate-900' : 'text-slate-600'}`}>
                             {mensagem.nome_contato || mensagem.whatsapp}
                         </h3>
+                        {mensagem.assigned_department && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 shrink-0">
+                                {mensagem.assigned_department}
+                            </span>
+                        )}
                     </div>
-                    {/* STATUS PILL (NOW AT TOP) */}
-                    <span
-                        className="flex-shrink-0 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md shadow-sm"
-                        style={statusInfo.colorHex ? {
-                            backgroundColor: isSelected ? 'rgba(0,0,0,0.05)' : `${statusInfo.colorHex}15`,
-                            color: statusInfo.colorHex,
-                            border: isSelected ? `1px solid ${statusInfo.colorHex}30` : 'none'
-                        } : {}}
-                    >
-                        {statusInfo.text}
-                    </span>
+                    {/* TAG DOTS */}
+                    {mensagem.tags && mensagem.tags.length > 0 && (
+                        <div className="flex items-center">
+                            {mensagem.tags.map((tag, idx) => (
+                                <div
+                                    key={idx}
+                                    className={`w-2.5 h-2.5 rounded-full border border-white shadow-sm ${idx > 0 ? '-ml-1.5' : ''}`}
+                                    style={{ backgroundColor: tag.color || '#cbd5e1', zIndex: 10 - idx }}
+                                    title={tag.name}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
-
-
 
                 <div className="flex justify-between items-center">
                     <p className={`text-[11.5px] truncate pr-3 flex-1 transition-colors ${hasUnreadMessages
@@ -283,20 +289,6 @@ const ContactItem = ({
                     </p>
 
                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {/* TAG DOTS */}
-                        {mensagem.tags && mensagem.tags.length > 0 && (
-                            <div className="flex items-center mr-1.5">
-                                {mensagem.tags.map((tag, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={`w-2.5 h-2.5 rounded-full border border-white shadow-sm ${idx > 0 ? '-ml-1.5' : ''}`}
-                                        style={{ backgroundColor: tag.color || '#cbd5e1', zIndex: 10 - idx }}
-                                        title={tag.name}
-                                    />
-                                ))}
-                            </div>
-                        )}
-
                         {/* UNREAD COUNTER */}
                         {hasUnreadMessages && (
                             <span className="flex-shrink-0 flex items-center justify-center h-4 min-w-[1rem] px-1 bg-blue-600 text-white text-[9px] font-black rounded-full shadow-md shadow-blue-100">
@@ -326,44 +318,50 @@ const ContactItem = ({
                 {/* MENU PRINCIPAL (Tonal Style) */}
                 {isMainMenuOpen && (
                     <div className="absolute right-0 top-10 mt-1 w-56 bg-white border border-slate-100 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2),0_0_0_1px_rgba(0,0,0,0.05)] z-[200] overflow-hidden animate-fade-in custom-scrollbar p-2">
-                        <button onClick={handlePuxarAtendimento} className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-2xl flex items-center gap-3 transition-all">
-                            <Headset size={16} className="text-blue-500" /> Puxar Atendimento
-                        </button>
-                        <button onClick={() => { setActiveSubMenu('status'); setIsMainMenuOpen(false); }} className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-2xl flex items-center gap-3 transition-all">
-                            <CheckCircle2 size={16} className="text-green-500" /> Alterar Situação
-                        </button>
+                        {mensagem.status === 'Atendente Chamado' ? (
+                            <>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsMainMenuOpen(false);
+                                        setIsTransferModalOpen(true);
+                                    }}
+                                    className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-amber-50 hover:text-amber-600 rounded-2xl flex items-center gap-3 transition-all"
+                                >
+                                    <Headset size={16} className="text-amber-500" /> Re-transferir
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsMainMenuOpen(false);
+                                        onUpdateStatus(mensagem.id, { status: 'Mensagem Recebida' });
+                                    }}
+                                    className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-2xl flex items-center gap-3 transition-all"
+                                >
+                                    <Bot size={16} className="text-blue-500" /> Devolver para IA
+                                </button>
+                            </>
+                        ) : (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsMainMenuOpen(false);
+                                    setIsTransferModalOpen(true);
+                                }}
+                                className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-amber-50 hover:text-amber-600 rounded-2xl flex items-center gap-3 transition-all"
+                            >
+                                <Headset size={16} className="text-amber-500" /> Transferir Atendimento
+                            </button>
+                        )}
                         <button onClick={() => { setActiveSubMenu('name'); setIsMainMenuOpen(false); }} className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-2xl flex items-center gap-3 transition-all">
                             <Edit size={16} className="text-amber-500" /> Alterar Nome
                         </button>
                         <button onClick={() => { setActiveSubMenu('tags'); setIsMainMenuOpen(false); }} className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-2xl flex items-center gap-3 transition-all">
                             <Tag size={16} className="text-indigo-500" /> Editar Tags
                         </button>
-                        <div className="my-1 border-t border-slate-50"></div>
                         <button onClick={handleMarkAsUnread} className="w-full text-left p-3 text-[12px] font-bold text-red-500 hover:bg-red-50 rounded-2xl flex items-center gap-3 transition-all">
                             <MailWarning size={16} /> Não lido
                         </button>
-                    </div>
-                )}
-
-                {/* SUBMENU DE STATUS (Tonal) */}
-                {activeSubMenu === 'status' && (
-                    <div className="absolute right-0 top-10 mt-1 w-64 bg-white border border-slate-100 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2),0_0_0_1px_rgba(0,0,0,0.05)] z-[200] overflow-hidden p-2">
-                        <div className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 mb-1">Situação</div>
-                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                            {(statusOptions || []).map(opt => {
-                                const isStatusActive = mensagem.status === opt.nome;
-                                return (
-                                    <button
-                                        key={opt.nome}
-                                        onClick={(e) => handleStatusChange(e, opt.nome)}
-                                        className={`w-full text-left p-3 text-[12px] font-bold transition-all rounded-2xl flex items-center gap-3 ${isStatusActive ? 'bg-slate-50 text-slate-900 shadow-inner' : 'text-slate-600 hover:bg-slate-50'}`}
-                                    >
-                                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: opt.cor }}></span>
-                                        {opt.nome}
-                                    </button>
-                                );
-                            })}
-                        </div>
                     </div>
                 )}
 
@@ -392,6 +390,31 @@ const ContactItem = ({
                     </div>
                 )}
             </div>
+
+            {isTransferModalOpen && (
+                <TransferModal
+                    isOpen={isTransferModalOpen}
+                    onClose={() => setIsTransferModalOpen(false)}
+                    onConfirm={async ({ department, user_id, notes }) => {
+                        try {
+                            const res = await api.post(`/atendimentos/${mensagem.id}/transfer`, {
+                                department,
+                                user_id,
+                                notes
+                            });
+                            onUpdateStatus(mensagem.id, res.data);
+                            toast.success(`Atendimento transferido para ${department || 'Atendente'} com sucesso!`);
+                        } catch (err) {
+                            toast.error('Erro ao transferir atendimento.');
+                            throw err;
+                        }
+                    }}
+                    currentDepartment={mensagem.assigned_department}
+                    currentUserId={mensagem.assigned_user_id}
+                    atendimentoName={mensagem.nome_contato}
+                    atendimentoWhatsapp={mensagem.whatsapp}
+                />
+            )}
         </div>
     );
 };

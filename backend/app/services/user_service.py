@@ -107,6 +107,7 @@ class UserService:
         db_user = models.User(
             email=user_in.email,
             name=user_in.name,
+            department=user_in.department.strip() if (user_in.department and user_in.department.strip()) else None,
             hashed_password=hashed_password,
             role=user_in.role or "user",
             company_id=company_id,
@@ -118,6 +119,19 @@ class UserService:
         await db.commit()
         await db.refresh(db_user)
         return db_user
+
+    @staticmethod
+    async def list_company_departments(
+        db: AsyncSession,
+        current_user: models.User
+    ) -> List[str]:
+        """
+        Retorna a lista de setores / funções cadastrados na empresa.
+        """
+        if not current_user.company_id:
+            return []
+        from app.crud import crud_atendimento
+        return await crud_atendimento.get_company_departments(db, company_id=current_user.company_id)
 
     @staticmethod
     async def update_company_user(

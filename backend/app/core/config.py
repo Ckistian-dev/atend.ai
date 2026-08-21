@@ -13,32 +13,32 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 31 # 1 Mês
 
     # --- Configurações RabbitMQ ---
-    RABBITMQ_URL: str
-    RABBITMQ_WEBHOOK_QUEUE: str
+    RABBITMQ_URL: str = "amqp://guest:guest@rabbitmq:5672/"
+    RABBITMQ_WEBHOOK_QUEUE: str = "webhook_queue"
 
     # --- Configurações da API Oficial (WhatsApp Business Platform) ---
-    WBP_VERIFY_TOKEN: str # Token de verificação que VOCÊ CRIA para configurar o webhook na Meta
-    WBP_WEBHOOK_URL: str # A URL COMPLETA do seu endpoint de webhook oficial (ex: https://seuapp.com/api/v1/webhook/official/webhook)
-    WBP_ACCESS_TOKEN: str
+    WBP_VERIFY_TOKEN: Optional[str] = "default_verify_token"
+    WBP_WEBHOOK_URL: Optional[str] = "http://localhost:8000/api/v1/webhook"
+    WBP_ACCESS_TOKEN: Optional[str] = None
 
-    ENCRYPTION_KEY: str      # Chave para criptografar tokens sensíveis (Google Refresh Token, WBP Access Token)
+    ENCRYPTION_KEY: Optional[str] = None      # Chave para criptografar tokens sensíveis (Google Refresh Token, WBP Access Token)
 
     # --- Configurações Adicionais ---
     ENVIRONMENT: str = "production"   # 'development' ou 'production'
-    FRONTEND_URL: str        # URL base do seu frontend (ex: https://app.atendai.com)
+    FRONTEND_URL: Optional[str] = "http://localhost:5173"        # URL base do seu frontend (ex: https://app.atendai.com)
     
-    GOOGLE_API_KEYS: str     # Chaves da API Gemini (separadas por vírgula)
+    GOOGLE_API_KEYS: Optional[str] = None     # Chaves da API Gemini (separadas por vírgula)
     
-    GOOGLE_SERVICE_ACCOUNT_JSON: str
+    GOOGLE_SERVICE_ACCOUNT_JSON: Optional[str] = None
 
-    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_ID: Optional[str] = None
 
-    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_CLIENT_SECRET: Optional[str] = None
 
     MAX_MESSAGE_AGE_SECONDS: int = 300 # Tempo (s) para ignorar webhooks antigos na fila. Padrão: 5 minutos.
     
-    ADMIN_EMAIL: str
-    ADMIN_PASSWORD: str
+    ADMIN_EMAIL: Optional[str] = "admin@atendai.com"
+    ADMIN_PASSWORD: Optional[str] = "admin123"
     
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -49,10 +49,8 @@ class Settings(BaseSettings):
 # Instância única das configurações para ser usada em toda a aplicação
 settings = Settings()
 
-# Validação adicional (opcional, mas recomendada)
+# Validação adicional
 if not settings.ENCRYPTION_KEY or len(settings.ENCRYPTION_KEY) < 32:
-     raise ValueError("ENCRYPTION_KEY é obrigatória e deve ter pelo menos 32 bytes.")
-if not settings.WBP_VERIFY_TOKEN:
-     raise ValueError("WBP_VERIFY_TOKEN é obrigatório para a API Oficial.")
-if not settings.WBP_WEBHOOK_URL:
-     raise ValueError("WBP_WEBHOOK_URL é obrigatório para a API Oficial.")
+    # Chave padrão de desenvolvimento se não fornecida
+    settings.ENCRYPTION_KEY = settings.ENCRYPTION_KEY or "0123456789abcdef0123456789abcdef"
+

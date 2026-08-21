@@ -1,4 +1,4 @@
-from sqlalchemy import ( Column, Integer, String, ForeignKey, Text, DateTime, func, Enum as SQLEnum )
+from sqlalchemy import ( Column, Integer, String, ForeignKey, Text, DateTime, LargeBinary, Boolean, func, Enum as SQLEnum )
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import JSONB
 from typing import List, Optional, Dict, Any
@@ -30,6 +30,7 @@ class Company(Base):
     users: Mapped[List["User"]] = relationship(back_populates="company", cascade="all, delete-orphan")
     configs: Mapped[List["Config"]] = relationship(back_populates="company", foreign_keys="[Config.company_id]", cascade="all, delete-orphan")
     atendimentos: Mapped[List["Atendimento"]] = relationship(back_populates="company", cascade="all, delete-orphan")
+    mensagens: Mapped[List["Message"]] = relationship(back_populates="company", cascade="all, delete-orphan")
     default_persona: Mapped[Optional["Config"]] = relationship(foreign_keys=[default_persona_id], post_update=True)
 
 class User(Base):
@@ -43,6 +44,7 @@ class User(Base):
 
     company_id: Mapped[Optional[int]] = mapped_column(ForeignKey("companies.id"), nullable=True)
     company: Mapped[Optional["Company"]] = relationship(back_populates="users")
+    department: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True, comment="Setor / Departamento / Função do usuário na empresa (ex: RH, SAC, Vendas)")
     permissions: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Permissões específicas do usuário")
     participates_distribution: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
     profile_color: Mapped[Optional[str]] = mapped_column(String(50), default="#3b82f6", server_default="'#3b82f6'", nullable=True)
@@ -67,14 +69,13 @@ class Config(Base):
     workflow_json: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Configuração visual do fluxo de conversa")
 
     # Novas configurações de IA
-    ai_model: Mapped[str] = mapped_column(String(100), default="gemini-2.5-flash", server_default="gemini-2.5-flash")
+    ai_model: Mapped[str] = mapped_column(String(100), default="gemini-3.5-flash-lite", server_default="gemini-3.5-flash-lite")
     temperature: Mapped[float] = mapped_column(default=0.5, server_default="0.5")
     top_p: Mapped[float] = mapped_column(default=0.95, server_default="0.95")
     top_k: Mapped[int] = mapped_column(default=40, server_default="40")
     thinking_budget: Mapped[Optional[int]] = mapped_column(Integer, default=1024, server_default="1024", nullable=True)
     thinking_level: Mapped[Optional[str]] = mapped_column(String(50), default="medium", server_default="medium", nullable=True)
     tts_voice: Mapped[Optional[str]] = mapped_column(String(50), default="Aoede", server_default="Aoede", nullable=True)
-    allow_send_values: Mapped[bool] = mapped_column(default=True, server_default="true", nullable=False, comment="Permitir ou não a IA calcular ou passar valores monetários ao cliente")
 
     # Formulário de Persona
     persona_form: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Dados estruturados do formulário de persona (Aba Persona)")
@@ -135,6 +136,8 @@ class Atendimento(Base):
     nome_contato: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
     company_id: Mapped[int] = mapped_column(ForeignKey('companies.id'))
     status: Mapped[str] = mapped_column(String(50), default="Aguardando Resposta", index=True)
+    assigned_department: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True, comment="Departamento/Setor atribuído ao atendimento (ex: SAC, RH, Vendas)")
+    assigned_user_id: Mapped[Optional[int]] = mapped_column(ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True, comment="ID do usuário responsável por este atendimento")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     active_persona_id: Mapped[Optional[int]] = mapped_column(ForeignKey('configs.id'), nullable=True)
     conversa: Mapped[Optional[str]] = mapped_column(Text, default="[]")
@@ -149,20 +152,46 @@ class Atendimento(Base):
 
     company: Mapped["Company"] = relationship(back_populates="atendimentos")
     active_persona: Mapped[Optional["Config"]] = relationship()
+    assigned_user: Mapped[Optional["User"]] = relationship(foreign_keys=[assigned_user_id])
+    mensagens: Mapped[List["Message"]] = relationship(back_populates="atendimento", cascade="all, delete-orphan", order_by="Message.timestamp.asc()")
 
-class AtendimentoMessageSearch(Base):
+class Message(Base):
     __tablename__ = "mensagens"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     company_id: Mapped[int] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), index=True)
     atendimento_id: Mapped[int] = mapped_column(ForeignKey("atendimentos.id", ondelete="CASCADE"), index=True)
     message_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    role: Mapped[str] = mapped_column(String(50), nullable=False)
-    content: Mapped[str] = mapped_column(Text, nullable=False)
-    message_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    role: Mapped[str] = mapped_column(String(50), nullable=False, default="user")
+    type: Mapped[str] = mapped_column(String(50), nullable=False, default="text", server_default="'text'")
+    content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    caption: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    message_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True, nullable=True)
+    status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default="received", server_default="'received'")
+    error_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    error_title: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    media_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
+    media_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    mime_type: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
+    filename: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    media_bytes: Mapped[Optional[bytes]] = mapped_column(LargeBinary, nullable=True, comment="Bytes binários do arquivo de mídia persistidos diretamente no banco")
+    reaction: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, comment="Emoji da reação ativa")
+    reactions: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Histórico/detalhes de reações na mensagem")
+    quoted_msg_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True, comment="ID da mensagem respondida ou alvo da reação")
+    is_ai: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
+    is_template: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
+    buttons: Mapped[Optional[List[str]]] = mapped_column(JSONB, nullable=True)
+    quoted_msg: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
+    extra_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     atendimento_info: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     embedding: Mapped[Optional[List[float]]] = mapped_column(Vector(768), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    company: Mapped["Company"] = relationship()
-    atendimento: Mapped["Atendimento"] = relationship()
+    company: Mapped["Company"] = relationship(back_populates="mensagens")
+    atendimento: Mapped["Atendimento"] = relationship(back_populates="mensagens")
+
+# Alias para manter compatibilidade com referências existentes a AtendimentoMessageSearch
+AtendimentoMessageSearch = Message
+
 

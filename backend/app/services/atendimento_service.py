@@ -14,7 +14,7 @@ from datetime import datetime, timezone, timedelta
 import pytz
 import httpx
 from sqlalchemy import select, func, cast, or_
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -55,23 +55,49 @@ class AtendimentoService:
         search: Optional[str] = None,
         status: Optional[List[str]] = None,
         tags: Optional[List[str]] = None,
+        department: Optional[str] = None,
+        assigned_user_id: Optional[int] = None,
         time_start: Optional[str] = None,
-        time_end: Optional[str] = None
+        time_end: Optional[str] = None,
+        current_user: Optional[models.User] = None
     ) -> AsyncGenerator[str, None]:
         """
         Gera um fluxo de dados em formato CSV para exportação em lote de atendimentos.
         Utiliza streaming para economizar memória do servidor ao processar grandes volumes.
-
-        @param db: Sessão ativa do banco de dados (SQLAlchemy AsyncSession).
-        @param company_id: ID da empresa associada para garantir o isolamento multitenant.
-        @param search: Termo de busca opcional.
-        @param status: Lista opcional de status para filtrar.
-        @param tags: Lista opcional de tags para filtrar.
-        @param time_start: Horário de início do período no formato ISO.
-        @param time_end: Horário de término do período no formato ISO.
-        @returns: Um gerador assíncrono que gera blocos de string (CSV).
+        Aplica regras de visibilidade e filtros de setor/usuário.
         """
         stmt_base = select(models.Atendimento).where(models.Atendimento.company_id == company_id)
+
+        is_admin = False
+        if current_user:
+            is_admin = (current_user.role == "admin" or getattr(current_user, "is_superuser", False))
+
+        # Restrição de visibilidade para usuários comuns (não-admins)
+        if current_user and not is_admin:
+            # 1. Usuários comuns não veem atendimentos em processamento exclusivo da IA
+            ai_statuses = ["Mensagem Recebida", "Gerando Resposta", "Aguardando Resposta", "Aguardando Envio"]
+            stmt_base = stmt_base.where(models.Atendimento.status.notin_(ai_statuses))
+
+            # 2. Apenas atendimentos do setor do usuário, atribuídos a ele ou tagueados
+            user_dept = (current_user.department or "").strip()
+            user_name = (current_user.name or "").strip()
+            user_email = (current_user.email or "").strip()
+
+            user_filters = [models.Atendimento.assigned_user_id == current_user.id]
+            if user_dept:
+                user_filters.append(models.Atendimento.assigned_department == user_dept)
+            if user_name:
+                user_filters.append(cast(models.Atendimento.tags, JSONB).contains([{'name': user_name}]))
+            if user_email:
+                user_filters.append(cast(models.Atendimento.tags, JSONB).contains([{'name': user_email}]))
+
+            stmt_base = stmt_base.where(or_(*user_filters))
+        else:
+            # Filtros opcionais para admin
+            if department and department.strip():
+                stmt_base = stmt_base.where(models.Atendimento.assigned_department == department.strip())
+            if assigned_user_id:
+                stmt_base = stmt_base.where(models.Atendimento.assigned_user_id == assigned_user_id)
 
         last_client_ts = func.get_last_user_msg_timestamp(models.Atendimento.conversa)
         sort_expression = func.coalesce(last_client_ts, models.Atendimento.updated_at)
@@ -109,7 +135,8 @@ class AtendimentoService:
             stmt_base = stmt_base.where(
                 (models.Atendimento.whatsapp.ilike(search_term)) |
                 (models.Atendimento.status.ilike(search_term)) |
-                (models.Atendimento.resumo.ilike(search_term))
+                (models.Atendimento.resumo.ilike(search_term)) |
+                (models.Atendimento.assigned_department.ilike(search_term))
             )
 
         async def stream_csv():
@@ -119,7 +146,7 @@ class AtendimentoService:
             writer = csv.writer(output, delimiter=',', quoting=csv.QUOTE_MINIMAL)
             
             # Cabeçalho do arquivo
-            writer.writerow(["WhatsApp", "Nome do Contato", "Situação", "Resumo", "Observações", "Tags", "Persona Ativa", "Criado em", "Última Atualização", "Conversa"])
+            writer.writerow(["WhatsApp", "Nome do Contato", "Situação", "Setor / Departamento", "Atendente Atribuído", "Resumo", "Observações", "Tags", "Persona Ativa", "Criado em", "Última Atualização", "Conversa"])
             yield output.getvalue()
             output.seek(0)
             output.truncate(0)
@@ -133,7 +160,10 @@ class AtendimentoService:
                     stmt_base.order_by(sort_expression.desc())
                     .offset(offset)
                     .limit(batch_size)
-                    .options(joinedload(models.Atendimento.active_persona))
+                    .options(
+                        joinedload(models.Atendimento.active_persona),
+                        joinedload(models.Atendimento.assigned_user)
+                    )
                 )
                 result = await db.execute(stmt_batch)
                 items = result.scalars().unique().all()
@@ -144,10 +174,13 @@ class AtendimentoService:
                 for item in items:
                     tags_str = "; ".join([t['name'] for t in item.tags]) if item.tags else ""
                     persona_name = item.active_persona.nome_config if item.active_persona else ""
+                    assigned_user_name = item.assigned_user.name if item.assigned_user else (item.assigned_user.email if item.assigned_user else "")
                     writer.writerow([
                         item.whatsapp,
                         item.nome_contato or "",
                         item.status,
+                        item.assigned_department or "",
+                        assigned_user_name,
                         item.resumo or "",
                         item.observacoes or "",
                         tags_str,
@@ -171,23 +204,52 @@ class AtendimentoService:
         search: Optional[str] = None,
         status: Optional[List[str]] = None,
         tags: Optional[List[str]] = None,
+        department: Optional[str] = None,
+        assigned_user_id: Optional[int] = None,
         page: int = 1,
         limit: int = 20,
         time_start: Optional[str] = None,
         time_end: Optional[str] = None,
         sort_by: Optional[str] = None,
-        sort_order: Optional[str] = "desc"
+        sort_order: Optional[str] = "desc",
+        current_user: Optional[models.User] = None
     ) -> Dict[str, Any]:
         """
-        Busca e pagina atendimentos com base em filtros e ordenação flexíveis.
-
-        @param db: Sessão ativa do banco de dados.
-        @param company_id: ID da empresa do usuário logado para multitenancy.
-        # ... (parâmetros de ordenação e paginação)
-        @returns: Dicionário contendo o total de itens e a lista de objetos Atendimento.
+        Busca e pagina atendimentos com base em filtros, ordenação e permissões de visibilidade.
         """
         skip = (page - 1) * limit
         stmt_base = select(models.Atendimento).where(models.Atendimento.company_id == company_id)
+
+        is_admin = False
+        if current_user:
+            is_admin = (current_user.role == "admin" or getattr(current_user, "is_superuser", False))
+
+        # Restrição de visibilidade para usuários comuns (não-admins)
+        if current_user and not is_admin:
+            # 1. Usuários comuns não visualizam atendimentos que ainda estão sob controle da IA
+            ai_statuses = ["Mensagem Recebida", "Gerando Resposta", "Aguardando Resposta", "Aguardando Envio"]
+            stmt_base = stmt_base.where(models.Atendimento.status.notin_(ai_statuses))
+
+            # 2. Apenas atendimentos do setor do usuário, atribuídos a ele ou tagueados com seu nome
+            user_dept = (current_user.department or "").strip()
+            user_name = (current_user.name or "").strip()
+            user_email = (current_user.email or "").strip()
+
+            user_filters = [models.Atendimento.assigned_user_id == current_user.id]
+            if user_dept:
+                user_filters.append(models.Atendimento.assigned_department == user_dept)
+            if user_name:
+                user_filters.append(cast(models.Atendimento.tags, JSONB).contains([{'name': user_name}]))
+            if user_email:
+                user_filters.append(cast(models.Atendimento.tags, JSONB).contains([{'name': user_email}]))
+
+            stmt_base = stmt_base.where(or_(*user_filters))
+        else:
+            # Filtros opcionais para admin
+            if department and department.strip():
+                stmt_base = stmt_base.where(models.Atendimento.assigned_department == department.strip())
+            if assigned_user_id:
+                stmt_base = stmt_base.where(models.Atendimento.assigned_user_id == assigned_user_id)
 
         # Ordenação padrão pela última mensagem do cliente
         last_client_ts = func.get_last_user_msg_timestamp(models.Atendimento.conversa)
@@ -200,6 +262,8 @@ class AtendimentoService:
             sort_field = models.Atendimento.status
         elif sort_by == 'agente':
             sort_field = models.Atendimento.active_persona_id
+        elif sort_by == 'department' or sort_by == 'setor':
+            sort_field = models.Atendimento.assigned_department
         elif sort_by == 'atualizacao':
             sort_field = sort_expression_default
         else:
@@ -239,7 +303,8 @@ class AtendimentoService:
             stmt_base = stmt_base.where(
                 (models.Atendimento.whatsapp.ilike(search_term)) |
                 (models.Atendimento.status.ilike(search_term)) |
-                (models.Atendimento.resumo.ilike(search_term))
+                (models.Atendimento.resumo.ilike(search_term)) |
+                (models.Atendimento.assigned_department.ilike(search_term))
             )
 
         # Conta o número de linhas para a resposta paginada
@@ -252,7 +317,11 @@ class AtendimentoService:
             stmt_base.order_by(final_sort)
             .offset(skip)
             .limit(limit)
-            .options(joinedload(models.Atendimento.active_persona))
+            .options(
+                joinedload(models.Atendimento.active_persona),
+                joinedload(models.Atendimento.assigned_user),
+                selectinload(models.Atendimento.mensagens)
+            )
         )
         data_result = await db.execute(stmt_data)
         items = data_result.scalars().unique().all()
@@ -271,14 +340,16 @@ class AtendimentoService:
         return await crud_atendimento.get_all_user_tags(db, company_id=company_id)
 
     @staticmethod
+    async def get_company_departments(db: AsyncSession, company_id: int) -> List[str]:
+        """
+        Retorna a lista de setores / departamentos configurados na empresa.
+        """
+        return await crud_atendimento.get_company_departments(db, company_id=company_id)
+
+    @staticmethod
     async def delete_tag_from_company(db: AsyncSession, company_id: int, tag_name: str) -> Dict[str, str]:
         """
         Deleta uma determinada tag de todos os atendimentos pertencentes à empresa.
-
-        @param db: Sessão do banco de dados.
-        @param company_id: ID da empresa.
-        @param tag_name: Nome da tag a ser removida.
-        @returns: Resumo do resultado da operação.
         """
         try:
             affected_rows = await crud_atendimento.delete_tag_from_all_atendimentos(
@@ -292,15 +363,14 @@ class AtendimentoService:
             raise e
 
     @staticmethod
-    async def get_atendimento_by_id(db: AsyncSession, company_id: int, atendimento_id: int) -> models.Atendimento:
+    async def get_atendimento_by_id(
+        db: AsyncSession,
+        company_id: int,
+        atendimento_id: int,
+        current_user: Optional[models.User] = None
+    ) -> models.Atendimento:
         """
-        Obtém um atendimento por ID garantindo a propriedade do tenant (empresa).
-
-        @param db: Sessão do banco de dados.
-        @param company_id: ID da empresa do usuário logado.
-        @param atendimento_id: ID do atendimento.
-        @returns: O modelo do atendimento.
-        @raises AtendimentoNotFoundError: Caso o atendimento não seja localizado.
+        Obtém um atendimento por ID garantindo a propriedade do tenant e controle de visibilidade.
         """
         stmt = (
             select(models.Atendimento)
@@ -308,12 +378,87 @@ class AtendimentoService:
                 models.Atendimento.id == atendimento_id,
                 models.Atendimento.company_id == company_id
             )
-            .options(joinedload(models.Atendimento.active_persona))
+            .options(
+                joinedload(models.Atendimento.active_persona),
+                joinedload(models.Atendimento.assigned_user),
+                selectinload(models.Atendimento.mensagens)
+            )
         )
         result = await db.execute(stmt)
         db_atendimento = result.scalars().first()
         if not db_atendimento:
             raise AtendimentoNotFoundError("Atendimento não encontrado")
+
+        # Validação de visibilidade para usuários não-admin
+        if current_user and not (current_user.role == "admin" or getattr(current_user, "is_superuser", False)):
+            ai_statuses = ["Mensagem Recebida", "Gerando Resposta", "Aguardando Resposta", "Aguardando Envio"]
+            if db_atendimento.status in ai_statuses:
+                raise AtendimentoNotFoundError("Atendimento em processamento pela IA.")
+
+            user_dept = (current_user.department or "").strip()
+            user_name = (current_user.name or "").strip()
+            user_email = (current_user.email or "").strip()
+
+            is_assigned = (db_atendimento.assigned_user_id == current_user.id)
+            is_dept = bool(user_dept and db_atendimento.assigned_department and db_atendimento.assigned_department.strip().lower() == user_dept.lower())
+            
+            tags_list = db_atendimento.tags or []
+            tag_names = [t.get("name", "").strip().lower() for t in tags_list if isinstance(t, dict)]
+            is_tagged = bool((user_name and user_name.lower() in tag_names) or (user_email and user_email.lower() in tag_names))
+
+            if not (is_assigned or is_dept or is_tagged):
+                raise AtendimentoNotFoundError("Atendimento não atribuído ao seu setor/usuário.")
+
+        return db_atendimento
+
+    @staticmethod
+    async def transfer_atendimento(
+        db: AsyncSession,
+        company_id: int,
+        atendimento_id: int,
+        department: Optional[str] = None,
+        user_id: Optional[int] = None,
+        notes: Optional[str] = None,
+        current_user: Optional[models.User] = None
+    ) -> models.Atendimento:
+        """
+        Transfere um atendimento para um setor (departamento) e/ou atendente humano específico.
+        Atualiza o status para 'Atendente Chamado'.
+        """
+        stmt = (
+            select(models.Atendimento)
+            .where(
+                models.Atendimento.id == atendimento_id,
+                models.Atendimento.company_id == company_id
+            )
+            .options(
+                joinedload(models.Atendimento.active_persona),
+                joinedload(models.Atendimento.assigned_user),
+                selectinload(models.Atendimento.mensagens)
+            )
+        )
+        result = await db.execute(stmt)
+        db_atendimento = result.scalars().first()
+        if not db_atendimento:
+            raise AtendimentoNotFoundError("Atendimento não encontrado")
+
+        db_atendimento.status = "Atendente Chamado"
+
+        if department is not None:
+            db_atendimento.assigned_department = department.strip() if department.strip() else None
+
+        if user_id is not None:
+            db_atendimento.assigned_user_id = user_id if user_id > 0 else None
+
+        if notes and notes.strip():
+            clean_notes = notes.strip()
+            transfer_msg = f"[Transferido para {department or 'Atendente'}]: {clean_notes}"
+            db_atendimento.observacoes = f"{db_atendimento.observacoes or ''}\n{transfer_msg}".strip()
+
+        db_atendimento.updated_at = datetime.now(timezone.utc)
+        db.add(db_atendimento)
+        await db.commit()
+        await db.refresh(db_atendimento, attribute_names=['active_persona', 'assigned_user', 'mensagens'])
         return db_atendimento
 
     @staticmethod
@@ -325,13 +470,6 @@ class AtendimentoService:
     ) -> models.Atendimento:
         """
         Atualiza campos de um atendimento.
-
-        @param db: Sessão do banco de dados.
-        @param company_id: ID da empresa.
-        @param atendimento_id: ID do atendimento a ser atualizado.
-        @param atendimento_in: Esquema contendo os dados de atualização.
-        @returns: O atendimento atualizado.
-        @raises AtendimentoNotFoundError: Se o atendimento não existir.
         """
         db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
         if not db_atendimento:
@@ -341,7 +479,7 @@ class AtendimentoService:
             db, db_atendimento=db_atendimento, atendimento_in=atendimento_in
         )
         await db.commit()
-        await db.refresh(updated_atendimento, attribute_names=['active_persona'])
+        await db.refresh(updated_atendimento, attribute_names=['active_persona', 'assigned_user', 'mensagens'])
         return updated_atendimento
 
     @staticmethod
@@ -352,14 +490,7 @@ class AtendimentoService:
     ) -> models.Atendimento:
         """
         Cria manualmente um novo atendimento para a empresa.
-
-        @param db: Sessão do banco de dados.
-        @param company_id: ID da empresa.
-        @param atendimento_in: Esquema de criação de atendimento.
-        @returns: O atendimento criado.
-        @raises AtendimentoConflictError: Se já houver um atendimento ativo com esse número.
         """
-        # Formata o número para um padrão limpo (removendo nono dígito quando cabível)
         atendimento_in.whatsapp = format_whatsapp_number(atendimento_in.whatsapp)
 
         existing_query = await db.execute(select(models.Atendimento).where(
@@ -373,7 +504,7 @@ class AtendimentoService:
             db=db, atendimento_in=atendimento_in, company_id=company_id
         )
         await db.commit()
-        await db.refresh(db_atendimento, attribute_names=['active_persona'])
+        await db.refresh(db_atendimento, attribute_names=['active_persona', 'assigned_user', 'mensagens'])
         return db_atendimento
 
     @staticmethod
@@ -422,7 +553,6 @@ class AtendimentoService:
         whatsapp_number = db_atendimento.whatsapp
 
         try:
-            # Envia via API oficial da Meta
             send_result = await whatsapp_service.send_text_message(
                 company=company,
                 number=whatsapp_number,
@@ -431,7 +561,6 @@ class AtendimentoService:
             
             logger.info(f"Mensagem manual enviada para {whatsapp_number} (Atendimento ID: {atendimento_id}). API Msg ID: {send_result.get('id')}")
 
-            # Registra no histórico do banco de dados
             message_id = send_result.get('id') or f"manual-{uuid.uuid4()}"
             timestamp_epoch = send_result.get('timestamp', int(datetime.now(timezone.utc).timestamp()))
             
@@ -440,7 +569,8 @@ class AtendimentoService:
                 role='assistant',
                 content=text,
                 timestamp=timestamp_epoch,
-                status="sent"
+                status="sent",
+                is_ai=False
             )
 
             atendimento_atualizado = await crud_atendimento.add_message_to_conversa(
@@ -453,7 +583,7 @@ class AtendimentoService:
             if not atendimento_atualizado:
                 raise Exception("Falha ao salvar mensagem no histórico após envio")
             
-            await db.refresh(atendimento_atualizado, attribute_names=['active_persona'])
+            await db.refresh(atendimento_atualizado, attribute_names=['active_persona', 'mensagens'])
             return atendimento_atualizado
 
         except Exception as e:
@@ -474,7 +604,7 @@ class AtendimentoService:
         whatsapp_service: WhatsAppService
     ) -> models.Atendimento:
         """
-        Realiza o upload e envio de um arquivo de mídia e a persiste no histórico.
+        Realiza o upload e envio de um arquivo de mídia e a persiste no histórico e banco de dados (media_bytes).
 
         @param db: Sessão do banco de dados.
         @param company: Modelo da empresa.
@@ -498,7 +628,6 @@ class AtendimentoService:
         whatsapp_number = db_atendimento.whatsapp
 
         try:
-            # Garante mimetype se for nulo
             if not mimetype:
                 mimetype, _ = mimetypes.guess_type(filename)
                 if not mimetype:
@@ -506,17 +635,30 @@ class AtendimentoService:
 
             logger.info(f"Enviando mídia manual (Tipo: {media_type}, Nome: {filename}) para Atendimento {atendimento_id}")
 
-            # Define conteúdo amigável para exibição no histórico
             if media_type == 'document':
                 generated_content = f"[Documento enviado: {filename}]"
             elif media_type == 'audio':
                 generated_content = f"[Áudio enviado: {filename}]"
+                try:
+                    from app.services.gemini_service import get_gemini_service
+                    gemini_svc = get_gemini_service()
+                    transcription = await gemini_svc.transcribe_and_analyze_media(
+                        media_data={"data": file_bytes, "mime_type": mimetype or "audio/ogg"},
+                        db_history=[],
+                        persona=None,
+                        db=db,
+                        company=company,
+                        atendimento_id=atendimento_id
+                    )
+                    if transcription and not transcription.startswith("[Erro"):
+                        generated_content = f"[Áudio Transcrito]: {transcription.strip()}"
+                except Exception as trans_err:
+                    logger.warning(f"Aviso: Não foi possível transcrever áudio manual: {trans_err}")
             elif media_type == 'image':
                 generated_content = f"[Imagem enviada: {filename}]"
             else:
                 generated_content = f"[Vídeo enviado: {filename}]"
 
-            # Envia via API do WhatsApp
             send_result = await whatsapp_service.send_media_message(
                 company=company,
                 number=whatsapp_number,
@@ -529,7 +671,6 @@ class AtendimentoService:
             
             logger.info(f"Mídia manual enviada para {whatsapp_number}. API Msg ID: {send_result.get('id')}")
 
-            # Prepara registro do histórico
             message_id = send_result.get('id') or f"manual-{uuid.uuid4()}"
             timestamp_epoch = send_result.get('timestamp', int(datetime.now(timezone.utc).timestamp()))
             media_id_from_send = send_result.get("media_id")
@@ -546,20 +687,23 @@ class AtendimentoService:
                 filename=filename,
                 media_id=media_id_from_send,
                 mime_type=final_mimetype_saved,
-                status="sent"
+                status="sent",
+                is_ai=False
             )
 
+            # Persiste a mensagem E os bytes da mídia diretamente no banco de dados
             atendimento_atualizado = await crud_atendimento.add_message_to_conversa(
                 db=db,
                 atendimento_id=atendimento_id,
                 company_id=company_id,
-                message=formatted_message
+                message=formatted_message,
+                media_bytes=file_bytes
             )
             
             if not atendimento_atualizado:
                 raise Exception("Falha ao salvar mídia no histórico após envio")
 
-            await db.refresh(atendimento_atualizado, attribute_names=['active_persona'])
+            await db.refresh(atendimento_atualizado, attribute_names=['active_persona', 'mensagens'])
             return atendimento_atualizado
 
         except Exception as e:

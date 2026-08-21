@@ -114,7 +114,18 @@ async def process_atendimento_followup_task(atendimento_id: int, company_id: int
             if not intervals:
                 return
                 
-            conversa = json.loads(at.conversa or "[]")
+            msgs_db = await crud_atendimento.get_messages_for_atendimento(db, atendimento_id, company_id)
+            conversa = [
+                {
+                    "id": m.message_id,
+                    "role": m.role,
+                    "content": m.content or "",
+                    "timestamp": int(m.timestamp.timestamp()) if m.timestamp else 0,
+                    "type": m.type,
+                    "tag": (m.extra_data or {}).get("tag") if isinstance(m.extra_data, dict) else None
+                }
+                for m in msgs_db
+            ]
             
             # Encontrar timestamp da última mensagem do cliente
             last_client_ts = 0
@@ -170,7 +181,7 @@ async def process_atendimento_followup_task(atendimento_id: int, company_id: int
             followup_key = f"followup_{target_interval['hours']}h_sent"
             logger.info(f"Follow-up (At. {atendimento_id}): Inativo por {inactive_hours:.2f}h. Gerando follow-up de {target_interval['hours']}h.")
             
-            # Chama o serviço de IA para o follow-up (isso pode decrementar tokens e commitar de forma isolada)
+            # Chama o serviço de IA para o follow-up
             gemini_service = get_gemini_service()
             ia_response = await gemini_service.generate_followup_action(
                 whatsapp=at,
@@ -190,12 +201,12 @@ async def process_atendimento_followup_task(atendimento_id: int, company_id: int
                     async with db_final.begin():
                         at_locked = await db_final.get(models.Atendimento, atendimento_id, with_for_update=True)
                         if at_locked and at_locked.status == "Aguardando Resposta":
-                            locked_conversa = json.loads(at_locked.conversa or "[]")
-                            
+                            current_msgs = await crud_atendimento.get_messages_for_atendimento(db_final, atendimento_id, company_id)
                             already_sent = False
-                            for msg in locked_conversa:
-                                m_ts = _get_ts_from_message(msg)
-                                if m_ts > last_client_ts and msg.get('tag') == followup_key:
+                            for msg in current_msgs:
+                                m_ts = int(msg.timestamp.timestamp()) if msg.timestamp else 0
+                                msg_tag = (msg.extra_data or {}).get("tag") if isinstance(msg.extra_data, dict) else None
+                                if m_ts > last_client_ts and msg_tag == followup_key:
                                     already_sent = True
                                     break
                                     
@@ -206,10 +217,14 @@ async def process_atendimento_followup_task(atendimento_id: int, company_id: int
                                     "content": reason,
                                     "timestamp": int(now.timestamp()),
                                     "type": "followup_skipped",
-                                    "tag": followup_key
+                                    "extra_data": {"tag": followup_key}
                                 }
-                                locked_conversa.append(system_message)
-                                at_locked.conversa = json.dumps(locked_conversa, ensure_ascii=False)
+                                await crud_atendimento.save_message(
+                                    db=db_final,
+                                    company_id=company_id,
+                                    atendimento_id=atendimento_id,
+                                    message_data=system_message
+                                )
                                 at_locked.updated_at = datetime.now(timezone.utc)
                                 db_final.add(at_locked)
                                 logger.info(f"Follow-up (At. {atendimento_id}): Registro de skip salvo com sucesso.")
@@ -224,29 +239,35 @@ async def process_atendimento_followup_task(atendimento_id: int, company_id: int
                 sent_info = await whatsapp_service.send_text_message(company, at.whatsapp, message_to_send)
                 
                 new_message = {
-                    "id": sent_info.get('id'), "role": "assistant", "content": message_to_send,
-                    "timestamp": int(now.timestamp()), "type": "followup", "tag": followup_key,
-                    "is_ai": True
+                    "id": sent_info.get('id'),
+                    "role": "assistant",
+                    "content": message_to_send,
+                    "timestamp": int(now.timestamp()),
+                    "type": "followup",
+                    "is_ai": True,
+                    "extra_data": {"tag": followup_key}
                 }
                 
-                # Para evitar condições de corrida, fazemos o update com SELECT FOR UPDATE no final
                 async with SessionLocal() as db_final:
                     async with db_final.begin():
                         at_locked = await db_final.get(models.Atendimento, atendimento_id, with_for_update=True)
                         if at_locked and at_locked.status == "Aguardando Resposta":
-                            locked_conversa = json.loads(at_locked.conversa or "[]")
-                            
-                            # Verifica novamente se o follow-up não foi enviado concorrentemente
+                            current_msgs = await crud_atendimento.get_messages_for_atendimento(db_final, atendimento_id, company_id)
                             already_sent = False
-                            for msg in locked_conversa:
-                                m_ts = _get_ts_from_message(msg)
-                                if m_ts > last_client_ts and msg.get('tag') == followup_key:
+                            for msg in current_msgs:
+                                m_ts = int(msg.timestamp.timestamp()) if msg.timestamp else 0
+                                msg_tag = (msg.extra_data or {}).get("tag") if isinstance(msg.extra_data, dict) else None
+                                if m_ts > last_client_ts and msg_tag == followup_key:
                                     already_sent = True
                                     break
                                     
                             if not already_sent:
-                                locked_conversa.append(new_message)
-                                at_locked.conversa = json.dumps(locked_conversa, ensure_ascii=False)
+                                await crud_atendimento.save_message(
+                                    db=db_final,
+                                    company_id=company_id,
+                                    atendimento_id=atendimento_id,
+                                    message_data=new_message
+                                )
                                 at_locked.updated_at = datetime.now(timezone.utc)
                                 db_final.add(at_locked)
                                 logger.info(f"Follow-up (At. {atendimento_id}): Mensagem enviada e salva com sucesso.")

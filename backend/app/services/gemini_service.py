@@ -68,6 +68,7 @@ class GeminiService:
             logger.error(f"🚨 Erro ao ler tabela de preços do models.json: {e}")
             # Fallback seguro com base 0.25
             self.model_pricing = {
+                "gemini-3.5-flash-lite": { "input_text": 0.25 / 0.25, "input_audio": 0.50 / 0.25, "output": 1.50 / 0.25 },
                 "gemini-3.1-flash-lite": { "input_text": 0.25 / 0.25, "input_audio": 0.50 / 0.25, "output": 1.50 / 0.25 }
             }
         self._initialize_model()
@@ -115,7 +116,7 @@ class GeminiService:
         """
         
         # Busca configurações da persona ou usa defaults
-        model_name = persona.ai_model if persona and persona.ai_model else "gemini-3.1-flash-lite"
+        model_name = persona.ai_model if persona and persona.ai_model else "gemini-3.5-flash-lite"
         temp = persona.temperature if persona and persona.temperature is not None else 0.5
         top_p = persona.top_p if persona and persona.top_p is not None else 0.95
         top_k = persona.top_k if persona and persona.top_k is not None else 40
@@ -226,10 +227,13 @@ class GeminiService:
                 tokens_to_deduct = 0 # Inicializa com 0
 
                 if usage_metadata:
-                    input_tokens = usage_metadata.prompt_token_count or 0
+                    input_tokens = (usage_metadata.prompt_token_count or 0) + (getattr(usage_metadata, "tool_use_prompt_token_count", 0) or 0)
                     candidates_tokens = usage_metadata.candidates_token_count or 0
                     thoughts_tokens = getattr(usage_metadata, "thoughts_token_count", 0) or 0
                     output_tokens = candidates_tokens + thoughts_tokens
+                    total_tokens = getattr(usage_metadata, "total_token_count", 0) or 0
+                    if total_tokens > (input_tokens + output_tokens):
+                        output_tokens += (total_tokens - (input_tokens + output_tokens))
                     
                     # Recupera multiplicadores para o modelo usado
                     pricing = self.model_pricing.get(model_name, self.model_pricing.get("gemini-3.1-flash-lite", {"input_text": 1.0, "input_audio": 2.0, "output": 6.0}))
@@ -500,10 +504,13 @@ class GeminiService:
         # --- LÓGICA DE DEDUÇÃO DE TOKENS DO TTS ---
         usage_metadata = response.usage_metadata
         if usage_metadata:
-            input_tokens = usage_metadata.prompt_token_count or 0
+            input_tokens = (usage_metadata.prompt_token_count or 0) + (getattr(usage_metadata, "tool_use_prompt_token_count", 0) or 0)
             candidates_tokens = usage_metadata.candidates_token_count or 0
             thoughts_tokens = getattr(usage_metadata, "thoughts_token_count", 0) or 0
             output_tokens = candidates_tokens + thoughts_tokens
+            total_tokens = getattr(usage_metadata, "total_token_count", 0) or 0
+            if total_tokens > (input_tokens + output_tokens):
+                output_tokens += (total_tokens - (input_tokens + output_tokens))
 
             # Preço do gemini-3.1-flash-tts-preview carregado dinamicamente ou fallback seguro
             pricing = self.model_pricing.get("gemini-3.1-flash-tts-preview", {"input_text": 1.0, "input_audio": 2.0, "output": 6.0})
@@ -1023,14 +1030,22 @@ class GeminiService:
         for at in sorted_atendimentos:
             conversa_compacta = ""
             try:
-                msgs = json.loads(at.conversa or "[]")
-                parts = []
-                for m in msgs:
-                    role = "U" if m.get("role") == "user" else "A"
-                    content = m.get("content", "").replace("\n", " ").replace("|", "/").strip()
-                    parts.append(f"{role}: {content}")
-                conversa_compacta = " / ".join(parts)
-            except:
+                if hasattr(at, 'mensagens') and at.mensagens:
+                    parts = []
+                    for m in at.mensagens:
+                        role = "U" if m.role == "user" else "A"
+                        content = (m.content or m.caption or "").replace("\n", " ").replace("|", "/").strip()
+                        parts.append(f"{role}: {content}")
+                    conversa_compacta = " / ".join(parts)
+                else:
+                    msgs = json.loads(at.conversa or "[]")
+                    parts = []
+                    for m in msgs:
+                        role = "U" if m.get("role") == "user" else "A"
+                        content = (m.get("content") or m.get("caption") or "").replace("\n", " ").replace("|", "/").strip()
+                        parts.append(f"{role}: {content}")
+                    conversa_compacta = " / ".join(parts)
+            except Exception:
                 conversa_compacta = "Erro ao ler conversa."
 
             tags_str = ", ".join([t['name'] for t in at.tags]) if at.tags else "Nenhuma"

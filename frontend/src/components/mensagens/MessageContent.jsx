@@ -36,17 +36,58 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
     }
 
     const type = msg.type || 'text';
-    const hasMedia = msg.media_id && ['image', 'audio', 'document', 'video'].includes(type);
+    const effectiveMediaId = msg.media_id || msg.message_id || msg.id;
+    const hasMedia = !!effectiveMediaId && ['image', 'audio', 'document', 'video'].includes(type);
     let displayText = msg.content;
 
+    // Extrai especificamente a transcrição se for mensagem de áudio
+    let audioTranscription = null;
+    if (type === 'audio' && msg.content) {
+        let rawAudio = (msg.content || '').trim();
+        // Remove qualquer prefixo de Mensagem Referenciada antes de procurar a transcrição
+        if (rawAudio.includes('[Mensagem Referenciada]:')) {
+            rawAudio = rawAudio.replace(/^\[Mensagem Referenciada\]:\s*"[\s\S]*?"\r?\n?/, '').trim();
+        }
+
+        const audioMatch = rawAudio.match(/\[(?:Áudio|Audio)\s+Transcrito\]:\s*([\s\S]*)$/i);
+        if (audioMatch) {
+            audioTranscription = audioMatch[1].trim();
+        } else if (
+            !rawAudio.startsWith('[') &&
+            !rawAudio.toLowerCase().startsWith('áudio') &&
+            !rawAudio.toLowerCase().startsWith('audio') &&
+            rawAudio !== (msg.filename || '') &&
+            !rawAudio.toLowerCase().includes('falha na análise')
+        ) {
+            audioTranscription = rawAudio;
+        }
+    }
+
     if (hasMedia && !msg.is_template) {
-        if (!displayText || (displayText.startsWith('[') && displayText.toLowerCase().includes('enviado'))) {
+        const raw = (displayText || '').trim();
+        const fname = (msg.filename || '').trim();
+        const cap = (msg.caption || '').trim();
+
+        if (
+            !raw ||
+            raw === fname ||
+            raw === cap ||
+            raw.startsWith('[') ||
+            raw.toLowerCase().includes('enviado:') ||
+            raw.toLowerCase().includes('enviado') ||
+            (fname && raw.toLowerCase() === fname.toLowerCase())
+        ) {
             displayText = null;
         }
     }
 
-    // Oculta descrições geradas pela IA — só exibe legendas reais do usuário (msg.caption)
-    if (displayText && displayText.startsWith('[Imagem/Doc Transcrito]:')) {
+    // Oculta descrições geradas pela IA e mensagens de tipos não suportados
+    if (displayText && (
+        displayText.startsWith('[Imagem/Doc Transcrito]:') ||
+        displayText.startsWith('[Transcrição da Imagem Enviada pela IA]:') ||
+        /^\[(?:Imagem|Doc|Documento|Vídeo|Video|Mídia|Midia).+Transcrito\]/i.test(displayText) ||
+        /^\[Mensagem tipo .* não suportada\]/i.test(displayText)
+    )) {
         displayText = null;
     }
 
@@ -54,17 +95,17 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
         let quoted = msg.quoted_msg;
         let content = msg.content || '';
 
-        // SEMPRE tenta limpar o prefixo do displayText para evitar exibição duplicada
-        if (content.startsWith('[Mensagem Referenciada]:')) {
-            const regex = /^\[Mensagem Referenciada\]:\s*"([\s\S]*?)"\r?\n?([\s\S]*)/;
+        // SEMPRE tenta extrair do texto caso o objeto estruturado não exista ou para limpar
+        if (content.includes('[Mensagem Referenciada]:')) {
+            const regex = /\[Mensagem Referenciada\]:\s*"([\s\S]*?)"\r?\n?([\s\S]*)/;
             const match = content.match(regex);
             if (match) {
-                // Se não tínhamos o objeto estruturado, usamos o que extraímos do texto
                 if (!quoted) {
-                    quoted = { content: match[1] };
+                    quoted = { content: match[1], id: msg.quoted_msg_id };
                 }
-                // Atualiza o texto principal para remover o prefixo em qualquer caso
-                displayText = match[2].trim();
+                if (type !== 'audio') {
+                    displayText = match[2].trim();
+                }
             }
         }
 
@@ -72,11 +113,12 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
 
         const isQuotedAssistant = quoted.role === 'assistant';
         const senderName = isQuotedAssistant ? 'Você' : 'Cliente';
+        const targetId = quoted.id || quoted.message_id || msg.quoted_msg_id;
 
         return (
             <div
-                onClick={() => onQuotedClick && quoted.id && onQuotedClick(quoted.id)}
-                className={`mb-3 p-3 rounded-xl border-l-4 flex flex-col gap-1 overflow-hidden select-none transition-all ${quoted.id ? 'cursor-pointer hover:brightness-110 active:scale-[0.98]' : ''
+                onClick={() => onQuotedClick && targetId && onQuotedClick(targetId)}
+                className={`mb-3 p-3 rounded-xl border-l-4 flex flex-col gap-1 overflow-hidden select-none transition-all ${targetId ? 'cursor-pointer hover:brightness-110 active:scale-[0.98]' : ''
                     } ${isAssistant
                         ? 'bg-black/20 border-white/40'
                         : 'bg-slate-100/80 border-blue-500'
@@ -88,7 +130,7 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
                 </span>
                 <p className={`text-[12px] line-clamp-2 leading-snug italic opacity-80 ${isAssistant ? 'text-white' : 'text-slate-600'
                     }`}>
-                    {formatWhatsAppText(quoted.content)}
+                    {formatWhatsAppText(quoted.content || quoted.caption || (quoted.filename ? `[Arquivo: ${quoted.filename}]` : '[Mensagem referenciada]'))}
                 </p>
             </div>
         );
@@ -105,8 +147,8 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
                         {quotedView}
                         <AudioPlayer
                             atendimentoId={atendimentoId}
-                            mediaId={msg.media_id}
-                            transcription={displayText}
+                            mediaId={effectiveMediaId}
+                            transcription={audioTranscription}
                             isAssistant={isAssistant}
                         />
                     </div>
@@ -118,12 +160,12 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
                         {quotedView}
                         <ImageDisplayer
                             atendimentoId={atendimentoId}
-                            mediaId={msg.media_id}
+                            mediaId={effectiveMediaId}
                             caption={msg.caption || null}
-                            filename={isAssistant ? msg.filename : null}
+                            filename={msg.filename || null}
                         />
                         {displayText && (
-                            <p className={`text-[15px] leading-relaxed font-medium mt-3 ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
+                            <p className={`text-[13px] leading-relaxed font-medium mt-2 ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
                                 {formatWhatsAppText(displayText)}
                             </p>
                         )}
@@ -136,12 +178,12 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
                         {quotedView}
                         <VideoDisplayer
                             atendimentoId={atendimentoId}
-                            mediaId={msg.media_id}
+                            mediaId={effectiveMediaId}
                             caption={msg.caption || null}
-                            filename={isAssistant ? msg.filename : null}
+                            filename={msg.filename || null}
                         />
                         {displayText && (
-                            <p className={`text-[15px] leading-relaxed font-medium mt-3 ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
+                            <p className={`text-[13px] leading-relaxed font-medium mt-2 ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
                                 {formatWhatsAppText(displayText)}
                             </p>
                         )}
@@ -150,46 +192,47 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
 
             case 'document':
                 return (
-                    <div className="flex flex-col space-y-3">
+                    <div className="flex flex-col space-y-2">
                         {quotedView}
-                        <div className={`flex items-center gap-4 p-4 rounded-2xl transition-all border ${isAssistant
-                            ? 'bg-white/10 border-white/20 hover:bg-white/20'
-                            : 'bg-slate-50 border-slate-100 hover:bg-white hover:shadow-lg hover:shadow-slate-200/50'
+                        <div className={`flex items-center gap-3.5 p-3 rounded-2xl transition-all border min-w-[220px] max-w-[320px] ${isAssistant
+                            ? 'bg-white/15 border-white/20 hover:bg-white/20'
+                            : 'bg-slate-50 border-slate-200/80 hover:bg-white hover:shadow-sm'
                             }`}>
-                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isAssistant ? 'bg-white/20 text-white' : 'bg-blue-600 text-white shadow-lg shadow-blue-100'
+                            <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${isAssistant ? 'bg-white/20 text-white' : 'bg-blue-600 text-white shadow-sm'
                                 }`}>
-                                <FileText size={24} />
+                                <FileText size={22} />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className={`text-[13px] font-black executive-title truncate mb-0.5 ${isAssistant ? 'text-white' : 'text-slate-900'}`} title={msg.filename}>
-                                    {msg.filename || 'Documento Central'}
+                                <p className={`text-[13px] font-bold truncate mb-0.5 ${isAssistant ? 'text-white' : 'text-slate-800'}`} title={msg.filename}>
+                                    {msg.filename || 'Documento'}
                                 </p>
-                                <p className={`text-[10px] font-bold uppercase tracking-widest ${isAssistant ? 'text-white/60' : 'text-slate-400'}`}>
-                                    {msg.mime_type ? msg.mime_type.split('/')[1] : 'ARQUIVO'}
+                                <p className={`text-[10px] font-semibold uppercase tracking-wider ${isAssistant ? 'text-white/70' : 'text-slate-400'}`}>
+                                    {msg.mime_type ? msg.mime_type.split('/')[1]?.toUpperCase() : 'ARQUIVO'}
                                 </p>
                             </div>
 
                             {hasMedia && (
                                 <button
                                     type="button"
-                                    onClick={() => onDownloadDocument(msg.media_id, msg.filename)}
+                                    onClick={() => onDownloadDocument(effectiveMediaId, msg.filename)}
                                     disabled={isDownloading}
-                                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isAssistant
-                                        ? 'bg-white/20 text-white hover:bg-white'
-                                        : 'bg-white text-slate-400 hover:text-blue-600 shadow-sm border border-slate-100'
+                                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${isAssistant
+                                        ? 'bg-white/20 text-white hover:bg-white/30'
+                                        : 'bg-white text-slate-500 hover:text-blue-600 shadow-sm border border-slate-200'
                                         } ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    title="Baixar arquivo"
                                 >
-                                    {isDownloading ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+                                    {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                                 </button>
                             )}
                         </div>
                         {msg.caption && (
-                            <p className={`text-[15px] leading-relaxed font-medium mt-2 ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
+                            <p className={`text-[13px] leading-relaxed font-medium mt-1 ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
                                 {formatWhatsAppText(msg.caption)}
                             </p>
                         )}
                         {displayText && (
-                            <p className={`text-[15px] leading-relaxed font-medium mt-2 ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
+                            <p className={`text-[13px] leading-relaxed font-medium mt-1 ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
                                 {formatWhatsAppText(displayText)}
                             </p>
                         )}
@@ -210,13 +253,14 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
             case 'text':
             default:
                 const defaultText = displayText || (msg.media_id ? `[Mídia não suportada: ${type}]` : '');
-                const hasContent = !!defaultText;
+                const hasContent = !!defaultText && defaultText.trim().length > 0;
+                if (!hasContent && !quotedView) return null;
                 return (
                     <div className="flex flex-col">
                         {quotedView}
-                        {(hasContent || !quotedView) && (
+                        {hasContent && (
                             <p className={`text-[15px] leading-relaxed font-medium ${isAssistant ? 'text-white' : 'text-slate-700'}`}>
-                                {formatWhatsAppText(defaultText) || '[Vazio]'}
+                                {formatWhatsAppText(defaultText)}
                             </p>
                         )}
                     </div>

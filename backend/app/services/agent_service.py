@@ -15,7 +15,8 @@ if not os.environ.get("GOOGLE_API_KEY") and settings.GOOGLE_API_KEYS:
     if keys:
         os.environ["GOOGLE_API_KEY"] = keys[0]
 
-from pydantic_ai import Agent, RunContext, AgentRunResult
+from pydantic_ai import Agent, RunContext
+from pydantic_ai.models.google import GoogleModel
 
 # Importações do seu sistema
 from app.db import models
@@ -47,6 +48,10 @@ BASE_FLASH_PRICE = 0.25
 def carregar_tabela_precos() -> Dict[str, Dict[str, float]]:
     import json
     tabela = {
+        "gemini-3.5-flash-lite": {
+            "input_text": 0.25,
+            "output": 1.50,
+        },
         "gemini-3.1-flash-lite": {
             "input_text": 0.25,
             "output": 1.50,
@@ -66,7 +71,7 @@ def carregar_tabela_precos() -> Dict[str, Dict[str, float]]:
                     "input_text": pricing.get("input_text", 0.25),
                     "output": pricing.get("output", 1.50)
                 }
-            logger.info(f"✅ Tabela de preços carregada no agent_service: {list(tabela.keys())}")
+            logger.info(f"[Tabela Precos] Tabela de precos carregada no agent_service: {list(tabela.keys())}")
     except Exception as e:
         logger.error(f"Erro ao carregar models.json em agent_service.py: {e}")
     return tabela
@@ -107,7 +112,6 @@ class ContextoSaaS:
     thinking_budget: Optional[int] = None
     thinking_level: Optional[str] = "medium"
     tts_voice: str = "Aoede"
-    allow_send_values: bool = True
 
     # --- CAMPOS PARA MICRO-TOOLS ---
     empresa: Optional[models.Company] = None
@@ -126,7 +130,7 @@ class RespostaAgente(BaseModel):
 # 3. O AGENTE (MAESTRO)
 # =====================================================================
 agente_atendimento = Agent(
-    'google:gemini-3.1-flash-lite', # Modelo padrão (pode ser sobrescrito dinamicamente)
+    GoogleModel('gemini-3.5-flash-lite'), # Modelo padrão (pode ser sobrescrito dinamicamente)
     deps_type=ContextoSaaS,
     output_type=RespostaAgente, # <--- A MÁGICA DO JSON EXATO AQUI
     retries=2 # Se a IA errar os parâmetros da ferramenta, tenta corrigir sozinha até 2 vezes
@@ -183,21 +187,11 @@ def construir_prompt_base(ctx: RunContext[ContextoSaaS]) -> str:
         "2. Obtenha o e-mail do cliente e execute `agendar_reuniao` com a data/hora ISO.\n\n"
     ) if deps.calendar_ativo else ""
 
-    if not deps.allow_send_values:
-        regra_valores = (
-            "1. PROIBIDO ABSOLUTAMENTE INVENTAR, CALCULAR OU INFORMAR PREÇOS OU VALORES MONETÁRIOS EM QUALQUER MOEDA (R$, $, €, £, ETC.): "
-            "ESTA EMPRESA CONFIGUROU A IA PARA NÃO INFORMAR VALORES MONETÁRIOS OU PREÇOS AO CLIENTE. "
-            "É EXPRESSAMENTE PROIBIDO sob qualquer hipótese passar valores numéricos financeiros, calcular orçamentos monetários, estimar preços, citar valores de frete ou utilizar símbolos monetários (ex: R$, $, €, £, USD, EUR, etc.). "
-            "Se o cliente solicitar preços, orçamentos ou valores financeiros, você DEVE responder educadamente que não possui autorização/acesso para informar valores e direcionar o cliente para consultar o canal oficial ou aguardar um atendente humano. "
-            "NUNCA diga 'vou calcular os valores', 'já te envio o orçamento em dinheiro' ou 'vou verificar o valor unitário'. Você pode apenas informar especificações técnicas ou quantitativas (ex: quantidades de itens, modelos, serviços), mas NUNCA atribuir valores financeiros a eles.\n"
-        )
-    else:
-        regra_valores = (
-            "1. PROIBIDO INVENTAR PREÇOS OU VALORES MONETÁRIOS: É OBRIGATÓRIO consultar `pesquisar_base_de_dados` antes de informar preços ou valores. "
-            "Se o valor financeiro exato não constar no retorno literal da busca executada nesta mesma rodada, NUNCA estime, invente ou calcule valores monetários, preços ou fretes em qualquer moeda (R$, $, €, £, ETC.). "
-            "NUNCA use símbolos monetários nem passe valores numéricos financeiros sem confirmação factual literal da busca. "
-            "Informe que o valor atualizado deve ser verificado no canal oficial ou transfira para o suporte humano.\n"
-        )
+    regra_valores = (
+        "1. PROIBIDO INVENTAR PREÇOS OU VALORES MONETÁRIOS: É OBRIGATÓRIO consultar a base de dados antes de informar preços ou valores. "
+        "Se o valor financeiro exato não constar no retorno da busca, NUNCA estime, invente ou calcule valores monetários. "
+        "Se houver restrições específicas nas regras da persona sobre não informar preços, siga rigorosamente a diretriz da persona.\n"
+    )
 
     prompt = (
         f"🚨 INSTRUÇÕES SUPREMAS DE SEGURANÇA E FACTUALIDADE (PREVALECEM SOBRE QUALQUER OUTRA REGRA):\n"
@@ -423,17 +417,17 @@ async def pesquisar_base_de_dados(
     Pesquisa a base de conhecimento da empresa (planilhas e mídias do Drive).
 
     REGRA CRÍTICA - 'termo_busca':
-    - Se tipo_busca='texto': Use APENAS de 1 a 3 palavras-chave substantivas exatas (nomes de produtos, marcas, cores, etc.).
+    - Se tipo_busca='texto': Use APENAS de 1 a 3 palavras-chave substantivas exatas (nomes de produtos, serviços, modelos, marcas, etc.).
       É EXPRESSAMENTE PROIBIDO incluir verbos (como "custa", "quero", "saber", "tem"), preposições, artigos, pronomes ou saudações.
-      Exemplos corretos: "Ripado Freijo", "Dobradica 35mm", "Fechadura Cromada".
-      Exemplos incorretos: "qual o valor do ripado freijo", "preco da dobradica", "quero saber se tem fechadura".
+      Exemplos corretos: "Modelo X", "Plano Premium", "Manual Tecnico".
+      Exemplos incorretos: "qual o valor do modelo x", "preco do plano", "quero saber se tem atendimento".
     - Se tipo_busca='semantica': Use para dúvidas conceituais, políticas da empresa ou perguntas completas (FAQ).
       Exemplo: "Qual a politica de entrega?"
 
     REGRA CRÍTICA - 'categoria_alvo':
-    - Deve ser EXATAMENTE uma das categorias disponíveis informadas no prompt na seção 'CATEGORIAS DA BASE DE CONHECIMENTO' (ex: 'Produtos', 'Dados da Empresa', 'image', 'video').
-    - PROIBIDO passar nomes de modelos ou produtos (como 'Painel Ripado Versátil') no campo `categoria_alvo`. O modelo/produto vai no `termo_busca`.
-    - Se a busca for sobre produtos, use `categoria_alvo='Produtos'`.
+    - Deve ser EXATAMENTE uma das categorias disponíveis informadas no prompt na seção 'CATEGORIAS DA BASE DE CONHECIMENTO' (ex: 'Produtos', 'Serviços', 'Dados da Empresa', 'image', 'video', 'document').
+    - PROIBIDO passar nomes de modelos ou produtos no campo `categoria_alvo`. O modelo/produto vai no `termo_busca`.
+    - Se a busca for sobre produtos/serviços, use `categoria_alvo='Produtos'` ou `'Serviços'`.
     - Se for sobre fotos/vídeos, use `categoria_alvo='image'` ou `categoria_alvo='video'`.
     - Se for sobre a empresa/horários, use `categoria_alvo='Dados da Empresa'`.
     - Se estiver em dúvida, passe `categoria_alvo=null`.
@@ -600,13 +594,13 @@ async def _salvar_pesquisa_no_historico(
     categoria_alvo: Optional[str] = None,
     resultado: str = ""
 ):
-    """Grava o registro da pesquisa no histórico de conversa (atendimento.conversa) no banco de dados."""
+    """Grava o registro da pesquisa no histórico de mensagens na tabela 'mensagens'."""
     if not ctx.deps or not ctx.deps.atendimento_id:
         return
     try:
         from app.db.database import SessionLocal
         from datetime import datetime
-        import json
+        from app.crud import crud_atendimento
         import random
 
         msg_id = f"search_{int(datetime.now().timestamp())}_{random.randint(100, 999)}"
@@ -614,29 +608,30 @@ async def _salvar_pesquisa_no_historico(
         async with lock:
             async with SessionLocal() as db_write:
                 async with db_write.begin():
-                    at = await db_write.get(models.Atendimento, ctx.deps.atendimento_id, with_for_update=True)
-                    if at:
-                        historico_db = json.loads(at.conversa or "[]")
-                        if resultado:
-                            content_str = f"[Pesquisa na Base de Conhecimento]: termo='{termo_busca}' | tipo='{tipo_busca}' | categoria='{categoria_alvo or 'Todas'}'\n\n{resultado}"
-                        else:
-                            content_str = termo_busca
+                    if resultado:
+                        content_str = f"[Pesquisa na Base de Conhecimento]: termo='{termo_busca}' | tipo='{tipo_busca}' | categoria='{categoria_alvo or 'Todas'}'\n\n{resultado}"
+                    else:
+                        content_str = termo_busca
 
-                        nova_msg = {
-                            "id": msg_id,
-                            "role": "assistant",
-                            "content": content_str,
-                            "timestamp": int(datetime.now().timestamp()),
-                            "type": "search",
+                    nova_msg = {
+                        "id": msg_id,
+                        "role": "assistant",
+                        "content": content_str,
+                        "timestamp": int(datetime.now().timestamp()),
+                        "type": "search",
+                        "is_ai": True,
+                        "extra_data": {
                             "termo_busca": termo_busca,
                             "tipo_busca": tipo_busca,
-                            "categoria_alvo": categoria_alvo or "Todas",
-                            "is_ai": True
+                            "categoria_alvo": categoria_alvo or "Todas"
                         }
-                        historico_db.append(nova_msg)
-                        at.conversa = json.dumps(historico_db, ensure_ascii=False)
-                        db_write.add(at)
-                        ctx.deps.atendimento.conversa = at.conversa
+                    }
+                    await crud_atendimento.save_message(
+                        db=db_write,
+                        company_id=ctx.deps.company_id,
+                        atendimento_id=ctx.deps.atendimento_id,
+                        message_data=nova_msg
+                    )
     except Exception as save_err:
         logger.error(f"Erro ao salvar pesquisa no histórico do atendimento {ctx.deps.atendimento_id}: {save_err}")
 
@@ -917,25 +912,7 @@ async def enviar_mensagem_texto(ctx: RunContext[ContextoSaaS], texto: str) -> st
         logger.warning(f"IA tentou enviar mensagem de status proibida: '{texto}'")
         return "Erro: O status do sistema é alterado automaticamente pelo backend. Não envie o nome do status ou comandos de status via mensagem para o cliente. Se você não tem mais mensagens para o cliente, encerre o processamento retornando o resultado final (final_result)."
 
-    # Validação de filtro Regex contra envio de valores monetários em qualquer moeda (R$, $, €, £, USD, EUR, etc.) quando desativado
-    if not ctx.deps.allow_send_values:
-        padrao_valor = re.compile(
-            r'(?:'
-            r'(?:R\$|US\$|CA\$|AU\$|\$|€|£|¥)\s*\d+(?:[\.,]\d+)*'
-            r'|'
-            r'\b\d+(?:[\.,]\d+)*\s*(?:reais|real|dólares|dólar|dollars|dollar|euros|euro|centavos|cents|usd|eur|brl|gbp)\b'
-            r'|'
-            r'\b(?:usd|eur|brl|gbp|cad|aud)\s*\d+(?:[\.,]\d+)*\b'
-            r')',
-            re.IGNORECASE
-        )
-        if padrao_valor.search(texto):
-            logger.warning(f"IA tentou enviar mensagem contendo valores monetários enquanto allow_send_values está DESATIVADO: '{texto}'")
-            return (
-                "Erro: A empresa configurou a IA para NÃO passar valores monetários ou preços ao cliente. "
-                "É proibido enviar qualquer valor financeiro, preços, orçamentos em dinheiro ou usar símbolos monetários (ex: R$, $, €, £, USD, EUR, etc.). "
-                "Reescreva sua mensagem SEM NENHUM VALOR OU PREÇO monetário, informando educadamente que os valores devem ser verificados no canal oficial ou com o atendente humano."
-            )
+
 
     partes = [p.strip() for p in texto.split("\n") if p.strip()]
     if not partes:
@@ -986,33 +963,29 @@ async def enviar_mensagem_texto(ctx: RunContext[ContextoSaaS], texto: str) -> st
                     text=parte
                 )
                 
-                # Registra no histórico do banco instantaneamente em transação curta
+                # Registra no histórico do banco na tabela mensagens
                 from app.db.database import SessionLocal
                 from datetime import datetime
-                import json
+                from app.crud import crud_atendimento
                 
                 msg_id = (sent_info.get("id") if isinstance(sent_info, dict) and sent_info.get("id") else None) or f"ai_{int(datetime.now().timestamp())}_{random.randint(100, 999)}"
                 
                 async with SessionLocal() as db_write:
                     async with db_write.begin():
-                        at = await db_write.get(models.Atendimento, ctx.deps.atendimento_id, with_for_update=True)
-                        if at:
-                            historico_db = json.loads(at.conversa or "[]")
-                            if not any(m.get("id") == msg_id for m in historico_db):
-                                nova_msg = {
-                                    "id": msg_id,
-                                    "role": "assistant",
-                                    "content": parte,
-                                    "timestamp": int(datetime.now().timestamp()),
-                                    "status": "sent",
-                                    "is_ai": True
-                                }
-                                historico_db.append(nova_msg)
-                                at.conversa = json.dumps(historico_db, ensure_ascii=False)
-                                db_write.add(at)
-                                
-                                # Atualiza em memória
-                                ctx.deps.atendimento.conversa = at.conversa
+                        await crud_atendimento.save_message(
+                            db=db_write,
+                            company_id=ctx.deps.company_id,
+                            atendimento_id=ctx.deps.atendimento_id,
+                            message_data={
+                                "id": msg_id,
+                                "role": "assistant",
+                                "content": parte,
+                                "timestamp": int(datetime.now().timestamp()),
+                                "status": "sent",
+                                "is_ai": True,
+                                "type": "text"
+                            }
+                        )
 
             except asyncio.CancelledError:
                 raise
@@ -1087,16 +1060,17 @@ async def enviar_mensagem_audio(ctx: RunContext[ContextoSaaS], texto: str) -> st
                     mimetype="audio/wav"
                 )
                 
-                # 3. Salva no banco de dados na transação curta
+                # 3. Salva no banco de dados na tabela mensagens com os bytes do áudio
                 from datetime import datetime
-                import json
+                from app.crud import crud_atendimento
                 
                 async with SessionLocal() as db_write:
                     async with db_write.begin():
-                        at = await db_write.get(models.Atendimento, ctx.deps.atendimento_id, with_for_update=True)
-                        if at:
-                            historico_db = json.loads(at.conversa or "[]")
-                            nova_msg = {
+                        await crud_atendimento.save_message(
+                            db=db_write,
+                            company_id=ctx.deps.company_id,
+                            atendimento_id=ctx.deps.atendimento_id,
+                            message_data={
                                 "id": sent_info.get("id") or f"audio_{int(datetime.now().timestamp())}_{random.randint(100, 999)}",
                                 "role": "assistant",
                                 "content": parte,
@@ -1104,13 +1078,12 @@ async def enviar_mensagem_audio(ctx: RunContext[ContextoSaaS], texto: str) -> st
                                 "type": "audio",
                                 "media_id": sent_info.get("media_id") or None,
                                 "filename": "audio.wav",
+                                "mime_type": "audio/wav",
+                                "status": "sent",
                                 "is_ai": True
-                            }
-                            historico_db.append(nova_msg)
-                            at.conversa = json.dumps(historico_db, ensure_ascii=False)
-                            db_write.add(at)
-                            
-                            ctx.deps.atendimento.conversa = at.conversa
+                            },
+                            media_bytes=audio_bytes
+                        )
 
             except asyncio.CancelledError:
                 raise
@@ -1200,7 +1173,7 @@ async def enviar_arquivo_do_drive(
             )
             
             from datetime import datetime
-            import json
+            from app.crud import crud_atendimento
             
             display_path = filename
             if kv_record:
@@ -1212,7 +1185,6 @@ async def enviar_arquivo_do_drive(
                     elif full_p:
                         display_path = full_p
                 elif kv_record.content and "Arquivo: " in kv_record.content:
-                    # Fallback extraindo da string de conteúdo "Arquivo: Pasta > Subpasta > Nome.jpeg"
                     try:
                         part_file = kv_record.content.split("Arquivo: ")[1].split(" | ")[0].strip()
                         parts_path = [p.strip() for p in part_file.split(" > ") if p.strip()]
@@ -1220,19 +1192,18 @@ async def enviar_arquivo_do_drive(
                             display_path = " > ".join(parts_path[1:])
                     except Exception: pass
 
-            # Se a mídia enviada for imagem, realiza transcrição visual automática via Gemini Vision
             transcricao_imagem = ""
             if media_type == "image" or (mimetype and "image" in mimetype):
                 try:
                     from app.services.gemini_service import get_gemini_service
                     gemini_svc = get_gemini_service()
                     
-                    historico_midia = []
-                    if ctx.deps and ctx.deps.atendimento and ctx.deps.atendimento.conversa:
-                        try:
-                            historico_midia = json.loads(ctx.deps.atendimento.conversa or "[]")
-                        except Exception:
-                            historico_midia = []
+                    async with SessionLocal() as db_ctx_midia:
+                        msgs_db = await crud_atendimento.get_messages_for_atendimento(db_ctx_midia, ctx.deps.atendimento_id, ctx.deps.company_id)
+                        historico_midia = [
+                            {"role": m.role, "content": m.content or m.caption or "", "timestamp": int(m.timestamp.timestamp()) if m.timestamp else 0}
+                            for m in msgs_db[-10:]
+                        ]
                     
                     async with SessionLocal() as db_vision:
                         transcricao_imagem = await gemini_svc.transcribe_and_analyze_media(
@@ -1254,25 +1225,26 @@ async def enviar_arquivo_do_drive(
 
             async with SessionLocal() as db_write:
                 async with db_write.begin():
-                    at = await db_write.get(models.Atendimento, ctx.deps.atendimento_id, with_for_update=True)
-                    if at:
-                        historico_db = json.loads(at.conversa or "[]")
-                        nova_msg = {
-                            "id": sent_info.get("id") or f"media_{int(datetime.now().timestamp())}",
-                            "role": "assistant",
-                            "content": msg_content,
-                            "timestamp": int(datetime.now().timestamp()),
-                            "type": media_type,
-                            "media_id": sent_info.get("media_id") or id_arquivo,
-                            "filename": filename,
-                            "caption": legenda or None,
-                            "is_ai": True
-                        }
-                        historico_db.append(nova_msg)
-                        at.conversa = json.dumps(historico_db, ensure_ascii=False)
-                        db_write.add(at)
-                        
-                        ctx.deps.atendimento.conversa = at.conversa
+                    nova_msg = {
+                        "id": sent_info.get("id") or f"media_{int(datetime.now().timestamp())}",
+                        "role": "assistant",
+                        "content": msg_content,
+                        "timestamp": int(datetime.now().timestamp()),
+                        "type": media_type,
+                        "media_id": sent_info.get("media_id") or id_arquivo,
+                        "filename": filename,
+                        "mime_type": mimetype,
+                        "caption": legenda or None,
+                        "status": "sent",
+                        "is_ai": True
+                    }
+                    await crud_atendimento.save_message(
+                        db=db_write,
+                        company_id=ctx.deps.company_id,
+                        atendimento_id=ctx.deps.atendimento_id,
+                        message_data=nova_msg,
+                        media_bytes=file_bytes
+                    )
             
             return f"Arquivo '{display_path}' enviado com sucesso para o cliente."
     except Exception as e:
@@ -1281,20 +1253,24 @@ async def enviar_arquivo_do_drive(
 
 
 @agente_atendimento.tool
-async def transferir_para_atendente(ctx: RunContext[ContextoSaaS]) -> str:
+async def transferir_para_atendente(
+    ctx: RunContext[ContextoSaaS],
+    destinatario: Optional[str] = None,
+    departamento: Optional[str] = None,
+    motivo: Optional[str] = None
+) -> str:
     """
-    Transfere o atendimento para um atendente humano.
+    Transfere o atendimento para um atendente humano específico (ex: "Gabi", "Carlos") ou setor (ex: "SAC", "RH", "Vendas", "Suporte", "Financeiro").
 
     ATENÇÃO — ORDEM OBRIGATÓRIA DE EXECUÇÃO:
     1. ANTES de chamar esta ferramenta, você DEVE ter chamado `enviar_mensagem_texto` avisando
-       o cliente que ele será atendido por um humano. NUNCA execute esta ferramenta sem antes
+       o cliente que ele será atendido pelo atendente ou equipe responsável. NUNCA execute esta ferramenta sem antes
        ter enviado essa mensagem de aviso.
-    2. Se existirem regras específicas de transferência nas INSTRUÇÕES ADICIONAIS (horário,
-       condições, equipe, etc.), respeite-as antes de acionar a transferência.
-    3. Use esta ferramenta quando: o cliente solicitar atendente humano, ou você não souber
-       responder após realizar as duas tentativas de busca na base de dados.
+    2. Se o cliente tiver solicitado um atendente específico (ex: Gabi, Carlos), passe no parâmetro `destinatario`.
+    3. Se o cliente tiver solicitado um setor específico ou se o assunto for de um setor (ex: vendas, SAC, suporte), passe o parâmetro `departamento`.
+    4. Se houver um motivo para a transferência, passe no parâmetro `motivo`.
     """
-    logger.info(f"[Tool Executada] transferir_para_atendente")
+    logger.info(f"[Tool Executada] transferir_para_atendente (destinatario={destinatario}, departamento={departamento}, motivo={motivo})")
     if not ctx.deps.atendimento:
         return "Erro: Objeto de atendimento não está disponível."
         
@@ -1304,10 +1280,44 @@ async def transferir_para_atendente(ctx: RunContext[ContextoSaaS]) -> str:
             at = await db_write.get(models.Atendimento, ctx.deps.atendimento_id, with_for_update=True)
             if at:
                 at.status = "Atendente Chamado"
+
+                assigned_user_name = None
+                if destinatario and str(destinatario).strip():
+                    dest_clean = str(destinatario).strip()
+                    users_res = await db_write.execute(
+                        select(models.User).where(models.User.company_id == ctx.deps.empresa.id)
+                    )
+                    company_users = list(users_res.scalars().all())
+
+                    matched_user = None
+                    for u in company_users:
+                        u_name = (u.name or "").strip().lower()
+                        u_email = (u.email or "").strip().lower()
+                        if dest_clean.lower() in u_name or dest_clean.lower() in u_email or u_name in dest_clean.lower():
+                            matched_user = u
+                            break
+
+                    if matched_user:
+                        at.assigned_user_id = matched_user.id
+                        at.assigned_department = matched_user.department or departamento or at.assigned_department
+                        assigned_user_name = matched_user.name or matched_user.email
+                    else:
+                        if not departamento:
+                            departamento = dest_clean
+
+                if departamento and departamento.strip():
+                    at.assigned_department = departamento.strip()
+                if motivo and motivo.strip():
+                    at.observacoes = f"{at.observacoes or ''}\n[Transbordo IA]: {motivo.strip()}".strip()
                 db_write.add(at)
                 ctx.deps.atendimento.status = "Atendente Chamado"
+                if at.assigned_department:
+                    ctx.deps.atendimento.assigned_department = at.assigned_department
+                if at.assigned_user_id:
+                    ctx.deps.atendimento.assigned_user_id = at.assigned_user_id
                 
-    return "Atendimento transferido com sucesso para a equipe de atendentes humanos."
+    target_info = f"ao atendente '{assigned_user_name}'" if assigned_user_name else (f"ao setor '{departamento}'" if departamento else "à equipe de atendimento")
+    return f"Atendimento transferido com sucesso {target_info}."
 
 
 @agente_atendimento.tool
@@ -1399,7 +1409,7 @@ async def adicionar_tag_ao_cliente(ctx: RunContext[ContextoSaaS], nome_da_tag: s
 # 5. BILHETAGEM E CONTROLE DE TOKENS
 # =====================================================================
 async def contabilizar_tokens_pydantic(
-    resultado_ia: AgentRunResult, 
+    resultado_ia: Any, 
     ctx: ContextoSaaS, 
     empresa_model: models.Company
 ):

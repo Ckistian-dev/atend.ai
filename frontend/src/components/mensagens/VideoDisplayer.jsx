@@ -44,6 +44,10 @@ const VideoDisplayer = ({ atendimentoId, mediaId, caption, filename }) => {
     }, [loadState]);
 
     const loadVideo = async () => {
+        if (!mediaId || mediaId === 'null' || mediaId === 'undefined' || !atendimentoId) {
+            setLoadState('error');
+            return;
+        }
         if (loadState !== 'idle') return;
         setLoadState('loading');
         try {
@@ -75,41 +79,35 @@ const VideoDisplayer = ({ atendimentoId, mediaId, caption, filename }) => {
     );
 
     return (
-        <div ref={displayerRef} className="space-y-3 w-full max-w-[220px] sm:max-w-[280px] md:max-w-[360px]">
-            {filename && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white max-w-full select-all">
-                    <FilmIcon size={14} className="text-white/80 flex-shrink-0" />
-                    <span className="text-[11px] font-bold truncate" title={filename}>
-                        {filename}
-                    </span>
-                </div>
-            )}
-            <div className="relative aspect-[4/3] bg-black/5 rounded-[1.5rem] overflow-hidden shadow-2xl shadow-blue-900/5 cursor-pointer group border border-white/10" onClick={openModal}>
+        <div ref={displayerRef} className="w-full min-w-[240px] max-w-[320px] sm:max-w-[360px] space-y-2">
+            <div 
+                className="relative aspect-video bg-black/10 rounded-2xl overflow-hidden shadow-md cursor-pointer group border border-white/10" 
+                onClick={openModal}
+            >
                 {(loadState === 'loading' || loadState === 'idle') && <MediaSkeleton />}
 
                 {loadState === 'error' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 text-red-300">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100/20 text-red-300">
                         <AlertCircle size={24} />
-                        <span className="text-[10px] font-black uppercase mt-2">Falha no carregamento</span>
+                        <span className="text-[10px] font-bold uppercase mt-2 tracking-wider">Falha no vídeo</span>
                     </div>
                 )}
 
                 {loadState === 'loaded' && videoSrc && (
                     <>
                         <video src={videoSrc} muted playsInline className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-blue-900/20 flex items-center justify-center transition-all group-hover:bg-blue-900/40">
-                            <div className="w-16 h-16 bg-white/30 backdrop-blur-xl rounded-full flex items-center justify-center shadow-2xl scale-90 group-hover:scale-100 transition-transform duration-500">
-                                <Play className="text-white fill-white ml-1" size={28} />
+                        <div className="absolute inset-0 bg-black/25 flex items-center justify-center transition-all group-hover:bg-black/40">
+                            <div className="w-13 h-13 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-300 border border-white/40 p-3">
+                                <Play className="text-white fill-white ml-0.5" size={22} />
                             </div>
                         </div>
                     </>
                 )}
             </div>
 
-
             {caption && (
-                <div className="px-2">
-                    <p className="text-[13px] leading-relaxed text-slate-600 font-bold italic opacity-80">{formatWhatsAppText(caption)}</p>
+                <div className="px-1 pt-1">
+                    <p className="text-[13px] leading-relaxed text-inherit font-medium opacity-90">{formatWhatsAppText(caption)}</p>
                 </div>
             )}
 

@@ -35,6 +35,8 @@ async def export_atendimentos(
     search: Optional[str] = Query(None, description="Termo de busca"),
     status: Optional[List[str]] = Query(None, description="Filtro de status"),
     tags: Optional[List[str]] = Query(None, description="Filtro de tags"),
+    department: Optional[str] = Query(None, description="Filtro por setor/departamento"),
+    assigned_user_id: Optional[int] = Query(None, description="Filtro por atendente/usuário atribuído"),
     time_start: Optional[str] = Query(None, description="Início do período"),
     time_end: Optional[str] = Query(None, description="Fim do período")
 ):
@@ -48,8 +50,11 @@ async def export_atendimentos(
         search=search,
         status=status,
         tags=tags,
+        department=department,
+        assigned_user_id=assigned_user_id,
         time_start=time_start,
-        time_end=time_end
+        time_end=time_end,
+        current_user=current_user
     )
     
     filename = f"atendimentos_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
@@ -60,7 +65,20 @@ async def export_atendimentos(
     )
 
 
-# Lista atendimentos paginados com filtros de busca, status, tags, data e ordenação
+# Retorna todos os setores / departamentos cadastrados nos atendimentos/usuários da empresa
+@router.get("/departments", response_model=List[str], summary="Listar setores da empresa")
+async def get_company_departments(
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(dependencies.get_current_active_user)
+):
+    """
+    Retorna a lista de setores / departamentos configurados na empresa.
+    """
+    company_id = current_user.company_id or 0
+    return await AtendimentoService.get_company_departments(db=db, company_id=company_id)
+
+
+# Lista atendimentos paginados com filtros de busca, status, tags, setor, data e ordenação
 @router.get("/", response_model=schemas.AtendimentoPage)
 async def get_atendimentos(
     db: AsyncSession = Depends(get_db),
@@ -68,6 +86,8 @@ async def get_atendimentos(
     search: Optional[str] = Query(None, description="Termo de busca para contato, status ou resumo"),
     status: Optional[List[str]] = Query(None, description="Lista de status para filtrar"),
     tags: Optional[List[str]] = Query(None, description="Lista de nomes de tags para filtrar"),
+    department: Optional[str] = Query(None, description="Filtro por setor/departamento"),
+    assigned_user_id: Optional[int] = Query(None, description="Filtro por atendente/usuário atribuído"),
     page: int = Query(1, ge=1, description="Número da página"),
     limit: int = Query(20, ge=1, le=10000, description="Itens por página"),
     time_start: Optional[str] = Query(None, description="Data e horário de início do filtro (YYYY-MM-DDTHH:MM)"),
@@ -76,7 +96,7 @@ async def get_atendimentos(
     sort_order: Optional[str] = Query("desc", description="Ordem da ordenação (asc ou desc)")
 ):
     """
-    Lista todos os atendimentos para o usuário logado, com suporte a busca e paginação.
+    Lista todos os atendimentos para o usuário logado, com suporte a busca, filtros e paginação.
     """
     company_id = current_user.company_id or 0
     return await AtendimentoService.get_atendimentos(
@@ -85,12 +105,15 @@ async def get_atendimentos(
         search=search,
         status=status,
         tags=tags,
+        department=department,
+        assigned_user_id=assigned_user_id,
         page=page,
         limit=limit,
         time_start=time_start,
         time_end=time_end,
         sort_by=sort_by,
-        sort_order=sort_order
+        sort_order=sort_order,
+        current_user=current_user
     )
 
 
@@ -129,6 +152,35 @@ async def delete_tag_from_company(
         raise HTTPException(status_code=500, detail=f"Erro interno ao excluir tag: {str(e)}")
 
 
+# Transfere um atendimento para um setor / usuário
+@router.post("/{atendimento_id}/transfer", response_model=schemas.Atendimento, summary="Transferir atendimento")
+async def transfer_atendimento(
+    atendimento_id: int,
+    payload: schemas.TransferAtendimentoPayload,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(dependencies.get_current_active_user)
+):
+    """
+    Transfere um atendimento para um setor (ex: SAC, RH, Vendas) e/ou atendente específico.
+    """
+    company_id = current_user.company_id or 0
+    try:
+        return await AtendimentoService.transfer_atendimento(
+            db=db,
+            company_id=company_id,
+            atendimento_id=atendimento_id,
+            department=payload.department,
+            user_id=payload.user_id,
+            notes=payload.notes,
+            current_user=current_user
+        )
+    except AtendimentoNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro ao transferir atendimento {atendimento_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Busca e retorna os detalhes de um atendimento específico pelo seu ID
 @router.get("/{atendimento_id}", response_model=schemas.Atendimento)
 async def get_atendimento_by_id(
@@ -144,7 +196,8 @@ async def get_atendimento_by_id(
         return await AtendimentoService.get_atendimento_by_id(
             db=db,
             company_id=company_id,
-            atendimento_id=atendimento_id
+            atendimento_id=atendimento_id,
+            current_user=current_user
         )
     except AtendimentoNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -401,7 +454,10 @@ async def download_media_directly(
             media_id=media_id
         )
         
-        headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+        headers = {
+            "Content-Disposition": f'inline; filename="{filename}"',
+            "Cache-Control": "public, max-age=86400"
+        }
         return Response(content=media_bytes, media_type=content_type, headers=headers)
         
     except AtendimentoNotFoundError as e:

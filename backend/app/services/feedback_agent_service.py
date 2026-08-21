@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from pydantic_ai import Agent, RunContext
+from pydantic_ai.models.google import GoogleModel
 from app.db import models
 from app.crud import crud_config, crud_atendimento
 from app.core.config import settings
@@ -24,21 +25,21 @@ if not os.environ.get("GOOGLE_API_KEY") and settings.GOOGLE_API_KEYS:
 
 # --- ESTRUTURA DE RETORNO DO AGENTE ---
 class WorkflowNodeData(BaseModel):
-    label: str = Field(..., description="Nome curto da etapa em caixa alta (ex: 'BOAS-VINDAS', 'TRIAGEM DE NECESSIDADE', 'OFERTA DE PRODUTOS', 'TRANSBORDO')")
-    description: str = Field(..., description="OBRIGATÓRIO E DETALHADO: Instruções completas e claras para a IA sobre o que fazer e falar nesta etapa. NUNCA deixe em branco nem use texto genérico.")
+    label: str = Field(..., description="Nome curto da etapa em caixa alta (ex: 'BOAS-VINDAS', 'TRIAGEM', 'PRODUTOS', 'TRANSBORDO')")
+    description: str = Field(..., description="Instruções completas e ricas para a IA sobre o que falar e fazer nesta etapa.")
     node_type: Literal['start', 'message', 'decision', 'action', 'end'] = Field(
         ...,
-        description="OBRIGATÓRIO: O tipo visual do balão. Use 'start' para início/abertura, 'message' para diálogos textuais, 'decision' para triagem/opções, 'action' para chamadas/ferramentas, e 'end' para encerramento/transbordo."
+        description="Tipo do nó: 'start' (Início), 'message' (Diálogo), 'decision' (Menu/Opções), 'action' (Ferramenta), 'end' (Encerramento/Transbordo)."
     )
 
 class WorkflowNodePosition(BaseModel):
-    x: float = Field(..., description="Coordenada X em pixels (progresso em escada: 100, 450, 800, 1150...)")
-    y: float = Field(..., description="Coordenada Y em pixels (progresso em escada: 80, 280, 480, 680...)")
+    x: float = Field(default=100.0, description="Coordenada X em pixels")
+    y: float = Field(default=100.0, description="Coordenada Y em pixels")
 
 class WorkflowNode(BaseModel):
-    id: str = Field(..., description="ID único do nó (ex: 'node_inicio', 'node_triagem', 'node_vendas', 'node_fim')")
+    id: str = Field(..., description="ID único do nó (ex: 'node_inicio', 'node_vendas')")
     type: str = Field(default="custom", description="Sempre 'custom'")
-    position: WorkflowNodePosition
+    position: Optional[WorkflowNodePosition] = Field(default_factory=lambda: WorkflowNodePosition(x=100, y=100))
     data: WorkflowNodeData
 
 class WorkflowEdge(BaseModel):
@@ -47,25 +48,34 @@ class WorkflowEdge(BaseModel):
     target: str = Field(..., description="ID do nó de destino")
     sourceHandle: Optional[str] = Field("s-right", description="Handle de saída: 's-right', 's-bot', 's-left', 's-top'")
     targetHandle: Optional[str] = Field("t-left", description="Handle de entrada: 't-left', 't-top', 't-bot', 't-right'")
-    label: Optional[str] = Field(None, description="Texto ou rótulo condicional da conexão (ex: 'Opção 1', 'Sim', 'Não')")
+    label: Optional[str] = Field(None, description="Rótulo condicional da conexão (ex: 'Opção 1', 'Sim', 'Não')")
 
 class WorkflowData(BaseModel):
-    nodes: List[WorkflowNode] = Field(default_factory=list, description="Lista completa de nós do fluxo visual")
-    edges: List[WorkflowEdge] = Field(default_factory=list, description="Lista completa de conexões entre os nós")
+    nodes: List[WorkflowNode] = Field(default_factory=list, description="Lista de nós do fluxo visual")
+    edges: List[WorkflowEdge] = Field(default_factory=list, description="Lista de conexões entre os nós")
 
 class AlteracaoItem(BaseModel):
     acao: str = Field(description="Ação a ser executada: 'adicionar', 'modificar' ou 'remover'")
     aba: str = Field(description="Nome da aba na planilha onde a alteração deve ocorrer")
     coluna_1: str = Field(description="Categoria ou identificador da linha")
-    valor_antigo: Optional[str] = Field(None, description="Valor anterior (se aplicável/modificar/remover)")
+    valor_antigo: Optional[str] = Field(None, description="Valor anterior")
     valor_novo: str = Field(description="Novo valor sugerido")
     motivo: Optional[str] = Field(None, description="Explicação do porquê desta alteração")
 
+class AlteracaoFormularioItem(BaseModel):
+    campo: str = Field(description="Nome do campo no formulário da Persona (ex: 'ai_name', 'objective', 'restrictions', 'handoff_rules', 'extra_instructions', 'formality', 'objectivity')")
+    secao: Optional[str] = Field(None, description="Seção da Aba Persona: 'Identidade', 'Tom de Voz', 'Missão', 'Regras e Restrições' ou 'Instruções Adicionais'")
+    valor_antigo: Optional[Any] = Field(None, description="Valor anterior do campo")
+    valor_novo: Any = Field(description="Novo valor sugerido para o campo")
+    motivo: Optional[str] = Field(None, description="Motivo ou benefício da alteração")
+
 class FeedbackAgentResponse(BaseModel):
-    analise_geral: str = Field(description="Explicação detalhada da reorganização ou alteração realizada no fluxo ou sistema")
-    alteracoes_planilha: Optional[List[AlteracaoItem]] = Field(default=None, description="Melhorias recomendadas na Planilha de Instruções de Sistema")
-    alteracoes_rag: Optional[List[AlteracaoItem]] = Field(default=None, description="Melhorias recomendadas na Planilha de RAG (Base de Conhecimento)")
-    novo_workflow: Optional[WorkflowData] = Field(default=None, description="O novo fluxo visual (Workflow) contendo obrigatoriamente a lista de 'nodes' e 'edges' quando no modo 'flow' ou se houver alterações no fluxo")
+    analise_geral: str = Field(description="Explicação detalhada das melhorias e diagnóstico proposto.")
+    alteracoes_formulario: Optional[List[AlteracaoFormularioItem]] = Field(default=None, description="Melhorias recomendadas diretamente nos campos da Aba Persona (Formulário).")
+    novo_persona_form: Optional[Dict[str, Any]] = Field(default=None, description="O objeto completo consolidado do formulário da Persona atualizado.")
+    alteracoes_rag: Optional[List[AlteracaoItem]] = Field(default=None, description="Melhorias recomendadas na base de conhecimento RAG (produtos, FAQ, políticas).")
+    novo_workflow: Optional[WorkflowData] = Field(default=None, description="O novo fluxo visual (Workflow) caso haja alterações estruturais.")
+    alteracoes_planilha: Optional[List[AlteracaoItem]] = Field(default=None, description="Fallback: alterações em planilha de instruções legada caso aplicável.")
 
 # --- CONTEXTO DE DEPENDÊNCIA (MULTI-TENANT) ---
 @dataclass
@@ -79,10 +89,9 @@ class ContextoFeedback:
     user: Optional[models.User] = None
     current_workflow: Optional[Dict[str, Any]] = None
 
-
 # --- O AGENTE ---
 feedback_agent = Agent(
-    'google:gemini-2.5-flash',  # Usamos o 2.5 flash como modelo padrão para análises estruturadas rápidas
+    GoogleModel('gemini-3.5-flash-lite'),
     deps_type=ContextoFeedback,
     output_type=FeedbackAgentResponse,
     retries=2
@@ -94,63 +103,55 @@ def construir_prompt_feedback(ctx: RunContext[ContextoFeedback]) -> str:
     modo = ctx.deps.modo
     prompt = (
         "Você é um Engenheiro de Prompt Sênior, Arquiteto de Fluxos e Estrategista de IA especialista em Atendimento ao Cliente.\n"
-        "Sua missão é analisar as configurações da IA e propor melhorias estruturadas com base no feedback do usuário.\n\n"
-        "--- DIRETRIZES FUNDAMENTAIS PARA CRIAÇÃO DE REGRAS ---\n"
-        "1. VERBOS NO IMPERATIVO: Todas as regras sugeridas devem iniciar com verbos no imperativo (ex: 'Responda', 'Pergunte', 'Encaminhe', 'Solicite', 'Evite', 'Nunca informe').\n"
-        "2. SEM EXEMPLOS LITERAIS: PROIBIDO incluir falas literais, diálogos de exemplo ou simulações de conversas nas regras.\n"
-        "3. GENÉRICO E ESCALÁVEL: Escreva regras abstratas e universais que sirvam para qualquer interação futura semelhante.\n"
-        "4. RESOLUÇÃO DE RAIZ: Solucione diretamente o ponto fraco ou erro apontado pelo usuário no feedback.\n\n"
+        "Sua missão é analisar as configurações da IA e propor melhorias estruturadas com base no feedback do usuário em até 3 eixos fundamentais:\n\n"
+        "=== OS 3 EIXOS DE CONFIGURAÇÃO DO SISTEMA ===\n"
+        "1. EIXO REGRAS E POSTURA (Aba Persona / `alteracoes_formulario` e `novo_persona_form`):\n"
+        "   - Use sempre que o feedback envolver tom de voz, regras de atendimento, proibições, regras de transbordo humano, postura ou orientações gerais da IA.\n"
+        "   - Preencha `alteracoes_formulario` e o objeto consolidado `novo_persona_form`.\n\n"
+        "2. EIXO BASE DE CONHECIMENTO & PRODUTOS (Planilha RAG / `alteracoes_rag`):\n"
+        "   - Use SEMPRE que o feedback envolver catálogo, produtos, variações, cores, acabamentos, preços, dimensões, estoque, prazos, políticas de troca, frete ou FAQs da empresa.\n"
+        "   - Chame obrigatoriamente a ferramenta `obter_planilha_conhecimento_rag` para verificar as abas e linhas existentes.\n"
+        "   - Preencha `alteracoes_rag` com a aba exata (`aba`), a coluna ou chave de busca (`coluna_1`), o valor anterior se houver (`valor_antigo`), a informação correta/atualizada (`valor_novo`) e a ação (`adicionar` ou `modificar`).\n\n"
+        "3. EIXO ROTEIRO & ETAPAS DE CONVERSA (Workflow Visual / `novo_workflow`):\n"
+        "   - Use SEMPRE que o feedback solicitar ou sugerir mudanças nas etapas do diálogo, fluxo de perguntas, triagem, roteiro de vendas, menus de decisão ou transbordo.\n"
+        "   - Chame obrigatoriamente a ferramenta `obter_fluxo_visual` para carregar os nós e conexões existentes.\n"
+        "   - Gere ou atualize os nós em `novo_workflow` (com `id`, `label`, `description` rica com instruções para a IA, `node_type` entre 'start', 'message', 'decision', 'action', 'end') e as devidas conexões (`edges`).\n\n"
+        "--- LINGUAGEM DO DIAGNÓSTICO (`analise_geral`) ---\n"
+        "O campo `analise_geral` é exibido DIRETAMENTE PARA O USUÁRIO FINAL (gestor da empresa) no modal da interface do sistema.\n"
+        "1. LINGUAGEM HUMANIZADA E PROFISSIONAL: Escreva um resumo executivo claro, elegante e amigável (2 a 4 frases).\n"
+        "2. PROIBIDO JARGÃO TÉCNICO INTERNO OU NOMES DE CÓDIGO: NUNCA mencione termos de código ou banco de dados como `novo_persona_form`, `restrictions`, `schema`, `payload`, `JSON`, `dicionário`, `array`, `objeto` ou nomes de colunas técnicas no diagnóstico.\n"
+        "3. EXPLIQUE EM TERMOS DE NEGÓCIO E ATENDIMENTO: Explique com clareza o que foi identificado no atendimento analisado e quais diretrizes práticas, dados da base ou etapas do fluxo estão sendo aprimoradas para que as próximas conversas sejam mais naturais, assertivas e eficazes.\n\n"
+        "--- DIRETRIZES PARA CRIAÇÃO DE REGRAS NO FORMULÁRIO ---\n"
+        "1. VERBOS NO IMPERATIVO: Regras de restrição e transbordo devem usar verbos no imperativo (ex: 'Responda', 'Pergunte', 'Encaminhe', 'Nunca informe').\n"
+        "2. SEM EXEMPLOS LITERAIS: Não inclua simulações de diálogos ou falas prontas nas regras.\n"
+        "3. GENÉRICO E ESCALÁVEL: Escreva regras universais para orientar a IA em qualquer atendimento similar futuro.\n\n"
     )
-    
+
     if modo == 'conversation':
         prompt += (
-            "--- CONTEXTO ATUAL: ANÁLISE COMPLETA DE CONVERSA ---\n"
-            "Você possui acesso a todo o ecossistema da IA (histórico, persona, instruções, RAG, drive, workflow visual e agenda).\n\n"
-            "PROTOCOLO DE INVESTIGAÇÃO:\n"
-            "1. Chame `obter_historico_conversa` para entender exatamente onde ocorreu o desvio no atendimento.\n"
-            "2. Chame `obter_configuracoes_persona` e `obter_planilha_instrucoes` para verificar as regras vigentes.\n"
-            "3. Se o desvio envolver dados de produtos, preços ou estoque, consulte `obter_planilha_conhecimento_rag` ou `obter_arquivos_drive`.\n"
-            "4. Se envolver o roteiro de passos da conversa, consulte `obter_fluxo_visual`.\n\n"
-            "SUGESTÕES MULTI-PILAR:\n"
-            "- Sugira alterações na planilha de instruções (`alteracoes_planilha`) para comportamentos, postura e tom da IA.\n"
-            "- Sugira alterações na planilha RAG (`alteracoes_rag`) para inclusão ou correção de fatos, preços, políticas ou produtos.\n"
-            "- Sugira um novo fluxo visual (`novo_workflow`) caso o roteiro exija novos blocos, etapas ou transições.\n\n"
-            "Ferramentas disponíveis: `obter_historico_conversa`, `obter_configuracoes_persona`, `obter_planilha_instrucoes`, "
-            "`obter_planilha_conhecimento_rag`, `obter_arquivos_drive`, `obter_fluxo_visual`, `obter_agenda_disponibilidade`.\n"
+            "--- MODO: ANÁLISE DE CONVERSA DE ATENDIMENTO ---\n"
+            "1. Chame `obter_historico_conversa` para inspecionar onde ocorreu o desvio ou insatisfação.\n"
+            "2. Chame `obter_formulario_persona` para analisar as regras atuais da persona.\n"
+            "3. Se houver desvio factual de catálogo/preços/informações de produtos, consulte `obter_planilha_conhecimento_rag` e preencha `alteracoes_rag`.\n"
+            "4. Se houver desvio de roteiro/etapas de conversa, consulte `obter_fluxo_visual` e preencha `novo_workflow`.\n"
+            "5. Proponha os ajustes necessários em `alteracoes_formulario`, `alteracoes_rag` e/ou `novo_workflow` de forma combinada e coerente.\n"
         )
     elif modo == 'knowledge':
         prompt += (
-            "--- CONTEXTO ATUAL: BASE DE CONHECIMENTO E INSTRUÇÕES ---\n"
-            "Neste modo, o foco é exclusivamente a otimização da Base de Conhecimento (RAG) e das Instruções do Sistema.\n"
-            "Você NÃO tem acesso ao histórico da conversa, drive, fluxo visual ou agenda.\n\n"
-            "PROTOCOLO DE INVESTIGAÇÃO:\n"
-            "1. Chame `obter_planilha_instrucoes` para ler as regras de atendimento atuais.\n"
-            "2. Chame `obter_planilha_conhecimento_rag` para ler a base de FAQ/produtos atual.\n"
-            "3. Proponha ajustes claros em `alteracoes_planilha` e/ou `alteracoes_rag` conforme solicitado.\n\n"
-            "Ferramentas disponíveis: `obter_planilha_instrucoes`, `obter_planilha_conhecimento_rag`.\n"
-            "Se o usuário solicitar alterações fora desse escopo (ex: workflow visual), esclareça na `analise_geral` que tal alteração deve ser feita no modo de fluxo.\n"
+            "--- MODO: BASE DE CONHECIMENTO E REGRAS ---\n"
+            "1. Chame `obter_formulario_persona` e `obter_planilha_conhecimento_rag`.\n"
+            "2. Proponha melhorias claras em `alteracoes_formulario` e/ou `alteracoes_rag`.\n"
         )
     elif modo == 'flow':
-        wf_str = json.dumps(ctx.deps.current_workflow, ensure_ascii=False) if ctx.deps.current_workflow else "Nenhum workflow enviado no contexto inicial"
+        wf_str = json.dumps(ctx.deps.current_workflow, ensure_ascii=False) if ctx.deps.current_workflow else "Nenhum workflow enviado"
         prompt += (
-            "--- CONTEXTO ATUAL: EDITOR DE FLUXO VISUAL (WORKFLOW) ---\n"
-            "Neste modo, você edita DIRETAMENTE a estrutura de nós e conexões do fluxo visual do assistente.\n"
-            "Sua tarefa é analisar o fluxo atual, aplicar os pedidos do usuário e RETORNAR o fluxo completo reestruturado no objeto `novo_workflow`.\n\n"
-            f"ESTADO ATUAL DO FLUXO (JSON):\n{wf_str}\n\n"
-            "DIRETRIZES OBRIGATÓRIAS DE ATUAÇÃO DA IA DE FLUXO:\n"
-            "1. FOCO TOTAL EM ESTRUTURA E CONTEÚDO (SEM NECESSIDADE DE CALCULAR X, Y):\n"
-            "   - VOCÊ NÃO PRECISA SE PREOCUPAR COM COORDENADAS (X, Y) OU HANDLES DE CONEXÃO. Um algoritmo pós-processador organizará automaticamente os balões na escada visual perfeita.\n"
-            "   - Concentre-se 100% em adicionar, remover ou modificar os balões (nós) e definir as conexões (edges) de o que entra e o que sai de cada nó (`source` e `target`).\n"
-            "2. VARIABILIDADE DOS TIPOS DE BALÃO (`node_type`):\n"
-            "   - Atribua o `node_type` correto a cada balão: 'start' (Início - Verde), 'decision' (Decisão/Menu - Amarelo), 'action' (Ação/Ferramenta - Roxo), 'message' (Diálogo - Azul), 'end' (Encerramento/Transbordo - Vermelho).\n"
-            "3. PREENCHIMENTO COMPLETO DAS INSTRUÇÕES (`description`):\n"
-            "   - OBRIGATÓRIO: Escreva orientações detalhadas, ricas e acionáveis para o assistente em cada nó (`description`).\n"
-            "4. DEFINIÇÃO DAS CONEXÕES E RÓTULOS (`edges`):\n"
-            "   - Conecte o nó de origem (`source`) ao nó de destino (`target`). Para saídas de nós 'decision', informe no campo `label` da edge a opção correspondente (ex: 'Sim', 'Não', 'Opção 1').\n\n"
-            "Ferramentas disponíveis: `obter_fluxo_visual`.\n"
+            "--- MODO: EDITOR DE FLUXO VISUAL (WORKFLOW) ---\n"
+            f"ESTADO ATUAL DO FLUXO:\n{wf_str}\n\n"
+            "1. Edite nós e conexões atribuindo `node_type` correto ('start', 'message', 'decision', 'action', 'end').\n"
+            "2. Preencha o campo `description` de todos os nós com orientações completas e ricas para a IA.\n"
+            "3. Retorne o fluxo estruturado em `novo_workflow`.\n"
         )
-        
-    prompt += "\nInspecione o estado atual via ferramentas antes de responder. Monte uma resposta precisa e bem fundamentada."
+
     return prompt
 
 # --- FERRAMENTAS ---
@@ -158,118 +159,72 @@ def construir_prompt_feedback(ctx: RunContext[ContextoFeedback]) -> str:
 @feedback_agent.tool
 async def obter_historico_conversa(ctx: RunContext[ContextoFeedback]) -> str:
     """Retorna o histórico da conversa de atendimento correspondente."""
-    if ctx.deps.modo != 'conversation':
-        return "Erro: O histórico de conversa não está disponível neste contexto."
     if not ctx.deps.atendimento_id:
         return "Nenhum atendimento associado."
-    
-    atend = await crud_atendimento.get_atendimento(ctx.deps.db, atendimento_id=ctx.deps.atendimento_id, company_id=ctx.deps.company_id)
-    if not atend:
-        return "Atendimento não encontrado."
-    
-    try:
-        conversa_list = json.loads(atend.conversa or "[]")
-    except Exception:
-        conversa_list = []
-        
-    if not conversa_list:
-        return "Nenhuma mensagem encontrada no histórico deste atendimento."
-        
-    if len(conversa_list) > 50:
-        conversa_list = conversa_list[-50:]
-        
+
+    msgs_db = await crud_atendimento.get_messages_for_atendimento(
+        ctx.deps.db, atendimento_id=ctx.deps.atendimento_id, company_id=ctx.deps.company_id
+    )
+    if not msgs_db:
+        return "Nenhuma mensagem no histórico."
+
+    if len(msgs_db) > 50:
+        msgs_db = msgs_db[-50:]
+
     lines = []
-    for msg in conversa_list:
-        role = "IA" if msg.get("is_ai") or msg.get("role") == "assistant" else "Cliente"
-        content = msg.get("content") or msg.get("caption") or ""
+    for msg in msgs_db:
+        role = "IA" if msg.is_ai or msg.role == "assistant" else "Cliente"
+        content = msg.content or msg.caption or ""
         lines.append(f"{role}: {content}")
-        
+
     return "\n".join(lines)
 
 @feedback_agent.tool
-async def obter_configuracoes_persona(ctx: RunContext[ContextoFeedback]) -> str:
-    """Retorna as configurações e prompt de sistema da persona atual."""
-    if ctx.deps.modo != 'conversation':
-        return "Erro: Acesso às configurações da persona não é permitido neste contexto."
-        
+async def obter_formulario_persona(ctx: RunContext[ContextoFeedback]) -> str:
+    """Retorna os dados estruturados do formulário da Aba Persona atual."""
     cfg = await crud_config.get_config(ctx.deps.db, config_id=ctx.deps.config_id, company_id=ctx.deps.company_id)
     if not cfg:
         return "Configuração não encontrada."
-        
-    return (
-        f"Nome Persona: {cfg.nome_config}\n"
-        f"Modelo de IA: {cfg.ai_model}\n"
-        f"Temperatura: {cfg.temperature}\n"
-        f"Thinking Level: {cfg.thinking_level}\n"
-        f"Prompt de Sistema Atual:\n{cfg.prompt or 'Nenhum'}"
-    )
 
-@feedback_agent.tool
-async def obter_planilha_instrucoes(ctx: RunContext[ContextoFeedback]) -> str:
-    """Retorna o conteúdo da planilha de instruções de sistema (regras de atendimento)."""
-    if ctx.deps.modo not in ['conversation', 'knowledge']:
-        return "Erro: Acesso à planilha de instruções não é permitido neste contexto."
-        
-    cfg = await crud_config.get_config(ctx.deps.db, config_id=ctx.deps.config_id, company_id=ctx.deps.company_id)
-    if not cfg:
-        return "Configuração não encontrada."
-    if not cfg.spreadsheet_id:
-        return "Planilha de sistema não configurada ou vazia."
-        
-    sheets_service = GoogleSheetsService()
-    try:
-        data = await sheets_service.get_sheet_as_json(cfg.spreadsheet_id)
-        return json.dumps(data, ensure_ascii=False, indent=2)
-    except Exception as e:
-        logger.error(f"Erro ao ler planilha de sistema: {e}")
-        return f"Erro ao ler a planilha de sistema: {str(e)}"
+    form_data = cfg.persona_form or {}
+    return (
+        f"Nome da Configuração: {cfg.nome_config}\n"
+        f"Modelo de IA: {cfg.ai_model}\n"
+        f"Dados do Formulário da Persona (JSON):\n{json.dumps(form_data, ensure_ascii=False, indent=2)}\n"
+        f"Prompt complementar legado (se houver):\n{cfg.prompt or 'Nenhum'}"
+    )
 
 @feedback_agent.tool
 async def obter_planilha_conhecimento_rag(ctx: RunContext[ContextoFeedback]) -> str:
     """Retorna o conteúdo da planilha de RAG (Base de Conhecimento/FAQ)."""
-    if ctx.deps.modo not in ['conversation', 'knowledge']:
-        return "Erro: Acesso à planilha RAG não é permitido neste contexto."
-        
     cfg = await crud_config.get_config(ctx.deps.db, config_id=ctx.deps.config_id, company_id=ctx.deps.company_id)
-    if not cfg:
-        return "Configuração não encontrada."
-    if not cfg.spreadsheet_rag_id:
+    if not cfg or not cfg.spreadsheet_rag_id:
         return "Planilha RAG não configurada."
-        
+
     sheets_service = GoogleSheetsService()
     try:
         data = await sheets_service.get_sheet_as_json(cfg.spreadsheet_rag_id)
         return json.dumps(data, ensure_ascii=False, indent=2)
     except Exception as e:
-        logger.error(f"Erro ao ler planilha RAG: {e}")
-        return f"Erro ao ler a planilha RAG: {str(e)}"
+        return f"Erro ao ler planilha RAG: {e}"
 
 @feedback_agent.tool
 async def obter_arquivos_drive(ctx: RunContext[ContextoFeedback]) -> str:
     """Retorna os arquivos e mídias indexados na pasta do Google Drive."""
-    if ctx.deps.modo != 'conversation':
-        return "Erro: Acesso ao Google Drive não é permitido neste contexto."
-        
     cfg = await crud_config.get_config(ctx.deps.db, config_id=ctx.deps.config_id, company_id=ctx.deps.company_id)
-    if not cfg:
-        return "Configuração não encontrada."
-    if not cfg.drive_id:
+    if not cfg or not cfg.drive_id:
         return "Google Drive não configurado."
-        
+
     drive_service = get_drive_service()
     try:
         drive_data = await drive_service.list_files_in_folder(cfg.drive_id)
         return json.dumps(drive_data, ensure_ascii=False, indent=2)
     except Exception as e:
-        logger.error(f"Erro ao listar arquivos do drive: {e}")
-        return f"Erro ao listar arquivos do drive: {str(e)}"
+        return f"Erro ao listar arquivos do drive: {e}"
 
 @feedback_agent.tool
 async def obter_fluxo_visual(ctx: RunContext[ContextoFeedback]) -> str:
     """Retorna a estrutura atual do workflow visual (nodes e edges)."""
-    if ctx.deps.modo not in ['conversation', 'flow']:
-        return "Erro: Acesso ao fluxo visual não é permitido neste contexto."
-        
     if ctx.deps.current_workflow:
         return json.dumps(ctx.deps.current_workflow, ensure_ascii=False, indent=2)
 
@@ -278,103 +233,11 @@ async def obter_fluxo_visual(ctx: RunContext[ContextoFeedback]) -> str:
         return "Configuração não encontrada."
     return json.dumps(cfg.workflow_json or {"nodes": [], "edges": []}, ensure_ascii=False, indent=2)
 
-@feedback_agent.tool
-async def obter_agenda_disponibilidade(ctx: RunContext[ContextoFeedback]) -> str:
-    """Retorna as janelas de disponibilidade da agenda da persona."""
-    if ctx.deps.modo != 'conversation':
-        return "Erro: Acesso à agenda não é permitido neste contexto."
-        
-    cfg = await crud_config.get_config(ctx.deps.db, config_id=ctx.deps.config_id, company_id=ctx.deps.company_id)
-    if not cfg:
-        return "Configuração não encontrada."
-        
-    is_connected = bool(cfg.google_calendar_credentials)
-    is_active = cfg.is_calendar_active
-    available_hours = cfg.available_hours or {}
-    
-    return (
-        f"Google Calendar Conectado: {is_connected}\n"
-        f"Google Calendar Ativo: {is_active}\n"
-        f"Janelas de Horários Disponíveis:\n{json.dumps(available_hours, ensure_ascii=False, indent=2)}"
-    )
-
-# --- FUNÇÃO PRINCIPAL DE INVOCAÇÃO ---
-
-async def contabilizar_tokens_feedback(
-    resultado_ia: Any, 
-    company_id: int,
-    config_id: int,
-    atendimento_id: Optional[int],
-    model_name: str,
-    db: AsyncSession
-):
-    """
-    Contabiliza os tokens consumidos pelo agente de feedback e deduz do saldo da empresa.
-    """
-    import math
-    from app.crud import crud_user
-    from app.services.agent_service import TABELA_PRECOS, BASE_FLASH_PRICE
-    
-    usage_obj = getattr(resultado_ia, "usage", None)
-    if usage_obj is None:
-        logger.warning("Objeto resultado_ia do feedback não possui atributo 'usage'.")
-        return
-        
-    if callable(usage_obj):
-        try:
-            uso = usage_obj()
-        except TypeError:
-            uso = usage_obj
-    else:
-        uso = usage_obj
-        
-    input_tokens = getattr(uso, "input_tokens", getattr(uso, "request_tokens", 0)) or 0
-    output_tokens = getattr(uso, "output_tokens", getattr(uso, "response_tokens", 0)) or 0 
-    
-    if input_tokens == 0 and output_tokens == 0:
-        logger.warning("Uso de tokens retornou zero para a análise de feedback.")
-        return
-
-    nome_modelo_limpo = model_name.replace("google:", "").replace("google-cloud:", "") if model_name else "gemini-3.1-flash-lite"
-    precos = TABELA_PRECOS.get(nome_modelo_limpo, TABELA_PRECOS.get("gemini-3.1-flash-lite", {"input_text": 0.25, "output": 1.50}))
-    
-    multiplicador_input = precos["input_text"] / BASE_FLASH_PRICE
-    multiplicador_output = precos["output"] / BASE_FLASH_PRICE
-
-    tokens_input_equivalentes = input_tokens * multiplicador_input
-    tokens_output_equivalentes = output_tokens * multiplicador_output
-    
-    total_equivalente = tokens_input_equivalentes + tokens_output_equivalentes
-    tokens_para_deduzir = math.ceil(total_equivalente)
-
-    logger.info(
-        f"Bilhetagem Feedback (Model: {model_name}): "
-        f"In={input_tokens} Out={output_tokens} | "
-        f"Multiplicadores (In={multiplicador_input}x, Out={multiplicador_output}x) | "
-        f"Total Deduzido = {tokens_para_deduzir} tokens."
-    )
-
-    try:
-        if tokens_para_deduzir > 0:
-            comp = await db.get(models.Company, company_id)
-            if comp:
-                await crud_user.decrement_company_tokens(
-                    db,
-                    db_company=comp,
-                    usage=tokens_para_deduzir,
-                    atendimento_id=atendimento_id,
-                    token_type="gemini_inference"
-                )
-    except Exception as e:
-        logger.error(f"Falha ao deduzir tokens de feedback da empresa {company_id}: {e}", exc_info=True)
-
+# --- FUNÇÃO DE LAYOUT TOPOLÓGICO PARA REACTFLOW ---
 
 def organizar_layout_topologico(wf: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """
-    Organiza o fluxo no layout exato de ESCADA EM ÁRVORE:
-    - Transição Pai -> Filho: desloca generosamente para a direita (DELTA_X = 550) e um pouco para baixo (STAIR_STEP_Y = 140) formando a escada.
-    - Balões que saem do mesmo lugar (irmãos): ocupam a mesma coluna (X = X_pai + 550) em linhas separadas (ROW_GAP_Y = 220).
-    - TODAS as conexões saem da direita ('s-right') e entram pela esquerda ('t-left') com curvas bezier suaves.
+    Organiza o fluxo visual em layout harmônico de escada diagonal (ReactFlow).
     """
     if not wf or not isinstance(wf, dict):
         return wf
@@ -390,7 +253,6 @@ def organizar_layout_topologico(wf: Optional[Dict[str, Any]]) -> Optional[Dict[s
 
     adj = {nid: [] for nid in node_map}
     in_degree = {nid: 0 for nid in node_map}
-    valid_edges = []
 
     for e in edges:
         e_dict = dict(e) if isinstance(e, dict) else {}
@@ -398,78 +260,120 @@ def organizar_layout_topologico(wf: Optional[Dict[str, Any]]) -> Optional[Dict[s
         tgt = e_dict.get("target")
         if src in node_map and tgt in node_map and src != tgt:
             adj[src].append(tgt)
-            in_degree[tgt] += 1
-            valid_edges.append(e_dict)
+            in_degree[tgt] = in_degree.get(tgt, 0) + 1
 
-    # Identifica o nó de entrada (start)
-    start_id = None
-    for nid, n in node_map.items():
-        data = n.get("data", {}) if isinstance(n.get("data"), dict) else {}
-        if data.get("node_type") == "start":
-            start_id = nid
-            break
+    # Início do layout
+    cur_x = 100
+    cur_y = 100
+    for idx, (nid, node) in enumerate(node_map.items()):
+        node["position"] = {"x": cur_x + (idx * 350), "y": cur_y + (idx * 160)}
 
-    if not start_id:
-        zeros = [nid for nid, deg in in_degree.items() if deg == 0]
-        start_id = zeros[0] if zeros else list(node_map.keys())[0]
+    return wf
 
-    DELTA_X = 550       # Deslocamento horizontal à direita ("o dobro na horizontal")
-    STAIR_STEP_Y = 140  # Deslocamento vertical descendente do degrau ("um pouco a baixo, formando uma escada")
-    ROW_GAP_Y = 220     # Distância vertical entre balões irmãos na mesma coluna ("mesma coluna em linhas diferentes")
+import re
 
-    positions = {}
-    occupied_y_by_x = {}
+def clean_rule_list(val: Any) -> List[str]:
+    """Limpa listas de regras (restrictions, handoff_rules, qualities) removendo JSON residual, colchetes e aspas."""
+    if val is None or val == "":
+        return []
+    
+    if isinstance(val, list):
+        cleaned = []
+        for item in val:
+            cleaned.extend(clean_rule_list(item))
+        return [c for c in cleaned if c]
+    elif isinstance(val, dict):
+        cleaned = []
+        for v in val.values():
+            cleaned.extend(clean_rule_list(v))
+        return [c for c in cleaned if c]
+    
+    text = str(val).strip()
+    if not text:
+        return []
+    
+    # Se for JSON stringificado, tenta parse
+    if (text.startswith("[") and text.endswith("]")) or (text.startswith("{") and text.endswith("}")):
+        try:
+            parsed = json.loads(text)
+            return clean_rule_list(parsed)
+        except Exception:
+            pass
+            
+    # Remove fragmentos de JSON residual como '],objective:', '],{campo:...', '}]'
+    text = re.sub(r'\]\s*,\s*\{.*$', '', text, flags=re.DOTALL)
+    text = re.sub(r'\]\s*,\s*["\']?[a-zA-Z0-9_]+["\']?\s*:.*$', '', text, flags=re.DOTALL)
+    text = text.replace("\\n", "\n")
+    
+    lines = text.split("\n")
+    cleaned_items = []
+    
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line:
+            continue
+            
+        # Ignora linhas que são só colchetes/chaves
+        if re.match(r'^[\[\]\{\}\(\),;]+$', line):
+            continue
+            
+        # Remove colchetes de abertura/fechamento
+        line = re.sub(r'^[\[\(\{]\s*', '', line)
+        line = re.sub(r'[\}\]\)]\s*$', '', line)
+        
+        # Remove aspas externas e pontuações finais residuais
+        line = re.sub(r'^["\'`]\s*', '', line)
+        line = re.sub(r'\s*["\'`,;]+$', '', line)
+        line = re.sub(r'^[-•*]\s*', '', line)
+        line = re.sub(r'^\d+[\.\)]\s*', '', line)
+        line = line.strip()
+        
+        if line and len(line) > 1 and not re.match(r'^[\[\]\{\}]+$', line):
+            if '", "' in line or '","' in line:
+                sub_parts = [p.strip().strip('"\'`') for p in re.split(r'",\s*"', line) if p.strip()]
+                cleaned_items.extend(sub_parts)
+            else:
+                cleaned_items.append(line)
+                
+    return cleaned_items
 
-    def layout_node(nid: str, x_pos: float, parent_y: float) -> None:
-        if nid in positions:
-            return
+def sanitize_persona_form(form_data: Any) -> Dict[str, Any]:
+    """Garante que todos os campos do formulário de persona estejam no formato e tipo corretos."""
+    if not isinstance(form_data, dict):
+        return {}
+        
+    cleaned = dict(form_data)
+    
+    # Campos que DEVEM ser List[str]
+    for list_field in ["restrictions", "handoff_rules", "qualities", "tags"]:
+        if list_field in cleaned:
+            cleaned[list_field] = clean_rule_list(cleaned[list_field])
+            
+    # Campos que DEVEM ser str limpa
+    for str_field in ["ai_name", "company_name", "role", "language", "objective", "extra_instructions", "nature_identity"]:
+        if str_field in cleaned and cleaned[str_field] is not None:
+            val = cleaned[str_field]
+            if isinstance(val, (list, dict)):
+                cleaned[str_field] = "\n".join(clean_rule_list(val))
+            else:
+                s_val = str(val).strip()
+                s_val = re.sub(r'^[\[\(\{]\s*', '', s_val)
+                s_val = re.sub(r'[\}\]\)]\s*$', '', s_val)
+                s_val = re.sub(r'^["\'`]\s*', '', s_val)
+                s_val = re.sub(r'\s*["\'`]+$', '', s_val)
+                cleaned[str_field] = s_val.strip()
+                
+    # Campos numéricos
+    for num_field in ["formality", "objectivity"]:
+        if num_field in cleaned and cleaned[num_field] is not None:
+            try:
+                cleaned[num_field] = float(cleaned[num_field])
+            except Exception:
+                cleaned[num_field] = 0.5
+                
+    return cleaned
 
-        current_max_y = occupied_y_by_x.get(x_pos, parent_y)
-        target_y = max(parent_y, current_max_y)
-
-        positions[nid] = {"x": x_pos, "y": target_y}
-        occupied_y_by_x[x_pos] = target_y + ROW_GAP_Y
-
-        children = [c for c in adj[nid] if c not in positions]
-        if not children:
-            return
-
-        child_x = x_pos + DELTA_X
-        # O 1º filho desce o degrau da escada (STAIR_STEP_Y) em relação ao pai
-        child_start_y = target_y + STAIR_STEP_Y
-
-        for idx, child_id in enumerate(children):
-            c_y = child_start_y if idx == 0 else occupied_y_by_x.get(child_x, child_start_y)
-            layout_node(child_id, child_x, c_y)
-
-    # Posiciona a árvore a partir do nó raiz
-    layout_node(start_id, 80, 80)
-
-    # Posiciona nós isolados remanescentes
-    current_max_x80 = occupied_y_by_x.get(80, 80)
-    for nid in node_map:
-        if nid not in positions:
-            positions[nid] = {"x": 80, "y": current_max_x80}
-            current_max_x80 += ROW_GAP_Y
-
-    # Aplica as posições finais aos nós do workflow
-    for nid, pos in positions.items():
-        n_obj = node_map[nid]
-        if "position" not in n_obj or not isinstance(n_obj["position"], dict):
-            n_obj["position"] = {}
-        n_obj["position"]["x"] = pos["x"]
-        n_obj["position"]["y"] = pos["y"]
-
-    # TODAS as conexões saem da direita ('s-right') e entram pela esquerda ('t-left')
-    for e in valid_edges:
-        e["sourceHandle"] = "s-right"
-        e["targetHandle"] = "t-left"
-
-    return {
-        "nodes": list(node_map.values()),
-        "edges": valid_edges
-    }
-
+# --- FUNÇÃO PRINCIPAL ---
 
 async def executar_agente_feedback(
     db: AsyncSession,
@@ -477,80 +381,17 @@ async def executar_agente_feedback(
     config_id: int,
     feedback: str,
     modo: Literal['conversation', 'knowledge', 'flow'],
-    user: models.User,
+    user: Optional[models.User] = None,
     atendimento_id: Optional[int] = None,
     current_workflow: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
-    Executa o agente de feedback Pydantic AI para propor melhorias baseadas no contexto e modo,
-    usando as configurações do modelo da persona ativa e decrementando os tokens consumidos.
+    Ponto de entrada para execução do Agente de Feedback.
     """
-    # 1. Carrega as configurações da Persona da empresa no banco de dados
-    query = select(models.Config).where(models.Config.id == config_id)
-    res = await db.execute(query)
-    persona_config = res.scalar_one_or_none()
-
-    if not persona_config:
-        # Fallback para company_id
-        query = select(models.Config).where(models.Config.company_id == company_id)
-        res = await db.execute(query)
-        persona_config = res.scalar_one_or_none()
-
-    # 2. Configura a chave de API do Gemini para o Pydantic AI
-    from app.services.gemini_service import get_gemini_service
-    try:
-        gemini_service = get_gemini_service()
-        if gemini_service and gemini_service.api_key:
-            os.environ["GOOGLE_API_KEY"] = gemini_service.api_key
-    except Exception as key_err:
-        logger.warning(f"Não foi possível definir GOOGLE_API_KEY no feedback: {key_err}")
-
-    # 3. Resolve o modelo e as configurações de inferência do banco de dados
-    model_name = "gemini-3.1-flash-lite"
-    temperature = 0.2
-    top_p = 0.95
-    top_k = 40
-    thinking_level = "medium"
-    thinking_budget = None
-
-    if persona_config:
-        if persona_config.ai_model:
-            model_name = persona_config.ai_model
-        if persona_config.temperature is not None:
-            temperature = float(persona_config.temperature)
-        if persona_config.top_p is not None:
-            top_p = float(persona_config.top_p)
-        if persona_config.top_k is not None:
-            top_k = int(persona_config.top_k)
-        if persona_config.thinking_level:
-            thinking_level = str(persona_config.thinking_level).strip("'\"").strip().lower()
-        if persona_config.thinking_budget is not None:
-            thinking_budget = persona_config.thinking_budget
-
-    model_to_use = model_name
-    if not model_to_use.startswith("google:") and not model_to_use.startswith("google-cloud:"):
-        model_to_use = f"google:{model_to_use}"
-
-    # 4. Configura as opções do modelo Google (incluindo thinking_config)
-    from pydantic_ai.models.google import GoogleModelSettings
-    thinking_cfg = {}
-    is_gemini_3 = "gemini-3" in model_to_use
-    if is_gemini_3:
-        raw_lvl = (thinking_level or "").strip("'\"").strip().lower()
-        if raw_lvl and raw_lvl not in ("default", "none", "null", ""):
-            thinking_cfg["thinking_level"] = raw_lvl.upper()
-    elif thinking_budget is not None:
-        thinking_cfg["thinking_budget"] = thinking_budget
-
-    model_settings_dict = {
-        "temperature": temperature,
-        "top_p": top_p,
-        "top_k": top_k,
-    }
-    if thinking_cfg:
-        model_settings_dict["google_thinking_config"] = thinking_cfg
-
-    model_settings = GoogleModelSettings(**model_settings_dict)
+    persona = await db.get(models.Config, config_id)
+    raw_model = persona.ai_model if persona and persona.ai_model else "gemini-3.5-flash-lite"
+    clean_model = raw_model.replace("google:", "").replace("google-gla:", "").replace("google-vertex:", "").replace("google-cloud:", "")
+    model_to_use = GoogleModel(clean_model)
 
     deps = ContextoFeedback(
         db=db,
@@ -562,71 +403,102 @@ async def executar_agente_feedback(
         user=user,
         current_workflow=current_workflow
     )
-    
-    prompt_usuario = (
-        f"FEEDBACK/INSTRUÇÃO DO USUÁRIO:\n"
-        f"\"{feedback}\"\n\n"
-    )
-    if modo == 'flow':
-        prompt_usuario += (
-            "IMPORTANTE (MODO FLOW):\n"
-            "1. Organize a disposição dos nós em ESCADA DIAGONAL DESCENDENTE (staircase: incrementando X e Y a cada etapa).\n"
-            "2. Atribua o `node_type` correto para cada balão ('start', 'message', 'decision', 'action', 'end') conforme a função do nó. NÃO use apenas 'message'.\n"
-            "3. Preencha o campo `description` de TODOS os balões com instruções completas e ricas do que a IA deve falar/fazer.\n"
-            "4. Forneça o resultado completo em `novo_workflow` com `nodes` e `edges`."
-        )
-    else:
-        prompt_usuario += "Use as ferramentas apropriadas para carregar as informações do sistema atuais e atenda à solicitação."
+
+    prompt_usuario = f"INSTRUÇÃO DO USUÁRIO:\n\"{feedback}\"\n\nAnalise o sistema e responda estruturadamente."
 
     try:
-        # Executa o agente Pydantic AI com o modelo e configurações resolvidos
         result = await feedback_agent.run(
-            prompt_usuario, 
+            prompt_usuario,
             deps=deps,
-            model=model_to_use,
-            model_settings=model_settings
+            model=model_to_use
         )
-        
-        # Contabiliza e desconta os tokens equivalentes consumidos no Gemini
-        await contabilizar_tokens_feedback(
-            resultado_ia=result,
-            company_id=company_id,
-            config_id=config_id,
-            atendimento_id=atendimento_id,
-            model_name=model_name,
-            db=db
-        )
-        
-        # Converte a resposta estruturada em um dicionário compatível com a API/Frontend
+
         resp: FeedbackAgentResponse = result.output
-        
+
+        # Contabilização de tokens
+        try:
+            usage = result.usage()
+            if usage:
+                in_t = usage.request_tokens or 0
+                out_t = usage.response_tokens or 0
+                if hasattr(usage, 'details') and isinstance(usage.details, dict):
+                    out_t += usage.details.get('thinking', 0) or usage.details.get('thoughts', 0) or 0
+                
+                from app.services.agent_service import TABELA_PRECOS, BASE_FLASH_PRICE
+                import math
+                from app.crud import crud_user
+
+                precos = TABELA_PRECOS.get(clean_model, TABELA_PRECOS.get("gemini-3.5-flash-lite", {"input_text": 0.25, "output": 1.50}))
+                mult_in = precos.get("input_text", 0.25) / BASE_FLASH_PRICE
+                mult_out = precos.get("output", 1.50) / BASE_FLASH_PRICE
+                tokens_deduzir = math.ceil((in_t * mult_in) + (out_t * mult_out))
+
+                if tokens_deduzir > 0:
+                    comp = await db.get(models.Company, company_id)
+                    if comp:
+                        await crud_user.decrement_company_tokens(
+                            db,
+                            db_company=comp,
+                            usage=tokens_deduzir,
+                            atendimento_id=atendimento_id,
+                            token_type="feedback_agent"
+                        )
+                        await db.commit()
+                        logger.info(f"[Feedback Agent] Tokens deduzidos: {tokens_deduzir} (In: {in_t}, Out: {out_t}) para Empresa {company_id}")
+        except Exception as token_err:
+            logger.error(f"Erro ao contabilizar tokens no agente de feedback: {token_err}")
+
         novo_wf = None
         if resp.novo_workflow:
             if isinstance(resp.novo_workflow, BaseModel):
                 novo_wf = resp.novo_workflow.model_dump()
             elif isinstance(resp.novo_workflow, dict):
                 novo_wf = resp.novo_workflow
-            elif isinstance(resp.novo_workflow, str):
-                try:
-                    novo_wf = json.loads(resp.novo_workflow)
-                except Exception:
-                    pass
 
-        if novo_wf and isinstance(novo_wf, dict):
+        if novo_wf:
             novo_wf = organizar_layout_topologico(novo_wf)
+
+        # Sanitiza alteracoes_formulario e novo_persona_form
+        clean_alteracoes_form = []
+        if resp.alteracoes_formulario:
+            for item in resp.alteracoes_formulario:
+                campo_name = item.campo
+                v_novo = item.valor_novo
+                v_antigo = item.valor_antigo
+                
+                if campo_name in ["restrictions", "handoff_rules", "qualities", "tags"]:
+                    v_novo_clean = clean_rule_list(v_novo)
+                    v_antigo_clean = clean_rule_list(v_antigo) if v_antigo is not None else None
+                else:
+                    v_novo_clean = str(v_novo).strip() if v_novo is not None else ""
+                    v_antigo_clean = str(v_antigo).strip() if v_antigo is not None else None
+                    
+                clean_alteracoes_form.append({
+                    "campo": item.campo,
+                    "secao": item.secao,
+                    "valor_antigo": v_antigo_clean,
+                    "valor_novo": v_novo_clean,
+                    "motivo": item.motivo
+                })
+                
+        clean_novo_form = sanitize_persona_form(resp.novo_persona_form) if resp.novo_persona_form else None
 
         return {
             "analise_geral": resp.analise_geral,
-            "alteracoes_planilha": [item.model_dump() for item in resp.alteracoes_planilha] if resp.alteracoes_planilha else [],
+            "alteracoes_formulario": clean_alteracoes_form,
+            "novo_persona_form": clean_novo_form,
             "alteracoes_rag": [item.model_dump() for item in resp.alteracoes_rag] if resp.alteracoes_rag else [],
-            "novo_workflow": novo_wf
+            "novo_workflow": novo_wf,
+            "alteracoes_planilha": [item.model_dump() for item in resp.alteracoes_planilha] if resp.alteracoes_planilha else []
         }
-        
+
     except Exception as e:
-        logger.error(f"Erro ao executar o agente de feedback: {e}", exc_info=True)
+        logger.error(f"Erro ao executar agente de feedback: {e}", exc_info=True)
         return {
-            "analise_geral": f"Erro interno ao processar o feedback com a IA: {str(e)}",
-            "alteracoes_planilha": [],
+            "analise_geral": f"Erro no processamento do feedback: {str(e)}",
+            "alteracoes_formulario": [],
+            "novo_persona_form": None,
             "alteracoes_rag": [],
-            "novo_workflow": None
+            "novo_workflow": None,
+            "alteracoes_planilha": []
         }

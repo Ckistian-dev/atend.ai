@@ -286,9 +286,53 @@ END $$;
             except Exception as ex:
                 logger.exception("Erro ao executar migração multi-tenant.")
 
+            # --- Ajuste de compatibilidade para tabela mensagens (message_date e timestamp) ---
+            try:
+                compat_mensagens_sql = """
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'mensagens') THEN
+                        -- Se message_date existir com NOT NULL, remove o NOT NULL
+                        IF EXISTS (
+                            SELECT 1 FROM information_schema.columns 
+                            WHERE table_schema = 'public' AND table_name = 'mensagens' AND column_name = 'message_date' AND is_nullable = 'NO'
+                        ) THEN
+                            ALTER TABLE mensagens ALTER COLUMN message_date DROP NOT NULL;
+                        END IF;
+
+                        -- Se message_date não existir, adiciona
+                        IF NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns 
+                            WHERE table_schema = 'public' AND table_name = 'mensagens' AND column_name = 'message_date'
+                        ) THEN
+                            ALTER TABLE mensagens ADD COLUMN message_date TIMESTAMPTZ DEFAULT NOW();
+                        END IF;
+
+                        -- Se timestamp não existir, adiciona
+                        IF NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns 
+                            WHERE table_schema = 'public' AND table_name = 'mensagens' AND column_name = 'timestamp'
+                        ) THEN
+                            ALTER TABLE mensagens ADD COLUMN "timestamp" TIMESTAMPTZ DEFAULT NOW();
+                        END IF;
+
+                        -- Sincroniza message_date e timestamp se um estiver nulo
+                        UPDATE mensagens SET message_date = "timestamp" WHERE message_date IS NULL AND "timestamp" IS NOT NULL;
+                        UPDATE mensagens SET "timestamp" = message_date WHERE "timestamp" IS NULL AND message_date IS NOT NULL;
+                    END IF;
+                END $$;
+                """
+                await conn.execute(text(compat_mensagens_sql))
+                logger.info("Compatibilidade de colunas na tabela 'mensagens' verificada.")
+            except Exception as compat_err:
+                logger.warning(f"Aviso ao ajustar compatibilidade da tabela mensagens: {compat_err}")
+
             # Executa a sincronização segura de schema de forma dinâmica e persistente
             await conn.run_sync(sync_schema)
             logger.info("Tabelas e colunas do banco de dados verificadas/sincronizadas com sucesso.")
+
+            # --- Migração de mensagens legadas finalizada e desativada ---
+            pass
 
             # --- LIMPEZA DE HIGIENIZAÇÃO DE CONFIGS (Remoção de aspas armazenadas em thinking_level e tts_voice) ---
             try:

@@ -44,6 +44,10 @@ const ImageDisplayer = ({ atendimentoId, mediaId, caption, filename }) => {
     }, [loadState]);
 
     const loadImage = async () => {
+        if (!mediaId || mediaId === 'null' || mediaId === 'undefined' || !atendimentoId) {
+            setLoadState('error');
+            return;
+        }
         if (loadState !== 'idle') return;
         setLoadState('loading');
         try {
@@ -75,45 +79,38 @@ const ImageDisplayer = ({ atendimentoId, mediaId, caption, filename }) => {
     );
 
     return (
-        <div ref={displayerRef} className="space-y-3 w-full max-w-[220px] sm:max-w-[280px] md:max-w-[360px]">
-            {filename && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white max-w-full select-all">
-                    <ImageIcon size={14} className="text-white/80 flex-shrink-0" />
-                    <span className="text-[11px] font-bold truncate" title={filename}>
-                        {filename}
-                    </span>
-                </div>
-            )}
-            <div className="relative aspect-[4/3] bg-black/5 rounded-[1.5rem] overflow-hidden shadow-2xl shadow-blue-900/5 group border border-white/10">
+        <div ref={displayerRef} className="w-full min-w-[240px] max-w-[320px] sm:max-w-[360px] space-y-2">
+            <div 
+                className="relative aspect-video bg-black/10 rounded-2xl overflow-hidden shadow-md cursor-pointer group border border-white/10"
+                onClick={openModal}
+            >
                 {(loadState === 'loading' || loadState === 'idle') && <MediaSkeleton />}
 
                 {loadState === 'error' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 text-red-300">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100/20 text-red-300">
                         <AlertCircle size={24} />
-                        <span className="text-[10px] font-black uppercase mt-2">Falha no carregamento</span>
+                        <span className="text-[10px] font-bold uppercase mt-2 tracking-wider">Falha na imagem</span>
                     </div>
                 )}
 
                 {loadState === 'loaded' && imageSrc && (
                     <img
                         src={imageSrc}
-                        alt="Interação"
-                        className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition-transform duration-700"
-                        onClick={openModal}
+                        alt="Imagem enviada"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                 )}
             </div>
 
-
             {caption && (
-                <div className="px-2">
-                    <p className="text-[13px] leading-relaxed text-slate-600 font-bold italic opacity-80">{formatWhatsAppText(caption)}</p>
+                <div className="px-1 pt-1">
+                    <p className="text-[13px] leading-relaxed text-inherit font-medium opacity-90">{formatWhatsAppText(caption)}</p>
                 </div>
             )}
 
             {isModalOpen && imageSrc && (
                 <div className="fixed inset-[-25px] backdrop-blur-3xl bg-white/5 flex items-center justify-center z-[9999] p-4 sm:p-8" onClick={closeModal}>
-                    <button onClick={closeModal} className="absolute top-4 right-4 sm:top-8 sm:right-8 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-2xl sm:rounded-3xl bg-white/10 text-white hover:bg-white/20 transition-all">
+                    <button onClick={closeModal} className="absolute top-4 right-4 sm:top-8 sm:right-8 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-2xl sm:rounded-3xl bg-white/10 text-white hover:bg-white/20 transition-all z-[10000]">
                         <X size={24} />
                     </button>
                     <div className="flex flex-col items-center gap-4 max-w-[95vw]" onClick={(e) => e.stopPropagation()}>

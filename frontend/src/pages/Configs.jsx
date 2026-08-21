@@ -130,7 +130,6 @@ const initialFormData = {
     thinking_budget: 1024,
     thinking_level: 'medium',
     tts_voice: 'Aoede',
-    allow_send_values: true,
     persona_form: null,
 };
 
@@ -168,6 +167,15 @@ function QualitiesSelector({ selected = [], onChange }) {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef(null);
 
+    // Garante que selected é sempre um array válido
+    const safeSelected = Array.isArray(selected)
+        ? selected
+        : typeof selected === 'string'
+            ? selected.startsWith('[')
+                ? (() => { try { const parsed = JSON.parse(selected); return Array.isArray(parsed) ? parsed : []; } catch { return selected ? selected.split(',').map(s => s.trim()).filter(Boolean) : []; } })()
+                : selected ? selected.split(',').map(s => s.trim()).filter(Boolean) : []
+            : [];
+
     const toggleOpen = () => {
         const nextState = !isOpen;
         setIsOpen(nextState);
@@ -180,15 +188,15 @@ function QualitiesSelector({ selected = [], onChange }) {
 
     const addQuality = (quality) => {
         const trimmed = quality.trim();
-        if (trimmed && !selected.includes(trimmed)) {
-            onChange([...selected, trimmed]);
+        if (trimmed && !safeSelected.includes(trimmed)) {
+            onChange([...safeSelected, trimmed]);
         }
         setInputValue('');
         // Mantém aberto para permitir adicionar várias opções em sequência
     };
 
     const removeQuality = (qualityToRemove) => {
-        onChange(selected.filter(q => q !== qualityToRemove));
+        onChange(safeSelected.filter(q => q !== qualityToRemove));
     };
 
     const handleKeyDown = (e) => {
@@ -201,7 +209,7 @@ function QualitiesSelector({ selected = [], onChange }) {
     };
 
     const availablePresets = PRESET_QUALITIES.filter(q =>
-        !selected.includes(q) &&
+        !safeSelected.includes(q) &&
         (!inputValue || q.toLowerCase().includes(inputValue.toLowerCase()))
     );
 
@@ -210,9 +218,9 @@ function QualitiesSelector({ selected = [], onChange }) {
             <PFLabel>3. Qualidades e Atributos da IA</PFLabel>
 
             {/* Tags selecionadas */}
-            {selected.length > 0 && (
+            {safeSelected.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-3">
-                    {selected.map(quality => (
+                    {safeSelected.map(quality => (
                         <span
                             key={quality}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 font-bold text-xs border border-blue-200/60 shadow-sm animate-fade-in"
@@ -524,14 +532,50 @@ const JsonTreeItem = ({ keyName, value, path = '', selectedFields, setSelectedFi
     );
 };
 
+function cleanRuleItems(items) {
+    if (items === null || items === undefined || items === '') return [];
+    if (Array.isArray(items)) {
+        return items.flatMap(item => cleanRuleItems(item)).filter(Boolean);
+    }
+    if (typeof items === 'object') {
+        return Object.values(items).flatMap(item => cleanRuleItems(item)).filter(Boolean);
+    }
+    let text = String(items).trim();
+    if (!text) return [];
+    if ((text.startsWith('[') && text.endsWith(']')) || (text.startsWith('{') && text.endsWith('}'))) {
+        try {
+            const parsed = JSON.parse(text);
+            return cleanRuleItems(parsed);
+        } catch (e) { }
+    }
+    text = text.replace(/\]\s*,\s*\{.*$/gs, '');
+    text = text.replace(/\]\s*,\s*[a-zA-Z0-9_]+\s*:.*$/gs, '');
+    text = text.replace(/\\n/g, '\n');
+    const lines = text.split('\n');
+    const results = [];
+    for (let rawLine of lines) {
+        let line = rawLine.trim();
+        if (!line || /^[\[\]\{\}\(\),;]+$/.test(line)) continue;
+        line = line.replace(/^[\[\(\{]\s*/, '').replace(/[\}\]\)]\s*$/, '');
+        line = line.replace(/^["'`]\s*/, '').replace(/\s*["'`,;]+$/, '');
+        line = line.replace(/^[-•*]\s*/, '');
+        line = line.replace(/^\d+[\.\)]\s*/, '').trim();
+        if (line && line.length > 1 && !/^[\[\]\{\}]+$/.test(line)) {
+            if (line.includes('", "') || line.includes('","')) {
+                const subItems = line.split(/",\s*"/).map(s => s.replace(/^["'`]|["'`]$/g, '').trim()).filter(Boolean);
+                results.push(...subItems);
+            } else {
+                results.push(line);
+            }
+        }
+    }
+    return results;
+}
+
 function RulesListInput({ label, items, placeholder, onChange }) {
     const [inputValue, setInputValue] = useState('');
 
-    const currentList = Array.isArray(items)
-        ? items
-        : (typeof items === 'string' && items.trim()
-            ? items.split('\n').map(s => s.replace(/^-\s*/, '').trim()).filter(Boolean)
-            : []);
+    const currentList = cleanRuleItems(items);
 
     const addItem = () => {
         const trimmed = inputValue.trim();
@@ -851,7 +895,6 @@ function Configs() {
     const activeTabsList = useMemo(() => [
         { id: 'ia', label: 'Modelo IA', icon: Cpu },
         { id: 'persona', label: 'Persona', icon: Sparkles },
-        { id: 'system', label: 'Instruções', icon: FileText },
         { id: 'rag', label: 'Conhecimento', icon: Database },
         { id: 'drive', label: 'Arquivos', icon: Folder },
         { id: 'fluxo', label: 'Fluxo', icon: Network },
@@ -913,8 +956,7 @@ function Configs() {
             top_k: config.top_k ?? 40,
             thinking_budget: config.thinking_budget ?? 1024,
             thinking_level: config.thinking_level ? String(config.thinking_level).replace(/['"]/g, '').trim().toLowerCase() : 'medium',
-            tts_voice: config.tts_voice ? String(config.tts_voice).replace(/['"]/g, '').trim() : 'Aoede',
-            allow_send_values: config.allow_send_values ?? true
+            tts_voice: config.tts_voice ? String(config.tts_voice).replace(/['"]/g, '').trim() : 'Aoede'
         });
 
         // Parse Schedule
@@ -1041,7 +1083,6 @@ function Configs() {
             thinking_budget: formData.thinking_budget,
             thinking_level: formData.thinking_level,
             tts_voice: formData.tts_voice,
-            allow_send_values: formData.allow_send_values,
             persona_form: formData.persona_form,
         };
         try {
@@ -1994,32 +2035,6 @@ function Configs() {
                                                         <Bot size={11} className="text-blue-500" /> Voz utilizada quando a IA gera áudios de resposta
                                                     </p>
                                                 </div>
-                                            </div>
-                                        </FormSection>
-
-                                        {/* SEÇÃO 1.5: Envio de Valores & Orçamentos */}
-                                        <FormSection icon={Shield} title="Regras de Envio de Valores & Orçamentos">
-                                            <div className="p-4 bg-slate-50/80 border border-slate-200/60 rounded-2xl flex items-center justify-between gap-4">
-                                                <div className="space-y-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xs font-bold text-slate-800">Permitir que a IA informe ou calcule valores monetários ao cliente</span>
-                                                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${formData.allow_send_values ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                                                            {formData.allow_send_values ? 'Ativado' : 'Bloqueado'}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                                                        {formData.allow_send_values
-                                                            ? 'A IA poderá consultar a base de conhecimento e informar valores monetários em qualquer moeda (R$, $, €, £, etc.) ao cliente quando constarem na busca.'
-                                                            : 'A IA será rigorosamente PROIBIDA de enviar valores numéricos em dinheiro, preços, orçamentos calculados ou fretes (R$, $, €, £, etc.), devendo direcionar o cliente ao canal oficial ou atendente.'}
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setFormData(p => ({ ...p, allow_send_values: !p.allow_send_values }))}
-                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0 ${formData.allow_send_values ? 'bg-emerald-600' : 'bg-slate-300'}`}
-                                                >
-                                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${formData.allow_send_values ? 'translate-x-6' : 'translate-x-1'}`} />
-                                                </button>
                                             </div>
                                         </FormSection>
 

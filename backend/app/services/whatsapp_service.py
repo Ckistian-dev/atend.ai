@@ -70,17 +70,19 @@ class WhatsAppService:
     def _run_ffmpeg_sync(self, input_path: str, output_path: str):
         """
         Função síncrona para executar o ffmpeg.
-        ALTERADO: Converte para MP3 para máxima compatibilidade, especialmente com iPhones.
-        O áudio não será mais enviado como PTT (mensagem de voz), mas como um arquivo de áudio reproduzível.
+        Converte para OGG OPUS (mono, 16kHz) para envio como mensagem de voz nativa gravada (PTT - Push To Talk).
         """
         command = [
             "ffmpeg",
             "-y",
             "-i", input_path,
-            "-c:a", "libmp3lame", # Codec MP3
-            "-q:a", "4",          # Qualidade de áudio (0=melhor, 9=pior)
-            "-ar", "44100",       # Sample rate padrão
-            output_path          # O output_path já terá a extensão .mp3
+            "-c:a", "libopus",     # Codec OPUS oficial da Meta para PTT
+            "-b:a", "32k",         # Bitrate de voz nítido e leve
+            "-vbr", "on",
+            "-compression_level", "10",
+            "-ar", "16000",        # 16kHz sample rate padrão de voz
+            "-ac", "1",            # 1 canal (mono obrigatório para PTT)
+            output_path            # Saída .ogg
         ]
         
         try:
@@ -242,6 +244,29 @@ class WhatsAppService:
         
         return None
 
+    def _run_ffmpeg_sync(self, input_path: str, output_path: str) -> None:
+        """Executa FFmpeg síncrono para converter qualquer áudio em OGG OPUS mono 48kHz (PTT WhatsApp nativo)."""
+        command = [
+            "ffmpeg", "-y",
+            "-i", input_path,
+            "-c:a", "libopus",
+            "-b:a", "32k",
+            "-ar", "48000",
+            "-ac", "1",
+            "-application", "voip",
+            output_path
+        ]
+        logger.debug(f"WBP: Executando conversão de áudio para PTT: {' '.join(command)}")
+        process = subprocess.run(
+            command,
+            capture_output=True,
+            check=False
+        )
+        if process.returncode != 0:
+            stderr = process.stderr.decode('utf-8', errors='ignore')
+            logger.error(f"WBP: Conversão FFmpeg para OGG OPUS falhou (code {process.returncode}). Stderr: {stderr}")
+            raise subprocess.CalledProcessError(process.returncode, command, output=process.stdout, stderr=process.stderr)
+
     async def _upload_media_official(
         self, 
         phone_number_id: str, 
@@ -258,39 +283,37 @@ class WhatsAppService:
         final_mimetype = mimetype
         final_filename = filename
 
-        # --- LÓGICA DE CONVERSÃO DE ÁUDIO PARA MP3 (ALTERADO) ---
-        # Converte qualquer áudio para MP3 para garantir compatibilidade com todos os dispositivos, incluindo iPhone.
-        # Isso corrige o erro 'Media upload error' (131053) da API da Meta.
+        # --- LÓGICA DE CONVERSÃO DE ÁUDIO PARA OGG OPUS (PTT - MENSAGEM DE VOZ NATIVA) ---
         if media_type == 'audio':
-            logger.info(f"WBP: Áudio ({mimetype}) recebido. Convertendo para MP3 para garantir compatibilidade.")
+            logger.info(f"WBP: Áudio ({mimetype}) recebido. Convertendo para OGG OPUS (PTT) para envio nativo de mensagem de voz.")
             try:
                 with tempfile.TemporaryDirectory() as temp_dir:
                     input_ext = os.path.splitext(filename)[1] or '.bin'
                     input_path = os.path.join(temp_dir, f"{uuid.uuid4()}{input_ext}")
                     
-                    output_path = os.path.join(temp_dir, f"{uuid.uuid4()}.mp3") # Saída agora é .mp3
+                    output_path = os.path.join(temp_dir, f"{uuid.uuid4()}.ogg") # Saída .ogg
                     
                     with open(input_path, "wb") as f:
                         f.write(file_bytes)
                     
-                    # Chama a função síncrona do ffmpeg (que agora converte para MP3)
+                    # Chama a função síncrona do ffmpeg (converte para OGG OPUS Mono 16kHz)
                     await asyncio.to_thread(self._run_ffmpeg_sync, input_path, output_path)
                     
                     with open(output_path, "rb") as f:
                         converted_bytes = f.read()
                     
                     if not converted_bytes:
-                        raise ValueError("Arquivo MP3 resultante está vazio.")
+                        raise ValueError("Arquivo OGG OPUS resultante está vazio.")
                         
                     final_file_bytes = converted_bytes
-                    final_mimetype = 'audio/mpeg' # Mimetype para MP3
-                    final_filename = os.path.splitext(filename)[0] + ".mp3"
+                    final_mimetype = 'audio/ogg' # Mimetype oficial aceito pela Meta para PTT
+                    final_filename = os.path.splitext(filename)[0] + ".ogg"
                     
-                    logger.info(f"WBP: Conversão de áudio para MP3 concluída ({len(final_file_bytes)} bytes).")
+                    logger.info(f"WBP: Conversão de áudio para OGG OPUS (PTT) concluída ({len(final_file_bytes)} bytes).")
 
             except Exception as conv_e:
-                logger.error(f"WBP: Falha CRÍTICA na conversão de áudio para MP3: {conv_e}", exc_info=True)
-                logger.warning("WBP: Tentando enviar áudio original (pode falhar ou não sair como PTT)...")
+                logger.error(f"WBP: Falha na conversão de áudio para OGG OPUS: {conv_e}", exc_info=True)
+                logger.warning("WBP: Tentando enviar áudio original...")
                 # Se a conversão falhar, ele tentará enviar o original.
         
         # --- INÍCIO DA LÓGICA DE CONVERSÃO DE IMAGEM (NOVO) ---
@@ -436,7 +459,7 @@ class WhatsAppService:
         files = {
             'file': (final_filename, final_file_bytes, final_mimetype),
             'messaging_product': (None, 'whatsapp'),
-            'type': (None, media_type)
+            'type': (None, final_mimetype if media_type == 'audio' else media_type)
         }
         
         logger.info(f"WBP: Iniciando upload de mídia ({final_filename}, {final_mimetype}, {len(final_file_bytes)} bytes)...")
@@ -513,6 +536,8 @@ class WhatsAppService:
             media_payload = {"id": media_id}
             if media_type == 'document':
                 media_payload["filename"] = filename
+            if media_type == 'audio':
+                media_payload["voice"] = True
             if caption and media_type != 'audio':
                  media_payload["caption"] = caption
                  
@@ -1014,14 +1039,20 @@ class WhatsAppService:
         media_id: str
     ) -> Tuple[bytes, str, str]:
         """
-        Faz proxy e download seguro de uma mídia da Meta.
+        Faz proxy e download seguro de uma mídia.
+        Primeiro consulta o banco de dados (tabela 'mensagens'). Se os bytes já estiverem
+        armazenados em 'media_bytes', retorna diretamente do banco sem chamar a Meta.
+        Caso contrário, faz o download da Meta, persiste os bytes no banco e retorna.
 
         @param db: Sessão do banco de dados.
         @param company_id: ID da empresa proprietária do atendimento.
         @param atendimento_id: ID do atendimento.
-        @param media_id: ID do arquivo de mídia na Meta.
+        @param media_id: ID do arquivo de mídia na Meta ou identificador da mensagem.
         @returns: Tupla contendo os bytes do arquivo, o mimetype e o nome do arquivo.
         """
+        if not media_id or str(media_id).strip().lower() in ['null', 'none', 'undefined', '']:
+            raise ValueError("ID de mídia inválido ou nulo.")
+
         from app.crud import crud_atendimento
         from app.services.atendimento_service import AtendimentoNotFoundError
 
@@ -1029,14 +1060,30 @@ class WhatsAppService:
         if not db_atendimento:
             raise AtendimentoNotFoundError("Atendimento não encontrado.")
 
+        # 1. Tenta recuperar direto da tabela mensagens
+        msg_record = await crud_atendimento.get_message_by_media_id(
+            db, company_id=company_id, media_id=media_id, atendimento_id=atendimento_id
+        )
+        if msg_record and msg_record.media_bytes:
+            content_type = msg_record.mime_type or "application/octet-stream"
+            filename = msg_record.filename or "download"
+            logger.info(f"Mídia {media_id} recuperada DIRETAMENTE do banco de dados (BYTEA, {len(msg_record.media_bytes)} bytes).")
+            return msg_record.media_bytes, content_type, filename
+
+        # Determina o ID real da Meta
+        target_meta_media_id = (msg_record.media_id if msg_record and msg_record.media_id else media_id)
+        if not target_meta_media_id or str(target_meta_media_id).strip().lower() in ['null', 'none', 'undefined', ''] or not str(target_meta_media_id).isdigit():
+            raise ValueError(f"Mídia '{media_id}' não possui arquivo armazenado no banco nem ID numérico válido na Meta.")
+
+        # 2. Se não estiver no banco e for ID numérico da Meta, baixa da Meta
         decrypted_token = settings.WBP_ACCESS_TOKEN
         
-        logger.debug(f"Buscando URL para media_id {media_id}...")
-        media_url = await self.get_media_url_official(media_id, decrypted_token)
+        logger.debug(f"Buscando URL para media_id {target_meta_media_id} na Meta...")
+        media_url = await self.get_media_url_official(target_meta_media_id, decrypted_token)
         if not media_url:
-            raise ValueError("URL da mídia não encontrada na Meta.")
+            raise ValueError(f"URL da mídia {target_meta_media_id} não encontrada na Meta.")
 
-        logger.info(f"Baixando mídia {media_id} diretamente da Meta...")
+        logger.info(f"Baixando mídia {target_meta_media_id} diretamente da Meta...")
         async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
             headers = {"Authorization": f"Bearer {decrypted_token}"}
             media_response = await client.get(media_url, headers=headers)
@@ -1048,22 +1095,21 @@ class WhatsAppService:
                     response_body_text = (await media_response.aread(1024)).decode('utf-8', errors='ignore')
                 except Exception:
                     pass
-                logger.error(f"Erro ao baixar mídia {media_id}: Meta retornou status {media_response.status_code} / tipo {content_type}. Corpo: {response_body_text}")
+                logger.error(f"Erro ao baixar mídia {target_meta_media_id}: Meta retornou status {media_response.status_code} / tipo {content_type}. Corpo: {response_body_text}")
                 media_response.raise_for_status()
                 raise ValueError("Falha ao baixar mídia da Meta: Resposta inesperada.")
 
             media_bytes = media_response.content
-            
-            # Recupera o nome original do arquivo gravado no histórico da conversa
-            filename = "download"
-            try:
-                conversa_list = json.loads(db_atendimento.conversa or "[]")
-                for msg in conversa_list:
-                    if msg.get("media_id") == media_id:
-                        filename = msg.get("filename") or "download"
-                        break
-            except Exception as e:
-                logger.warning(f"Erro ao buscar filename para media {media_id}: {e}")
+            filename = (msg_record.filename if msg_record and msg_record.filename else None) or "download"
+
+            # 3. Salva os bytes no banco de dados para os próximos acessos
+            if msg_record:
+                msg_record.media_bytes = media_bytes
+                if not msg_record.mime_type:
+                    msg_record.mime_type = content_type
+                db.add(msg_record)
+                await db.commit()
+                logger.info(f"Mídia {target_meta_media_id} baixada da Meta e persistida no banco de dados com sucesso.")
 
             return media_bytes, content_type, filename
 
@@ -1103,6 +1149,7 @@ class WhatsAppService:
         wbp_business_account_id = company.wbp_business_account_id if company else None
 
         # Se houver mídia de cabeçalho, realiza o upload prévio e a insere nos componentes
+        uploaded_media_id = None
         if file_bytes and wbp_phone_number_id:
             actual_mime = mimetype or (mimetypes.guess_type(filename)[0] if filename else 'application/octet-stream')
             
@@ -1112,7 +1159,7 @@ class WhatsAppService:
             elif actual_mime.startswith('video/'):
                 media_type = 'video'
             
-            media_id = await self._upload_media_official(
+            uploaded_media_id = await self._upload_media_official(
                 phone_number_id=wbp_phone_number_id,
                 access_token=settings.WBP_ACCESS_TOKEN,
                 file_bytes=file_bytes,
@@ -1121,7 +1168,7 @@ class WhatsAppService:
                 media_type=media_type
             )
             
-            if media_id:
+            if uploaded_media_id:
                 if not payload.components:
                     payload.components = []
                 header_comp = next((c for c in payload.components if c['type'] == 'header'), None)
@@ -1131,7 +1178,7 @@ class WhatsAppService:
                 
                 header_comp['parameters'].append({
                     "type": media_type,
-                    media_type: {"id": media_id}
+                    media_type: {"id": uploaded_media_id}
                 })
             else:
                 logger.error(f"Falha no upload de mídia para template: {filename}")
@@ -1151,7 +1198,7 @@ class WhatsAppService:
         logger.info(f"Template '{payload.template_name}' enviado para {whatsapp_number}. API Msg ID: {send_result.get('id')}")
 
         msg_type = 'text'
-        final_media_id = None
+        final_media_id = uploaded_media_id
         content_for_history = f"[Template: {payload.template_name}]\n"
 
         try:
@@ -1212,16 +1259,21 @@ class WhatsAppService:
             type=msg_type,
             media_id=final_media_id,
             filename=filename if file_bytes else None,
+            mime_type=mimetype if file_bytes else None,
             status="sent",
             is_template=True,
             buttons=extracted_buttons
         )
 
         atendimento_atualizado = await crud_atendimento.add_message_to_conversa(
-            db=db, atendimento_id=atendimento_id, company_id=company_id, message=formatted_message
+            db=db, 
+            atendimento_id=atendimento_id, 
+            company_id=company_id, 
+            message=formatted_message,
+            media_bytes=file_bytes
         )
 
-        await db.refresh(atendimento_atualizado, attribute_names=['active_persona'])
+        await db.refresh(atendimento_atualizado, attribute_names=['active_persona', 'mensagens'])
         return atendimento_atualizado
 
 # --- Singleton ---
@@ -1231,3 +1283,4 @@ def get_whatsapp_service():
     if _whatsapp_service_instance is None:
         _whatsapp_service_instance = WhatsAppService()
     return _whatsapp_service_instance
+

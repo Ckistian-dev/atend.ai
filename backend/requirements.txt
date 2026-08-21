@@ -50,5 +50,10 @@ boto3 # Mantido caso outra parte da aplicação use AWS
 # pika foi substituído por aio_pika para suporte assíncrono
 aio_pika
 
-#--- Agent IA ---
+#--- Agent IA & Orquestração RAG ---
 pydantic-ai
+langgraph
+langchain-core
+langchain-google-genai
+llama-index
+llama-index-core

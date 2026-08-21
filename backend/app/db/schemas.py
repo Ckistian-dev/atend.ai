@@ -16,14 +16,13 @@ class ConfigBase(BaseModel):
     is_calendar_active: Optional[bool] = False
     google_calendar_credentials: Optional[Dict[str, Any]] = None
     workflow_json: Optional[Dict[str, Any]] = None
-    ai_model: Optional[str] = "gemini-2.5-flash"
+    ai_model: Optional[str] = "gemini-3.5-flash-lite"
     temperature: Optional[float] = 0.5
     top_p: Optional[float] = 0.95
     top_k: Optional[int] = 40
     thinking_budget: Optional[int] = 1024
     thinking_level: Optional[str] = "medium"
     tts_voice: Optional[str] = "Aoede"
-    allow_send_values: Optional[bool] = True
     persona_form: Optional[Dict[str, Any]] = None
 
     @field_validator("thinking_level", mode="before")
@@ -69,7 +68,6 @@ class ConfigUpdate(BaseModel):
     thinking_budget: Optional[int] = None
     thinking_level: Optional[str] = None
     tts_voice: Optional[str] = None
-    allow_send_values: Optional[bool] = None
     persona_form: Optional[Dict[str, Any]] = None
 
     @field_validator("thinking_level", mode="before")
@@ -184,6 +182,8 @@ class AtendimentoUpdate(BaseModel):
     conversa: Optional[Any] = None
     nome_contato: Optional[str] = None
     tags: Optional[List[Dict[str, str]]] = None
+    assigned_department: Optional[str] = None
+    assigned_user_id: Optional[int] = None
     model_config = {"from_attributes": True}
 
 class AtendimentoCreate(BaseModel):
@@ -195,6 +195,8 @@ class AtendimentoCreate(BaseModel):
     observacoes: Optional[str] = None
     notificacao_contato: Optional[str] = None
     tags: Optional[List[Dict[str, str]]] = Field(default_factory=list)
+    assigned_department: Optional[str] = None
+    assigned_user_id: Optional[int] = None
     # Campos opcionais para iniciar com um template
     template_name: Optional[str] = None
     template_language_code: Optional[str] = None
@@ -208,10 +210,13 @@ class Atendimento(BaseModel):
     company_id: int
     active_persona_id: Optional[int] = None
     status: str
+    assigned_department: Optional[str] = None
+    assigned_user_id: Optional[int] = None
     resumo: Optional[str] = None
     observacoes: Optional[str] = None
     notificacao_contato: Optional[str] = None
     conversa: Optional[str] = "[]"
+    mensagens: Optional[List["FormattedMessage"]] = None
     created_at: datetime
     bulk_template_name: Optional[str] = None
     bulk_template_params: Optional[Dict[str, Any]] = None
@@ -221,12 +226,18 @@ class Atendimento(BaseModel):
     tags: Optional[List[Dict[str, str]]] = Field(default_factory=list)
     token_usage: Optional[int] = 0
     active_persona: Optional[Config] = None
+    assigned_user: Optional["User"] = None
     model_config = {"from_attributes": True}
 
 class AtendimentoPage(BaseModel):
     total: int
     items: List[Atendimento]
     model_config = {"from_attributes": True}
+
+class TransferAtendimentoPayload(BaseModel):
+    department: Optional[str] = None
+    user_id: Optional[int] = None
+    notes: Optional[str] = None
 
 # --- Schemas de Empresa ---
 class CompanyBase(BaseModel):
@@ -264,6 +275,7 @@ class Company(CompanyBase):
 class UserBase(BaseModel):
     email: EmailStr
     name: Optional[str] = None
+    department: Optional[str] = None
     participates_distribution: Optional[bool] = False
     profile_color: Optional[str] = "#3b82f6"
 
@@ -274,10 +286,12 @@ class UserCreateByAdmin(UserCreate):
     role: Optional[str] = "user"
     company_id: Optional[int] = None
     permissions: Optional[Dict[str, Any]] = None
+    department: Optional[str] = None
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     name: Optional[str] = None
+    department: Optional[str] = None
     role: Optional[str] = None
     company_id: Optional[int] = None
     password: Optional[str] = Field(None, description="Definir uma nova senha para o usuário")
@@ -317,10 +331,11 @@ class TokenData(BaseModel):
 
 # --- Schemas da conversa---
 class FormattedMessage(BaseModel):
-    id: str
-    role: str
+    id: Optional[Any] = None
+    message_id: Optional[str] = None
+    role: str = "user"
     content: Optional[str] = None
-    caption: Optional[str] = None  # Texto original enviado pelo usuário junto com a mídia
+    caption: Optional[str] = None
     timestamp: Optional[Any] = Field(default_factory=lambda: int(datetime.now(timezone.utc).timestamp()))
     status: Optional[str] = None
     type: str = "text"
@@ -331,6 +346,12 @@ class FormattedMessage(BaseModel):
     is_template: Optional[bool] = False
     buttons: Optional[List[str]] = None
     quoted_msg: Optional[Dict[str, Any]] = None
+    quoted_msg_id: Optional[str] = None
+    reaction: Optional[str] = None
+    reactions: Optional[Dict[str, Any]] = None
+    error_code: Optional[str] = None
+    error_title: Optional[str] = None
+    extra_data: Optional[Dict[str, Any]] = None
     is_ai: Optional[bool] = False
     model_config = {"from_attributes": True}
 
@@ -360,7 +381,17 @@ class AlteracaoPlanilha(BaseModel):
     motivo: Optional[str] = None
 
 
+class AlteracaoFormularioItem(BaseModel):
+    campo: str
+    secao: Optional[str] = None
+    valor_antigo: Optional[Any] = None
+    valor_novo: Any
+    motivo: Optional[str] = None
+
+
 class ApplyFeedbackPayload(BaseModel):
+    alteracoes_formulario: Optional[List[AlteracaoFormularioItem]] = None
+    novo_persona_form: Optional[Dict[str, Any]] = None
     alteracoes_planilha: Optional[List[AlteracaoPlanilha]] = None
     alteracoes_rag: Optional[List[AlteracaoPlanilha]] = None
     novo_workflow: Optional[Dict[str, Any]] = None

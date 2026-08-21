@@ -269,39 +269,50 @@ class GoogleSheetsService:
                 acao = str(alt.get("acao", "adicionar")).strip().lower()
                 
                 row_to_update = -1
+                existing_row_values = []
                 
-                if acao == "substituir":
-                    result = self.service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range=f"'{aba}'!A:B").execute()
+                if acao in ["substituir", "modificar", "alterar", "editar", "update"]:
+                    result = self.service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range=f"'{aba}'!A:Z").execute()
                     rows = result.get('values', [])
                     for i, row in enumerate(rows):
                         if i == 0: continue # Pula cabeçalho
                         
                         row_col1 = row[0].strip().lower() if len(row) > 0 else ""
-                        row_col2 = row[1].strip().lower() if len(row) > 1 else ""
-                        
                         target_col1 = col1.strip().lower()
                         target_old_val = str(alt.get("valor_antigo") or "").strip().lower()
                         
-                        # Considera match se a Coluna 1 bater OU se o Valor Antigo estiver na Coluna 2 da planilha (fallback caso a IA resuma o nome da Coluna 1)
-                        match_col1 = (target_col1 != "" and target_col1 == row_col1)
+                        # Match por coluna 1
+                        match_col1 = (target_col1 != "" and (target_col1 == row_col1 or target_col1 in row_col1 or row_col1 in target_col1))
                         
+                        # Match por valor antigo em qualquer coluna da linha
                         match_old = False
-                        if target_old_val and row_col2:
+                        if target_old_val:
                             clean_target = " ".join(target_old_val.split())
-                            clean_row = " ".join(row_col2.split())
-                            if clean_target in clean_row or clean_row in clean_target:
-                                match_old = True
+                            for cell in row:
+                                clean_cell = " ".join(str(cell).strip().lower().split())
+                                if clean_target in clean_cell or clean_cell in clean_target:
+                                    match_old = True
+                                    break
                                 
                         if match_col1 or match_old:
                             row_to_update = i + 1 # Sheets usa índice base 1
-                            col1 = row[0] if len(row) > 0 else col1 # Mantém o nome exato da categoria original da planilha
+                            existing_row_values = list(row)
+                            col1 = row[0] if len(row) > 0 else col1
                             break
                 
                 if row_to_update != -1:
+                    # Monta os valores atualizados preservando estrutura
+                    if len(existing_row_values) >= 2:
+                        updated_vals = list(existing_row_values)
+                        updated_vals[0] = col1
+                        updated_vals[1] = novo
+                    else:
+                        updated_vals = [col1, novo]
+
                     # Atualiza a linha existente
                     self.service.spreadsheets().values().update(
-                        spreadsheetId=spreadsheet_id, range=f"'{aba}'!A{row_to_update}:B{row_to_update}",
-                        valueInputOption="USER_ENTERED", body={"values": [[col1, novo]]}
+                        spreadsheetId=spreadsheet_id, range=f"'{aba}'!A{row_to_update}:{chr(65 + max(len(updated_vals) - 1, 1))}{row_to_update}",
+                        valueInputOption="USER_ENTERED", body={"values": [updated_vals]}
                     ).execute()
                 else:
                     # Adiciona nova linha (Adicionar ou se não encontrou o que substituir)

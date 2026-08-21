@@ -3,7 +3,7 @@ import { useSearchParams, useOutletContext } from 'react-router-dom'; // Importa
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import {
-    Loader2, MoreVertical, Download, Wand2, Check, X as XIcon, Sparkles, ChevronLeft
+    Loader2, MoreVertical, Download, Wand2, Check, X as XIcon, Sparkles, ChevronLeft, Bot, Headset
 } from 'lucide-react';
 import PageLoader from '../components/common/PageLoader';
 
@@ -179,7 +179,14 @@ const getTextColorForBackground = (hexColor) => {
 
 const getLastMessageTimestamp = (at) => {
     try {
-        const conversa = JSON.parse(at.conversa || '[]');
+        let conversa = [];
+        if (Array.isArray(at.mensagens) && at.mensagens.length > 0) {
+            conversa = at.mensagens;
+        } else if (typeof at.conversa === 'string') {
+            conversa = JSON.parse(at.conversa || '[]');
+        } else if (Array.isArray(at.conversa)) {
+            conversa = at.conversa;
+        }
         if (conversa.length === 0) {
             return new Date(at.updated_at).getTime(); // Fallback se conversa vazia
         }
@@ -235,6 +242,7 @@ function Mensagens() {
             try {
                 const userRes = await api.get('/auth/me');
                 const fetchedUser = userRes.data;
+                setCurrentUser(fetchedUser);
                 const isCollab =
                     fetchedUser.role !== 'admin' &&
                     fetchedUser.role !== 'superadmin' &&
@@ -242,12 +250,12 @@ function Mensagens() {
                 setIsDistributionCollaborator(isCollab);
                 if (isCollab && !distributionInitialized.current) {
                     distributionInitialized.current = true;
-                    // Força modo Atendimentos sem IA e aplica filtro de tag com o nome
+                    // Força modo Atendimentos sem IA e aplica filtro de setor/função
                     setActiveButtonGroup(null);
                     setActiveFilters([]);
                     setStatusFilters([]);
-                    if (fetchedUser.name) {
-                        setTagFilters([fetchedUser.name]);
+                    if (fetchedUser.department) {
+                        setDepartmentFilter(fetchedUser.department);
                     }
                 }
             } catch (e) {
@@ -266,6 +274,8 @@ function Mensagens() {
     const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
     const [statusFilters, setStatusFilters] = useState([]); // ALTERADO: Agora é array
     const [tagFilters, setTagFilters] = useState([]); // ALTERADO: Agora é array
+    const [departments, setDepartments] = useState([]);
+    const [departmentFilter, setDepartmentFilter] = useState('');
     // --- NOVO: Estados para filtro de horário ---
     const [timeStart, setTimeStart] = useState(null);
     const [timeEnd, setTimeEnd] = useState(null);
@@ -311,6 +321,7 @@ function Mensagens() {
         activeFilters,
         statusFilters,
         tagFilters,
+        departmentFilter,
         debouncedSearchTerm,
         timeStart,
         timeEnd
@@ -360,6 +371,10 @@ function Mensagens() {
                 tagFilters.forEach(t => params.append('tags', t));
             }
 
+            if (departmentFilter && departmentFilter !== 'ALL') {
+                params.append('department', departmentFilter);
+            }
+
             // --- NOVO: Adiciona filtros de horário à requisição ---
             if (timeStart) {
                 params.append('time_start', timeStart);
@@ -369,16 +384,18 @@ function Mensagens() {
                 params.append('time_end', timeEnd);
             }
 
-            const [userRes, atendimentosRes, personasRes, situationsRes, tagsRes] = await Promise.all([
+            const [userRes, atendimentosRes, personasRes, situationsRes, tagsRes, deptsRes] = await Promise.all([
                 api.get('/auth/me'),
                 api.get('/atendimentos/', { params }), // Envia os parâmetros formatados
                 api.get('/configs/'),
                 api.get('/configs/situations'),
-                api.get('/atendimentos/tags') // Busca todas as tags
+                api.get('/atendimentos/tags'), // Busca todas as tags
+                api.get('/atendimentos/departments').catch(() => ({ data: [] }))
             ]);
             const fetchedUser = userRes.data;
             setCurrentUser(fetchedUser);
             setPersonas(personasRes.data);
+            setDepartments(deptsRes.data || []);
 
             // Garante que 'Aguardando Envio' esteja nas opções para alteração manual
             let sOptions = situationsRes.data || [];
@@ -683,6 +700,10 @@ function Mensagens() {
         if (!selectedAtendimento || isDownloadingMedia) {
             return;
         }
+        if (!mediaId || mediaId === 'null' || mediaId === 'undefined') {
+            toast.error("Identificador de mídia não disponível.");
+            return;
+        }
 
         // Limpa URL de blob antiga
         if (currentBlobUrl.current) {
@@ -791,10 +812,13 @@ function Mensagens() {
         }
     };
 
-    // --- NOVA FUNÇÃO (Adicione esta função) ---
     const handleDownloadDocument = async (mediaId, filename) => {
         if (!selectedAtendimento || isDownloadingMedia) {
             console.log("handleDownloadDocument blocked: No selection or already downloading.");
+            return;
+        }
+        if (!mediaId || mediaId === 'null' || mediaId === 'undefined') {
+            toast.error("Identificador de documento não disponível.");
             return;
         }
 
@@ -1138,7 +1162,14 @@ function Mensagens() {
         if (!selectedAtendimento) return;
 
         try {
-            const conversa = JSON.parse(selectedAtendimento.conversa || '[]');
+            let conversa = [];
+            if (Array.isArray(selectedAtendimento.mensagens) && selectedAtendimento.mensagens.length > 0) {
+                conversa = selectedAtendimento.mensagens;
+            } else if (typeof selectedAtendimento.conversa === 'string') {
+                conversa = JSON.parse(selectedAtendimento.conversa || '[]');
+            } else if (Array.isArray(selectedAtendimento.conversa)) {
+                conversa = selectedAtendimento.conversa;
+            }
             if (conversa.length === 0) {
                 toast.error("Não há mensagens para exportar.");
                 return;
@@ -1238,6 +1269,7 @@ function Mensagens() {
     const handleClearAllFilters = () => {
         setStatusFilters([]);
         setTagFilters([]);
+        setDepartmentFilter('');
         // --- ALTERAÇÃO AQUI ---
         setTimeStart(null);
         setTimeEnd(null);
@@ -1333,44 +1365,50 @@ function Mensagens() {
             {/* ASIDE: LISTA DE CONTATOS (EDITORIAL) */}
             <aside className={`${selectedAtendimento ? 'hidden md:flex' : 'flex'} w-full md:w-[320px] lg:w-[360px] flex-col min-h-0 relative contact-list-container transition-all duration-300`}>
                 <div>
-                    <div className="relative">
-                        <SearchAndFilter
-                            searchTerm={searchTerm}
-                            setSearchTerm={setSearchTerm}
-                            activeButtonGroup={activeButtonGroup}
-                            toggleFilter={toggleFilter}
-                            onFilterIconClick={() => setIsFilterPopoverOpen(prev => !prev)}
-                            hasActiveFilters={
-                                // Para colaboradores de distribuição, o filtro de tag é silencioso (não exibe badge)
-                                isDistributionCollaborator
-                                    ? ((statusFilters && statusFilters.length > 0) || !!timeStart || !!timeEnd)
-                                    : ((statusFilters && statusFilters.length > 0) || (tagFilters && tagFilters.length > 0) || !!timeStart || !!timeEnd)
-                            }
-                            activeFiltersCount={
-                                isDistributionCollaborator
-                                    ? ((statusFilters ? statusFilters.length : 0) + (timeStart || timeEnd ? 1 : 0))
-                                    : ((statusFilters ? statusFilters.length : 0) + (tagFilters ? tagFilters.length : 0) + (timeStart || timeEnd ? 1 : 0))
-                            }
-                            hideIAButton={isDistributionCollaborator}
-                        />
-                        <FilterPopover
-                            isOpen={isFilterPopoverOpen}
-                            onClose={() => setIsFilterPopoverOpen(false)}
-                            statusOptions={statusOptions}
-                            allTags={allTags}
-                            selectedStatus={statusFilters}
-                            onStatusChange={handleStatusFilterChange}
-                            selectedTags={tagFilters}
-                            onTagChange={handleTagFilterChange}
-                            onClearFilters={handleClearAllFilters}
-                            limit={limit}
-                            onLimitChange={setLimit}
-                            timeStart={timeStart}
-                            onTimeStartChange={setTimeStart}
-                            timeEnd={timeEnd}
-                            onTimeEndChange={setTimeEnd}
-                        />
-                    </div>
+                        {(() => {
+                            const isAdmin = isSuperUser || userRole === 'admin' || currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
+                            const isDeptActive = isAdmin && departmentFilter && departmentFilter !== 'ALL';
+                            return (
+                                <>
+                                    <SearchAndFilter
+                                        searchTerm={searchTerm}
+                                        setSearchTerm={setSearchTerm}
+                                        activeButtonGroup={activeButtonGroup}
+                                        toggleFilter={toggleFilter}
+                                        onFilterIconClick={() => setIsFilterPopoverOpen(prev => !prev)}
+                                        hasActiveFilters={
+                                            (statusFilters && statusFilters.length > 0) || (tagFilters && tagFilters.length > 0) || isDeptActive || !!timeStart || !!timeEnd
+                                        }
+                                        activeFiltersCount={
+                                            (statusFilters ? statusFilters.length : 0) + (tagFilters ? tagFilters.length : 0) + (isDeptActive ? 1 : 0) + (timeStart || timeEnd ? 1 : 0)
+                                        }
+                                        hideIAButton={isDistributionCollaborator}
+                                    />
+                                    <FilterPopover
+                                        isOpen={isFilterPopoverOpen}
+                                        onClose={() => setIsFilterPopoverOpen(false)}
+                                        statusOptions={statusOptions}
+                                        allTags={allTags}
+                                        selectedStatus={statusFilters}
+                                        onStatusChange={handleStatusFilterChange}
+                                        departments={departments}
+                                        selectedDepartment={departmentFilter}
+                                        hideDepartment={!isAdmin}
+                                        onDepartmentChange={setDepartmentFilter}
+                                        selectedTags={tagFilters}
+                                        onTagChange={handleTagFilterChange}
+                                        onClearFilters={handleClearAllFilters}
+                                        limit={limit}
+                                        onLimitChange={setLimit}
+                                        timeStart={timeStart}
+                                        onTimeStartChange={setTimeStart}
+                                        timeEnd={timeEnd}
+                                        onTimeEndChange={setTimeEnd}
+                                        hideStatus={true}
+                                    />
+                                </>
+                            );
+                        })()}
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-4 custom-scrollbar">

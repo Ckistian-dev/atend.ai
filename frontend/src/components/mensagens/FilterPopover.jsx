@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { X, Tag, CheckCircle2, Check, ListFilter, ArrowRight, Clock, ChevronLeft, Trash2 } from 'lucide-react';
+import { X, Tag, CheckCircle2, Check, ListFilter, ArrowRight, Clock, ChevronLeft, Trash2, Building2 } from 'lucide-react';
 
 const FilterPopover = ({
     isOpen,
@@ -10,6 +10,9 @@ const FilterPopover = ({
     onStatusChange,
     selectedTags,
     onTagChange,
+    departments = [],
+    selectedDepartment = '',
+    onDepartmentChange,
     onClearFilters,
     limit,
     onLimitChange,
@@ -17,9 +20,11 @@ const FilterPopover = ({
     onTimeStartChange,
     timeEnd,
     onTimeEndChange,
+    hideStatus = false,
+    hideDepartment = false
 }) => {
     const popoverRef = useRef(null);
-    const [view, setView] = useState('menu'); // 'menu', 'status', 'tags', 'time', 'limit'
+    const [view, setView] = useState('menu'); // 'menu', 'status', 'tags', 'department', 'time', 'limit'
 
     // Resetar view ao abrir/fechar
     useEffect(() => {
@@ -75,8 +80,11 @@ const FilterPopover = ({
         ? (selectedTags.length === 1 ? selectedTags[0] : (selectedTags.length > 1 ? `${selectedTags.length} itens` : null))
         : selectedTags;
 
+    const isDeptActive = !!selectedDepartment && selectedDepartment !== 'ALL';
+
     const menuOptions = [
-        { id: 'status', label: 'Situação', icon: CheckCircle2, color: 'text-blue-500', active: isStatusActive, activeVal: statusActiveVal },
+        ...(!hideStatus ? [{ id: 'status', label: 'Situação', icon: CheckCircle2, color: 'text-blue-500', active: isStatusActive, activeVal: statusActiveVal }] : []),
+        ...(!hideDepartment && departments && departments.length > 0 ? [{ id: 'department', label: 'Setor / Equipe', icon: Building2, color: 'text-blue-600', active: isDeptActive, activeVal: selectedDepartment }] : []),
         { id: 'tags', label: 'Marcação (Tag)', icon: Tag, color: 'text-purple-500', active: isTagsActive, activeVal: tagsActiveVal },
         { id: 'time', label: 'Intervalo de Tempo', icon: Clock, color: 'text-indigo-500', active: !!timeStart || !!timeEnd, activeVal: (timeStart || timeEnd) ? 'Ativo' : null },
         { id: 'limit', label: 'Itens por Página', icon: ArrowRight, color: 'text-slate-500', active: true, activeVal: limit + ' itens' },
@@ -139,6 +147,38 @@ const FilterPopover = ({
                                     <span className="flex items-center gap-3">
                                         <span className="h-2 w-2 rounded-full shadow-sm" style={{ backgroundColor: status.cor }}></span>
                                         {status.nome}
+                                    </span>
+                                    {isSelected && <Check size={12} className="text-blue-600" />}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {view === 'department' && (
+                    <div className="space-y-0.5">
+                        <div className="px-3 py-1 text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Setor / Equipe</div>
+                        <button
+                            onClick={() => onDepartmentChange && onDepartmentChange('')}
+                            className={`w-full text-left p-3 text-[12px] font-bold transition-all rounded-2xl flex items-center justify-between ${!selectedDepartment || selectedDepartment === 'ALL' ? 'bg-slate-50 text-slate-900 shadow-inner' : 'text-slate-600 hover:bg-slate-50 hover:text-blue-600'}`}
+                        >
+                            <span className="flex items-center gap-3">
+                                <Building2 size={14} className="text-slate-400" />
+                                Todos os Setores
+                            </span>
+                            {(!selectedDepartment || selectedDepartment === 'ALL') && <Check size={12} className="text-blue-600" />}
+                        </button>
+                        {(departments || []).map(dept => {
+                            const isSelected = selectedDepartment === dept;
+                            return (
+                                <button
+                                    key={dept}
+                                    onClick={() => onDepartmentChange && onDepartmentChange(dept)}
+                                    className={`w-full text-left p-3 text-[12px] font-bold transition-all rounded-2xl flex items-center justify-between ${isSelected ? 'bg-slate-50 text-slate-900 shadow-inner' : 'text-slate-600 hover:bg-slate-50 hover:text-blue-600'}`}
+                                >
+                                    <span className="flex items-center gap-3">
+                                        <Building2 size={14} className="text-blue-500" />
+                                        {dept}
                                     </span>
                                     {isSelected && <Check size={12} className="text-blue-600" />}
                                 </button>

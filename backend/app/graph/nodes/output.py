@@ -1,0 +1,496 @@
+import re
+import json
+import random
+import asyncio
+import logging
+from datetime import datetime, timezone
+from typing import Dict, Any, List, Optional
+from sqlalchemy import select
+
+from app.graph.state import AgentState
+from app.db import models
+from app.db.database import SessionLocal
+from app.crud import crud_atendimento
+from app.services.whatsapp_service import get_whatsapp_service
+from app.services.gemini_service import get_gemini_service
+
+logger = logging.getLogger(__name__)
+
+# Lock global para controle sequencial por atendimento
+_output_locks: Dict[int, asyncio.Lock] = {}
+_global_lock = asyncio.Lock()
+
+MEDIA_TAG_REGEX = re.compile(r'\[(?:MEDIA|ARQUIVO|IMAGEM|DOC|FOTO|VIDEO):\s*([a-zA-Z0-9_\-\.]+)\s*\]', re.IGNORECASE)
+
+async def _get_lock(atendimento_id: int) -> asyncio.Lock:
+    async with _global_lock:
+        if atendimento_id not in _output_locks:
+            _output_locks[atendimento_id] = asyncio.Lock()
+        return _output_locks[atendimento_id]
+
+
+def build_delivery_queue(final_response: str, media_file_ids: List[str]) -> List[Dict[str, Any]]:
+    """
+    Constrói a fila unificada e ordenada de entrega (balões de texto e mídias intercaladas).
+    """
+    queue: List[Dict[str, Any]] = []
+    used_media_ids = set()
+
+    linhas = [l.strip() for l in (final_response or "").split("\n") if l.strip()]
+
+    for l in linhas:
+        # Se a linha contiver tags [MEDIA: id], decompõe respeitando a ordem
+        parts = MEDIA_TAG_REGEX.split(l)
+        if len(parts) > 1:
+            # parts alterna entre [texto_antes, id_capturado, texto_depois, ...]
+            is_match = False
+            for chunk in parts:
+                chunk = chunk.strip()
+                if not chunk:
+                    is_match = not is_match
+                    continue
+                if is_match:
+                    queue.append({"type": "media", "file_id": chunk})
+                    used_media_ids.add(chunk)
+                else:
+                    if len(chunk) > 250:
+                        frases = [p.strip() for p in chunk.replace(". ", ".\n").replace("! ", "!\n").replace("? ", "?\n").split("\n") if p.strip()]
+                        for f in frases:
+                            queue.append({"type": "text", "content": f})
+                    else:
+                        queue.append({"type": "text", "content": chunk})
+                is_match = not is_match
+        else:
+            if len(l) > 250:
+                frases = [p.strip() for p in l.replace(". ", ".\n").replace("! ", "!\n").replace("? ", "?\n").split("\n") if p.strip()]
+                for f in frases:
+                    queue.append({"type": "text", "content": f})
+            else:
+                queue.append({"type": "text", "content": l})
+
+    # Mídias adicionais em media_file_ids que não foram citadas com tag no texto vão ao final
+    for f_id in (media_file_ids or []):
+        f_id_clean = str(f_id).strip()
+        if f_id_clean and f_id_clean not in used_media_ids:
+            queue.append({"type": "media", "file_id": f_id_clean})
+            used_media_ids.add(f_id_clean)
+
+    return queue
+
+
+async def output_node(state: AgentState) -> Dict[str, Any]:
+    """
+    Nó 7: Envio Sequencial de Mensagens e Mídias Intercaladas com Simulação de Digitação e Persistência no CRM.
+
+    @param state: Estado final do grafo.
+    @returns: Dicionário final do estado.
+    """
+    final_response = state.get("final_response") or state.get("draft_response") or ""
+    atendimento_id = state.get("atendimento_id")
+    tenant_id = state.get("tenant_id")
+    resumo_crm = state.get("resumo_crm") or ""
+    status_final = state.get("status_final") or "Aguardando Resposta"
+    tts_voice = state.get("tts_voice")
+    raw_media_ids = state.get("media_file_ids") or []
+    if isinstance(raw_media_ids, str):
+        raw_media_ids = [raw_media_ids]
+
+    delivery_queue = build_delivery_queue(final_response, raw_media_ids)
+
+    if not delivery_queue:
+        logger.warning(f"[Output Node] Fila de entrega vazia para Atend {atendimento_id}. Nada a enviar.")
+        return state
+
+    whatsapp_svc = get_whatsapp_service()
+    gemini_svc = get_gemini_service()
+
+    send_as_audio = bool(state.get("send_as_audio"))
+    is_audio_mode = bool(send_as_audio and tts_voice and str(tts_voice).strip() and str(tts_voice).strip().lower() not in ["none", "null", ""])
+
+    last_processed_msg_id = state.get("last_processed_msg_id", 0)
+
+    lock = await _get_lock(atendimento_id)
+    async with lock:
+        # 1. Carrega atendimento e empresa do banco
+        async with SessionLocal() as db_read:
+            atendimento = await db_read.get(models.Atendimento, atendimento_id)
+            company = await db_read.get(models.Company, tenant_id)
+
+            if not atendimento or not company:
+                logger.error(f"[Output Node] Atendimento {atendimento_id} ou Empresa {tenant_id} não encontrado!")
+                return state
+
+            # Verificação imediata no banco antes de qualquer envio
+            if last_processed_msg_id > 0 and await crud_atendimento.has_newer_user_messages(db_read, atendimento_id, tenant_id, last_processed_msg_id):
+                logger.info(f"[Output Node] Nova mensagem do cliente detectada antes do início dos envios (Atend {atendimento_id}). Cancelando envio.")
+                raise asyncio.CancelledError()
+
+            destinatario_numero = atendimento.whatsapp
+
+        # 2. Execução sequencial da fila de entrega (balões de texto e mídias intercaladas)
+        total_items = len(delivery_queue)
+        for idx, item in enumerate(delivery_queue):
+            curr_task = asyncio.current_task()
+            if curr_task and curr_task.cancelling() > 0:
+                logger.info(f"[Output Node] Interrupção detectada antes do item #{idx+1}/{total_items}. Abortando envio.")
+                raise asyncio.CancelledError()
+
+            # Verificação de segurança no banco para novas mensagens e barramento cross-process
+            async with SessionLocal() as db_check:
+                if last_processed_msg_id > 0 and await crud_atendimento.has_newer_user_messages(db_check, atendimento_id, tenant_id, last_processed_msg_id):
+                    logger.info(f"[Output Node] Nova mensagem do cliente detectada antes do item #{idx+1} (Atend {atendimento_id}). Cancelando envio.")
+                    raise asyncio.CancelledError()
+
+                at_chk = await db_check.get(models.Atendimento, atendimento_id)
+                if at_chk and at_chk.status not in ["Gerando Resposta", "Mensagem Recebida"]:
+                    logger.info(f"[Output Node] Status alterado para '{at_chk.status}'. Abortando envio.")
+                    raise asyncio.CancelledError()
+
+            # --- CASO A: ITEM É BALÃO DE TEXTO / ÁUDIO ---
+            if item["type"] == "text":
+                balao = item["content"]
+                if is_audio_mode:
+                    chars_per_sec = random.uniform(0.08, 0.15)
+                    recording_delay = min(max(len(balao) * chars_per_sec, 2.0), 10.0)
+                    logger.info(f"[Output Node] Item #{idx+1}/{total_items} (Áudio): Simulando gravação por {recording_delay:.1f}s...")
+                    await asyncio.sleep(recording_delay)
+                else:
+                    chars_per_sec = random.uniform(0.05, 0.09)
+                    typing_delay = min(max(len(balao) * chars_per_sec, 1.2), 4.5)
+                    logger.info(f"[Output Node] Item #{idx+1}/{total_items} (Texto): Simulando digitação por {typing_delay:.1f}s...")
+                    await asyncio.sleep(typing_delay)
+
+                if curr_task and curr_task.cancelling() > 0:
+                    raise asyncio.CancelledError()
+
+                async with SessionLocal() as db_check_post:
+                    if last_processed_msg_id > 0 and await crud_atendimento.has_newer_user_messages(db_check_post, atendimento_id, tenant_id, last_processed_msg_id):
+                        logger.info(f"[Output Node] Nova mensagem do cliente chegou durante processamento do item #{idx+1}. Cancelando envio.")
+                        raise asyncio.CancelledError()
+
+                try:
+                    audio_enviado = False
+                    if is_audio_mode:
+                        try:
+                            logger.info(f"[Output Node] Gerando áudio via Gemini TTS (Voz: '{tts_voice}') para Atend {atendimento_id}...")
+                            async with SessionLocal() as db_tts:
+                                audio_bytes = await gemini_svc.generate_tts(
+                                    text=balao,
+                                    db=db_tts,
+                                    company=company,
+                                    atendimento_id=atendimento_id
+                                )
+
+                            if audio_bytes:
+                                sent_info = await whatsapp_svc.send_media_message(
+                                    company=company,
+                                    number=destinatario_numero,
+                                    media_type="audio",
+                                    file_bytes=audio_bytes,
+                                    filename="audio.ogg",
+                                    mimetype="audio/ogg"
+                                )
+
+                                msg_id = (sent_info.get("id") if isinstance(sent_info, dict) and sent_info.get("id") else None) or f"ai_audio_{int(datetime.now().timestamp())}_{random.randint(100, 999)}"
+                                media_id_saved = (sent_info.get("media_id") if isinstance(sent_info, dict) else None) or msg_id
+
+                                async with SessionLocal() as db_write_audio:
+                                    async with db_write_audio.begin():
+                                        await crud_atendimento.save_message(
+                                            db=db_write_audio,
+                                            company_id=tenant_id,
+                                            atendimento_id=atendimento_id,
+                                            message_data={
+                                                "id": msg_id,
+                                                "role": "assistant",
+                                                "content": balao,
+                                                "timestamp": int(datetime.now().timestamp()),
+                                                "type": "audio",
+                                                "media_id": media_id_saved,
+                                                "filename": "audio.ogg",
+                                                "mime_type": "audio/ogg",
+                                                "status": "sent",
+                                                "is_ai": True
+                                            },
+                                            media_bytes=audio_bytes
+                                        )
+                                audio_enviado = True
+                                logger.info(f"[Output Node] Áudio #{idx+1} enviado e salvo com sucesso no Atend {atendimento_id}.")
+                        except Exception as tts_err:
+                            logger.error(f"[Output Node] Falha ao gerar/enviar áudio via TTS: {tts_err}. Fallback para texto.", exc_info=True)
+
+                    if not audio_enviado:
+                        sent_info = await whatsapp_svc.send_text_message(
+                            company=company,
+                            number=destinatario_numero,
+                            text=balao
+                        )
+
+                        msg_id = (sent_info.get("id") if isinstance(sent_info, dict) and sent_info.get("id") else None) or f"ai_{int(datetime.now().timestamp())}_{random.randint(100, 999)}"
+
+                        async with SessionLocal() as db_write:
+                            async with db_write.begin():
+                                await crud_atendimento.save_message(
+                                    db=db_write,
+                                    company_id=tenant_id,
+                                    atendimento_id=atendimento_id,
+                                    message_data={
+                                        "id": msg_id,
+                                        "role": "assistant",
+                                        "content": balao,
+                                        "timestamp": int(datetime.now().timestamp()),
+                                        "status": "sent",
+                                        "is_ai": True,
+                                        "type": "text"
+                                    }
+                                )
+                except asyncio.CancelledError:
+                    raise
+                except Exception as send_err:
+                    logger.error(f"[Output Node] Falha no envio do balão #{idx+1}: {send_err}", exc_info=True)
+
+            # --- CASO B: ITEM É UMA MÍDIA INTERCALADA (FOTO, VÍDEO, DOCUMENTO) ---
+            elif item["type"] == "media":
+                f_id = item["file_id"]
+                if not f_id or not str(f_id).strip():
+                    continue
+                f_id = str(f_id).strip()
+
+                logger.info(f"[Output Node] Item #{idx+1}/{total_items} (Mídia): Preparando download e envio do arquivo '{f_id}'...")
+
+                try:
+                    from app.services.google_drive_service import get_drive_service
+                    drive_svc = get_drive_service()
+
+                    real_drive_id = f_id
+                    filename = "arquivo"
+                    media_type = "document"
+                    mimetype = "application/octet-stream"
+
+                    async with SessionLocal() as db_kv:
+                        stmt_kv = select(models.KnowledgeVector).where(
+                            models.KnowledgeVector.config_id == state.get("config_id"),
+                            models.KnowledgeVector.raw_data.op("->>")("id_arquivo") == f_id
+                        )
+                        res_kv = await db_kv.execute(stmt_kv)
+                        kv_record = res_kv.scalar_one_or_none()
+
+                        if not kv_record and len(f_id) < 25:
+                            stmt_alt = select(models.KnowledgeVector).where(
+                                models.KnowledgeVector.config_id == state.get("config_id"),
+                                models.KnowledgeVector.origin == "drive",
+                                models.KnowledgeVector.content.ilike(f"%{f_id}%")
+                            ).limit(1)
+                            res_alt = await db_kv.execute(stmt_alt)
+                            kv_record = res_alt.scalar_one_or_none()
+
+                        if kv_record and kv_record.raw_data:
+                            real_drive_id = kv_record.raw_data.get("id_arquivo") or f_id
+                            filename = kv_record.raw_data.get("nome_exato") or "arquivo"
+                            raw_cat = (kv_record.category or "document").lower().strip()
+                            mimetype = kv_record.raw_data.get("mime_type") or "application/octet-stream"
+
+                            CATEGORY_TO_MEDIA_TYPE = {
+                                "fotos": "image", "foto": "image", "imagens": "image", "imagem": "image", "image": "image",
+                                "videos": "video", "video": "video", "vídeos": "video", "vídeo": "video",
+                                "audios": "audio", "audio": "audio", "áudios": "audio", "áudio": "audio",
+                            }
+                            media_type = CATEGORY_TO_MEDIA_TYPE.get(raw_cat, "document")
+                            if media_type == "document" and mimetype != "application/octet-stream":
+                                if "image" in mimetype: media_type = "image"
+                                elif "video" in mimetype: media_type = "video"
+                                elif "audio" in mimetype: media_type = "audio"
+
+                    if not kv_record and (f_id.isdigit() or len(f_id) < 20):
+                        logger.warning(f"[Output Node] '{f_id}' não é um ID de arquivo do Google Drive válido. Ignorando.")
+                        continue
+
+                    file_bytes = await asyncio.to_thread(drive_svc.download_file_bytes, real_drive_id)
+                    if not file_bytes:
+                        logger.warning(f"[Output Node] Não foi possível baixar arquivo '{real_drive_id}' do Drive.")
+                        continue
+
+                    # Pausa curta realista antes de disparar o upload da imagem
+                    await asyncio.sleep(1.0)
+
+                    # Se for imagem, transcreve com Gemini Vision para manter histórico contextual
+                    transcricao_imagem = ""
+                    if media_type == "image" or ("image" in (mimetype or "")):
+                        try:
+                            async with SessionLocal() as db_vision:
+                                transcricao_imagem = await gemini_svc.transcribe_and_analyze_media(
+                                    media_data={"data": file_bytes, "mime_type": mimetype or "image/jpeg"},
+                                    db_history=[],
+                                    persona=None,
+                                    db=db_vision,
+                                    company=company,
+                                    atendimento_id=atendimento_id
+                                )
+                        except Exception as vision_err:
+                            logger.warning(f"[Output Node] Erro ao transcrever imagem enviada pela IA: {vision_err}")
+
+                    msg_content = f"[Arquivo Enviado: {filename}]"
+                    if transcricao_imagem and not transcricao_imagem.startswith("[Erro"):
+                        msg_content += f"\n\n[Transcrição da Imagem Enviada pela IA]:\n{transcricao_imagem.strip()}"
+
+                    logger.info(f"[Output Node] Enviando mídia do Drive '{filename}' ({media_type}) para {destinatario_numero}...")
+                    media_sent = await whatsapp_svc.send_media_message(
+                        company=company,
+                        number=destinatario_numero,
+                        media_type=media_type,
+                        file_bytes=file_bytes,
+                        filename=filename,
+                        mimetype=mimetype,
+                        caption=None
+                    )
+                    media_msg_id = (media_sent.get("id") if isinstance(media_sent, dict) else None) or f"ai_media_{int(datetime.now().timestamp())}_{random.randint(100, 999)}"
+                    media_id_saved = (media_sent.get("media_id") if isinstance(media_sent, dict) else None) or media_msg_id
+
+                    async with SessionLocal() as db_m:
+                        async with db_m.begin():
+                            await crud_atendimento.save_message(
+                                db=db_m,
+                                company_id=tenant_id,
+                                atendimento_id=atendimento_id,
+                                message_data={
+                                    "id": media_msg_id,
+                                    "role": "assistant",
+                                    "content": msg_content,
+                                    "caption": None,
+                                    "timestamp": int(datetime.now().timestamp()),
+                                    "status": "sent",
+                                    "is_ai": True,
+                                    "type": media_type,
+                                    "media_id": media_id_saved,
+                                    "filename": filename,
+                                    "mime_type": mimetype
+                                },
+                                media_bytes=file_bytes
+                            )
+                    logger.info(f"[Output Node] Mídia '{filename}' enviada com sucesso.")
+                except Exception as media_err:
+                    logger.error(f"[Output Node] Erro ao enviar mídia {f_id}: {media_err}", exc_info=True)
+
+        # 3. Atualização final do Atendimento (Resumo, Status, Nome do Contato e Tags)
+        try:
+            async with SessionLocal() as db_final:
+                async with db_final.begin():
+                    at_final = await db_final.get(models.Atendimento, atendimento_id, with_for_update=True)
+                    if at_final:
+                        has_newer_after_send = last_processed_msg_id > 0 and await crud_atendimento.has_newer_user_messages(
+                            db_final, atendimento_id, tenant_id, last_processed_msg_id
+                        )
+                        if has_newer_after_send or at_final.status == "Mensagem Recebida":
+                            logger.info(
+                                f"[Output Node] Nova mensagem do cliente detectada após envio (Atend {atendimento_id}). "
+                                f"Definindo status como 'Mensagem Recebida' para reprocessar a mensagem pendente imediatamente."
+                            )
+                            at_final.status = "Mensagem Recebida"
+                        else:
+                            at_final.status = status_final
+
+                        # Atribuição de Atendente / Setor no Transbordo
+                        if status_final == "Atendente Chamado" or state.get("intent_handoff"):
+                            destinatario = state.get("handoff_destinatario")
+                            dept_override = state.get("handoff_department")
+                            motivo = state.get("handoff_motivo")
+                            team_members = state.get("team_members") or []
+
+                            assigned_user = None
+                            if destinatario and str(destinatario).strip():
+                                dest_clean = str(destinatario).strip().lower()
+                                for m in team_members:
+                                    m_name = (m.get("name") or "").strip().lower()
+                                    m_email = (m.get("email") or "").strip().lower()
+                                    if dest_clean in m_name or dest_clean in m_email or m_name in dest_clean:
+                                        assigned_user = m
+                                        break
+
+                                if assigned_user:
+                                    at_final.assigned_user_id = assigned_user.get("id")
+                                    if assigned_user.get("department"):
+                                        at_final.assigned_department = assigned_user.get("department")
+                                    logger.info(f"[Output Node] Transbordo atribuído ao atendente '{assigned_user.get('name')}' (ID: {assigned_user.get('id')}, Setor: {at_final.assigned_department})")
+                                else:
+                                    for m in team_members:
+                                        m_dept = (m.get("department") or "").strip().lower()
+                                        if dest_clean == m_dept or dest_clean in m_dept:
+                                            dept_override = m.get("department")
+                                            break
+                                    if not dept_override:
+                                        dept_override = str(destinatario).strip()
+                                    at_final.assigned_department = dept_override
+                                    logger.info(f"[Output Node] Transbordo atribuído ao setor '{dept_override}'")
+                            elif dept_override:
+                                at_final.assigned_department = dept_override
+                                logger.info(f"[Output Node] Transbordo atribuído ao setor '{dept_override}'")
+
+                            if motivo and str(motivo).strip():
+                                at_final.observacoes = f"{at_final.observacoes or ''}\n[Transbordo IA]: {motivo.strip()}".strip()
+
+                        if resumo_crm and resumo_crm.strip():
+                            at_final.resumo = resumo_crm.strip()
+
+                        novo_nome = state.get("novo_nome_cliente")
+                        if novo_nome and str(novo_nome).strip():
+                            at_final.nome_contato = str(novo_nome).strip()
+
+                        tags_para_add = state.get("tags_para_adicionar") or []
+                        tags_cadastradas = await crud_atendimento.get_all_user_tags(db_final, company_id=tenant_id)
+                        tag_lookup = {
+                            t['name'].strip().lower(): t 
+                            for t in tags_cadastradas 
+                            if isinstance(t, dict) and 'name' in t
+                        }
+
+                        tags_atuais = list(at_final.tags or [])
+                        updated_tags = []
+                        nomes_atuais = set()
+                        modificado = False
+
+                        for t in tags_atuais:
+                            t_name = t.get("name") if isinstance(t, dict) else str(t)
+                            t_color = t.get("color") if isinstance(t, dict) else None
+                            if t_name and str(t_name).strip():
+                                clean_name = str(t_name).strip()
+                                key = clean_name.lower()
+                                if key in tag_lookup:
+                                    official_tag = tag_lookup[key]
+                                    official_name = official_tag.get('name', clean_name)
+                                    official_color = official_tag.get('color', t_color or '#3B82F6')
+                                    if official_color != t_color or official_name != clean_name:
+                                        modificado = True
+                                    updated_tags.append({"name": official_name, "color": official_color})
+                                else:
+                                    updated_tags.append({"name": clean_name, "color": t_color or '#3B82F6'})
+                                nomes_atuais.add(key)
+
+                        if tags_para_add:
+                            for tag in tags_para_add:
+                                if tag and str(tag).strip():
+                                    clean_tag = str(tag).strip()
+                                    key = clean_tag.lower()
+                                    if key not in nomes_atuais:
+                                        if key in tag_lookup:
+                                            official_tag = tag_lookup[key]
+                                            updated_tags.append({
+                                                "name": official_tag.get('name', clean_tag),
+                                                "color": official_tag.get('color', '#3B82F6')
+                                            })
+                                        else:
+                                            updated_tags.append({
+                                                "name": clean_tag,
+                                                "color": '#3B82F6'
+                                            })
+                                        nomes_atuais.add(key)
+                                        modificado = True
+
+                        if modificado:
+                            at_final.tags = updated_tags
+
+            logger.info(f"[Output Node] Ciclo concluído com sucesso para o Atend {atendimento_id}. Status: '{status_final}'")
+
+        except Exception as update_err:
+            logger.error(f"[Output Node] Erro ao atualizar status/resumo do Atend {atendimento_id}: {update_err}", exc_info=True)
+
+    return state

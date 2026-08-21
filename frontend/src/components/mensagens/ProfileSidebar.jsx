@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Phone, FileText, Tag, Edit, Cpu, X, Check, Plus, Clock } from 'lucide-react';
+import { Phone, FileText, Tag, Edit, Cpu, X, Check, Plus, Clock, Bot, Headset, ArrowRightLeft, Building2, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../api/axiosConfig';
 import TagEditor from './TagEditor'; // Importa o novo componente
 import NameEditor from './NameEditor'; // Importa o novo componente
+import TransferModal from '../common/TransferModal';
 
 // --- NOVO Componente: Sidebar de Perfil do Contato ---
 const ProfileSidebar = ({
@@ -12,6 +13,7 @@ const ProfileSidebar = ({
 }) => {
     const [activeSubMenu, setActiveSubMenu] = useState(null);
     const [isEditingObs, setIsEditingObs] = useState(false);
+    const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
     const [obsText, setObsText] = useState(atendimento.observacoes || '');
 
     const textareaRef = useRef(null);
@@ -43,6 +45,23 @@ const ProfileSidebar = ({
             textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
         }
     }, [obsText, isEditingObs]);
+
+    const handleTransferConfirm = async ({ department, user_id, notes }) => {
+        try {
+            const res = await api.post(`/atendimentos/${atendimento.id}/transfer`, {
+                department,
+                user_id,
+                notes
+            });
+            if (onUpdateStatus) {
+                onUpdateStatus(atendimento.id, res.data);
+            }
+            toast.success(`Atendimento transferido para ${department || 'Atendente'} com sucesso!`);
+        } catch (err) {
+            toast.error('Erro ao transferir atendimento.');
+            throw err;
+        }
+    };
 
     const getStatusStyle = (status) => {
         const situacao = statusOptions.find(opt => opt.nome === status);
@@ -97,55 +116,6 @@ const ProfileSidebar = ({
 
     const statusStyle = getStatusStyle(atendimento.status);
 
-    const getAtendimentoMetrics = () => {
-        let tempoAtendimento = 0;
-        if (atendimento.created_at && atendimento.updated_at) {
-            const created = new Date(atendimento.created_at);
-            const updated = new Date(atendimento.updated_at);
-            tempoAtendimento = (updated - created) / 1000;
-        }
-
-        let tempoResposta = 0;
-        let totalRespostas = 0;
-        try {
-            const conversa = typeof atendimento.conversa === 'string' ? JSON.parse(atendimento.conversa) : (atendimento.conversa || []);
-            let lastUserTime = null;
-            for (const msg of conversa) {
-                if (msg.role === 'user') {
-                    if (!lastUserTime) lastUserTime = msg.timestamp;
-                } else if (msg.role === 'assistant') {
-                    if (msg.is_ai) {
-                        lastUserTime = null;
-                        continue;
-                    } else if (lastUserTime) {
-                        const diff = parseFloat(msg.timestamp) - parseFloat(lastUserTime);
-                        if (!isNaN(diff) && diff >= 0) {
-                            tempoResposta += diff;
-                            totalRespostas += 1;
-                        }
-                        lastUserTime = null;
-                    }
-                }
-            }
-        } catch (e) {
-            console.error("Erro ao calcular tempo de resposta", e);
-        }
-        const mediaResposta = totalRespostas > 0 ? tempoResposta / totalRespostas : 0;
-        
-        return { tempoAtendimento, mediaResposta };
-    };
-
-    const formatTime = (seconds) => {
-        if (seconds === 0) return '—';
-        if (seconds < 60) return `${Math.floor(seconds)}s`;
-        const minutes = seconds / 60;
-        if (minutes < 60) return `${Math.floor(minutes)}m`;
-        const hours = minutes / 60;
-        if (hours < 24) return `${Math.floor(hours)}h`;
-        const days = hours / 24;
-        return `${Math.floor(days)}d`;
-    };
-
     return (
         <div className="h-full flex flex-col bg-transparent overflow-hidden">
             {/* EDITORIAL HEADER */}
@@ -177,31 +147,75 @@ const ProfileSidebar = ({
                         )}
                     </div>
 
-                    <div className="mt-8 relative" ref={statusRef}>
-                        <button
-                            onClick={() => setActiveSubMenu(activeSubMenu === 'status' ? null : 'status')}
-                            className="px-6 py-2 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all hover:scale-105"
-                            style={statusStyle}
-                        >
-                            {atendimento.status}
-                        </button>
+                    {/* Department & Assigned User Badges */}
+                    {(atendimento.assigned_department || atendimento.assigned_user) && (
+                        <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+                            {atendimento.assigned_department && (
+                                <span className="px-3 py-1 rounded-full text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200/80 shadow-sm flex items-center gap-1">
+                                    <Building2 size={11} className="text-blue-600" />
+                                    Setor: {atendimento.assigned_department}
+                                </span>
+                            )}
+                            {atendimento.assigned_user && (
+                                <span className="px-3 py-1 rounded-full text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200/80 shadow-sm flex items-center gap-1">
+                                    <User size={11} className="text-indigo-600" />
+                                    {atendimento.assigned_user.name || atendimento.assigned_user.email}
+                                </span>
+                            )}
+                        </div>
+                    )}
 
-                        {activeSubMenu === 'status' && (
-                            <div className="absolute top-full mt-4 left-1/2 -translate-x-1/2 w-64 bg-white border border-slate-100 rounded-3xl shadow-2xl z-50 p-2">
-                                <p className="editorial-label p-3 border-b border-slate-50 mb-1">Mudar Lead Para</p>
-                                <div className="max-h-60 overflow-y-auto no-scrollbar">
-                                    {(statusOptions || []).map(opt => (
-                                        <button key={opt.nome} onClick={(e) => handleStatusChange(e, opt.nome)} className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-2xl transition-all flex items-center gap-3">
-                                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: opt.cor }}></span>
-                                            {opt.nome}
-                                        </button>
-                                    ))}
+                    <div className="mt-5 flex flex-col items-center gap-2 w-full">
+                        {atendimento.status === 'Atendente Chamado' ? (
+                            <>
+                                <span className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200/60 shadow-sm flex items-center gap-1.5">
+                                    <Headset size={13} /> Atendente Chamado
+                                </span>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsTransferModalOpen(true)}
+                                        className="px-3.5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                                        title="Transferir para outro setor ou atendente"
+                                    >
+                                        <ArrowRightLeft size={13} /> Re-transferir
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            onUpdateStatus(atendimento.id, { status: 'Mensagem Recebida' });
+                                            toast.success('Atendimento devolvido para a IA');
+                                        }}
+                                        className="px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                                    >
+                                        <Bot size={14} /> Devolver IA
+                                    </button>
                                 </div>
-                            </div>
+                            </>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => setIsTransferModalOpen(true)}
+                                className="mt-1 px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-wider bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200 transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
+                            >
+                                <Headset size={15} /> Transferir para Setor/Atendente
+                            </button>
                         )}
                     </div>
                 </div>
             </header>
+
+            {isTransferModalOpen && (
+                <TransferModal
+                    isOpen={isTransferModalOpen}
+                    onClose={() => setIsTransferModalOpen(false)}
+                    onConfirm={handleTransferConfirm}
+                    currentDepartment={atendimento.assigned_department}
+                    currentUserId={atendimento.assigned_user_id}
+                    atendimentoName={atendimento.nome_contato}
+                    atendimentoWhatsapp={atendimento.whatsapp}
+                />
+            )}
 
             {/* SCROLLABLE INSIGHTS */}
             <div className="flex-1 overflow-y-auto no-scrollbar px-6 pb-8 space-y-6">
@@ -228,7 +242,7 @@ const ProfileSidebar = ({
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
                             <FileText size={18} className="text-indigo-600" />
-                            <p className="editorial-label pt-1">Notas de Campo</p>
+                            <p className="editorial-label pt-1">Anotações</p>
                         </div>
                         {!isEditingObs && (
                             <button onClick={() => setIsEditingObs(true)} className="w-8 h-8 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all">
@@ -254,7 +268,7 @@ const ProfileSidebar = ({
                     ) : (
                         <div className="p-5 bg-indigo-50/50 rounded-3xl border border-indigo-50">
                             <p className="text-[13px] text-slate-600 leading-relaxed font-bold italic">
-                                {obsText || "Nenhuma nota específica foi registrada por operadores."}
+                                {obsText || "Nenhuma anotação específica foi registrada por operadores."}
                             </p>
                         </div>
                     )}
@@ -289,28 +303,10 @@ const ProfileSidebar = ({
                     )}
                 </section>
 
-                {/* MÉTRICAS DE TEMPO */}
-                <section>
-                    <div className="flex items-center gap-3 mb-4 text-slate-800">
-                        <Clock size={18} className="text-emerald-500" />
-                        <p className="editorial-label pt-1 m-0">Métricas de Tempo</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-emerald-50/50 border border-emerald-100/50 rounded-2xl p-4 flex flex-col gap-1 items-center justify-center">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">T. Atendimento</span>
-                            <span className="text-xl font-black text-emerald-700">{formatTime(getAtendimentoMetrics().tempoAtendimento)}</span>
-                        </div>
-                        <div className="bg-blue-50/50 border border-blue-100/50 rounded-2xl p-4 flex flex-col gap-1 items-center justify-center">
-                            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Resposta Humana</span>
-                            <span className="text-xl font-black text-blue-700">{formatTime(getAtendimentoMetrics().mediaResposta)}</span>
-                        </div>
-                    </div>
-                </section>
-
                 {/* CONSUMO */}
                 <section className="pt-6 border-t border-white/40">
                     <div className="flex items-center justify-between">
-                        <p className="editorial-label text-slate-400">Consumo de Atividades</p>
+                        <p className="editorial-label text-slate-400">Consumo de Tokens</p>
                         <p className="executive-title text-slate-900 text-lg">
                             {atendimento.token_usage ? atendimento.token_usage.toLocaleString('pt-BR') : 0} <span className="text-[10px] font-black text-slate-400">TK</span>
                         </p>

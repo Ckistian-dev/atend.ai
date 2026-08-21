@@ -145,32 +145,49 @@ const HeroStatModule = ({ modulo }) => {
 };
 
 // 2. Metric Grid
-const MetricGridModule = ({ modulo }) => (
-    <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
-        {modulo.titulo && (
-            <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 bg-blue-50 rounded-lg">
-                    <LayoutGrid size={18} className="text-blue-600" />
-                </div>
-                <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo}</h3>
-            </div>
-        )}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {(modulo.metricas || []).map((m, i) => {
-                const cor = COR_MAP[m.cor] || COR_MAP.azul;
-                return (
-                    <div key={i} className="group rounded-[20px] p-5 bg-slate-50/50 hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 border border-transparent hover:border-slate-100 ring-1 ring-slate-200/20">
-                        <div className={`w-10 h-10 rounded-xl ${cor.icon} text-white flex items-center justify-center mb-4 shadow-lg shadow-blue-500/10 group-hover:scale-110 transition-transform`}>
-                            {ICON_MAP[m.icone] || <Activity size={18} />}
-                        </div>
-                        <p className="text-3xl font-black text-slate-900 tracking-tighter leading-none mb-1.5">{m.valor}</p>
-                        <p className="text-slate-500 text-xs font-bold uppercase tracking-wider leading-snug">{m.label}</p>
+const MetricGridModule = ({ modulo }) => {
+    const GRADIENTS = [
+        { bg: 'from-blue-600 to-indigo-600', text: 'text-blue-600', light: 'bg-blue-50/60', border: 'border-blue-100' },
+        { bg: 'from-emerald-500 to-teal-600', text: 'text-emerald-600', light: 'bg-emerald-50/60', border: 'border-emerald-100' },
+        { bg: 'from-amber-500 to-orange-600', text: 'text-amber-600', light: 'bg-amber-50/60', border: 'border-amber-100' },
+        { bg: 'from-purple-600 to-violet-600', text: 'text-purple-600', light: 'bg-purple-50/60', border: 'border-purple-100' },
+        { bg: 'from-pink-500 to-rose-600', text: 'text-pink-600', light: 'bg-pink-50/60', border: 'border-pink-100' },
+        { bg: 'from-cyan-500 to-blue-600', text: 'text-cyan-600', light: 'bg-cyan-50/60', border: 'border-cyan-100' },
+    ];
+
+    return (
+        <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
+            {modulo.titulo && (
+                <div className="flex items-center gap-2.5 mb-6">
+                    <div className="p-2 bg-blue-50 rounded-xl text-blue-600">
+                        <LayoutGrid size={18} />
                     </div>
-                );
-            })}
+                    <div>
+                        <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo}</h3>
+                        {modulo.descricao && <p className="text-slate-400 text-xs mt-0.5">{modulo.descricao}</p>}
+                    </div>
+                </div>
+            )}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {(modulo.metricas || []).map((m, i) => {
+                    const g = GRADIENTS[i % GRADIENTS.length];
+                    const val = m.valor ?? m.value ?? m.val ?? m.total ?? m.quantidade ?? m.numero ?? "—";
+                    const lbl = m.label ?? m.nome ?? m.name ?? m.titulo ?? m.descricao ?? "Métrica";
+
+                    return (
+                        <div key={i} className={`group rounded-[20px] p-5 ${g.light} border ${g.border} hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 relative overflow-hidden`}>
+                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${g.bg} text-white flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform`}>
+                                {ICON_MAP[m.icone] || <Activity size={18} />}
+                            </div>
+                            <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-none mb-1.5">{val}</p>
+                            <p className="text-slate-500 text-xs font-bold uppercase tracking-wider leading-snug">{lbl}</p>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 // 3. Pie Chart
 const PieChartModule = ({ modulo }) => {
@@ -563,39 +580,51 @@ const ProgressListModule = ({ modulo }) => {
 
 // 13. SWOT Analysis
 const SwotAnalysisModule = ({ modulo }) => {
+    const renderQuadrant = (title, items, icon, bgClass, borderClass, textClass, badgeClass) => {
+        const hasItems = items && items.length > 0;
+        return (
+            <div className={`p-5 rounded-2xl ${bgClass} border ${borderClass} flex flex-col justify-between`}>
+                <div>
+                    <div className="flex items-center justify-between mb-3">
+                        <h4 className={`font-black text-xs uppercase tracking-wider flex items-center gap-2 ${textClass}`}>
+                            {icon} {title}
+                        </h4>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${badgeClass}`}>
+                            {hasItems ? items.length : 0}
+                        </span>
+                    </div>
+                    {hasItems ? (
+                        <ul className="space-y-2 text-slate-700 text-xs font-medium leading-relaxed">
+                            {items.map((item, i) => (
+                                <li key={i} className="flex items-start gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-1.5 shrink-0" />
+                                    <span>{item}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-slate-400 text-xs italic py-2">Nenhum ponto registrado no período</p>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
             <div className="flex items-center gap-2.5 mb-6">
-                <div className="p-2 bg-slate-100 rounded-lg">
-                    <LayoutGrid size={18} className="text-slate-700" />
+                <div className="p-2 bg-slate-100 rounded-xl text-slate-700">
+                    <LayoutGrid size={18} />
                 </div>
-                <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo || "Análise SWOT"}</h3>
+                <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                    {modulo.titulo || "Análise SWOT"}
+                </h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-100">
-                    <h4 className="text-emerald-800 font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><CheckCircle2 size={16} /> Forças</h4>
-                    <ul className="list-disc pl-5 space-y-1 text-emerald-700 text-sm font-medium">
-                        {(modulo.forcas || []).map((f, i) => <li key={i}>{f}</li>)}
-                    </ul>
-                </div>
-                <div className="p-4 rounded-xl bg-rose-50 border border-rose-100">
-                    <h4 className="text-rose-800 font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><AlertTriangle size={16} /> Fraquezas</h4>
-                    <ul className="list-disc pl-5 space-y-1 text-rose-700 text-sm font-medium">
-                        {(modulo.fraquezas || []).map((f, i) => <li key={i}>{f}</li>)}
-                    </ul>
-                </div>
-                <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
-                    <h4 className="text-blue-800 font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><Lightbulb size={16} /> Oportunidades</h4>
-                    <ul className="list-disc pl-5 space-y-1 text-blue-700 text-sm font-medium">
-                        {(modulo.oportunidades || []).map((f, i) => <li key={i}>{f}</li>)}
-                    </ul>
-                </div>
-                <div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
-                    <h4 className="text-amber-800 font-black text-sm uppercase tracking-wider mb-3 flex items-center gap-2"><Zap size={16} /> Ameaças</h4>
-                    <ul className="list-disc pl-5 space-y-1 text-amber-700 text-sm font-medium">
-                        {(modulo.ameacas || []).map((f, i) => <li key={i}>{f}</li>)}
-                    </ul>
-                </div>
+                {renderQuadrant("Forças", modulo.forcas, <CheckCircle2 size={16} />, "bg-emerald-50/50", "border-emerald-100", "text-emerald-800", "bg-emerald-100 text-emerald-700")}
+                {renderQuadrant("Fraquezas", modulo.fraquezas, <AlertTriangle size={16} />, "bg-rose-50/50", "border-rose-100", "text-rose-800", "bg-rose-100 text-rose-700")}
+                {renderQuadrant("Oportunidades", modulo.oportunidades, <Lightbulb size={16} />, "bg-blue-50/50", "border-blue-100", "text-blue-800", "bg-blue-100 text-blue-700")}
+                {renderQuadrant("Ameaças", modulo.ameacas, <Zap size={16} />, "bg-amber-50/50", "border-amber-100", "text-amber-800", "bg-amber-100 text-amber-700")}
             </div>
         </div>
     );
@@ -606,22 +635,22 @@ const SentimentMeterModule = ({ modulo }) => {
     return (
         <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
             <div className="flex items-center gap-2.5 mb-6">
-                <div className="p-2 bg-pink-50 rounded-lg">
+                <div className="p-2 bg-pink-50 rounded-xl">
                     <Star size={18} className="text-pink-600" />
                 </div>
                 <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo || "Análise de Sentimento"}</h3>
             </div>
             <div className="flex items-center justify-between gap-2 mb-2 text-xs font-bold uppercase tracking-widest">
-                <span className="text-emerald-500">Positivo {modulo.positivo}%</span>
-                <span className="text-slate-400">Neutro {modulo.neutro}%</span>
-                <span className="text-rose-500">Negativo {modulo.negativo}%</span>
+                <span className="text-emerald-600">Positivo {modulo.positivo}%</span>
+                <span className="text-slate-500">Neutro {modulo.neutro}%</span>
+                <span className="text-rose-600">Negativo {modulo.negativo}%</span>
             </div>
-            <div className="w-full h-4 flex rounded-full overflow-hidden mb-4 bg-slate-100">
-                <div className="bg-emerald-500 h-full transition-all" style={{ width: `${modulo.positivo}%` }}></div>
+            <div className="w-full h-3.5 flex rounded-full overflow-hidden mb-4 bg-slate-100 p-0.5">
+                <div className="bg-emerald-500 h-full rounded-l-full transition-all" style={{ width: `${modulo.positivo}%` }}></div>
                 <div className="bg-slate-300 h-full transition-all" style={{ width: `${modulo.neutro}%` }}></div>
-                <div className="bg-rose-500 h-full transition-all" style={{ width: `${modulo.negativo}%` }}></div>
+                <div className="bg-rose-500 h-full rounded-r-full transition-all" style={{ width: `${modulo.negativo}%` }}></div>
             </div>
-            {modulo.resumo && <p className="text-slate-600 text-sm text-center font-medium bg-slate-50 p-3 rounded-xl border border-slate-100">{modulo.resumo}</p>}
+            {modulo.resumo && <p className="text-slate-700 text-sm text-center font-medium bg-slate-50 p-3.5 rounded-xl border border-slate-100 leading-relaxed">{modulo.resumo}</p>}
         </div>
     );
 };
@@ -631,26 +660,32 @@ const ActionStepsModule = ({ modulo }) => {
     return (
         <div className="rounded-[24px] bg-white p-6 shadow-xl shadow-slate-100 border border-slate-100/50">
             <div className="flex items-center gap-2.5 mb-6">
-                <div className="p-2 bg-orange-50 rounded-lg">
+                <div className="p-2 bg-orange-50 rounded-xl">
                     <ArrowRight size={18} className="text-orange-600" />
                 </div>
                 <h3 className="text-slate-800 font-bold text-base tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{modulo.titulo || "Plano de Ação"}</h3>
             </div>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3.5">
                 {(modulo.passos || []).map((passo, i) => (
-                    <div key={i} style={{ display: 'table', width: '100%' }}>
-                        <div style={{ display: 'table-row' }}>
-                            <div style={{ display: 'table-cell', width: '32px', verticalAlign: 'top', paddingRight: '16px' }}>
-                                <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-sm shadow-md" style={{ marginTop: '8px' }}>
-                                    {passo.numero || (i + 1)}
-                                </div>
+                    <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50/70 border border-slate-100 hover:bg-white hover:shadow-md transition-all">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-center font-black text-xs shadow-sm shrink-0 mt-0.5">
+                            {passo.numero || (i + 1)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <h4 className="text-slate-800 font-bold text-sm leading-tight">{passo.titulo}</h4>
+                                {passo.prazo && (
+                                    <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-wider">
+                                        {passo.prazo}
+                                    </span>
+                                )}
+                                {passo.responsavel && (
+                                    <span className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-bold">
+                                        {passo.responsavel}
+                                    </span>
+                                )}
                             </div>
-                            <div style={{ display: 'table-cell', verticalAlign: 'top' }}>
-                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                    <h4 className="text-slate-800 font-bold text-sm m-0 mb-1">{passo.titulo}</h4>
-                                    <p className="text-slate-600 text-xs font-medium leading-relaxed m-0">{passo.descricao}</p>
-                                </div>
-                            </div>
+                            <p className="text-slate-600 text-xs font-medium leading-relaxed m-0">{passo.descricao}</p>
                         </div>
                     </div>
                 ))}
@@ -798,10 +833,10 @@ const AnalysisReport = ({ analysisData }) => {
     // Compatibilidade com formato antigo e sanitização de typos do LLM
     const normalizedModulos = useMemo(() => {
         const VALID_TYPES = [
-            'hero_stat', 'metric_grid', 'pie_chart', 'bar_chart', 'friction_cards', 
-            'insight_cards', 'text_section', 'timeline_events', 'line_chart', 
-            'area_chart', 'radar_chart', 'progress_list', 'swot_analysis', 
-            'sentiment_meter', 'action_steps', 'highlight_quotes', 'comparative_table', 
+            'hero_stat', 'metric_grid', 'pie_chart', 'bar_chart', 'friction_cards',
+            'insight_cards', 'text_section', 'timeline_events', 'line_chart',
+            'area_chart', 'radar_chart', 'progress_list', 'swot_analysis',
+            'sentiment_meter', 'action_steps', 'highlight_quotes', 'comparative_table',
             'key_value_list'
         ];
 
@@ -860,12 +895,12 @@ const AnalysisReport = ({ analysisData }) => {
                     if (root) {
                         // 2. Remove animations/transitions classes from root
                         root.classList.remove('animate-fade-in-up');
-                        
+
                         // 3. Process all children nodes recursively
                         const allNodes = root.getElementsByTagName('*');
                         for (let i = 0; i < allNodes.length; i++) {
                             const node = allNodes[i];
-                            
+
                             // Remove class names triggering animation/transition
                             if (typeof node.className === 'string') {
                                 node.className = node.className
@@ -876,13 +911,13 @@ const AnalysisReport = ({ analysisData }) => {
                                     .replace(/\banimate-\S+/g, '')
                                     .replace(/\btransition-\S+/g, '');
                             }
-                            
+
                             // Override inline styles with !important priority
                             node.style.setProperty('transform', 'none', 'important');
                             node.style.setProperty('transition', 'none', 'important');
                             node.style.setProperty('animation', 'none', 'important');
                             node.style.setProperty('transition-property', 'none', 'important');
-                            
+
                             // If opacity was set to 0 due to entrance delay, force it to 1
                             if (node.style.opacity === '0' || node.style.opacity === '0.0' || node.style.opacity === '0.1') {
                                 node.style.setProperty('opacity', '1', 'important');
@@ -942,11 +977,19 @@ const AnalysisReport = ({ analysisData }) => {
 
             {/* Resposta Direta */}
             {resposta_direta && (
-                <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-50/50 to-indigo-50/50 flex items-start gap-3 border border-blue-100/80">
-                    <Sparkles size={18} className="text-blue-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                        <p className="text-blue-600 text-xs font-black uppercase tracking-widest mb-1.5">Resposta Direta</p>
-                        <p className="text-slate-800 font-semibold text-sm leading-relaxed">{resposta_direta}</p>
+                <div className="relative overflow-hidden p-6 rounded-2xl bg-gradient-to-r from-blue-700 via-indigo-600 to-indigo-800 text-white shadow-lg shadow-indigo-600/10">
+                    <div className="relative z-10 flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20">
+                            <Sparkles size={20} className="text-amber-300" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <span className="text-[11px] font-black uppercase tracking-widest text-blue-200">
+                                Diagnóstico Executivo Direto
+                            </span>
+                            <p className="text-white text-sm sm:text-[15px] font-medium leading-relaxed">
+                                {resposta_direta}
+                            </p>
+                        </div>
                     </div>
                 </div>
             )}
@@ -1321,7 +1364,7 @@ const Dashboard = () => {
                     </div>
 
                     {/* Gráficos Principais */}
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    <div className="grid gap-8">
                         {/* Line Chart */}
                         <div className="lg:col-span-3 bg-white rounded-[32px] p-6 sm:p-8 shadow-xl shadow-slate-100 border border-slate-100/50" style={{ animation: 'fade-in-up 0.6s ease backwards 0.4s' }}>
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
@@ -1383,45 +1426,8 @@ const Dashboard = () => {
                                 </ResponsiveContainer>
                             </div>
                         </div>
-
-                        {/* Pie Chart Card */}
-                        <div className="bg-white rounded-[32px] p-8 shadow-xl shadow-slate-100 border border-slate-100/50" style={{ animation: 'fade-in-up 0.6s ease backwards 0.5s' }}>
-                            <div className="flex items-center gap-3 mb-8">
-                                <div className="p-2.5 bg-violet-50 rounded-2xl">
-                                    <PieIcon size={18} className="text-violet-600" />
-                                </div>
-                                <div>
-                                    <h3 className="text-slate-800 font-bold text-lg tracking-tight" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>Mix de Conversão</h3>
-                                    <p className="text-slate-400 text-xs mt-0.5">Distribuição por situação</p>
-                                </div>
-                            </div>
-                            <div className="h-[260px] relative">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie data={data.charts.atendimentosPorSituacao} dataKey="value" nameKey="name"
-                                            cx="50%" cy="50%" innerRadius="55%" outerRadius="90%"
-                                            paddingAngle={4} strokeWidth={0} stroke="#f9fafb">
-                                            {data.charts.atendimentosPorSituacao.map((entry, i) => (
-                                                <Cell key={i} fill={STATUS_COLORS[entry.name] || CHART_PALETTE[i % CHART_PALETTE.length]} className="focus:outline-none" />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip content={<CustomTooltip />} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                            <div className="mt-8 flex flex-col gap-3">
-                                {data.charts.atendimentosPorSituacao.map((entry, i) => (
-                                    <div key={i} className="flex items-center justify-between group p-2 rounded-xl hover:bg-slate-50 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: STATUS_COLORS[entry.name] || CHART_PALETTE[i % CHART_PALETTE.length] }} />
-                                            <span className="text-slate-500 font-semibold text-xs">{entry.name}</span>
-                                        </div>
-                                        <span className="text-slate-900 font-black text-sm tracking-tight">{entry.value}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
                     </div>
+
                     {/* AI Analyzer Area */}
                     <div style={{ animation: 'fade-in-up 0.7s ease backwards 0.6s' }}>
                         <AIAnalyzer

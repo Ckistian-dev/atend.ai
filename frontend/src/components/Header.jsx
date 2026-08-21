@@ -258,13 +258,18 @@ const Header = ({ setIsMobileMenuOpen }) => {
               <div
                 id="header-user-info"
                 className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-full bg-slate-50 ring-1 ring-slate-200"
-                title={user.email}
+                title={`${user.name || user.email} ${user.department ? `(${user.department})` : ''}`}
               >
                 <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
                   style={{ backgroundColor: getUserColor(user.profile_color, user.name || user.email) }}>
                   {(user.name || user.email)?.[0]?.toUpperCase()}
                 </div>
                 <span className="text-xs font-semibold text-slate-700 hidden md:inline">{user.name || user.email}</span>
+                {user.department && (
+                  <span className="hidden lg:inline text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/80">
+                    {user.department}
+                  </span>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full ring-1 ring-slate-100">

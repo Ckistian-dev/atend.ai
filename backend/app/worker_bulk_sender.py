@@ -131,6 +131,8 @@ async def process_bulk_queue():
                 except Exception as template_err:
                     logger.warning(f"Worker-Bulk: Falha ao reconstruir texto do template para Atendimento {at.id}: {template_err}")
 
+                from app.crud import crud_atendimento
+
                 new_message = {
                     "id": send_result.get('id') or f"bulk-{uuid.uuid4()}",
                     "role": "assistant",
@@ -143,9 +145,12 @@ async def process_bulk_queue():
                     "buttons": extracted_buttons
                 }
                 
-                conversa_list = json.loads(at.conversa or "[]")
-                conversa_list.append(new_message)
-                at.conversa = json.dumps(conversa_list, ensure_ascii=False)
+                await crud_atendimento.save_message(
+                    db=db,
+                    company_id=at.company_id,
+                    atendimento_id=at.id,
+                    message_data=new_message
+                )
                 # --- FIM DO LOG CONVERSA ---
 
                 # Após envio, muda o status para que a IA assuma quando o cliente responder

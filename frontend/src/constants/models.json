@@ -28,6 +28,15 @@
       }
     },
     {
+      "id": "gemini-3.5-flash-lite",
+      "name": "Gemini 3.5 Flash Lite (1.33x)",
+      "pricing": {
+        "input_text": 0.30,
+        "input_audio": 0.30,
+        "output": 2.50
+      }
+    },
+    {
       "id": "gemini-3.1-flash-lite",
       "name": "Gemini 3.1 Flash Lite (1x)",
       "pricing": {
@@ -37,5 +46,5 @@
       }
     }
   ],
-  "DEFAULT_MODEL": "gemini-3.1-flash-lite"
+  "DEFAULT_MODEL": "gemini-3.5-flash-lite"
 }

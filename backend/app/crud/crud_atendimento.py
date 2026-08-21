@@ -1,6 +1,6 @@
 import logging
-from sqlalchemy import select, func, text
-from sqlalchemy.orm import joinedload
+from sqlalchemy import select, func, text, or_
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import models, schemas
@@ -12,13 +12,35 @@ from app.services.whatsapp_service import format_whatsapp_number
 
 logger = logging.getLogger(__name__)
 
+def parse_timestamp_to_datetime(ts: Any) -> datetime:
+    """Converte qualquer formato de timestamp (int, float, ISO str, datetime) em datetime com timezone UTC."""
+    if isinstance(ts, datetime):
+        if ts.tzinfo is None:
+            return ts.replace(tzinfo=timezone.utc)
+        return ts
+    if isinstance(ts, (int, float)):
+        return datetime.fromtimestamp(ts, tz=timezone.utc)
+    if isinstance(ts, str):
+        try:
+            val = float(ts)
+            return datetime.fromtimestamp(val, tz=timezone.utc)
+        except ValueError:
+            pass
+        try:
+            return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        except Exception:
+            pass
+    return datetime.now(timezone.utc)
+
 async def get_atendimento(db: AsyncSession, atendimento_id: int, company_id: int) -> Optional[models.Atendimento]:
-    """Busca um atendimento específico pelo ID, carregando relacionamentos."""
+    """Busca um atendimento específico pelo ID, carregando relacionamentos e mensagens."""
     result = await db.execute(
         select(models.Atendimento)
         .where(models.Atendimento.id == atendimento_id, models.Atendimento.company_id == company_id)
         .options(
-            joinedload(models.Atendimento.active_persona) # Carrega a persona ativa também
+            joinedload(models.Atendimento.active_persona),
+            joinedload(models.Atendimento.assigned_user),
+            selectinload(models.Atendimento.mensagens)
         )
     )
     return result.scalars().first()
@@ -29,11 +51,249 @@ async def get_atendimentos_by_user(db: AsyncSession, company_id: int) -> List[mo
         select(models.Atendimento)
         .where(models.Atendimento.company_id == company_id)
         .options(
-            joinedload(models.Atendimento.active_persona)
+            joinedload(models.Atendimento.active_persona),
+            selectinload(models.Atendimento.mensagens)
         )
         .order_by(models.Atendimento.updated_at.desc())
     )
     return result.scalars().all()
+
+async def get_messages_for_atendimento(
+    db: AsyncSession, 
+    atendimento_id: int, 
+    company_id: int
+) -> List[models.Message]:
+    """Retorna todas as mensagens de um atendimento ordenadas cronologicamente."""
+    stmt = (
+        select(models.Message)
+        .where(
+            models.Message.atendimento_id == atendimento_id,
+            models.Message.company_id == company_id
+        )
+        .order_by(models.Message.timestamp.asc())
+    )
+    res = await db.execute(stmt)
+    return res.scalars().all()
+
+async def has_newer_user_messages(
+    db: AsyncSession,
+    atendimento_id: int,
+    company_id: int,
+    last_processed_msg_id: int
+) -> bool:
+    """Verifica com alta eficiência se existem mensagens novas do cliente (role 'user' ou 'client') gravadas após last_processed_msg_id."""
+    if not last_processed_msg_id or last_processed_msg_id <= 0:
+        return False
+    stmt = (
+        select(models.Message.id)
+        .where(
+            models.Message.atendimento_id == atendimento_id,
+            models.Message.company_id == company_id,
+            models.Message.id > last_processed_msg_id,
+            models.Message.role.in_(["user", "client"]),
+            models.Message.type != "reaction"
+        )
+        .limit(1)
+    )
+    res = await db.execute(stmt)
+    return res.scalar_one_or_none() is not None
+
+async def get_message_by_wamid_or_id(
+    db: AsyncSession, 
+    company_id: int, 
+    message_id: str
+) -> Optional[models.Message]:
+    """Busca uma mensagem específica pelo WAMID ou ID interno."""
+    stmt = select(models.Message).where(
+        models.Message.company_id == company_id,
+        models.Message.message_id == message_id
+    )
+    res = await db.execute(stmt)
+    return res.scalars().first()
+
+async def get_message_by_media_id(
+    db: AsyncSession,
+    company_id: int,
+    media_id: str,
+    atendimento_id: Optional[int] = None
+) -> Optional[models.Message]:
+    """Busca uma mensagem pelo media_id, message_id ou id primário para recuperação de bytes."""
+    if not media_id or str(media_id).strip().lower() in ['null', 'none', 'undefined', '']:
+        return None
+
+    media_id_str = str(media_id).strip()
+    conditions = [
+        models.Message.media_id == media_id_str,
+        models.Message.message_id == media_id_str
+    ]
+    try:
+        msg_int_id = int(media_id_str)
+        # Limita ao intervalo válido de INTEGER (int32) do PostgreSQL (-2^31 a 2^31 - 1)
+        if -2147483648 <= msg_int_id <= 2147483647:
+            conditions.append(models.Message.id == msg_int_id)
+    except (ValueError, TypeError):
+        pass
+
+    query = select(models.Message).where(
+        models.Message.company_id == company_id,
+        or_(*conditions)
+    )
+    if atendimento_id:
+        query = query.where(models.Message.atendimento_id == atendimento_id)
+    res = await db.execute(query)
+    return res.scalars().first()
+
+async def save_message(
+    db: AsyncSession,
+    company_id: int,
+    atendimento_id: int,
+    message_data: Dict[str, Any],
+    media_bytes: Optional[bytes] = None
+) -> models.Message:
+    """
+    Cria ou atualiza uma mensagem individual na tabela 'mensagens'.
+    Persiste arquivos de mídia diretamente em 'media_bytes' (BYTEA).
+    """
+    msg_id = str(message_data.get("id") or message_data.get("message_id") or "")
+    if not msg_id:
+        import uuid
+        msg_id = f"msg_{uuid.uuid4().hex[:12]}"
+
+    ts = parse_timestamp_to_datetime(message_data.get("timestamp"))
+
+    stmt = select(models.Message).where(
+        models.Message.company_id == company_id,
+        models.Message.message_id == msg_id
+    )
+    res = await db.execute(stmt)
+    existing_msg = res.scalars().first()
+
+    content_val = message_data.get("content")
+    if content_val is None:
+        content_val = message_data.get("caption") or message_data.get("filename") or ""
+
+    if existing_msg:
+        # Atualiza campos se fornecidos
+        if message_data.get("content") is not None:
+            existing_msg.content = str(message_data["content"])
+        if message_data.get("caption") is not None:
+            existing_msg.caption = message_data["caption"]
+        if message_data.get("status") is not None:
+            existing_msg.status = message_data["status"]
+        if message_data.get("type") is not None:
+            existing_msg.type = message_data["type"]
+        if message_data.get("media_id") is not None:
+            existing_msg.media_id = message_data["media_id"]
+        if message_data.get("mime_type") is not None:
+            existing_msg.mime_type = message_data["mime_type"]
+        if message_data.get("filename") is not None:
+            existing_msg.filename = message_data["filename"]
+        if message_data.get("error_code") is not None:
+            existing_msg.error_code = message_data["error_code"]
+        if message_data.get("error_title") is not None:
+            existing_msg.error_title = message_data["error_title"]
+        if message_data.get("reaction") is not None:
+            existing_msg.reaction = message_data["reaction"]
+        if message_data.get("reactions") is not None:
+            existing_msg.reactions = message_data["reactions"]
+        if media_bytes is not None:
+            existing_msg.media_bytes = media_bytes
+        db.add(existing_msg)
+        return existing_msg
+    else:
+        new_msg = models.Message(
+            company_id=company_id,
+            atendimento_id=atendimento_id,
+            message_id=msg_id,
+            role=message_data.get("role", "user"),
+            type=message_data.get("type", "text"),
+            content=str(content_val),
+            caption=message_data.get("caption"),
+            timestamp=ts,
+            message_date=ts,
+            status=message_data.get("status", "received"),
+            error_code=message_data.get("error_code"),
+            error_title=message_data.get("error_title"),
+            media_id=message_data.get("media_id"),
+            media_url=message_data.get("url") or message_data.get("media_url"),
+            mime_type=message_data.get("mime_type"),
+            filename=message_data.get("filename"),
+            media_bytes=media_bytes,
+            reaction=message_data.get("reaction"),
+            reactions=message_data.get("reactions"),
+            quoted_msg_id=message_data.get("quoted_msg_id"),
+            is_ai=bool(message_data.get("is_ai", False)),
+            is_template=bool(message_data.get("is_template", False)),
+            buttons=message_data.get("buttons"),
+            quoted_msg=message_data.get("quoted_msg"),
+            extra_data=message_data.get("extra_data")
+        )
+        db.add(new_msg)
+        return new_msg
+
+async def apply_reaction_to_message(
+    db: AsyncSession,
+    company_id: int,
+    atendimento_id: int,
+    target_message_id: str,
+    emoji: str,
+    sender_number: Optional[str] = None
+) -> Optional[models.Message]:
+    """
+    Aplica ou remove uma reação em uma mensagem específica (target_message_id / WAMID).
+    Se emoji for vazio (''), remove a reação.
+    """
+    stmt = select(models.Message).where(
+        models.Message.company_id == company_id,
+        models.Message.message_id == target_message_id
+    )
+    res = await db.execute(stmt)
+    target_msg = res.scalars().first()
+
+    if not target_msg:
+        # Tenta buscar pelo atendimento caso o target_message_id seja id numérico
+        logger.warning(f"Mensagem alvo para reação não encontrada: message_id={target_message_id}, company_id={company_id}")
+        return None
+
+    sender_key = sender_number or "user"
+    current_reactions = dict(target_msg.reactions or {})
+
+    if emoji and emoji.strip():
+        clean_emoji = emoji.strip()
+        target_msg.reaction = clean_emoji
+        current_reactions[sender_key] = {
+            "emoji": clean_emoji,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    else:
+        # Remoção de reação
+        target_msg.reaction = None
+        current_reactions.pop(sender_key, None)
+
+    target_msg.reactions = current_reactions
+    db.add(target_msg)
+    logger.info(f"Reação '{emoji}' aplicada à mensagem {target_message_id} (Atendimento {atendimento_id}).")
+    return target_msg
+
+async def update_message_status(
+    db: AsyncSession,
+    company_id: int,
+    message_id: str,
+    status: str,
+    error_code: Optional[str] = None,
+    error_title: Optional[str] = None
+) -> Optional[models.Message]:
+    """Atualiza o status de entrega/leitura/falha de uma mensagem pelo WAMID."""
+    msg = await get_message_by_wamid_or_id(db, company_id=company_id, message_id=message_id)
+    if msg:
+        msg.status = status
+        if error_code:
+            msg.error_code = str(error_code)
+        if error_title:
+            msg.error_title = str(error_title)
+        db.add(msg)
+        return msg
+    return None
 
 async def distribute_atendimento(db: AsyncSession, atendimento: models.Atendimento):
     """
@@ -57,14 +317,12 @@ async def distribute_atendimento(db: AsyncSession, atendimento: models.Atendimen
 
     # 2. Verificar se o atendimento já possui a tag de algum dos candidatos
     current_tags = atendimento.tags or []
-    # Garantir que current_tags é uma lista
     if not isinstance(current_tags, list):
         try:
             current_tags = json.loads(current_tags) if isinstance(current_tags, str) else list(current_tags)
         except:
             current_tags = []
 
-    # Mapear nomes/emails dos candidatos para verificar
     candidate_identifiers = set()
     for u in candidates:
         if u.name:
@@ -72,7 +330,6 @@ async def distribute_atendimento(db: AsyncSession, atendimento: models.Atendimen
         if u.email:
             candidate_identifiers.add(u.email.strip().lower())
 
-    # Remover None se houver
     candidate_identifiers.discard(None)
 
     has_agent_tag = False
@@ -107,7 +364,6 @@ async def distribute_atendimento(db: AsyncSession, atendimento: models.Atendimen
     selected_name = selected_user.name if selected_user.name else selected_user.email
     selected_color = selected_user.profile_color or "#3b82f6"
 
-    # Criar tag com base no nome do usuário (fallback para email) e cor
     new_tag = {"name": selected_name, "color": selected_color}
     current_tags.append(new_tag)
     atendimento.tags = current_tags
@@ -118,7 +374,6 @@ async def create_atendimento(db: AsyncSession, atendimento_in: schemas.Atendimen
     Cria um novo atendimento e carrega seus relacionamentos para evitar erros de lazy-loading.
     Não faz commit.
     """
-    # Exclui os campos que não pertencem ao modelo do banco de dados, pois são usados apenas para a lógica de envio de template na rota.
     create_data = atendimento_in.model_dump(exclude={'template_name', 'template_language_code', 'template_components'})
 
     db_atendimento = models.Atendimento(
@@ -126,62 +381,46 @@ async def create_atendimento(db: AsyncSession, atendimento_in: schemas.Atendimen
         company_id=company_id
     )
     db.add(db_atendimento)
-    await db.flush() # Envia o objeto para o banco para obter um ID e valores padrão.
+    await db.flush()
 
     if db_atendimento.status == "Atendente Chamado":
         await distribute_atendimento(db, db_atendimento)
 
-    # Recarrega o objeto e seu relacionamento 'active_persona' explicitamente.
-    # Isso é crucial para que a resposta da API possa ser serializada sem erros de I/O (lazy loading).
-    await db.refresh(db_atendimento, attribute_names=['active_persona'])
-
-    # O commit será feito na rota que chamou a função.
+    await db.refresh(db_atendimento, attribute_names=['active_persona', 'mensagens'])
     return db_atendimento
 
 async def update_atendimento(db: AsyncSession, db_atendimento: models.Atendimento, atendimento_in: schemas.AtendimentoUpdate) -> models.Atendimento:
-    """Atualiza os dados de um atendimento. Não faz commit."""
+    """Atualiza os dados de um atendimento e sincroniza mensagens se aplicável."""
     old_status = db_atendimento.status
     update_data = atendimento_in.model_dump(exclude_unset=True)
     
     for field, value in update_data.items():
-        
-        # --- INÍCIO DA MODIFICAÇÃO ---
-        
         if field == 'conversa':
-            
-            # CASO 1: É um dict (lógica antiga de 'add_message')
             if isinstance(value, dict) and 'add_message' in value:
-                try:
-                    current_conversa_str = db_atendimento.conversa or "[]"
-                    current_conversa_list = json.loads(current_conversa_str)
-                    new_message = value['add_message'] # Espera um dict de mensagem formatado
-                    
-                    if 'timestamp' not in new_message:
-                        new_message['timestamp'] = datetime.now(timezone.utc).isoformat()
-                    
-                    current_conversa_list.append(new_message)
-                    current_conversa_list.sort(key=lambda x: x.get('timestamp') or '1970-01-01T00:00:00+00:00')
-                    
-                    setattr(db_atendimento, 'conversa', json.dumps(current_conversa_list, ensure_ascii=False))
-                    needs_refresh = True 
-                
-                except (json.JSONDecodeError, TypeError) as e:
-                    logger.error(f"Erro ao adicionar mensagem à conversa (Atendimento ID {db_atendimento.id}): {e}. Conversa atual: {db_atendimento.conversa}")
-            
-            # CASO 2: É uma string (nova lógica de 'mark_as_read' / substituição total)
+                # Adiciona mensagem na tabela mensagens
+                new_msg_data = value['add_message']
+                await save_message(
+                    db=db,
+                    company_id=db_atendimento.company_id,
+                    atendimento_id=db_atendimento.id,
+                    message_data=new_msg_data
+                )
             elif isinstance(value, str):
-                # Simplesmente define o valor, pois já é uma string JSON
-                setattr(db_atendimento, field, value)
-            
-            # CASO 3: É outra coisa (ex: None ou um tipo inesperado)
-            elif value is not None:
-                # Loga um aviso se não for um dict esperado ou uma string
-                logger.warning(f"Tipo inesperado para 'conversa' no update (Atendimento ID {db_atendimento.id}): {type(value)}")
-        
-        # Para todos os outros campos (status, active_persona_id, etc.)
+                # Se for JSON string (ex: mark_as_read atualizando status de mensagens)
+                try:
+                    msgs_list = json.loads(value)
+                    if isinstance(msgs_list, list):
+                        for m in msgs_list:
+                            if isinstance(m, dict) and m.get("id"):
+                                msg_rec = await get_message_by_wamid_or_id(db, company_id=db_atendimento.company_id, message_id=str(m["id"]))
+                                if msg_rec and m.get("status") and msg_rec.status != m.get("status"):
+                                    msg_rec.status = m["status"]
+                                    db.add(msg_rec)
+                except Exception as parse_err:
+                    logger.warning(f"Erro ao processar sync de conversa string em update_atendimento: {parse_err}")
+                setattr(db_atendimento, 'conversa', value)
         else:
             setattr(db_atendimento, field, value)
-            
 
     db_atendimento.updated_at = datetime.now(timezone.utc)
     db.add(db_atendimento)
@@ -191,46 +430,38 @@ async def update_atendimento(db: AsyncSession, db_atendimento: models.Atendiment
 
     return db_atendimento
 
-
 async def add_message_to_conversa(
     db: AsyncSession,
     atendimento_id: int,
     company_id: int,
-    message: schemas.FormattedMessage # Usando o schema definido
+    message: schemas.FormattedMessage,
+    media_bytes: Optional[bytes] = None
 ) -> Optional[models.Atendimento]:
-    """Adiciona uma mensagem formatada à conversa de um atendimento existente."""
+    """Persiste a mensagem diretamente na tabela 'mensagens' e atualiza o atendimento."""
     db_atendimento = await get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
     if not db_atendimento:
-        logger.warning(f"Tentativa de adicionar mensagem a atendimento inexistente ou não pertencente à empresa: ID {atendimento_id}, Empresa {company_id}")
+        logger.warning(f"Tentativa de adicionar mensagem a atendimento inexistente: ID {atendimento_id}, Empresa {company_id}")
         return None
 
     try:
-        current_conversa_str = db_atendimento.conversa or "[]"
-        current_conversa_list = json.loads(current_conversa_str)
+        msg_dict = message.model_dump()
+        await save_message(
+            db=db,
+            company_id=company_id,
+            atendimento_id=atendimento_id,
+            message_data=msg_dict,
+            media_bytes=media_bytes
+        )
 
-        # Garante timestamp se não existir
-        if not message.timestamp:
-            message.timestamp = datetime.now(timezone.utc).isoformat()
-
-        current_conversa_list.append(message.model_dump()) # Adiciona o dict da mensagem
-
-        # Ordena pelo timestamp antes de salvar
-        current_conversa_list.sort(key=lambda x: x.get('timestamp') or '1970-01-01T00:00:00+00:00')
-
-        db_atendimento.conversa = json.dumps(current_conversa_list, ensure_ascii=False)
-        db_atendimento.updated_at = datetime.now(timezone.utc) # Atualiza timestamp do atendimento
+        db_atendimento.updated_at = datetime.now(timezone.utc)
         db.add(db_atendimento)
-        await db.commit() # Salva a adição da mensagem
-        await db.refresh(db_atendimento) # Recarrega para obter estado atualizado
-        logger.info(f"Mensagem ID {message.id} adicionada à conversa do Atendimento ID {atendimento_id}.")
+        await db.commit()
+        await db.refresh(db_atendimento, attribute_names=['mensagens', 'active_persona'])
+        logger.info(f"Mensagem ID {message.id or message.message_id} salva na tabela mensagens do Atendimento ID {atendimento_id}.")
         return db_atendimento
 
-    except (json.JSONDecodeError, TypeError) as e:
-        logger.error(f"Erro ao adicionar mensagem (ID: {message.id}) à conversa (Atendimento ID {atendimento_id}): {e}. Conversa atual: {db_atendimento.conversa}")
-        await db.rollback()
-        return None
     except Exception as e:
-        logger.error(f"Erro inesperado ao adicionar mensagem (ID: {message.id}) ao atendimento {atendimento_id}: {e}", exc_info=True)
+        logger.error(f"Erro ao salvar mensagem no atendimento {atendimento_id}: {e}", exc_info=True)
         await db.rollback()
         return None
 
@@ -580,8 +811,8 @@ async def get_atendimentos_para_processar(db: AsyncSession) -> List[models.Atend
     Esta é uma consulta otimizada em massa (bulk query) que o agent_processor.py usa.
     """
     try:
-        # Define o tempo limite (20 segundos atrás)
-        tempo_limite = datetime.now(timezone.utc) - timedelta(seconds=20)
+        # Define o tempo limite (10 segundos de debounce após a última mensagem)
+        tempo_limite = datetime.now(timezone.utc) - timedelta(seconds=10)
         
         # Cria a consulta
         stmt = (
@@ -661,3 +892,40 @@ async def delete_tag_from_all_atendimentos(db: AsyncSession, company_id: int, ta
     except Exception as e:
         logger.error(f"Erro ao excluir tag '{tag_name}' para a empresa {company_id}: {e}", exc_info=True)
         raise e
+
+async def get_company_departments(db: AsyncSession, company_id: int) -> List[str]:
+    """
+    Retorna uma lista consolidada de setores/departamentos da empresa,
+    obtidos a partir dos usuários cadastrados e atendimentos existentes.
+    """
+    try:
+        # 1. Departamentos dos usuários
+        stmt_users = select(models.User.department).where(
+            models.User.company_id == company_id,
+            models.User.department.isnot(None),
+            models.User.department != ""
+        ).distinct()
+        res_users = await db.execute(stmt_users)
+        user_depts = [d for d in res_users.scalars().all() if d and d.strip()]
+
+        # 2. Departamentos dos atendimentos
+        stmt_atend = select(models.Atendimento.assigned_department).where(
+            models.Atendimento.company_id == company_id,
+            models.Atendimento.assigned_department.isnot(None),
+            models.Atendimento.assigned_department != ""
+        ).distinct()
+        res_atend = await db.execute(stmt_atend)
+        atend_depts = [d for d in res_atend.scalars().all() if d and d.strip()]
+
+        # Une e ordena sem duplicatas (mantendo a capitalização mais frequente / limpa)
+        dept_dict = {}
+        for d in user_depts + atend_depts:
+            clean = d.strip()
+            key = clean.lower()
+            if key not in dept_dict:
+                dept_dict[key] = clean
+
+        return sorted(list(dept_dict.values()))
+    except Exception as e:
+        logger.error(f"Erro ao buscar departamentos para empresa {company_id}: {e}", exc_info=True)
+        return []

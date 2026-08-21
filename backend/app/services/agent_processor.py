@@ -1,30 +1,33 @@
 import asyncio
 import json
 import logging
-import random
-import uuid
-import re
+import math
+import os
 from typing import Dict, List, Any, Optional
+from datetime import datetime, timezone
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.future import select
-from datetime import datetime, timezone, timedelta
 
 from app.db.database import SessionLocal
 from app.crud import crud_atendimento, crud_config, crud_user
-from app.services.whatsapp_service import get_whatsapp_service, MessageSendError
+from app.db import models
+from app.graph.state import AgentState
+from app.graph.workflow import run_agent_workflow
 from app.services.gemini_service import get_gemini_service
 from app.services.google_calendar_service import get_google_calendar_service
-from app.services.google_drive_service import get_drive_service # <--- Import do serviço de Drive
-from app.services.config_service import SITUATIONS, ConfigService
-parse_drive_index = ConfigService.parse_drive_index
-from app.db import models, schemas
-from app.services.agent_service import agente_atendimento, ContextoSaaS, contabilizar_tokens_pydantic
-from pydantic_ai.messages import ModelRequest, ModelResponse, UserPromptPart, TextPart
+from app.services.agent_service import TABELA_PRECOS, BASE_FLASH_PRICE
+
+try:
+    from langgraph.errors import NodeCancelledError
+except ImportError:
+    class NodeCancelledError(Exception):
+        pass
 
 logger = logging.getLogger(__name__)
 
-# Dicionário global para controlar e permitir cancelamento de tasks de atendimento ativas por ID
+# Dicionário global para controlar e permitir cancelamento de tasks ativas
 _active_processing_tasks: Dict[int, asyncio.Task] = {}
 
 def cancel_active_atendimento_task(atendimento_id: int) -> bool:
@@ -34,603 +37,380 @@ def cancel_active_atendimento_task(atendimento_id: int) -> bool:
     """
     task = _active_processing_tasks.get(atendimento_id)
     if task and not task.done():
-        logger.info(f"[BARRAMENTO AMBIENTE] Interrompendo task de IA ativa para Atendimento ID {atendimento_id} devido a nova mensagem recebida.")
+        logger.info(f"[Barramento] Interrompendo task de IA ativa para Atendimento ID {atendimento_id} devido a nova mensagem.")
         task.cancel()
         return True
-def selecionar_ultimas_mensagens_historico(historico_previo: List[Dict[str, Any]], max_dialogo: int = 10) -> List[Dict[str, Any]]:
+    return False
+
+def build_prompt_from_persona_form(persona_form: Any) -> str:
     """
-    Seleciona as mensagens do histórico anterior garantindo que até `max_dialogo`
-    mensagens reais de diálogo (mensagens do usuário ou respostas principais da IA) 
-    sejam mantidas, junto com suas respectivas pesquisas associadas.
+    Converte os dados estruturados do formulário da Aba Persona em um System Prompt limpo.
     """
-    if not historico_previo:
-        return []
+    if not persona_form:
+        return ""
+    if isinstance(persona_form, str):
+        return persona_form.strip()
+    if not isinstance(persona_form, dict):
+        return ""
 
-    dialogo_count = 0
-    cut_index = 0
+    lines = []
 
-    # Percorre de trás para frente contando mensagens de diálogo reais
-    for i in range(len(historico_previo) - 1, -1, -1):
-        msg = historico_previo[i]
-        role = msg.get("role") or "user"
-        msg_type = msg.get("type") or "text"
+    # Seção 1: Identidade
+    ai_name = str(persona_form.get("ai_name") or "").strip()
+    company_name = str(persona_form.get("company_name") or "").strip()
+    role = str(persona_form.get("role") or "").strip()
+    language = str(persona_form.get("language") or "Português (BR)").strip()
+    nature_identity = str(persona_form.get("nature_identity") or "human").strip().lower()
 
-        # Mensagens de diálogo são mensagens do usuário ou mensagens de resposta da IA (excluindo registros de busca interna)
-        is_dialogue = (role in ["user", "client"]) or (role == "assistant" and msg_type != "search")
+    identity_parts = []
+    if ai_name: identity_parts.append(f"Nome da IA / Atendente: {ai_name}")
+    if company_name: identity_parts.append(f"Empresa / Marca: {company_name}")
+    if role: identity_parts.append(f"Função / Cargo: {role}")
+    if language: identity_parts.append(f"Idioma: {language}")
 
-        if is_dialogue:
-            dialogo_count += 1
+    if nature_identity == "ai":
+        identity_parts.append("Natureza da Identidade: IA (Transparente)")
+        identity_parts.append("Postura: Você é abertamente uma inteligência artificial assistente. Se o cliente perguntar se é IA/robô, confirme com simpatia e presteza.")
+        identity_parts.append("Postura de Transbordo: Ao transferir para atendimento humano, você pode informar com clareza que está transferindo o atendimento para nossa equipe humana / consultores especializados.")
+    elif nature_identity == "ignore":
+        identity_parts.append("Natureza da Identidade: Neutra / Evasiva")
+        identity_parts.append("Postura: Se o cliente perguntar se você é um robô/IA, desvie educadamente mantendo o foco total em ajudar com o atendimento, sem confirmar nem negar.")
+        identity_parts.append("Postura de Transbordo: Ao transferir, use termos neutros da equipe (ex: 'Vou direcionar seu atendimento para um especialista da nossa equipe que dará continuidade por aqui...'), sem enfatizar humano vs robô.")
+    else:  # "human" (padrão)
+        identity_parts.append("Natureza da Identidade: HUMANA (Atendente Real da Empresa)")
+        identity_parts.append("Postura: Você deve agir, falar e se comportar EXATAMENTE como um atendente humano real da empresa. NUNCA diga, insinue ou admita que é uma IA, robô, bot ou assistente virtual.")
+        identity_parts.append("Postura de Transbordo: NUNCA use termos como 'atendente humano', 'equipe humana' ou 'transferir para um humano'. Fale naturalmente de colega para colega como alguém da equipe: 'Vou te passar aqui para um colega da equipe dar continuidade', 'Só um instante que vou transferir para um especialista da nossa equipe te atender', 'Vou pedir para o pessoal do setor responsável continuar com você por aqui'.")
 
-        if dialogo_count > max_dialogo:
-            cut_index = i + 1
-            break
+    if identity_parts:
+        lines.append("## IDENTIDADE DA PERSONA")
+        lines.extend([f"- {p}" for p in identity_parts])
+        lines.append("")
 
-    return historico_previo[cut_index:]
+    # Seção 2: Tom de Voz
+    style_parts = []
+    formality = persona_form.get("formality")
+    if formality is not None:
+        try:
+            f_val = float(formality)
+            if f_val <= 0.3: style_parts.append("Formalidade: FORMAL - Linguagem culta e profissional.")
+            elif f_val >= 0.7: style_parts.append("Formalidade: INFORMAL - Linguagem leve e próxima.")
+            else: style_parts.append("Formalidade: SEMI-FORMAL - Equilíbrio profissional e acolhedor.")
+        except Exception: pass
 
+    objectivity = persona_form.get("objectivity")
+    if objectivity is not None:
+        try:
+            o_val = float(objectivity)
+            if o_val <= 0.3: style_parts.append("Objetividade: DIRETO - Mensagens concisas e diretas.")
+            elif o_val >= 0.7: style_parts.append("Objetividade: DETALHADO - Explicações completas.")
+            else: style_parts.append("Objetividade: MODERADO - Nível ideal de detalhes.")
+        except Exception: pass
 
-def converter_historico_para_pydantic(historico_db: List[Dict[str, Any]]) -> List[Any]:
-    """
-    Converte o histórico de conversa do banco de dados (lista de dicts)
-    para o formato de mensagens nativo do PydanticAI (ModelRequest / ModelResponse),
-    agrupando mensagens consecutivas do mesmo papel ("user" / "assistant")
-    para manter a alternância correta exigida pelas LLMs.
-    """
-    if not historico_db:
-        return []
+    qualities = persona_form.get("qualities")
+    if qualities:
+        q_str = ", ".join(qualities) if isinstance(qualities, list) else str(qualities)
+        style_parts.append(f"Atributos: {q_str}")
 
-    pydantic_messages = []
-    grouped_turns: List[Dict[str, Any]] = []
+    if style_parts:
+        lines.append("## TOM DE VOZ E COMUNICAÇÃO")
+        lines.extend([f"- {s}" for s in style_parts])
+        lines.append("")
 
-    for msg in historico_db:
-        role = msg.get("role") or "user"
-        content = msg.get("content") or ""
-        caption = msg.get("caption")
+    # Seção 3: Missão
+    objective = str(persona_form.get("objective") or "").strip()
+    if objective:
+        lines.append("## MISSÃO E OBJETIVO")
+        lines.append(objective)
+        lines.append("")
 
-        if caption and caption.strip():
-            content = f"{content}\n[Legenda: {caption}]"
+    # Seção 4: Regras e Restrições
+    restrictions = persona_form.get("restrictions")
+    if restrictions:
+        r_list = restrictions if isinstance(restrictions, list) else [restrictions]
+        lines.append("## REGRAS E RESTRIÇÕES")
+        lines.extend([f"- {r}" for r in r_list if str(r).strip()])
+        lines.append("")
 
-        content_clean = str(content).strip()
-        if not content_clean:
-            continue
+    handoff_rules = persona_form.get("handoff_rules")
+    if handoff_rules:
+        h_list = handoff_rules if isinstance(handoff_rules, list) else [handoff_rules]
+        lines.append("## REGRAS DE TRANSBORDO")
+        lines.extend([f"- {h}" for h in h_list if str(h).strip()])
+        lines.append("")
 
-        # Normaliza o papel do emissor
-        role_normalized = "user" if role in ["user", "client"] else "assistant"
+    # Seção 5: Instruções Adicionais
+    extra = str(persona_form.get("extra_instructions") or "").strip()
+    if extra:
+        lines.append("## INSTRUÇÕES ADICIONAIS")
+        lines.append(extra)
+        lines.append("")
 
-        if grouped_turns and grouped_turns[-1]["role"] == role_normalized:
-            grouped_turns[-1]["contents"].append(content_clean)
-        else:
-            grouped_turns.append({"role": role_normalized, "contents": [content_clean]})
-
-    for turn in grouped_turns:
-        full_text = "\n".join(turn["contents"]).strip()
-        if not full_text:
-            continue
-
-        if turn["role"] == "user":
-            pydantic_messages.append(
-                ModelRequest(parts=[UserPromptPart(content=full_text)])
-            )
-        else:
-            pydantic_messages.append(
-                ModelResponse(parts=[TextPart(content=full_text)])
-            )
-
-    return pydantic_messages
+    return "\n".join(lines).strip()
 
 async def process_single_atendimento(atendimento_id: int, company: models.Company):
+    """
+    Controla o ciclo assíncrono de processamento por atendimento evitando concorrência.
+    """
     current_task = asyncio.current_task()
     existing_task = _active_processing_tasks.get(atendimento_id)
-    
+
     if existing_task and not existing_task.done():
-        logger.warning(f"Atendimento {atendimento_id} já está sendo processado em outra task ativa. Pulando redundância.")
+        logger.warning(f"Atendimento {atendimento_id} já está em processamento ativo. Pulando.")
         return
 
     if current_task:
         _active_processing_tasks[atendimento_id] = current_task
-        
+
     try:
         await _process_single_atendimento_inner(atendimento_id, company)
     finally:
         if _active_processing_tasks.get(atendimento_id) == current_task:
             _active_processing_tasks.pop(atendimento_id, None)
 
-
 async def _process_single_atendimento_inner(atendimento_id: int, company: models.Company):
     """
-    Processa um único atendimento de ponta a ponta.
-    Esta função é o coração do agente, orquestrando a leitura do estado atual,
-    a geração de resposta pela IA, o envio de mensagens/arquivos e a atualização final do banco de dados.
-    É projetada para ser executada de forma assíncrona para cada atendimento.
+    Orquestra a execução do Grafo LangGraph para um atendimento.
     """
-    # Log inicial para rastrear qual usuário está processando qual atendimento.
-    logger.info(f"[ATENDIMENTO INICIADO] ID: {atendimento_id} | Empresa ID: {company.id}")
-    
-    # Inicializa os serviços necessários para o processamento.
-    whatsapp_service = get_whatsapp_service()
+    logger.info(f"[LangGraph Agente] Iniciando Atendimento ID: {atendimento_id} | Empresa: {company.id}")
     gemini_service = get_gemini_service()
-    drive_service = get_drive_service()
-    
-    # Variável para logging, armazena o número de WhatsApp do contato.
-    atendimento_contato_num_log = "N/A"
 
     try:
-        # --- ETAPA 1: BLOQUEIO E ATUALIZAÇÃO DE STATUS ---
-        logger.info(f"[Passo 1/5 - Bloqueio] Tentando travar atendimento ID {atendimento_id}...")
+        # --- PASSO 1: BLOQUEIO E MARCAÇÃO DE STATUS ---
         marked_generating = False
-        try:
-            async with SessionLocal() as db_mark_generating:
-                async with db_mark_generating.begin():
-                    # Bloqueia a linha do atendimento no banco de dados para escrita.
-                    atendimento_to_mark = await db_mark_generating.get(models.Atendimento, atendimento_id, with_for_update=True)
-                    if atendimento_to_mark:
-                         atendimento_contato_num_log = atendimento_to_mark.whatsapp
-                    
-                    # Verifica se o atendimento está em um estado que permite o processamento.
-                    if atendimento_to_mark and atendimento_to_mark.status in ["Mensagem Recebida"]:
-                        atendimento_to_mark.status = "Gerando Resposta"
-                        atendimento_to_mark.updated_at = datetime.now(timezone.utc)
-                        marked_generating = True
-                    else:
-                        logger.warning(f"[Passo 1/5 - Bloqueio] Atendimento {atendimento_id} pulado. Status atual: '{atendimento_to_mark.status if atendimento_to_mark else 'N/A'}' (esperado: 'Mensagem Recebida').")
-                        return 
+        async with SessionLocal() as db_mark:
+            async with db_mark.begin():
+                atendimento = await db_mark.get(models.Atendimento, atendimento_id, with_for_update=True)
+                if atendimento and atendimento.status in ["Mensagem Recebida"]:
+                    atendimento.status = "Gerando Resposta"
+                    atendimento.updated_at = datetime.now(timezone.utc)
+                    marked_generating = True
+                else:
+                    logger.warning(f"Atendimento {atendimento_id} não elegível para processamento (status: {atendimento.status if atendimento else 'None'}).")
+                    return
 
-        except Exception as lock_err:
-            logger.error(f"[Passo 1/5 - Bloqueio] Falha crítica ao marcar status de processamento: {lock_err}")
+        if not marked_generating:
             return
-        
-        if not marked_generating: return
 
-        logger.info(f"[Passo 1/5 - Bloqueio] Atendimento ID {atendimento_id} travado com sucesso e marcado como 'Gerando Resposta'.")
-
-        # --- ETAPA 2: COLETA DE CONTEXTO PARA A IA ---
-        logger.info(f"[Passo 2/5 - Contexto] Iniciando coleta de contexto e histórico de mensagens...")
-        conversation_history = []
-        persona_config = None
-
-        try:
-            # Abre uma nova sessão para ler os dados do atendimento.
-            async with SessionLocal() as db_read_context:
-                atendimento_context = await db_read_context.get(
-                    models.Atendimento,
-                    atendimento_id,
-                    options=[joinedload(models.Atendimento.active_persona)]
-                )
-                if not atendimento_context: raise ValueError("Atendimento não encontrado.")
-                atendimento_contato_num_log = atendimento_context.whatsapp
-
-                # Carrega a persona ativa específica para este atendimento.
-                persona_config = atendimento_context.active_persona
-                # Se não houver persona específica, usa a persona padrão do usuário.
-                if not persona_config:
-                    if company.default_persona_id:
-                        persona_config = await crud_config.get_config(db_read_context, company.default_persona_id, company.id)
-                
-                # Se nenhuma persona for encontrada, o processo não pode continuar.
-                if not persona_config:
-                    raise ValueError("Nenhuma persona configurada para esta empresa/atendimento.")
-                
-                logger.info(f"[Passo 2/5 - Contexto] Persona carregada: ID {persona_config.id} | Nome: {persona_config.nome_config or 'N/A'}")
-
-                # Carrega o histórico da conversa a partir do campo JSON no banco de dados.
-                try:
-                    conversation_history = json.loads(atendimento_context.conversa or "[]")
-                    conversation_history.sort(key=lambda x: x.get('timestamp') or 0) # Garante a ordem cronológica.
-                except:
-                    conversation_history = []
-                
-                logger.info(f"[Passo 2/5 - Contexto] Histórico carregado: {len(conversation_history)} mensagens no total.")
-
-        # Se ocorrer um erro ao coletar o contexto, o status do atendimento é revertido para "Erro Contexto".
-        except Exception as context_err:
-            logger.error(f"[Passo 2/5 - Contexto] Falha ao ler dados de contexto para o atendimento ID {atendimento_id}: {context_err}")
-            try:
-                async with SessionLocal() as db_revert:
-                    async with db_revert.begin():
-                        at_revert = await db_revert.get(models.Atendimento, atendimento_id)
-                        if at_revert and at_revert.status == "Gerando Resposta":
-                            at_revert.status = "Erro Contexto"
-                            at_revert.updated_at = datetime.now(timezone.utc)
-            except Exception: pass
-            return 
-
-        # --- ETAPA 3: GERAÇÃO DA RESPOSTA PELA IA ---
-        ia_response = None
-        
-        try:
-            logger.info(f"[Passo 3/5 - IA] Preparando dados do contexto para envio à IA...")
-            # 0. Coleta os dados do banco em uma transação curta para liberar a conexão antes de chamar a IA
-            async with SessionLocal() as db_gemini_deduct:
-                company_for_gemini = await db_gemini_deduct.get(models.Company, company.id)
-                # Re-busca a persona_config para garantir os valores mais recentes da transação do banco
-                persona_config = await db_gemini_deduct.get(models.Config, persona_config.id)
-                workflow_context = gemini_service._format_workflow_to_markdown(persona_config.workflow_json)
-                available_tags = await crud_atendimento.get_all_user_tags(db_gemini_deduct, company_id=company.id)
-                available_tags_names = [t['name'] for t in available_tags]
-                
-                # Busca as categorias reais de conhecimento disponíveis no banco
-                categorias_conhecimento = []
-                try:
-                    stmt_cats = select(models.KnowledgeVector.category).where(
-                        models.KnowledgeVector.config_id == persona_config.id
-                    ).distinct()
-                    res_cats = await db_gemini_deduct.execute(stmt_cats)
-                    categorias_conhecimento = sorted(list({str(r).strip() for r in res_cats.scalars().all() if r and str(r).strip()}))
-                    logger.info(f"[Passo 2/5 - Contexto] Categorias de conhecimento disponíveis na base: {categorias_conhecimento}")
-                except Exception as cat_err:
-                    logger.error(f"[Passo 2/5 - Contexto] Erro ao buscar categorias de conhecimento: {cat_err}")
-                
-                atendimento_for_gemini = await db_gemini_deduct.get(models.Atendimento, atendimento_id)
-                datetime_context = gemini_service._get_datetime_context(company_for_gemini)
-
-            # 3. Recupera Calendar Context (Fora do bloco SessionLocal)
-            calendar_context = ""
-            if persona_config.is_calendar_active and persona_config.available_hours:
-                logger.info(f"[Passo 3/5 - IA] Configuração do Calendário está ativa. Buscando eventos no Google Calendar...")
-                booked_events_str = ""
-                if persona_config.google_calendar_credentials:
-                    try:
-                        cal_service = get_google_calendar_service(persona_config)
-                        events = await asyncio.to_thread(cal_service.get_upcoming_events)
-                        if events:
-                            booked_list = [f"- {e['start'].get('dateTime', e['start'].get('date'))}" for e in events]
-                            booked_events_str = "\n# HORÁRIOS JÁ OCUPADOS (NÃO AGENDAR NESTES)\n" + "\n".join(booked_list) + "\n"
-                    except Exception as cal_err:
-                        logger.error(f"[Passo 3/5 - IA] Erro ao carregar eventos da agenda Google: {cal_err}")
-
-                hours_summary = []
-                for day, intervals in persona_config.available_hours.items():
-                    if intervals:
-                        if isinstance(intervals, str):
-                            hours_summary.append(f"{day.capitalize()}: {intervals}")
-                        elif isinstance(intervals, list):
-                            formatted_intervals = []
-                            for i in intervals:
-                                if isinstance(i, dict):
-                                    start = i.get('start')
-                                    end = i.get('end')
-                                    if start and end:
-                                        formatted_intervals.append(f"{start}-{end}")
-                                    elif start:
-                                        formatted_intervals.append(start)
-                                    elif end:
-                                        formatted_intervals.append(end)
-                                elif isinstance(i, str):
-                                    formatted_intervals.append(i)
-                            if formatted_intervals:
-                                hours_summary.append(f"{day.capitalize()}: {', '.join(formatted_intervals)}")
-                        else:
-                            hours_summary.append(f"{day.capitalize()}: {str(intervals)}")
-                
-                hours_text = " | ".join(hours_summary) if hours_summary else "Não configurado"
-                calendar_context = f"\n# DISPONIBILIDADE DE AGENDA\n- Horários de Trabalho: {hours_text}\n"
-                calendar_context += booked_events_str
-                calendar_context += "Se o cliente demonstrar interesse em agendar, verifique a disponibilidade real (horários de trabalho vs ocupados) e proponha um horário livre usando a tool correspondente.\n"
-
-
-            
-            # --- RESOLUÇÃO DE PERSONA PROMPT E PÁGINA DE INSTRUÇÕES ---
-            persona_form_data = getattr(persona_config, 'persona_form', None)
-            persona_from_tab = build_prompt_from_persona_form(persona_form_data) if persona_form_data else ""
-            
-            has_spreadsheet_id = bool(persona_config.spreadsheet_id and str(persona_config.spreadsheet_id).strip())
-            instructions_page_prompt = (persona_config.prompt or "").strip() if has_spreadsheet_id else ""
-
-            if persona_from_tab and instructions_page_prompt:
-                persona_prompt_resolved = f"{persona_from_tab}\n\n## MATRIZ DE INSTRUÇÕES DO SISTEMA\n{instructions_page_prompt}"
-                logger.info(f"[Passo 3/5 - IA] Usando ABA DE PERSONA e PÁGINA DE INSTRUÇÕES (Planilha ID: {persona_config.spreadsheet_id}) no system prompt.")
-            elif persona_from_tab:
-                persona_prompt_resolved = persona_from_tab
-                logger.info(f"[Passo 3/5 - IA] Planilha de instruções não configurada (ID ausente). Usando apenas a ABA DE PERSONA no system prompt.")
-            elif instructions_page_prompt:
-                persona_prompt_resolved = instructions_page_prompt
-                logger.info(f"[Passo 3/5 - IA] Aba de persona não preenchida. Usando apenas a PÁGINA DE INSTRUÇÕES da planilha como system prompt.")
-            else:
-                persona_prompt_resolved = "Você é um assistente virtual útil."
-                logger.info(f"[Passo 3/5 - IA] Nenhuma instrução ou persona configurada. Usando prompt fallback padrão.")
-
-            contexto = ContextoSaaS(
-                db=None,
-                company_id=company.id,
-                config_id=persona_config.id,
-                atendimento_id=atendimento_id,
-                nome_cliente=atendimento_context.nome_contato or "Desconhecido",
-                data_hora_atual=datetime_context,
-                persona_prompt=persona_prompt_resolved,
-                model_name=persona_config.ai_model or "gemini-3.1-flash-lite",
-                rag_context="",
-                workflow_context=workflow_context,
-                calendar_context=calendar_context,
-                available_tags=available_tags_names,
-                drive_ativo=bool(persona_config.drive_id),
-                calendar_ativo=bool(persona_config.is_calendar_active),
-                # --- Configuracoes de inferencia vindas da Config do cliente ---
-                temperature=float(persona_config.temperature if persona_config.temperature is not None else 0.5),
-                top_p=float(persona_config.top_p if persona_config.top_p is not None else 0.95),
-                top_k=int(persona_config.top_k if persona_config.top_k is not None else 40),
-                thinking_budget=persona_config.thinking_budget,
-                thinking_level=str(persona_config.thinking_level or "medium").strip("'\"").strip().lower(),
-                tts_voice=str(persona_config.tts_voice or "").strip("'\"").strip(),
-                allow_send_values=bool(getattr(persona_config, 'allow_send_values', True) if getattr(persona_config, 'allow_send_values', None) is not None else True),
-                # --- Micro-tools ---
-                empresa=company_for_gemini,
-                atendimento=atendimento_for_gemini,
-                whatsapp_service=whatsapp_service,
-                categorias_conhecimento=categorias_conhecimento
+        # --- PASSO 2: COLETA DE CONTEXTO E CONFIGURAÇÃO ---
+        async with SessionLocal() as db_ctx:
+            atendimento_ctx = await db_ctx.get(
+                models.Atendimento,
+                atendimento_id,
+                options=[joinedload(models.Atendimento.active_persona)]
             )
-            
-            # 6. Executa o Agente do Pydantic AI com histórico de mensagens nativo
-            # Coleta TODAS as mensagens consecutivas do usuário no final da conversa
-            user_msgs_tail = []
-            idx_split = len(conversation_history)
-            
-            while idx_split > 0 and conversation_history[idx_split - 1].get("role") in ["user", "client"]:
-                idx_split -= 1
-                msg_item = conversation_history[idx_split]
-                c_text = str(msg_item.get("content") or "").strip()
-                if msg_item.get("caption"):
-                    c_text = f"{c_text}\n[Legenda: {msg_item.get('caption')}]".strip()
-                if c_text:
-                    user_msgs_tail.insert(0, c_text)
+            if not atendimento_ctx:
+                raise ValueError("Atendimento não encontrado.")
 
-            if user_msgs_tail:
-                ultima_mensagem = "\n".join(user_msgs_tail)
-                historico_previo = conversation_history[:idx_split]
-            else:
-                ultima_mensagem = "Olá"
-                historico_previo = conversation_history
-                
-            # Otimização de Tokens: Limita o histórico prévio às últimas 10 mensagens de diálogo reais (mantendo buscas associadas) e injeta a síntese CRM se houver histórico mais antigo
-            resumo_crm_extra = None
-            MAX_DIALOGO = 10
-            historico_filtrado = selecionar_ultimas_mensagens_historico(historico_previo, max_dialogo=MAX_DIALOGO)
-            
-            if len(historico_filtrado) < len(historico_previo):
-                resumo_crm_extra = (atendimento_context.resumo or "").strip() or None
-                historico_previo = historico_filtrado
-                logger.info(f"[Passo 3/5 - IA] Histórico prévio truncado para as últimas {MAX_DIALOGO} mensagens de diálogo ({len(historico_previo)} registros brutos). Síntese CRM injetada no prompt.")
+            persona_config = atendimento_ctx.active_persona
+            if not persona_config and company.default_persona_id:
+                persona_config = await crud_config.get_config(db_ctx, company.default_persona_id, company.id)
 
-            contexto.resumo_crm_context = resumo_crm_extra
-            memoria_ia = converter_historico_para_pydantic(historico_previo)
-            
-            model_to_use = contexto.model_name
-            if not model_to_use.startswith("google:") and not model_to_use.startswith("google-cloud:"):
-                model_to_use = f"google:{model_to_use}"
+            if not persona_config:
+                raise ValueError(f"Nenhuma persona configurada para a empresa {company.id}.")
 
-            logger.info(f"[Passo 3/5 - IA] Executando Pydantic AI com o modelo '{model_to_use}'...")
-            
-            import os
-            try:
-                os.environ["GOOGLE_API_KEY"] = gemini_service.api_key
-            except Exception as key_err:
-                logger.warning(f"[Passo 3/5 - IA] Não foi possível definir GOOGLE_API_KEY no ambiente: {key_err}")
+            msgs_db = await crud_atendimento.get_messages_for_atendimento(db_ctx, atendimento_id, company.id)
+            last_processed_msg_id = max([m.id for m in msgs_db]) if msgs_db else 0
+            conversation_history = [
+                {
+                    "id": m.message_id,
+                    "role": m.role,
+                    "content": m.content or "",
+                    "caption": m.caption or "",
+                    "timestamp": int(m.timestamp.timestamp()) if m.timestamp else 0,
+                    "type": m.type,
+                    "is_ai": m.is_ai,
+                    "reaction": m.reaction
+                }
+                for m in msgs_db
+                if m.type != 'reaction'
+            ]
+            conversation_history.sort(key=lambda x: x.get('timestamp') or 0)
 
-            from pydantic_ai.models.google import GoogleModelSettings
+            available_tags = await crud_atendimento.get_all_user_tags(db_ctx, company_id=company.id)
+            available_tags_names = [t['name'] for t in available_tags]
 
-            thinking_cfg = {}
-            is_gemini_3 = "gemini-3" in contexto.model_name
-            if is_gemini_3:
-                raw_lvl = (contexto.thinking_level or "").strip("'\"").strip().lower()
-                if raw_lvl and raw_lvl not in ("default", "none", "null", ""):
-                    thinking_cfg["thinking_level"] = raw_lvl.upper()
-            elif contexto.thinking_budget is not None:
-                thinking_cfg["thinking_budget"] = contexto.thinking_budget
+            current_tags_raw = atendimento_ctx.tags or []
+            if isinstance(current_tags_raw, str):
+                try:
+                    current_tags_raw = json.loads(current_tags_raw)
+                except Exception:
+                    current_tags_raw = []
+            current_tags_names = [t['name'] if isinstance(t, dict) and 'name' in t else str(t) for t in current_tags_raw]
 
-            model_settings_dict = {
-                "temperature": contexto.temperature,
-                "top_p": contexto.top_p,
-                "top_k": contexto.top_k,
-            }
-            if thinking_cfg:
-                model_settings_dict["google_thinking_config"] = thinking_cfg
+            workflow_context = gemini_service._format_workflow_to_markdown(persona_config.workflow_json)
 
-            model_settings = GoogleModelSettings(**model_settings_dict)
+            # Coleta de atendentes e setores da empresa
+            users_stmt = select(models.User).where(models.User.company_id == company.id)
+            users_res = await db_ctx.execute(users_stmt)
+            company_users = list(users_res.scalars().all())
 
-            logger.info(
-                f"[Passo 3/5 - IA] ModelSettings: temperature={contexto.temperature}, "
-                f"top_p={contexto.top_p}, top_k={contexto.top_k}, "
-                f"thinking_config={thinking_cfg}"
-            )
+            team_members = []
+            team_lines = []
+            for u in company_users:
+                u_name = (u.name or u.email.split('@')[0]).strip()
+                u_dept = (u.department or ('Admin' if u.role == 'admin' else 'Atendimento Geral')).strip()
+                team_members.append({
+                    "id": u.id,
+                    "name": u_name,
+                    "email": u.email,
+                    "department": u_dept,
+                    "role": u.role
+                })
+                team_lines.append(f"- Atendente: {u_name} | Função/Setor: {u_dept}")
 
-            from pydantic_ai.usage import UsageLimits
+            company_team_info = "👥 EQUIPE DE ATENDENTES E SETORES DA EMPRESA:\n" + ("\n".join(team_lines) if team_lines else "- Nenhum atendente cadastrado")
 
-            resultado_ia = await agente_atendimento.run(
+        # --- PASSO 3: RESOLUÇÃO DE CALENDÁRIO ---
+        calendar_context = ""
+        if persona_config.is_calendar_active and persona_config.available_hours:
+            booked_events_str = ""
+            if persona_config.google_calendar_credentials:
+                try:
+                    cal_service = get_google_calendar_service(persona_config)
+                    events = await asyncio.to_thread(cal_service.get_upcoming_events)
+                    if events:
+                        booked_list = [f"- {e['start'].get('dateTime', e['start'].get('date'))}" for e in events]
+                        booked_events_str = "\n# HORÁRIOS JÁ OCUPADOS (NÃO AGENDAR NESTES)\n" + "\n".join(booked_list) + "\n"
+                except Exception as cal_err:
+                    logger.error(f"Erro ao carregar eventos da agenda: {cal_err}")
+
+            calendar_context = f"\n# DISPONIBILIDADE DE AGENDA\n- Horários de Trabalho: {persona_config.available_hours}\n{booked_events_str}"
+
+        # --- PASSO 4: RESOLUÇÃO DE PERSONA PROMPT ---
+        persona_form_data = getattr(persona_config, 'persona_form', None)
+        persona_from_tab = build_prompt_from_persona_form(persona_form_data) if persona_form_data else ""
+        has_spreadsheet_id = bool(persona_config.spreadsheet_id and str(persona_config.spreadsheet_id).strip())
+        instructions_page_prompt = (persona_config.prompt or "").strip() if has_spreadsheet_id else ""
+
+        if persona_from_tab and instructions_page_prompt:
+            persona_prompt_resolved = f"{persona_from_tab}\n\n## INSTRUÇÕES COMPLEMENTARES (FALLBACK)\n{instructions_page_prompt}"
+        elif persona_from_tab:
+            persona_prompt_resolved = persona_from_tab
+        elif instructions_page_prompt:
+            persona_prompt_resolved = instructions_page_prompt
+        else:
+            persona_prompt_resolved = "Você é um assistente virtual útil e profissional."
+
+        # Extrai a última mensagem consolidada do cliente
+        user_msgs_tail = []
+        idx_split = len(conversation_history)
+        while idx_split > 0 and conversation_history[idx_split - 1].get("role") in ["user", "client"]:
+            idx_split -= 1
+            msg_item = conversation_history[idx_split]
+            c_text = str(msg_item.get("content") or "").strip()
+            if msg_item.get("caption"):
+                c_text = f"{c_text}\n[Legenda: {msg_item.get('caption')}]".strip()
+            if c_text:
+                user_msgs_tail.insert(0, c_text)
+
+        ultima_mensagem = "\n".join(user_msgs_tail) if user_msgs_tail else "Olá"
+
+        # Data e hora atual formatada em horário local de Brasília
+        import pytz
+        tz_br = pytz.timezone("America/Sao_Paulo")
+        now_br = datetime.now(tz_br)
+        dias_semana = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
+        data_hora_atual_str = f"{dias_semana[now_br.weekday()]}, {now_br.strftime('%d/%m/%Y às %H:%M:%S')} (Horário de Brasília)"
+
+        # --- PASSO 5: MONTAGEM DO ESTADO DO LANGGRAPH ---
+        ai_model_to_use = persona_config.ai_model or "gemini-3.5-flash-lite"
+
+        nature_id_val = "human"
+        if isinstance(persona_form_data, dict):
+            nature_id_val = str(persona_form_data.get("nature_identity") or "human").strip().lower()
+
+        initial_state: AgentState = {
+            "tenant_id": company.id,
+            "config_id": persona_config.id,
+            "atendimento_id": atendimento_id,
+            "user_input": ultima_mensagem,
+            "conversation_history": conversation_history[:idx_split],
+            "nome_cliente": atendimento_ctx.nome_contato,
+            "ai_model": ai_model_to_use,
+            "persona_prompt": persona_prompt_resolved,
+            "nature_identity": nature_id_val,
+            "workflow_context": workflow_context,
+            "calendar_context": calendar_context,
+            "available_tags": available_tags_names,
+            "current_tags": current_tags_names,
+            "team_members": team_members,
+            "company_team_info": company_team_info,
+            "drive_ativo": bool(persona_config.drive_id),
+            "calendar_ativo": bool(persona_config.is_calendar_active),
+            "tts_voice": str(persona_config.tts_voice or "").strip("'\"").strip(),
+            "data_hora_atual": data_hora_atual_str,
+            "temperature": persona_config.temperature if persona_config.temperature is not None else 0.5,
+            "top_p": persona_config.top_p if persona_config.top_p is not None else 0.95,
+            "top_k": persona_config.top_k if persona_config.top_k is not None else 40,
+            "thinking_budget": persona_config.thinking_budget,
+            "thinking_level": str(persona_config.thinking_level or "medium").strip("'\"").strip().lower() if persona_config.thinking_level else "medium",
+            "resumo_crm": atendimento_ctx.resumo or "",
+            "last_processed_msg_id": last_processed_msg_id,
+            "retry_count": 0,
+            "validation_passed": False,
+            "send_as_audio": False,
+            "input_tokens": 0,
+            "output_tokens": 0
+        }
+
+        # --- PASSO 6: EXECUÇÃO DO GRAFO LANGGRAPH ---
+        final_state = await run_agent_workflow(initial_state)
+
+        # --- PASSO 7: CONTABILIZAÇÃO DE TOKENS ---
+        in_t = final_state.get("input_tokens", 0)
+        out_t = final_state.get("output_tokens", 0)
+        tot_t = in_t + out_t
+
+        nome_modelo_limpo = ai_model_to_use.replace("google:", "").replace("google-cloud:", "")
+        precos = TABELA_PRECOS.get(nome_modelo_limpo, TABELA_PRECOS.get("gemini-3.5-flash-lite", {"input_text": 0.25, "output": 1.50}))
+        
+        multiplicador_input = precos["input_text"] / BASE_FLASH_PRICE
+        multiplicador_output = precos["output"] / BASE_FLASH_PRICE
+        tokens_deduzir = math.ceil((in_t * multiplicador_input) + (out_t * multiplicador_output))
+
+        if tokens_deduzir > 0:
+            async with SessionLocal() as db_tokens:
+                async with db_tokens.begin():
+                    comp = await db_tokens.get(models.Company, company.id)
+                    if comp:
+                        await crud_user.decrement_company_tokens(
+                            db_tokens,
+                            db_company=comp,
+                            usage=tokens_deduzir,
+                            atendimento_id=atendimento_id,
+                            token_type="gemini_inference"
+                        )
+            logger.info(f"[LangGraph] Tokens deduzidos: {tokens_deduzir} (In: {in_t}, Out: {out_t})")
+
+        # --- PASSO 8: REGISTRO EM LAST_PROMPT.TXT ---
+        try:
+            log_entry = [
+                "=" * 80,
+                f"📌 EXECUÇÃO DO RAG AGÊNTICO LANGGRAPH - {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}",
+                f"👤 Atendimento ID: {atendimento_id} | Empresa ID: {company.id}",
+                f"🤖 Modelo: {ai_model_to_use} | Tentativas: {final_state.get('retry_count', 0)}",
+                f"🎯 Intenção: {final_state.get('intent_category')} | Status Final: {final_state.get('status_final')}",
+                "-" * 80,
+                "📥 MENSAGEM DO CLIENTE:",
                 ultima_mensagem,
-                deps=contexto,
-                message_history=memoria_ia,
-                model=model_to_use,
-                model_settings=model_settings,
-                usage_limits=UsageLimits(request_limit=15)
-            )
-            
-            # 7. Converte a resposta estruturada para o formato esperado pelo restante do agent_processor
-            dados = resultado_ia.output
-            logger.info(f"[Passo 3/5 - IA] Retorno recebido com sucesso do LLM. Output Resumo: '{dados.resumo}'")
+                "-" * 80,
+                "🔍 CONTEXTO RAG RECUPERADO:",
+                str(final_state.get("retrieved_context") or "Nenhum"),
+                "-" * 80,
+                "💬 RESPOSTA ENVIADA:",
+                str(final_state.get("final_response") or "Nenhuma"),
+                "-" * 80,
+                f"📊 CONSUMO DE TOKENS: {tot_t:,} (In: {in_t:,} | Out: {out_t:,})",
+                "=" * 80,
+                "\n"
+            ]
+            with open("last_prompt.txt", "a", encoding="utf-8") as f:
+                f.write("\n".join(log_entry))
+        except Exception as f_err:
+            logger.error(f"Erro ao salvar last_prompt.txt: {f_err}")
 
-            # Escreve o input e output detalhado em last_prompt.txt de forma clara, ordenada e de fácil leitura
-            try:
-                from pydantic_core import to_jsonable_python
-                from app.services.agent_service import construir_prompt_base
-
-                parts = []
-                parts.append("=" * 80)
-                parts.append("📌 REGISTRO DETALHADO DO ÚLTIMO PROMPT E ORDEM DE EXECUÇÃO DA IA (LAST PROMPT)")
-                parts.append("=" * 80)
-                parts.append(f"🕒 Data/Hora do Ciclo: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
-                parts.append(f"👤 Atendimento ID: {atendimento_id} | Contato: {atendimento_contato_num_log}")
-                parts.append(f"🤖 Modelo Utilizado: {model_to_use}")
-                parts.append("=" * 80)
-                parts.append("")
-
-                # 1. OBTER O PROMPT DO SISTEMA (SYSTEM PROMPT / PERSONA & REGRAS)
-                class MockRunContext:
-                    def __init__(self, deps):
-                        self.deps = deps
-
-                try:
-                    system_prompt_str = construir_prompt_base(MockRunContext(contexto))
-                except Exception as sys_err:
-                    system_prompt_str = f"Erro ao renderizar system prompt: {sys_err}"
-
-                parts.append("--------------------------------------------------------------------------------")
-                parts.append("🧠 1. PROMPT DO SISTEMA (SYSTEM PROMPT / PERSONA, FLUXO & REGRAS)")
-                parts.append("--------------------------------------------------------------------------------")
-                parts.append(system_prompt_str.strip())
-                parts.append("")
-                parts.append("-" * 80)
-                parts.append("")
-
-                # 2. OBTER A SEQUÊNCIA CRONOLÓGICA DAS MENSAGENS E AÇÕES (ORDEM EXATA DE ENVIO)
-                parts.append("--------------------------------------------------------------------------------")
-                parts.append("💬 2. SEQUÊNCIA CRONOLÓGICA DE MENSAGENS E AÇÕES (ORDEM EXATA DE ENVIO)")
-                parts.append("--------------------------------------------------------------------------------")
-
-                messages = resultado_ia.all_messages()
-                ordem_count = 1
-
-                for msg_idx, msg in enumerate(messages):
-                    msg_dict = to_jsonable_python(msg)
-                    parts_list = msg_dict.get("parts", [])
-
-                    for p in parts_list:
-                        part_kind = p.get("part_kind")
-                        content = p.get("content") or p.get("text")
-
-                        # Ignora o system prompt no fluxo de conversa pois ele já está na Seção 1
-                        if part_kind in ["system-prompt", "system"]:
-                            continue
-
-                        if part_kind == "user-prompt":
-                            is_latest = (content == ultima_mensagem)
-                            tag_label = "MENSAGEM ATUAL DA RODADA" if is_latest else "HISTÓRICO"
-                            parts.append(f"[Ordem #{ordem_count:02d}] 👤 CLIENTE ({tag_label})")
-                            parts.append(f"{content}")
-                            parts.append("")
-                            ordem_count += 1
-
-                        elif part_kind == "tool-call" or ("tool_name" in p and "args" in p):
-                            tool_name = p.get("tool_name")
-                            args = p.get("args") or {}
-                            try:
-                                args_formatted = json.dumps(args, ensure_ascii=False, indent=2)
-                            except Exception:
-                                args_formatted = str(args)
-                            parts.append(f"[Ordem #{ordem_count:02d}] 🛠️ AÇÃO DA IA (CHAMADA DE FERRAMENTA)")
-                            parts.append(f"Ferramenta: {tool_name}")
-                            parts.append(f"Parâmetros:\n{args_formatted}")
-                            parts.append("")
-                            ordem_count += 1
-
-                        elif part_kind == "tool-return" or "outcome" in p:
-                            tool_name = p.get("tool_name")
-                            parts.append(f"[Ordem #{ordem_count:02d}] 📥 RETORNO DA FERRAMENTA ('{tool_name}')")
-                            parts.append(f"Retorno:\n{content}")
-                            parts.append("")
-                            ordem_count += 1
-
-                        elif part_kind == "text" or msg_dict.get("role") == "model":
-                            if content:
-                                parts.append(f"[Ordem #{ordem_count:02d}] 🤖 RESPOSTA DA IA")
-                                parts.append(f"{content}")
-                                parts.append("")
-                                ordem_count += 1
-
-                parts.append("-" * 80)
-                parts.append("")
-
-                # 3. SAÍDA E RESUMO FINAL DA RODADA
-                parts.append("--------------------------------------------------------------------------------")
-                parts.append("📝 3. RESUMO CONSOLIDADO E STATUS DA RODADA")
-                parts.append("--------------------------------------------------------------------------------")
-                parts.append(f"Resumo CRM: {dados.resumo}")
-                parts.append("Próximo Status: Aguardando Resposta")
-                parts.append("")
-                parts.append("-" * 80)
-                parts.append("")
-
-                # 4. CONSUMO DE TOKENS DO CICLO
-                if resultado_ia.usage:
-                    u = resultado_ia.usage
-                    in_t = getattr(u, 'input_tokens', getattr(u, 'request_tokens', 0)) or 0
-                    out_t = getattr(u, 'output_tokens', getattr(u, 'response_tokens', 0)) or 0
-                    tot_t = getattr(u, 'total_tokens', in_t + out_t) or (in_t + out_t)
-                    parts.append("--------------------------------------------------------------------------------")
-                    parts.append("📊 4. CONSUMO DE TOKENS DO CICLO")
-                    parts.append("--------------------------------------------------------------------------------")
-                    parts.append(f"- Tokens de Entrada (Prompt + Histórico): {in_t:,}")
-                    parts.append(f"- Tokens de Saída (Respostas + Ações): {out_t:,}")
-                    parts.append(f"- Total de Tokens Consumidos: {tot_t:,}")
-                    parts.append("")
-
-                parts.append("=" * 80)
-
-                # Adiciona ao 'last_prompt.txt' (modo 'a') para acumular os registros de cada ciclo
-                with open("last_prompt.txt", "a", encoding="utf-8") as f:
-                    f.write("\n".join(parts) + "\n\n")
-            except Exception as f_err:
-                logger.error(f"Erro ao gravar last_prompt.txt: {f_err}", exc_info=True)
-            
-            ia_response = {
-                "resumo": dados.resumo or "",
-                "nova_situacao": "Aguardando Resposta"
-            }
-            
-            # 8. Contabiliza tokens
-            logger.info(f"[Passo 3/5 - IA] Iniciando contabilização de tokens...")
-            await contabilizar_tokens_pydantic(resultado_ia, contexto, company_for_gemini)
-            
-            if not ia_response:
-                raise ValueError("A IA retornou um resultado vazio ou inválido.")
-
-        # Se a IA falhar permanentemente, o status é atualizado para "Erro IA" com detalhes do erro.
-        except Exception as ia_err:
-            logger.error(f"[Passo 3/5 - IA] Falha crítica na geração ou execução da IA: {ia_err}", exc_info=True)
-            try:
-                async with SessionLocal() as db_ia_fail:
-                    async with db_ia_fail.begin():
-                        at_ia_fail = await db_ia_fail.get(models.Atendimento, atendimento_id)
-                        if at_ia_fail:
-                            at_ia_fail.status = "Erro IA"
-                            at_ia_fail.resumo = f"IA Error: {str(ia_err)[:250]}"
-                            at_ia_fail.updated_at = datetime.now(timezone.utc)
-            except Exception: pass
-            return
-
-        # --- ETAPA 4: EXECUÇÃO DAS AÇÕES (MIGRADAS PARA AS MICRO-TOOLS) ---
-        logger.info(f"[Passo 4/5 - Ações] Ações delegadas para execução interna nas ferramentas da IA.")
-        intended_status_after_send = ia_response.get("nova_situacao", "Aguardando Resposta")
-        intended_resumo = ia_response.get("resumo", "")
-
-        # --- ETAPA 5: ATUALIZAÇÃO FINAL DO ATENDIMENTO ---
-        try:
-            logger.info(f"[Passo 5/5 - Finalização] Iniciando persistência final do status e resumo no banco de dados...")
-            async with SessionLocal() as db_final:
-                async with db_final.begin():
-                    # Bloqueia novamente a linha para garantir a consistência dos dados.
-                    at_final = await db_final.get(models.Atendimento, atendimento_id, with_for_update=True)
-                    if at_final:
-                        # Atualiza o status apenas se ele ainda for "Gerando Resposta", para evitar sobrescrever uma mudança manual ou de tool.
-                        if at_final.status == "Gerando Resposta":
-                             at_final.status = intended_status_after_send
-                             logger.info(f"[Passo 5/5 - Finalização] Definindo status final do atendimento como '{intended_status_after_send}'")
-                        else:
-                             logger.info(f"[Passo 5/5 - Finalização] Status já alterado anteriormente para '{at_final.status}'. Mantendo.")
-
-                        if at_final.status == "Atendente Chamado":
-                            logger.info(f"[Passo 5/5 - Finalização] Status é 'Atendente Chamado'. Distribuindo atendimento para equipe humana...")
-                            await crud_atendimento.distribute_atendimento(db_final, at_final)
-                        
-                        # Salva as observações da IA (resumo)
-                        at_final.resumo = intended_resumo
-                        at_final.updated_at = datetime.now(timezone.utc)
-            
-            logger.info(f"[ATENDIMENTO CONCLUÍDO] Atendimento ID {atendimento_id} processado com total sucesso.")
-
-        except Exception as final_err:
-            logger.error(f"[Passo 5/5 - Finalização] Erro ao persistir atualizações finais: {final_err}")
-
-    # Bloco de captura para erros inesperados e graves durante todo o processo.
-    except asyncio.CancelledError:
-        logger.info(f"[BARRAMENTO AMBIENTE] Atendimento ID {atendimento_id} teve sua geração de IA cancelada por nova mensagem. Revertendo status para 'Mensagem Recebida'.")
+    except (asyncio.CancelledError, NodeCancelledError):
+        logger.info(f"[Barramento] Atendimento {atendimento_id} cancelado/reiniciado devido a nova mensagem. Revertendo status para 'Mensagem Recebida'...")
         try:
             async with SessionLocal() as db_cancel:
                 async with db_cancel.begin():
@@ -638,63 +418,59 @@ async def _process_single_atendimento_inner(atendimento_id: int, company: models
                     if at_cancel and at_cancel.status == "Gerando Resposta":
                         at_cancel.status = "Mensagem Recebida"
                         at_cancel.updated_at = datetime.now(timezone.utc)
-        except Exception: pass
-        raise
-    except Exception as outer_err:
-        logger.error(f"[ATENDIMENTO ERRO] ERRO CRÍTICO GERAL no processamento do atendimento {atendimento_id}: {outer_err}", exc_info=True)
-        # Tenta reverter o status para "Erro IA" para que o atendimento possa ser analisado manualmente.
+                        db_cancel.add(at_cancel)
+        except Exception as c_err:
+            logger.error(f"Erro ao reverter status no cancelamento: {c_err}")
+        return
+
+    except Exception as e:
+        # Tratamento de cancelamento encapsulado pelo LangGraph
+        if (
+            isinstance(e, (asyncio.CancelledError, NodeCancelledError))
+            or "cancelled" in type(e).__name__.lower()
+            or "cancelled" in str(e).lower()
+        ):
+            logger.info(f"[Barramento] Atendimento {atendimento_id} cancelado/reiniciado devido a nova mensagem ({type(e).__name__}). Revertendo status para 'Mensagem Recebida'...")
+            try:
+                async with SessionLocal() as db_cancel:
+                    async with db_cancel.begin():
+                        at_cancel = await db_cancel.get(models.Atendimento, atendimento_id)
+                        if at_cancel and at_cancel.status == "Gerando Resposta":
+                            at_cancel.status = "Mensagem Recebida"
+                            at_cancel.updated_at = datetime.now(timezone.utc)
+                            db_cancel.add(at_cancel)
+            except Exception as c_err:
+                logger.error(f"Erro ao reverter status no cancelamento: {c_err}")
+            return
+
+        logger.error(f"[LangGraph Erro] Falha crítica no atendimento {atendimento_id}: {e}", exc_info=True)
         try:
             async with SessionLocal() as db_fail:
                 async with db_fail.begin():
                     at_fail = await db_fail.get(models.Atendimento, atendimento_id)
                     if at_fail and at_fail.status == "Gerando Resposta":
                         at_fail.status = "Erro IA"
-                        at_fail.resumo = f"Outer Error: {str(outer_err)[:100]}"
+                        at_fail.resumo = f"Erro LangGraph: {str(e)[:250]}"
                         at_fail.updated_at = datetime.now(timezone.utc)
-                        logger.info(f"[ATENDIMENTO ERRO] Status revertido para 'Erro IA' com sucesso.")
-        except: pass
-
+        except Exception: pass
 
 async def run_agent_cycle():
     """
-    Executa um ciclo completo de verificação e processamento do agente.
-    Esta função é o ponto de entrada principal para o loop do agente, que é executado periodicamente.
-    As tarefas de processamento são disparadas em background (create_task), portanto o ciclo retorna
-    imediatamente — sem bloquear enquanto a IA gera resposta ou os delays de digitação correm.
-    O status 'Gerando Resposta' garante que ciclos seguintes não dupliquem o processamento.
+    Ciclo contínuo de verificação de atendimentos pendentes acionado pelo worker.
     """
-    logger.info("Agente (Ciclo Otimizado): Iniciando ciclo...")
-    
-    # Dicionário para garantir que cada atendimento seja processado apenas uma vez por ciclo, evitando duplicidade.
-    atendimentos_para_processar: Dict[int, models.Atendimento] = {}
-
+    logger.info("Agente (LangGraph): Iniciando ciclo de verificação...")
     async with SessionLocal() as db:
         try:
-            # 1. Busca todos os atendimentos que estão aguardando uma resposta e suas respectivas empresas
-            atendimentos_msg_recebida = await crud_atendimento.get_atendimentos_para_processar(db)
-            
-            if atendimentos_msg_recebida:
-                logger.info(f"Agente (Ciclo): {len(atendimentos_msg_recebida)} atendimentos (Mensagem Recebida) encontrados.")
-                for at in atendimentos_msg_recebida:
-                    # Adiciona o atendimento ao dicionário, garantindo que não haja duplicatas.
-                    if at.id not in atendimentos_para_processar:
-                        atendimentos_para_processar[at.id] = at
-
-            # 2. Dispara cada atendimento como uma task independente em background.
-            #    O ciclo retorna imediatamente; cada task roda no event loop de forma autônoma.
-            if atendimentos_para_processar:
-                logger.info(f"Agente (Ciclo): Disparando {len(atendimentos_para_processar)} tarefa(s) em background.")
-                for at in atendimentos_para_processar.values():
+            atendimentos = await crud_atendimento.get_atendimentos_para_processar(db)
+            if atendimentos:
+                logger.info(f"Agente (LangGraph): {len(atendimentos)} atendimento(s) encontrado(s).")
+                for at in atendimentos:
                     task = _active_processing_tasks.get(at.id)
                     if task and not task.done():
-                        logger.info(f"Agente (Ciclo): Atendimento {at.id} já está em processamento ativo. Pulando disparo.")
                         continue
                     if at.company:
                         asyncio.create_task(process_single_atendimento(at.id, at.company))
-                    else:
-                        logger.warning(f"Agente (Ciclo): Atendimento {at.id} sem empresa carregada.")
             else:
-                logger.info("Agente (Ciclo): Nenhum atendimento para processar.")
-
-        except Exception as cycle_err:
-            logger.error(f"Agente (Ciclo): Erro CRÍTICO no loop principal: {cycle_err}", exc_info=True)
+                logger.info("Agente (LangGraph): Nenhum atendimento para processar.")
+        except Exception as e:
+            logger.error(f"Agente (LangGraph): Erro no ciclo: {e}", exc_info=True)

@@ -40,13 +40,31 @@ async def update_user_me(
 @router.get("/", response_model=List[schemas.User], summary="Listar todos os usuários da empresa")
 async def list_company_users(
     db: AsyncSession = Depends(get_db),
-    current_user: models.User = Depends(get_current_active_admin)
+    current_user: models.User = Depends(get_current_active_user)
 ):
     """
-    Lista todos os usuários associados à empresa do administrador logado.
+    Lista todos os usuários associados à empresa do usuário autenticado.
     """
     try:
         return await UserService.list_company_users(
+            db=db,
+            current_user=current_user
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# Retorna todos os setores / departamentos cadastrados na empresa
+@router.get("/departments", response_model=List[str], summary="Listar setores/departamentos da empresa")
+async def list_company_departments(
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """
+    Retorna a lista de setores / funções existentes na empresa.
+    """
+    try:
+        return await UserService.list_company_departments(
             db=db,
             current_user=current_user
         )

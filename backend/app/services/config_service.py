@@ -1077,10 +1077,21 @@ class ConfigService:
         if not persona:
             raise ValueError("Persona não encontrada.")
             
-        sheets_service = GoogleSheetsService()
+        from app.services.feedback_agent_service import sanitize_persona_form
         mensagens_sucesso = []
 
-        # 1. Aplicar alterações na Planilha de Sistema
+        # 0. Aplicar alterações no Formulário de Persona (Aba Persona)
+        if hasattr(payload, 'novo_persona_form') and payload.novo_persona_form:
+            persona.persona_form = sanitize_persona_form(payload.novo_persona_form)
+            mensagens_sucesso.append("Formulário de Persona atualizado.")
+        elif hasattr(payload, 'alteracoes_formulario') and payload.alteracoes_formulario:
+            current_form = dict(persona.persona_form or {})
+            for item in payload.alteracoes_formulario:
+                current_form[item.campo] = item.valor_novo
+            persona.persona_form = sanitize_persona_form(current_form)
+            mensagens_sucesso.append("Formulário de Persona atualizado.")
+
+        # 1. Aplicar alterações na Planilha de Sistema (Fallback)
         if payload.alteracoes_planilha and persona.spreadsheet_id:
             alteracoes_dict = [a.model_dump() for a in payload.alteracoes_planilha]
             await sheets_service.apply_feedback_to_sheet(persona.spreadsheet_id, alteracoes_dict)
@@ -1111,7 +1122,7 @@ class ConfigService:
         # 3. Substituir o JSON do fluxo
         if payload.novo_workflow:
             persona.workflow_json = payload.novo_workflow
-            mensagens_sucesso.append("Novo fluxo visual fluxo visual salvo com sucesso.")
+            mensagens_sucesso.append("Novo fluxo visual salvo com sucesso.")
 
         db.add(persona)
         await db.commit()
@@ -1130,7 +1141,7 @@ class ConfigService:
         user: models.User
     ) -> Dict[str, Any]:
         """
-        Usa o Pydantic AI para analisar e propor sugestões sobre a base de conhecimento.
+        Usa a IA para analisar e propor sugestões sobre a base de conhecimento.
         """
         from app.services.feedback_agent_service import executar_agente_feedback
         return await executar_agente_feedback(
@@ -1159,7 +1170,20 @@ class ConfigService:
         sheets_service = GoogleSheetsService()
         mensagens_sucesso = []
 
-        # 1. Aplicar alterações na Planilha de Sistema
+        from app.services.feedback_agent_service import sanitize_persona_form
+
+        # 0. Aplicar alterações no Formulário de Persona (Aba Persona)
+        if payload.novo_persona_form:
+            persona.persona_form = sanitize_persona_form(payload.novo_persona_form)
+            mensagens_sucesso.append("Formulário de Persona atualizado.")
+        elif payload.alteracoes_formulario:
+            current_form = dict(persona.persona_form or {})
+            for item in payload.alteracoes_formulario:
+                current_form[item.campo] = item.valor_novo
+            persona.persona_form = sanitize_persona_form(current_form)
+            mensagens_sucesso.append("Formulário de Persona atualizado.")
+
+        # 1. Aplicar alterações na Planilha de Sistema (Fallback)
         if payload.alteracoes_planilha and persona.spreadsheet_id:
             alteracoes_dict = [a.model_dump() for a in payload.alteracoes_planilha]
             await sheets_service.apply_feedback_to_sheet(persona.spreadsheet_id, alteracoes_dict)

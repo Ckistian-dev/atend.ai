@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import toast from 'react-hot-toast';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axiosConfig';
-import { Search, MessageSquare, Edit, Trash2, AlertTriangle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X as XIcon, Tag, Download, Plus, MessageSquarePlus, Loader2, Send, FileImage, FileVideo, File as FileIcon, Upload, FileText, Info, Bot, Clock, Database, User, Zap, ListFilter } from 'lucide-react';
+import { Search, MessageSquare, Edit, Trash2, AlertTriangle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X as XIcon, Tag, Download, Plus, MessageSquarePlus, Loader2, Send, FileImage, FileVideo, File as FileIcon, Upload, FileText, Info, Bot, Clock, Database, User, Zap, ListFilter, ArrowRightLeft, Building2 } from 'lucide-react';
 import PageLoader from '../components/common/PageLoader';
 import CreateTemplateModal from '../components/mensagens/CreateTemplateModal';
 import FilterPopover from '../components/mensagens/FilterPopover';
+import TransferModal from '../components/common/TransferModal';
 
 // --- DESIGN SYSTEM & MODAL GENÉRICO ---
 const DS_STYLE = `
@@ -295,7 +296,11 @@ const ConversationModal = ({ onClose, conversation, contactIdentifier }) => {
 
     let messages = [];
     try {
-        messages = conversation ? JSON.parse(conversation) : [];
+        if (Array.isArray(conversation)) {
+            messages = conversation;
+        } else if (typeof conversation === 'string') {
+            messages = JSON.parse(conversation || '[]');
+        }
     } catch (e) {
         console.error("Erro ao analisar JSON da conversa:", e);
     }
@@ -1310,6 +1315,10 @@ function Atendimentos() {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || '');
     const [sortOrder, setSortOrder] = useState(searchParams.get('sort_order') || 'desc');
+    const [departments, setDepartments] = useState([]);
+    const [selectedDepartment, setSelectedDepartment] = useState(searchParams.get('department') || '');
+    const [transferModalData, setTransferModalData] = useState(null);
+    const isAdmin = userData?.role === 'admin' || userData?.role === 'superadmin';
 
     // --- NOVO: Flag para colaborador com distribuição ativa ---
     const [isDistributionCollaborator, setIsDistributionCollaborator] = useState(false);
@@ -1323,17 +1332,22 @@ function Atendimentos() {
             try {
                 const userRes = await api.get('/auth/me');
                 const fetchedUser = userRes.data;
+                setUserData(fetchedUser);
                 const isCollab =
                     fetchedUser.role !== 'admin' &&
                     fetchedUser.role !== 'superadmin' &&
                     fetchedUser.participates_distribution === true;
                 setIsDistributionCollaborator(isCollab);
-                if (isCollab && fetchedUser.name && !distributionInitialized.current) {
+
+                // Aplica filtro de função/setor do colaborador automaticamente se ainda não inicializado
+                if (isCollab && !distributionInitialized.current) {
+                    if (fetchedUser.department) {
+                        setSelectedDepartment(fetchedUser.department);
+                    }
                     distributionInitialized.current = true;
-                    setSelectedTags([fetchedUser.name]);
                 }
             } catch (e) {
-                // Ignora — o fetchData principal também busca o usuário e tratará erros
+                console.error("Erro ao buscar perfil para inicialização de filtros:", e);
             } finally {
                 setIsAuthReady(true);
             }
@@ -1354,6 +1368,7 @@ function Atendimentos() {
         const urlSearch = searchParams.get('search') || '';
         const urlStatus = searchParams.getAll('status');
         const urlTags = searchParams.getAll('tags').length ? searchParams.getAll('tags') : (searchParams.getAll('tag').length ? searchParams.getAll('tag') : []);
+        const urlDept = searchParams.get('department') || '';
         const urlTimeStart = searchParams.get('time_start') || '';
         const urlTimeEnd = searchParams.get('time_end') || '';
         const urlPage = parseInt(searchParams.get('page') || '1', 10);
@@ -1368,6 +1383,7 @@ function Atendimentos() {
 
         if (!arraysEqual(urlStatus, selectedStatus)) setSelectedStatus(urlStatus);
         if (!arraysEqual(urlTags, selectedTags)) setSelectedTags(urlTags);
+        if (urlDept !== selectedDepartment) setSelectedDepartment(urlDept);
         if (urlTimeStart !== timeStart) setTimeStart(urlTimeStart);
         if (urlTimeEnd !== timeEnd) setTimeEnd(urlTimeEnd);
         if (urlPage !== currentPage) setCurrentPage(urlPage);
@@ -1395,6 +1411,9 @@ function Atendimentos() {
             if (sortOrder) queryParams.append('sort_order', sortOrder);
             if (timeStart) queryParams.append('time_start', timeStart);
             if (timeEnd) queryParams.append('time_end', timeEnd);
+            if (selectedDepartment && selectedDepartment !== 'ALL') {
+                queryParams.append('department', selectedDepartment);
+            }
 
             if (selectedStatus && selectedStatus.length > 0) {
                 selectedStatus.forEach(s => queryParams.append('status', s));
@@ -1407,12 +1426,13 @@ function Atendimentos() {
                 queryParams.append('selecting_bulk', 'true');
             }
 
-            const [atendimentosRes, personasRes, userRes, situationsRes, tagsRes] = await Promise.all([
+            const [atendimentosRes, personasRes, userRes, situationsRes, tagsRes, deptsRes] = await Promise.all([
                 api.get('/atendimentos/', { params: queryParams }),
                 api.get('/configs/'),
                 api.get('/auth/me'),
                 api.get('/configs/situations'),
-                api.get('/atendimentos/tags')
+                api.get('/atendimentos/tags'),
+                api.get('/atendimentos/departments').catch(() => ({ data: [] }))
             ]);
 
             setAtendimentos(atendimentosRes.data.items);
@@ -1420,6 +1440,7 @@ function Atendimentos() {
             setTotalPages(Math.ceil(atendimentosRes.data.total / pageSize));
             setAllTags(tagsRes.data);
             setPersonas(personasRes.data);
+            setDepartments(deptsRes.data || []);
             const fetchedUser = userRes.data;
             setUserData(fetchedUser);
 
@@ -1454,7 +1475,7 @@ function Atendimentos() {
                 initialFetchDone.current = true; // Marca que o fetch inicial foi feito
             }
         }
-    }, [searchTerm, currentPage, pageSize, selectedStatus, selectedTags, timeStart, timeEnd, sortBy, sortOrder, setSearchParams, isSelectingForBulk]);
+    }, [searchTerm, currentPage, pageSize, selectedStatus, selectedTags, selectedDepartment, timeStart, timeEnd, sortBy, sortOrder, setSearchParams, isSelectingForBulk]);
 
     // --- CORREÇÃO DE POLLING (COM PAUSA EM SEGUNDO PLANO) ---
     useEffect(() => {
@@ -1878,22 +1899,16 @@ function Atendimentos() {
                                     onClick={() => setIsFilterOpen(!isFilterOpen)}
                                     className={`flex items-center justify-center gap-2.5 px-6 h-14 md:h-16 w-full md:w-auto rounded-2xl font-bold transition-all border ${
                                         // Para colaboradores de distribuição, o filtro de tag é silencioso
-                                        isFilterOpen || selectedStatus?.length > 0 || timeStart || timeEnd
+                                        isFilterOpen || selectedStatus?.length > 0 || timeStart || timeEnd || (isAdmin && selectedDepartment && selectedDepartment !== 'ALL') || selectedTags?.length > 0
                                             ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200'
                                             : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'
                                         }`}
                                 >
                                     <ListFilter size={20} />
                                     <span className="text-[13px] uppercase tracking-widest whitespace-nowrap">Filtros</span>
-                                    {/* Badge: ignora o filtro de tag auto-aplicado para colaboradores */}
-                                    {(!isDistributionCollaborator && ((selectedStatus && selectedStatus.length > 0) || (selectedTags && selectedTags.length > 0) || timeStart || timeEnd)) && (
+                                    {((selectedStatus && selectedStatus.length > 0) || (selectedTags && selectedTags.length > 0) || (isAdmin && selectedDepartment && selectedDepartment !== 'ALL') || timeStart || timeEnd) && (
                                         <div className="w-5 h-5 bg-white text-blue-600 rounded-full flex items-center justify-center text-[10px] font-black animate-pulse">
-                                            {(selectedStatus ? selectedStatus.length : 0) + (selectedTags ? selectedTags.length : 0) + (timeStart || timeEnd ? 1 : 0)}
-                                        </div>
-                                    )}
-                                    {(isDistributionCollaborator && (selectedStatus?.length > 0 || timeStart || timeEnd)) && (
-                                        <div className="w-5 h-5 bg-white text-blue-600 rounded-full flex items-center justify-center text-[10px] font-black animate-pulse">
-                                            {(selectedStatus ? selectedStatus.length : 0) + (timeStart || timeEnd ? 1 : 0)}
+                                            {(selectedStatus ? selectedStatus.length : 0) + (selectedTags ? selectedTags.length : 0) + (isAdmin && selectedDepartment && selectedDepartment !== 'ALL' ? 1 : 0) + (timeStart || timeEnd ? 1 : 0)}
                                         </div>
                                     )}
                                 </button>
@@ -1903,6 +1918,13 @@ function Atendimentos() {
                                     statusOptions={statusOptions}
                                     allTags={allTags}
                                     selectedStatus={selectedStatus}
+                                    departments={departments}
+                                    selectedDepartment={selectedDepartment}
+                                    hideDepartment={!isAdmin}
+                                    onDepartmentChange={(dept) => {
+                                        setSelectedDepartment(dept);
+                                        setCurrentPage(1);
+                                    }}
                                     onStatusChange={(val) => {
                                         setSelectedStatus(prev => {
                                             const arr = Array.isArray(prev) ? prev : (prev ? [prev] : []);
@@ -1936,6 +1958,7 @@ function Atendimentos() {
                                     onClearFilters={() => {
                                         setSelectedStatus([]);
                                         setSelectedTags([]);
+                                        setSelectedDepartment('ALL');
                                         setTimeStart('');
                                         setTimeEnd('');
                                         setCurrentPage(1);
@@ -1944,19 +1967,30 @@ function Atendimentos() {
                             </div>
                         </div>
 
-                        {/* Active Filters Row — ocultado para colaboradores se só tiver o filtro de tag automático */}
+                        {/* Active Filters Row */}
                         {(() => {
                             const hasExtraStatus = selectedStatus && selectedStatus.length > 0;
                             const hasExtraTags = selectedTags && selectedTags.length > 0;
                             const hasTime = timeStart || timeEnd;
-                            // Para colaboradores, só mostra a row se houver filtros ALÉM do tag automático
-                            const showRow = isDistributionCollaborator
-                                ? (hasExtraStatus || hasTime)
-                                : (hasExtraStatus || hasExtraTags || hasTime);
+                            const hasDept = isAdmin && selectedDepartment && selectedDepartment !== 'ALL';
+                            const showRow = hasExtraStatus || hasExtraTags || hasTime || hasDept;
                             if (!showRow) return null;
                             return (
                             <div className="flex flex-wrap gap-2.5 items-center pt-2 animate-fade-in text-left">
                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Filtros ativos:</span>
+                                {isAdmin && selectedDepartment && selectedDepartment !== 'ALL' && (
+                                    <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl border border-blue-100 shadow-sm transition-all hover:bg-blue-100/50">
+                                        <Building2 size={12} className="text-blue-600" />
+                                        Setor: {selectedDepartment}
+                                        <button
+                                            onClick={() => { setSelectedDepartment('ALL'); setCurrentPage(1); }}
+                                            className="hover:bg-blue-200 text-blue-800 rounded-full p-0.5 transition-colors"
+                                            title="Remover filtro de setor"
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                )}
                                 {selectedStatus && selectedStatus.map(status => (
                                     <span key={status} className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl border border-blue-100 shadow-sm transition-all hover:bg-blue-100/50">
                                         <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
@@ -1966,12 +2000,11 @@ function Atendimentos() {
                                             className="hover:bg-blue-200 text-blue-800 rounded-full p-0.5 transition-colors"
                                             title="Remover filtro de situação"
                                         >
-                                            <XIcon size={12} />
+                                            <X size={12} />
                                         </button>
                                     </span>
                                 ))}
-                                {/* Tags: para colaboradores, oculta o tag do próprio nome (auto-aplicado) */}
-                                {selectedTags && selectedTags.filter(tag => isDistributionCollaborator ? tag !== userData?.name : true).map(tag => (
+                                {selectedTags && selectedTags.map(tag => (
                                     <span key={tag} className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-purple-50 text-purple-700 text-xs font-bold rounded-xl border border-purple-100 shadow-sm transition-all hover:bg-purple-100/50">
                                         <span className="w-1.5 h-1.5 rounded-full bg-purple-600" />
                                         Tag: {tag}
@@ -1980,31 +2013,20 @@ function Atendimentos() {
                                             className="hover:bg-purple-200 text-purple-800 rounded-full p-0.5 transition-colors"
                                             title="Remover filtro de tag"
                                         >
-                                            <XIcon size={12} />
+                                            <X size={12} />
                                         </button>
                                     </span>
                                 ))}
-                                {timeStart && (
-                                    <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-xl border border-indigo-100 shadow-sm transition-all hover:bg-indigo-100/50">
-                                        <Clock size={12} className="text-indigo-600" />
-                                        Início: {new Date(timeStart).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
-                                        <button 
-                                            onClick={() => { setTimeStart(''); setCurrentPage(1); }} 
-                                            className="hover:bg-indigo-200 text-indigo-800 rounded-full p-0.5 transition-colors"
-                                            title="Remover data início"
-                                        >
-                                            <XIcon size={12} />
-                                        </button>
-                                    </span>
-                                )}
-                                {timeEnd && (
-                                    <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-xl border border-indigo-100 shadow-sm transition-all hover:bg-indigo-100/50">
-                                        <Clock size={12} className="text-indigo-600" />
-                                        Fim: {new Date(timeEnd).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
-                                        <button 
-                                            onClick={() => { setTimeEnd(''); setCurrentPage(1); }} 
-                                            className="hover:bg-indigo-200 text-indigo-800 rounded-full p-0.5 transition-colors"
-                                            title="Remover data fim"
+                                {(timeStart || timeEnd) && (
+                                    <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 shadow-sm transition-all hover:bg-slate-200/50">
+                                        <Clock size={12} className="text-slate-500" />
+                                        {timeStart && !timeEnd && `A partir de ${timeStart}`}
+                                        {!timeStart && timeEnd && `Até ${timeEnd}`}
+                                        {timeStart && timeEnd && `${timeStart} às ${timeEnd}`}
+                                        <button
+                                            onClick={() => { setTimeStart(''); setTimeEnd(''); setCurrentPage(1); }}
+                                            className="hover:bg-slate-300 text-slate-800 rounded-full p-0.5 transition-colors"
+                                            title="Remover filtro de horário"
                                         >
                                             <XIcon size={12} />
                                         </button>
@@ -2016,6 +2038,7 @@ function Atendimentos() {
                                         setSelectedTags([]);
                                         setTimeStart('');
                                         setTimeEnd('');
+                                        setSelectedDepartment('ALL');
                                         setCurrentPage(1);
                                     }}
                                     className="text-[10px] font-black uppercase tracking-widest text-red-500 hover:text-red-700 ml-2 transition-colors flex items-center gap-1 hover:underline"
@@ -2029,7 +2052,7 @@ function Atendimentos() {
                     </div>
                 </div>
 
-                <div className="overflow-x-auto custom-scrollbar border-b border-slate-50">
+                <div className="overflow-x-auto custom-scrollbar relative z-20 border-b border-slate-50">
                     {isSelectingForBulk && atendimentos.length > 0 && atendimentos.every(at => selectedIds.includes(at.id)) && totalAtendimentos > atendimentos.length && selectedIds.length < totalAtendimentos && (
                         <div className="bg-blue-50/80 border-b border-blue-100/50 px-6 py-3.5 text-center text-xs font-bold text-blue-700 animate-fade-in flex items-center justify-center gap-2">
                             <span>Todos os {atendimentos.length} contatos desta página foram selecionados.</span>
@@ -2058,6 +2081,7 @@ function Atendimentos() {
                                 <SortableHeader column="contato" label="Contato" />
                                 <SortableHeader column="atualizacao" label="Atualização" className="hidden lg:table-cell" />
                                 <SortableHeader column="status" label="Status" center />
+                                <th className="px-4 sm:px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] hidden lg:table-cell">Setor</th>
                                 <th className="px-4 sm:px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] hidden sm:table-cell">Categorias</th>
                                 <th className="px-4 sm:px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] hidden xl:table-cell">Inteligência / Resumo</th>
                                 <SortableHeader column="agente" label="Agente" center className="hidden md:table-cell" />
@@ -2067,7 +2091,7 @@ function Atendimentos() {
                         <tbody className="divide-y divide-slate-50">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={isSelectingForBulk ? "8" : "7"} className="px-6 py-20 text-center">
+                                    <td colSpan={isSelectingForBulk ? "9" : "8"} className="px-6 py-20 text-center">
                                         <PageLoader fullScreen={false} message="Atualizando lista..." subMessage="" />
                                     </td>
                                 </tr>
@@ -2136,6 +2160,23 @@ function Atendimentos() {
                                                     {at.status ?? 'N/A'}
                                                 </span>
                                             </td>
+                                            <td className="px-4 sm:px-6 py-5 hidden lg:table-cell">
+                                                <div className="flex flex-col gap-1">
+                                                    {at.assigned_department ? (
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200/80 w-fit">
+                                                            <Building2 size={11} className="text-blue-600" />
+                                                            {at.assigned_department}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[11px] text-slate-300 font-bold uppercase tracking-tighter">—</span>
+                                                    )}
+                                                    {at.assigned_user && (
+                                                        <span className="text-[10px] text-slate-500 font-medium truncate max-w-[130px]" title={at.assigned_user.name || at.assigned_user.email}>
+                                                            👤 {at.assigned_user.name || at.assigned_user.email}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
                                             <td className="px-6 py-5 hidden sm:table-cell">
                                                 <div className="flex flex-wrap gap-1.5 max-w-[150px]">
                                                     {(at.tags && atendimentos.length > 0 && at.tags.length > 0) ? (
@@ -2169,6 +2210,7 @@ function Atendimentos() {
                                             </td>
                                             <td className="px-4 sm:px-6 py-5 text-center">
                                                 <div className="flex justify-center items-center gap-0.5 sm:gap-1 transition-opacity">
+                                                    <button onClick={(e) => { e.stopPropagation(); setTransferModalData(at); }} className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-amber-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-lg sm:rounded-xl transition-all" title="Transferir Setor / Atendente"><ArrowRightLeft size={16} /></button>
                                                     <button onClick={(e) => { e.stopPropagation(); setModalData({ type: 'conversation', data: at }); }} className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-lg sm:rounded-xl transition-all" title="Ver conversa"><MessageSquare size={16} /></button>
                                                     <button onClick={(e) => { e.stopPropagation(); setModalData({ type: 'edit', data: at }); }} className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-lg sm:rounded-xl transition-all" title="Editar"><Edit size={16} /></button>
                                                     <button onClick={(e) => { e.stopPropagation(); setModalData({ type: 'delete', data: at }); }} className="hidden xs:flex w-8 sm:w-9 h-8 sm:h-9 items-center justify-center text-slate-400 hover:text-red-500 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-lg sm:rounded-xl transition-all" title="Apagar"><Trash2 size={16} /></button>
@@ -2207,10 +2249,35 @@ function Atendimentos() {
             </div>
 
             {/* Modais */}
-            {modalData.type === 'conversation' && modalData.data && <ConversationModal onClose={handleCloseModals} conversation={modalData.data.conversa} contactIdentifier={modalData.data.nome_contato || modalData.data.whatsapp} />}
+            {modalData.type === 'conversation' && modalData.data && <ConversationModal onClose={handleCloseModals} conversation={modalData.data.mensagens && modalData.data.mensagens.length > 0 ? modalData.data.mensagens : modalData.data.conversa} contactIdentifier={modalData.data.nome_contato || modalData.data.whatsapp} />}
             {modalData.type === 'edit' && modalData.data && <EditModal onClose={handleCloseModals} atendimento={modalData.data} personas={personas} statusOptions={statusOptions} onSave={handleSaveEdit} allTags={allTags} setAllTags={setAllTags} onDeleteGlobalTag={handleDeleteTag} />}
             {modalData.type === 'delete' && modalData.data && <DeleteConfirmationModal onClose={handleCloseModals} atendimento={modalData.data} onConfirm={handleConfirmDelete} />}
             {isCreateModalOpen && <CreateModal onClose={() => setIsCreateModalOpen(false)} onSave={handleCreate} personas={personas} statusOptions={statusOptions} allTags={allTags} setAllTags={setAllTags} onDeleteGlobalTag={handleDeleteTag} />}
+            
+            {transferModalData && (
+                <TransferModal
+                    isOpen={!!transferModalData}
+                    onClose={() => setTransferModalData(null)}
+                    onConfirm={async ({ department, user_id, notes }) => {
+                        try {
+                            await api.post(`/atendimentos/${transferModalData.id}/transfer`, {
+                                department,
+                                user_id,
+                                notes
+                            });
+                            toast.success('Atendimento transferido com sucesso!');
+                            fetchData();
+                        } catch (err) {
+                            toast.error('Erro ao transferir atendimento.');
+                            throw err;
+                        }
+                    }}
+                    currentDepartment={transferModalData.assigned_department}
+                    currentUserId={transferModalData.assigned_user_id}
+                    atendimentoName={transferModalData.nome_contato}
+                    atendimentoWhatsapp={transferModalData.whatsapp}
+                />
+            )}
         </div>
     );
 }

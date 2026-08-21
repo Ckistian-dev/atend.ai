@@ -4,6 +4,37 @@ import { Check, CheckCheck, AlertCircle, Clock, MessageSquare, Wand2, Loader2, S
 import toast from 'react-hot-toast';
 import MessageContent from './MessageContent';
 
+const deduplicateMessages = (msgs) => {
+    if (!Array.isArray(msgs) || msgs.length === 0) return [];
+    const seenIds = new Set();
+    const result = [];
+
+    for (const msg of msgs) {
+        if (!msg) continue;
+        const msgId = msg.message_id || msg.id;
+        
+        if (msgId && seenIds.has(String(msgId))) {
+            continue;
+        }
+
+        // Evita duplicatas com mesmo conteúdo, role e timestamp aproximado
+        const isContentDuplicate = result.some(r => 
+            r.role === msg.role && 
+            (r.content || '') === (msg.content || '') &&
+            (r.type || 'text') === (msg.type || 'text') &&
+            Math.abs(new Date(r.timestamp || 0).getTime() - new Date(msg.timestamp || 0).getTime()) < 5000
+        );
+
+        if (isContentDuplicate) {
+            continue;
+        }
+
+        if (msgId) seenIds.add(String(msgId));
+        result.push(msg);
+    }
+    return result;
+};
+
 // --- Componente: Corpo da Conversa (Mensagens) ---
 const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedia }) => {
     const chatContainerRef = useRef(null);
@@ -18,10 +49,20 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
     useEffect(() => {
         let parsedMessages = [];
         try {
-            parsedMessages = mensagem ? JSON.parse(mensagem.conversa || '[]') : [];
+            if (mensagem) {
+                if (Array.isArray(mensagem.mensagens) && mensagem.mensagens.length > 0) {
+                    parsedMessages = mensagem.mensagens;
+                } else if (typeof mensagem.conversa === 'string') {
+                    parsedMessages = JSON.parse(mensagem.conversa || '[]');
+                } else if (Array.isArray(mensagem.conversa)) {
+                    parsedMessages = mensagem.conversa;
+                }
+            }
         } catch (e) {
-            console.error("Erro ao analisar JSON da conversa:", e);
+            console.error("Erro ao analisar mensagens:", e);
         }
+
+        parsedMessages = deduplicateMessages(parsedMessages);
 
         // --- NOVO: Lógica para verificar a posição do scroll ANTES de atualizar as mensagens ---
         const chatElement = chatContainerRef.current;
@@ -80,11 +121,41 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
 
     const handleScrollToMessage = (targetId) => {
         if (!targetId) return;
-        const element = document.getElementById(`msg-${targetId}`);
+        const targetStr = String(targetId).trim();
+
+        // 1. Tenta achar o elemento diretamente pelo ID no DOM
+        let element = document.getElementById(`msg-${targetStr}`);
+
+        // 2. Se não achar, procura nos atributos data-wamid ou data-msg-id
+        if (!element) {
+            element = document.querySelector(`[data-wamid="${targetStr}"]`) || document.querySelector(`[data-msg-id="${targetStr}"]`);
+        }
+
+        // 3. Se ainda não achar, procura na lista de mensagens em memória
+        if (!element && Array.isArray(messages)) {
+            const found = messages.find(m =>
+                String(m.id) === targetStr ||
+                String(m.message_id) === targetStr ||
+                (m.message_id && targetStr.includes(String(m.message_id))) ||
+                (m.id && targetStr.includes(String(m.id))) ||
+                (m.content && m.content.includes(targetStr))
+            );
+            if (found) {
+                element = document.getElementById(`msg-${found.id}`) ||
+                    document.querySelector(`[data-wamid="${found.message_id}"]`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setHighlightedMessageId(found.id);
+                    setTimeout(() => setHighlightedMessageId(null), 2500);
+                    return;
+                }
+            }
+        }
+
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            setHighlightedMessageId(targetId);
-            setTimeout(() => setHighlightedMessageId(null), 2000);
+            setHighlightedMessageId(targetStr);
+            setTimeout(() => setHighlightedMessageId(null), 2500);
         } else {
             toast.error("Mensagem original não encontrada nesta conversa.");
         }
@@ -96,7 +167,16 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
             className="flex-1 p-4 md:p-6 overflow-y-auto space-y-6 custom-scrollbar bg-slate-50/20"
         >
             {messages.map((msg, index) => {
-                if (msg.type === 'search') {
+                if (msg.type === 'search' || msg.type === 'unsupported' || msg.type === 'reaction') {
+                    return null;
+                }
+
+                const rawContent = (msg.content || '').trim();
+                const isUnsupportedText = /^\[Mensagem tipo .* não suportada\]/i.test(rawContent);
+                const hasMedia = !!(msg.media_id || ['image', 'audio', 'video', 'document', 'location'].includes(msg.type));
+                const hasInteractive = !!(msg.buttons?.length || msg.quoted_msg);
+
+                if (!hasMedia && !hasInteractive && (isUnsupportedText || !rawContent)) {
                     return null;
                 }
 
@@ -126,8 +206,10 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
                     >
                         <div
                             id={`msg-${msg.id}`}
+                            data-msg-id={msg.id}
+                            data-wamid={msg.message_id}
                             className={`relative max-w-[78%] md:max-w-[70%] transition-all duration-300 ${isAssistant ? 'chat-bubble-user' : 'chat-bubble-ia shadow-sm border border-white/40'
-                                } ${highlightedMessageId === msg.id ? 'highlight-message' : ''}`}
+                                } ${highlightedMessageId === msg.id || (highlightedMessageId && String(highlightedMessageId) === String(msg.message_id)) ? 'highlight-message' : ''}`}
                         >
                             {msg.is_template && (
                                 <div className={`text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2 pb-2 border-b ${isAssistant ? 'border-white/20 text-white/80' : 'border-slate-100 text-blue-600'}`}>
@@ -143,6 +225,16 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
                                 isDownloading={isDownloadingMedia}
                                 onQuotedClick={handleScrollToMessage}
                             />
+
+                            {/* REACTION BADGE (WhatsApp Style) */}
+                            {(msg.reaction || (msg.reactions && typeof msg.reactions === 'object' && Object.keys(msg.reactions).length > 0)) && (
+                                <div className={`absolute -bottom-3 ${isAssistant ? 'right-3' : 'left-3'} bg-white border border-slate-200/90 shadow-md shadow-slate-900/10 rounded-full px-2 py-0.5 flex items-center gap-1 text-xs transform hover:scale-110 transition-transform z-10 select-none cursor-default`} title="Reação">
+                                    <span>{msg.reaction || Object.values(msg.reactions)[0]}</span>
+                                    {msg.reactions && typeof msg.reactions === 'object' && Object.keys(msg.reactions).length > 1 && (
+                                        <span className="text-[10px] font-black text-slate-500">{Object.keys(msg.reactions).length}</span>
+                                    )}
+                                </div>
+                            )}
 
                             <div className={`flex items-center gap-2 mt-3 ${isAssistant ? 'justify-end text-white/60' : 'justify-start text-slate-400'}`}>
                                 {(msg.is_ai || msg.type === 'followup') && (
