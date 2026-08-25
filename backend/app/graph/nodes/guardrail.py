@@ -7,6 +7,7 @@ from typing import Dict, Any
 from google.genai import types
 from app.graph.state import AgentState, EvaluationResult
 from app.graph.prompts import GUARDRAIL_JUDGE_PROMPT
+from app.graph.history_utils import format_conversation_history
 from app.services.gemini_service import get_gemini_service
 from app.db.database import SessionLocal
 from app.crud import crud_atendimento
@@ -36,28 +37,19 @@ async def guardrail_node(state: AgentState) -> Dict[str, Any]:
                 logger.info(f"[Guardrail Node] Nova mensagem do cliente detectada antes da avaliação (Atend {state.get('atendimento_id')}). Abortando ciclo.")
                 raise asyncio.CancelledError()
 
-    # Avaliação de Grounding pelo Juiz LLM
+    # Avaliação de Grounding pelo Juiz LLM com histórico coeso
     history = state.get("conversation_history") or []
-    history_turns = []
-    for msg in history[-10:]:
-        role = msg.get("role", "user")
-        content = msg.get("content", "")
-        caption = msg.get("caption")
-        msg_type = msg.get("type", "text")
-        turn_text = content
-        if caption and str(caption).strip() and str(caption).strip() not in turn_text:
-            turn_text = f"{turn_text} [Legenda: {caption}]".strip()
-        if msg_type not in ["text", "sending"] and f"[{msg_type}" not in turn_text.lower():
-            turn_text = f"[{msg_type.upper()}]: {turn_text}".strip()
-        if turn_text:
-            history_turns.append(f"{role.upper()}: {turn_text}")
+    history_str = format_conversation_history(history, max_messages=50)
     if state.get("user_input"):
-        history_turns.append(f"USER: {state.get('user_input')}")
-    history_str = "\n".join(history_turns) if history_turns else "Início de conversa."
+        history_str = f"{history_str}\n\nUSER: {state.get('user_input')}".strip()
 
     persona_prompt = state.get("persona_prompt") or ""
     workflow_context = state.get("workflow_context") or ""
     workflow_sec = f"\n--- ROTEIRO / FLUXO DE ATENDIMENTO ---\n{workflow_context}\n" if workflow_context else ""
+    
+    resumo_crm = state.get("resumo_crm")
+    resumo_sec = f"\n--- RESUMO CONSOLIDADO DO CRM ---\n{resumo_crm.strip()}\n" if resumo_crm and resumo_crm.strip() else ""
+    
     tools_summary = "\n".join([f"- Ferramenta {t.get('tool_name')}: {t.get('result')}" for t in tool_results])
 
     send_as_audio = state.get("send_as_audio", False)
@@ -66,7 +58,8 @@ async def guardrail_node(state: AgentState) -> Dict[str, Any]:
     eval_prompt = f"""--- DIRETRIZES DA PERSONA / EMPRESA ---
 {persona_prompt}
 {workflow_sec}
---- HISTÓRICO RECENTE DA CONVERSA ---
+{resumo_sec}
+--- HISTÓRICO DA CONVERSA ---
 {history_str}
 
 --- CONTEXTO RECUPERADO DA BASE DE CONHECIMENTO ---

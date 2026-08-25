@@ -11,8 +11,8 @@ import { formatLastMessagePreview } from '../../utils/formatters';
 // --- Componente: Item de Contato na Lista (MODIFICADO) ---
 const ContactItem = ({
     mensagem, isSelected, onSelect, statusOptions, onUpdateStatus, getTextColorForBackground,
-    // Novas props para o editor de tags
-    allTags, onUpdateTags, onAddNewTag, onDeleteTag, onSwitchToAtendimentos
+    allTags, onUpdateTags, onAddNewTag, onDeleteTag, onSwitchToAtendimentos,
+    onMarkAsRead, onMarkAsUnread
 }) => {
     // --- ESTADOS DO MENU (MODIFICADO) ---
     // Controla o menu principal de 2 opções ('Alterar Situação', 'Editar Tags')
@@ -32,7 +32,7 @@ const ContactItem = ({
         try {
             if (Array.isArray(mensagem.mensagens) && mensagem.mensagens.length > 0) {
                 parsedConversa = mensagem.mensagens;
-            } else if (typeof mensagem.conversa === 'string') {
+            } else if (typeof mensagem.conversa === 'string' && mensagem.conversa !== '[]') {
                 parsedConversa = JSON.parse(mensagem.conversa || '[]');
             } else if (Array.isArray(mensagem.conversa)) {
                 parsedConversa = mensagem.conversa;
@@ -43,10 +43,9 @@ const ContactItem = ({
 
         setConversa(parsedConversa);
 
-        // Contar mensagens 'user' que estão 'unread'
-        // (Assumindo que o webhook está marcando 'status: "unread"')
+        // Contar mensagens do cliente ('user' ou 'client') que estão 'unread'
         const count = parsedConversa.filter(
-            msg => msg.role === 'user' && msg.status === 'unread'
+            msg => msg && (msg.role === 'user' || msg.role === 'client') && msg.status === 'unread'
         ).length;
         setUnreadCount(count);
 
@@ -207,20 +206,13 @@ const ContactItem = ({
         e.stopPropagation();
         setIsMainMenuOpen(false); // Fecha o menu imediatamente
 
-        if (conversa && conversa.length > 0) {
-            // Encontra o índice da última mensagem enviada pelo usuário (cliente)
-            const lastUserMessageIndex = conversa.map(msg => msg.role).lastIndexOf('user');
-
-            // Se encontrou uma mensagem do usuário, marca ela como não lida
-            if (lastUserMessageIndex !== -1) {
-                const updatedConversa = [...conversa];
-                updatedConversa[lastUserMessageIndex] = { ...updatedConversa[lastUserMessageIndex], status: 'unread' };
-
-                // Chama a função de update genérica do pai
-                onUpdateStatus(mensagem.id, {
-                    conversa: JSON.stringify(updatedConversa)
-                });
-            }
+        setUnreadCount(1);
+        if (onMarkAsUnread) {
+            onMarkAsUnread(mensagem.id);
+        } else {
+            api.post(`/atendimentos/${mensagem.id}/mark_unread`).catch(err => {
+                console.error("Erro ao marcar como não lido:", err);
+            });
         }
     };
 
@@ -233,12 +225,14 @@ const ContactItem = ({
             onClick={() => {
                 setIsMainMenuOpen(false);
                 if (hasUnreadMessages) {
-                    const updatedConversa = conversa.map(msg =>
-                        (msg.role === 'user' && msg.status === 'unread')
-                            ? { ...msg, status: 'read' }
-                            : msg
-                    );
-                    onUpdateStatus(mensagem.id, { conversa: JSON.stringify(updatedConversa) });
+                    setUnreadCount(0);
+                    if (onMarkAsRead) {
+                        onMarkAsRead(mensagem.id);
+                    } else {
+                        api.post(`/atendimentos/${mensagem.id}/mark_read`).catch(err => {
+                            console.error("Erro ao marcar como lido:", err);
+                        });
+                    }
                 }
                 onSelect(mensagem);
             }}

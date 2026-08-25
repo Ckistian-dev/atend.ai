@@ -348,39 +348,76 @@ async def _transferir_para_atendente(atendimento_id: int, tenant_id: int, destin
 
             at.status = "Atendente Chamado"
 
-            assigned_user_name = None
-            if destinatario and str(destinatario).strip():
-                dest_clean = str(destinatario).strip()
-                users_res = await db.execute(
-                    select(models.User).where(models.User.company_id == tenant_id)
-                )
-                company_users = list(users_res.scalars().all())
+            # Busca os usuários cadastrados da empresa
+            users_res = await db.execute(
+                select(models.User).where(models.User.company_id == tenant_id)
+            )
+            company_users = list(users_res.scalars().all())
 
-                matched_user = None
-                for u in company_users:
-                    u_name = (u.name or "").strip().lower()
-                    u_email = (u.email or "").strip().lower()
-                    if dest_clean.lower() in u_name or dest_clean.lower() in u_email or u_name in dest_clean.lower():
+            valid_dept_map = {}
+            valid_user_map = {}
+            for u in company_users:
+                u_name = (u.name or u.email.split('@')[0]).strip()
+                u_dept = (u.department or ('Admin' if u.role == 'admin' else 'Atendimento Geral')).strip()
+                if u_dept:
+                    valid_dept_map[u_dept.lower()] = u_dept
+                if u_name:
+                    valid_user_map[u_name.lower()] = u
+                if u.email:
+                    valid_user_map[u.email.lower()] = u
+
+            matched_user = None
+            resolved_dept = None
+
+            if destinatario and str(destinatario).strip():
+                dest_clean = str(destinatario).strip().lower()
+                for key, u in valid_user_map.items():
+                    if dest_clean == key or dest_clean in key or key in dest_clean:
                         matched_user = u
+                        resolved_dept = (u.department or ('Admin' if u.role == 'admin' else 'Atendimento Geral')).strip()
                         break
 
-                if matched_user:
-                    at.assigned_user_id = matched_user.id
-                    at.assigned_department = matched_user.department or departamento or at.assigned_department
-                    assigned_user_name = matched_user.name or matched_user.email
-                else:
-                    if not departamento:
-                        departamento = dest_clean
+                if not matched_user:
+                    for key, dept_name in valid_dept_map.items():
+                        if dest_clean == key or dest_clean in key or key in dest_clean:
+                            resolved_dept = dept_name
+                            break
 
-            if departamento and str(departamento).strip():
-                at.assigned_department = str(departamento).strip()
+            if not resolved_dept and departamento and str(departamento).strip():
+                dept_clean = str(departamento).strip().lower()
+                for key, dept_name in valid_dept_map.items():
+                    if dept_clean == key or dept_clean in key or key in dept_clean:
+                        resolved_dept = dept_name
+                        break
+
+            # Fallback com base nos usuários cadastrados
+            if not matched_user and not resolved_dept:
+                if len(company_users) == 1:
+                    matched_user = company_users[0]
+                    resolved_dept = (matched_user.department or ('Admin' if matched_user.role == 'admin' else 'Atendimento Geral')).strip()
+                elif len(company_users) > 1:
+                    dist_users = [u for u in company_users if u.participates_distribution]
+                    if not dist_users:
+                        first_admin = next((u for u in company_users if u.role == "admin"), company_users[0])
+                        matched_user = first_admin
+                        resolved_dept = (first_admin.department or ('Admin' if first_admin.role == 'admin' else 'Atendimento Geral')).strip()
+
+            if matched_user:
+                at.assigned_user_id = matched_user.id
+                assigned_user_name = matched_user.name or matched_user.email
+            else:
+                assigned_user_name = None
+
+            if resolved_dept:
+                at.assigned_department = resolved_dept
 
             if motivo and str(motivo).strip():
                 at.observacoes = f"{at.observacoes or ''}\n[Transbordo IA]: {motivo.strip()}".strip()
 
+            await crud_atendimento.distribute_atendimento(db, at)
             db.add(at)
 
-            target_str = f"ao atendente '{assigned_user_name}' (Setor: {at.assigned_department or 'Geral'})" if assigned_user_name else (f"ao setor '{at.assigned_department}'" if at.assigned_department else "à equipe de suporte")
+            target_str = f"ao atendente '{assigned_user_name}' (Cargo/Setor: {at.assigned_department or 'Geral'})" if assigned_user_name else (f"ao setor '{at.assigned_department}'" if at.assigned_department else "à equipe de atendimento")
             return f"Atendimento transferido com sucesso {target_str}."
 
 async def tools_node(state: AgentState) -> Dict[str, Any]:

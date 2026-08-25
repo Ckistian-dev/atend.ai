@@ -5,6 +5,7 @@ from typing import Dict, Any
 from google.genai import types
 from app.graph.state import AgentState, RouterDecision
 from app.graph.prompts import ROUTER_SYSTEM_PROMPT
+from app.graph.history_utils import format_conversation_history
 from app.services.gemini_service import get_gemini_service
 
 logger = logging.getLogger(__name__)
@@ -20,20 +21,17 @@ async def router_node(state: AgentState) -> Dict[str, Any]:
     user_input = state.get("user_input", "")
     history = state.get("conversation_history", [])
     model_name = state.get("ai_model") or "gemini-3.5-flash-lite"
+    resumo_crm = state.get("resumo_crm")
 
-    # Constrói o histórico resumido para o roteador
-    history_summary = []
-    for msg in history[-6:]:
-        role = msg.get("role", "user")
-        content = msg.get("content", "")
-        history_summary.append(f"{role.upper()}: {content}")
-    history_str = "\n".join(history_summary) if history_summary else "Nenhum histórico anterior."
+    # Constrói o histórico coeso e abrangente para o roteador
+    history_str = format_conversation_history(history, max_messages=40)
+    resumo_sec = f"\n--- RESUMO DO HISTÓRICO ANTERIOR (CRM) ---\n{resumo_crm.strip()}\n" if resumo_crm and resumo_crm.strip() else ""
 
-    user_prompt = f"""--- HISTÓRICO RECENTE ---
+    user_prompt = f"""{resumo_sec}--- HISTÓRICO DA CONVERSA ---
 {history_str}
 
 --- MENSAGEM ATUAL DO CLIENTE ---
-{user_input}
+USER: {user_input}
 """
 
     try:

@@ -101,14 +101,32 @@ async def has_newer_user_messages(
 async def get_message_by_wamid_or_id(
     db: AsyncSession, 
     company_id: int, 
-    message_id: str
+    message_id: str,
+    atendimento_id: Optional[int] = None
 ) -> Optional[models.Message]:
-    """Busca uma mensagem específica pelo WAMID ou ID interno."""
-    stmt = select(models.Message).where(
+    """Busca uma mensagem específica pelo WAMID (message_id) ou ID inteiro primário."""
+    if not message_id or str(message_id).strip().lower() in ['null', 'none', 'undefined', '']:
+        return None
+
+    msg_id_str = str(message_id).strip()
+    conditions = [
+        models.Message.message_id == msg_id_str
+    ]
+    try:
+        msg_int_id = int(msg_id_str)
+        if -2147483648 <= msg_int_id <= 2147483647:
+            conditions.append(models.Message.id == msg_int_id)
+    except (ValueError, TypeError):
+        pass
+
+    query = select(models.Message).where(
         models.Message.company_id == company_id,
-        models.Message.message_id == message_id
+        or_(*conditions)
     )
-    res = await db.execute(stmt)
+    if atendimento_id:
+        query = query.where(models.Message.atendimento_id == atendimento_id)
+
+    res = await db.execute(query)
     return res.scalars().first()
 
 async def get_message_by_media_id(
@@ -389,6 +407,99 @@ async def create_atendimento(db: AsyncSession, atendimento_in: schemas.Atendimen
     await db.refresh(db_atendimento, attribute_names=['active_persona', 'mensagens'])
     return db_atendimento
 
+async def mark_atendimento_messages_as_read(
+    db: AsyncSession,
+    company_id: int,
+    atendimento_id: int
+) -> Tuple[Optional[models.Atendimento], List[str]]:
+    """
+    Marca todas as mensagens não lidas do cliente como 'read'
+    exclusivamente na tabela 'mensagens' (e sincroniza a conversa legada se houver).
+    Retorna o atendimento atualizado e a lista de WAMIDs para envio de recibos à Meta.
+    """
+    stmt_msgs = (
+        select(models.Message)
+        .where(
+            models.Message.company_id == company_id,
+            models.Message.atendimento_id == atendimento_id,
+            models.Message.role.in_(["user", "client"]),
+            models.Message.status != "read"
+        )
+    )
+    res_msgs = await db.execute(stmt_msgs)
+    unread_messages = res_msgs.scalars().all()
+
+    wamid_list: List[str] = []
+    for msg in unread_messages:
+        msg.status = "read"
+        db.add(msg)
+        if msg.message_id and str(msg.message_id).startswith("wamid."):
+            wamid_list.append(str(msg.message_id))
+
+    db_atendimento = await get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
+    if db_atendimento and db_atendimento.conversa and db_atendimento.conversa != "[]":
+        try:
+            conv = json.loads(db_atendimento.conversa)
+            if isinstance(conv, list):
+                updated = False
+                for m in conv:
+                    if isinstance(m, dict) and m.get("role") in ["user", "client"] and m.get("status") != "read":
+                        m["status"] = "read"
+                        updated = True
+                if updated:
+                    db_atendimento.conversa = json.dumps(conv)
+                    db.add(db_atendimento)
+        except Exception:
+            pass
+
+    logger.info(f"Atendimento {atendimento_id}: {len(unread_messages)} mensagens marcadas como 'read' na tabela mensagens ({len(wamid_list)} WAMIDs).")
+    return db_atendimento, wamid_list
+
+async def mark_atendimento_messages_as_unread(
+    db: AsyncSession,
+    company_id: int,
+    atendimento_id: int
+) -> Optional[models.Atendimento]:
+    """
+    Marca a última mensagem do cliente no atendimento como 'unread'
+    exclusivamente na tabela 'mensagens' (e sincroniza a conversa legada se houver).
+    """
+    stmt_last_msg = (
+        select(models.Message)
+        .where(
+            models.Message.company_id == company_id,
+            models.Message.atendimento_id == atendimento_id,
+            models.Message.role.in_(["user", "client"])
+        )
+        .order_by(models.Message.timestamp.desc(), models.Message.id.desc())
+        .limit(1)
+    )
+    res_last = await db.execute(stmt_last_msg)
+    last_msg = res_last.scalars().first()
+
+    if last_msg:
+        last_msg.status = "unread"
+        db.add(last_msg)
+
+    db_atendimento = await get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
+    if db_atendimento and db_atendimento.conversa and db_atendimento.conversa != "[]":
+        try:
+            conv = json.loads(db_atendimento.conversa)
+            if isinstance(conv, list):
+                last_user_idx = -1
+                for idx, m in enumerate(conv):
+                    if isinstance(m, dict) and m.get("role") in ["user", "client"]:
+                        last_user_idx = idx
+                if last_user_idx != -1:
+                    conv[last_user_idx]["status"] = "unread"
+                    db_atendimento.conversa = json.dumps(conv)
+                    db.add(db_atendimento)
+        except Exception:
+            pass
+
+    logger.info(f"Atendimento {atendimento_id}: Última mensagem marcada como 'unread' na tabela mensagens.")
+    return db_atendimento
+
 async def update_atendimento(db: AsyncSession, db_atendimento: models.Atendimento, atendimento_in: schemas.AtendimentoUpdate) -> models.Atendimento:
     """Atualiza os dados de um atendimento e sincroniza mensagens se aplicável."""
     old_status = db_atendimento.status
@@ -406,16 +517,23 @@ async def update_atendimento(db: AsyncSession, db_atendimento: models.Atendiment
                     message_data=new_msg_data
                 )
             elif isinstance(value, str):
-                # Se for JSON string (ex: mark_as_read atualizando status de mensagens)
+                # Se for JSON string (ex: atualização de status legado)
                 try:
                     msgs_list = json.loads(value)
                     if isinstance(msgs_list, list):
                         for m in msgs_list:
-                            if isinstance(m, dict) and m.get("id"):
-                                msg_rec = await get_message_by_wamid_or_id(db, company_id=db_atendimento.company_id, message_id=str(m["id"]))
-                                if msg_rec and m.get("status") and msg_rec.status != m.get("status"):
-                                    msg_rec.status = m["status"]
-                                    db.add(msg_rec)
+                            if isinstance(m, dict):
+                                target_id = m.get("message_id") or m.get("id")
+                                if target_id:
+                                    msg_rec = await get_message_by_wamid_or_id(
+                                        db, 
+                                        company_id=db_atendimento.company_id, 
+                                        message_id=str(target_id),
+                                        atendimento_id=db_atendimento.id
+                                    )
+                                    if msg_rec and m.get("status") and msg_rec.status != m.get("status"):
+                                        msg_rec.status = m["status"]
+                                        db.add(msg_rec)
                 except Exception as parse_err:
                     logger.warning(f"Erro ao processar sync de conversa string em update_atendimento: {parse_err}")
                 setattr(db_atendimento, 'conversa', value)

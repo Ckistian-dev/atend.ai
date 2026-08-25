@@ -227,6 +227,58 @@ async def update_atendimento(
         raise HTTPException(status_code=404, detail=str(e))
 
 
+# Marca todas as mensagens não lidas de um atendimento como lidas
+@router.post("/{atendimento_id}/mark_read", response_model=schemas.Atendimento, summary="Marcar mensagens como lidas")
+async def mark_atendimento_as_read(
+    atendimento_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(dependencies.get_current_active_user),
+    whatsapp_service: WhatsAppService = Depends(get_whatsapp_service)
+):
+    """
+    Marca todas as mensagens do cliente no atendimento como lidas na tabela de mensagens
+    e envia confirmações de leitura (recibo/tiques azuis) para a API oficial do WhatsApp.
+    """
+    company_id = current_user.company_id or 0
+    try:
+        return await AtendimentoService.mark_as_read(
+            db=db,
+            company=current_user.company,
+            company_id=company_id,
+            atendimento_id=atendimento_id,
+            whatsapp_service=whatsapp_service
+        )
+    except AtendimentoNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro ao marcar mensagens como lidas (Atendimento ID: {atendimento_id}): {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Marca a última mensagem do cliente como não lida
+@router.post("/{atendimento_id}/mark_unread", response_model=schemas.Atendimento, summary="Marcar atendimento como não lido")
+async def mark_atendimento_as_unread(
+    atendimento_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(dependencies.get_current_active_user)
+):
+    """
+    Marca a última mensagem do cliente no atendimento como não lida na tabela de mensagens.
+    """
+    company_id = current_user.company_id or 0
+    try:
+        return await AtendimentoService.mark_as_unread(
+            db=db,
+            company_id=company_id,
+            atendimento_id=atendimento_id
+        )
+    except AtendimentoNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro ao marcar atendimento como não lido (Atendimento ID: {atendimento_id}): {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Cria manualmente um novo atendimento para a empresa
 @router.post("/", response_model=schemas.Atendimento, status_code=201)
 async def create_atendimento(

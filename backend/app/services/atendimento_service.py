@@ -7,6 +7,7 @@ import csv
 import io
 import copy
 import mimetypes
+import asyncio
 from typing import List, Dict, Any, Optional, Tuple, AsyncGenerator
 from datetime import datetime, timezone, timedelta
 
@@ -477,6 +478,61 @@ class AtendimentoService:
 
         updated_atendimento = await crud_atendimento.update_atendimento(
             db, db_atendimento=db_atendimento, atendimento_in=atendimento_in
+        )
+        await db.commit()
+        await db.refresh(updated_atendimento, attribute_names=['active_persona', 'assigned_user', 'mensagens'])
+        return updated_atendimento
+
+    @staticmethod
+    async def mark_as_read(
+        db: AsyncSession,
+        company: models.Company,
+        company_id: int,
+        atendimento_id: int,
+        whatsapp_service: WhatsAppService
+    ) -> models.Atendimento:
+        """
+        Marca todas as mensagens do cliente no atendimento como lidas na tabela 'mensagens'
+        e envia a confirmação de leitura (recibo / tiques azuis) para a API da Meta WhatsApp.
+        """
+        db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
+        if not db_atendimento:
+            raise AtendimentoNotFoundError("Atendimento não encontrado")
+
+        updated_atendimento, wamid_list = await crud_atendimento.mark_atendimento_messages_as_read(
+            db=db,
+            company_id=company_id,
+            atendimento_id=atendimento_id
+        )
+        await db.commit()
+
+        # Envia recibos de leitura para a Meta de forma assíncrona se houver WAMIDs
+        if wamid_list and company and company.wbp_phone_number_id:
+            try:
+                asyncio.create_task(whatsapp_service.mark_messages_as_read_batch(company, wamid_list))
+            except Exception as meta_err:
+                logger.warning(f"Erro ao disparar recibos de leitura para a Meta: {meta_err}")
+
+        await db.refresh(updated_atendimento, attribute_names=['active_persona', 'assigned_user', 'mensagens'])
+        return updated_atendimento
+
+    @staticmethod
+    async def mark_as_unread(
+        db: AsyncSession,
+        company_id: int,
+        atendimento_id: int
+    ) -> models.Atendimento:
+        """
+        Marca a última mensagem do cliente no atendimento como não lida ('unread') na tabela 'mensagens'.
+        """
+        db_atendimento = await crud_atendimento.get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
+        if not db_atendimento:
+            raise AtendimentoNotFoundError("Atendimento não encontrado")
+
+        updated_atendimento = await crud_atendimento.mark_atendimento_messages_as_unread(
+            db=db,
+            company_id=company_id,
+            atendimento_id=atendimento_id
         )
         await db.commit()
         await db.refresh(updated_atendimento, attribute_names=['active_persona', 'assigned_user', 'mensagens'])

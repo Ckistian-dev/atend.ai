@@ -207,10 +207,11 @@ def construir_prompt_base(ctx: RunContext[ContextoSaaS]) -> str:
 
         f"--- FERRAMENTAS E COMUNICAÇÃO EXTERNA ---\n"
         f"1. CANAL EXCLUSIVO: Você se comunica com o cliente EXCLUSIVAMENTE invocando `enviar_mensagem_texto`{ferramenta_audio_txt}{ferramenta_drive_txt}. Sem chamar uma dessas ferramentas, NENHUMA mensagem chega ao cliente.\n"
-        f"2. BALÕES INDIVIDUAIS: Envie cada frase ou ideia em chamadas separadas e individuais. PROIBIDO agrupar múltiplos assuntos em um único envio de texto ou áudio.\n"
-        f"3. DATA E HORA: Chame `obter_data_hora_atual` sempre que precisar validar o momento atual do atendimento.\n"
-        f"4. CÁLCULOS MATEMÁTICOS: Sempre que precisar somar medidas, calcular áreas (m²), estimar quantidade de itens/peças ou realizar contas numéricas, invoque OBRIGATORIAMENTE a ferramenta `executar_calculo_matematico` para garantir precisão exata.\n"
-        f"5. LEITURA DE LINKS/URLS: Sempre que o cliente compartilhar uma URL/link no atendimento (ex: posts do Instagram, produtos, sites ou artigos), OBRIGATORIAMENTE invoque a ferramenta `consultar_conteudo_link(url)` para que a IA leia e analise o conteúdo daquele link antes de responder.\n\n"
+        f"2. BALÕES INDIVIDUAIS E MISTOS: Envie cada frase ou ideia em chamadas separadas e individuais. Você PODE e DEVE mesclar `enviar_mensagem_audio` e `enviar_mensagem_texto` estrategicamente na mesma resposta (ex: enviar um balão em áudio conversando de forma calorosa e humana, e em seguida um balão em texto com o link, valores ou dados objetivos).\n"
+        f"3. 🚨 PROIBIDO ENVIAR LINKS/URLS EM ÁUDIO: É EXPRESSAMENTE PROIBIDO enviar links, URLs ou sites (ex: https://..., www....) através de `enviar_mensagem_audio`. Links DEVEM ser enviados EXCLUSIVAMENTE via `enviar_mensagem_texto` para que o cliente consiga clicar normalmente no WhatsApp.\n"
+        f"4. DATA E HORA: Chame `obter_data_hora_atual` sempre que precisar validar o momento atual do atendimento.\n"
+        f"5. CÁLCULOS MATEMÁTICOS: Sempre que precisar somar medidas, calcular áreas (m²), estimar quantidade de itens/peças ou realizar contas numéricas, invoque OBRIGATORIAMENTE a ferramenta `executar_calculo_matematico` para garantir precisão exata.\n"
+        f"6. LEITURA DE LINKS/URLS: Sempre que o cliente compartilhar uma URL/link no atendimento (ex: posts do Instagram, produtos, sites ou artigos), OBRIGATORIAMENTE invoque a ferramenta `consultar_conteudo_link(url)` para que a IA leia e analise o conteúdo daquele link antes de responder.\n\n"
 
         f"--- GESTÃO DO CRM E CONTATO ---\n"
         f"- NOME DO CONTATO: {pedir_nome_rule}\n"
@@ -220,7 +221,8 @@ def construir_prompt_base(ctx: RunContext[ContextoSaaS]) -> str:
         f"- CONCLUSÃO: Se o atendimento for finalizado com sucesso, invoque `concluir_atendimento`.\n\n"
 
         f"--- DIRETRIZES DE FORMATO E HUMANIZAÇÃO ---\n"
-        f"- CONTINUIDADE: Se já houver histórico trocado, NUNCA repita saudações iniciais (ex: 'Olá', 'Tudo bem?', 'Eu sou o Téo'). Responda diretamente à dúvida.\n"
+        f"- CONTINUIDADE: Se já houver histórico trocado, é EXPRESSAMENTE PROIBIDO repetir saudações (ex: 'Olá', 'Oi, [Nome]!', 'Tudo bem?'). Responda diretamente à dúvida do cliente sem enrolação.\n"
+        f"- VÍCIOS DE LINGUAGEM: É EXPRESSAMENTE PROIBIDO iniciar mensagens com interjeições robóticas repetitivas (ex: 'Entendido!', 'Isso mesmo!', 'Perfeito!', 'Com certeza!', 'Excelente!', 'Claro, pode falar!'). Converse como uma pessoa real no chat.\n"
         f"- TAMANHO DAS MENSAGENS: Escreva mensagens curtas e conversacionais (máximo de 1 a 2 frases por balão).\n"
         f"- FORMATO DO WHATSAPP: Use exclusivamente `*negrito*` (1 asterisco), `_itálico_` e `~tachado~`. PROIBIDO usar `**duplo asterisco**`.\n"
     )
@@ -1039,6 +1041,111 @@ async def enviar_mensagem_audio(ctx: RunContext[ContextoSaaS], texto: str) -> st
                 logger.info(f"Interrupção (Barramento) detectada durante gravação de áudio para Atendimento {ctx.deps.atendimento_id}. Abortando envio.")
                 raise asyncio.CancelledError()
 
+            # Trava de Segurança contra links em áudio
+            url_regex = re.compile(
+                r'(?:https?://[^\s]+|www\.[^\s]+|[a-zA-Z0-9_\-\.]+\.(?:com|br|org|net|io|me|site|store|shop|app|online)(?:/[^\s]*)?)',
+                re.IGNORECASE
+            )
+            url_match = url_regex.search(parte)
+            if url_match:
+                logger.warning(f"[Safety Guard] URL detectada na tool enviar_mensagem_audio: '{parte}'. Tratando envio para não falar link em áudio.")
+                url_start = url_match.start()
+                text_before = parte[:url_start].strip()
+                url_and_rest = parte[url_start:].strip()
+
+                text_before_clean = re.sub(
+                    r'(\s+(?:em|no link|no site|acesse|acesse em|pelo link|no catálogo))\s*:?\s*$', 
+                    '', 
+                    text_before, 
+                    flags=re.IGNORECASE
+                ).strip()
+
+                if parte.endswith('?') and not text_before_clean.endswith(('?', '.', '!')):
+                    text_before_clean += '?'
+                elif text_before_clean and not text_before_clean.endswith(('?', '.', '!')):
+                    text_before_clean += '.'
+
+                if url_and_rest.endswith('?') and '=' not in url_and_rest:
+                    url_and_rest = url_and_rest.rstrip('?')
+                elif url_and_rest.endswith('.') and not url_and_rest.endswith('..'):
+                    url_and_rest = url_and_rest.rstrip('.')
+
+                # Se houver fala substancial antes da URL, sintetiza e envia em áudio
+                if len(text_before_clean) >= 8:
+                    try:
+                        from app.db.database import SessionLocal
+                        async with SessionLocal() as db_tts:
+                            audio_bytes = await gemini_svc.generate_tts(
+                                text=text_before_clean,
+                                db=db_tts,
+                                company=ctx.deps.empresa,
+                                atendimento_id=ctx.deps.atendimento_id
+                            )
+
+                        sent_info = await ctx.deps.whatsapp_service.send_media_message(
+                            company=ctx.deps.empresa,
+                            number=ctx.deps.atendimento.whatsapp,
+                            media_type="audio",
+                            file_bytes=audio_bytes,
+                            filename="audio.wav",
+                            mimetype="audio/wav"
+                        )
+                        
+                        from datetime import datetime
+                        from app.crud import crud_atendimento
+                        async with SessionLocal() as db_write:
+                            async with db_write.begin():
+                                await crud_atendimento.save_message(
+                                    db=db_write,
+                                    company_id=ctx.deps.company_id,
+                                    atendimento_id=ctx.deps.atendimento_id,
+                                    message_data={
+                                        "id": sent_info.get("id") or f"audio_{int(datetime.now().timestamp())}_{random.randint(100, 999)}",
+                                        "role": "assistant",
+                                        "content": text_before_clean,
+                                        "timestamp": int(datetime.now().timestamp()),
+                                        "type": "audio",
+                                        "media_id": sent_info.get("media_id") or None,
+                                        "filename": "audio.wav",
+                                        "mime_type": "audio/wav",
+                                        "status": "sent",
+                                        "is_ai": True
+                                    },
+                                    media_bytes=audio_bytes
+                                )
+                    except Exception as audio_err:
+                        logger.error(f"Erro ao enviar áudio pré-link: {audio_err}")
+
+                # Envia o link como TEXTO clicável
+                try:
+                    sent_text = await ctx.deps.whatsapp_service.send_text_message(
+                        company=ctx.deps.empresa,
+                        number=ctx.deps.atendimento.whatsapp,
+                        text=url_and_rest
+                    )
+                    from datetime import datetime
+                    from app.crud import crud_atendimento
+                    async with SessionLocal() as db_write_txt:
+                        async with db_write_txt.begin():
+                            await crud_atendimento.save_message(
+                                db=db_write_txt,
+                                company_id=ctx.deps.company_id,
+                                atendimento_id=ctx.deps.atendimento_id,
+                                message_data={
+                                    "id": (sent_text.get("id") if isinstance(sent_text, dict) and sent_text.get("id") else None) or f"ai_{int(datetime.now().timestamp())}_{random.randint(100, 999)}",
+                                    "role": "assistant",
+                                    "content": url_and_rest,
+                                    "timestamp": int(datetime.now().timestamp()),
+                                    "status": "sent",
+                                    "is_ai": True,
+                                    "type": "text"
+                                }
+                            )
+                except Exception as text_err:
+                    logger.error(f"Erro ao enviar link em texto na tool enviar_mensagem_audio: {text_err}")
+
+                continue
+
             try:
                 # 1. Gera áudio via Gemini TTS em transação isolada
                 from app.db.database import SessionLocal
@@ -1281,32 +1388,66 @@ async def transferir_para_atendente(
             if at:
                 at.status = "Atendente Chamado"
 
-                assigned_user_name = None
-                if destinatario and str(destinatario).strip():
-                    dest_clean = str(destinatario).strip()
-                    users_res = await db_write.execute(
-                        select(models.User).where(models.User.company_id == ctx.deps.empresa.id)
-                    )
-                    company_users = list(users_res.scalars().all())
+                users_res = await db_write.execute(
+                    select(models.User).where(models.User.company_id == ctx.deps.empresa.id)
+                )
+                company_users = list(users_res.scalars().all())
 
-                    matched_user = None
-                    for u in company_users:
-                        u_name = (u.name or "").strip().lower()
-                        u_email = (u.email or "").strip().lower()
-                        if dest_clean.lower() in u_name or dest_clean.lower() in u_email or u_name in dest_clean.lower():
+                valid_dept_map = {}
+                valid_user_map = {}
+                for u in company_users:
+                    u_name = (u.name or u.email.split('@')[0]).strip()
+                    u_dept = (u.department or ('Admin' if u.role == 'admin' else 'Atendimento Geral')).strip()
+                    if u_dept:
+                        valid_dept_map[u_dept.lower()] = u_dept
+                    if u_name:
+                        valid_user_map[u_name.lower()] = u
+                    if u.email:
+                        valid_user_map[u.email.lower()] = u
+
+                matched_user = None
+                resolved_dept = None
+
+                if destinatario and str(destinatario).strip():
+                    dest_clean = str(destinatario).strip().lower()
+                    for key, u in valid_user_map.items():
+                        if dest_clean == key or dest_clean in key or key in dest_clean:
                             matched_user = u
+                            resolved_dept = (u.department or ('Admin' if u.role == 'admin' else 'Atendimento Geral')).strip()
                             break
 
-                    if matched_user:
-                        at.assigned_user_id = matched_user.id
-                        at.assigned_department = matched_user.department or departamento or at.assigned_department
-                        assigned_user_name = matched_user.name or matched_user.email
-                    else:
-                        if not departamento:
-                            departamento = dest_clean
+                    if not matched_user:
+                        for key, dept_name in valid_dept_map.items():
+                            if dest_clean == key or dest_clean in key or key in dest_clean:
+                                resolved_dept = dept_name
+                                break
 
-                if departamento and departamento.strip():
-                    at.assigned_department = departamento.strip()
+                if not resolved_dept and departamento and str(departamento).strip():
+                    dept_clean = str(departamento).strip().lower()
+                    for key, dept_name in valid_dept_map.items():
+                        if dept_clean == key or dept_clean in key or key in dept_clean:
+                            resolved_dept = dept_name
+                            break
+
+                # Fallback com base nos usuários cadastrados
+                if not matched_user and not resolved_dept:
+                    if len(company_users) == 1:
+                        matched_user = company_users[0]
+                        resolved_dept = (matched_user.department or ('Admin' if matched_user.role == 'admin' else 'Atendimento Geral')).strip()
+                    elif len(company_users) > 1:
+                        first_admin = next((u for u in company_users if u.role == "admin"), company_users[0])
+                        matched_user = first_admin
+                        resolved_dept = (first_admin.department or ('Admin' if first_admin.role == 'admin' else 'Atendimento Geral')).strip()
+
+                if matched_user:
+                    at.assigned_user_id = matched_user.id
+                    assigned_user_name = matched_user.name or matched_user.email
+                else:
+                    assigned_user_name = None
+
+                if resolved_dept:
+                    at.assigned_department = resolved_dept
+
                 if motivo and motivo.strip():
                     at.observacoes = f"{at.observacoes or ''}\n[Transbordo IA]: {motivo.strip()}".strip()
                 db_write.add(at)
@@ -1316,7 +1457,7 @@ async def transferir_para_atendente(
                 if at.assigned_user_id:
                     ctx.deps.atendimento.assigned_user_id = at.assigned_user_id
                 
-    target_info = f"ao atendente '{assigned_user_name}'" if assigned_user_name else (f"ao setor '{departamento}'" if departamento else "à equipe de atendimento")
+    target_info = f"ao atendente '{assigned_user_name}' (Cargo/Setor: {at.assigned_department or 'Geral'})" if assigned_user_name else (f"ao setor '{at.assigned_department}'" if at.assigned_department else "à equipe de atendimento")
     return f"Atendimento transferido com sucesso {target_info}."
 
 

@@ -27104,3 +27104,1499 @@ Boa tarde! Poxa, sinto muito por isso. *Entendido! Vou te transferir aqui para o
 📊 CONSUMO DE TOKENS: 1,039 (In: 902 | Out: 137)
 ================================================================================
 
+================================================================================
+📌 EXECUÇÃO DO RAG AGÊNTICO LANGGRAPH - 25/08/2026 12:14:57
+👤 Atendimento ID: 17031 | Empresa ID: 5
+🤖 Modelo: gemini-3.5-flash-lite | Tentativas: 0
+🎯 Intenção: rag | Status Final: Aguardando Resposta
+--------------------------------------------------------------------------------
+📥 MENSAGEM DO CLIENTE:
+Bom dia!
+--------------------------------------------------------------------------------
+🔍 CONTEXTO RAG RECUPERADO:
+Nenhuma informação relevante encontrada na base de conhecimento para esta consulta.
+--------------------------------------------------------------------------------
+💬 RESPOSTA ENVIADA:
+Olá! Recebi sua mensagem e vou verificar as informações para você.
+--------------------------------------------------------------------------------
+📊 CONSUMO DE TOKENS: 0 (In: 0 | Out: 0)
+================================================================================
+
+================================================================================
+📌 EXECUÇÃO DO RAG AGÊNTICO LANGGRAPH - 25/08/2026 12:24:19
+👤 Atendimento ID: 17032 | Empresa ID: 5
+🤖 Modelo: gemini-3.5-flash-lite | Tentativas: 0
+🎯 Intenção: direct_chat | Status Final: Aguardando Resposta
+--------------------------------------------------------------------------------
+📥 MENSAGEM DO CLIENTE:
+Bom dia!
+--------------------------------------------------------------------------------
+🔍 CONTEXTO RAG RECUPERADO:
+Nenhum
+--------------------------------------------------------------------------------
+💬 RESPOSTA ENVIADA:
+Olá, seja muito bem-vindo à Talatto.com! Eu sou o Téo, consultor de atendimentos por aqui. Como posso te chamar e como posso te ajudar hoje?
+--------------------------------------------------------------------------------
+📊 CONSUMO DE TOKENS: 7,694 (In: 7,363 | Out: 331)
+================================================================================
+
+================================================================================
+📌 EXECUÇÃO DO RAG AGÊNTICO LANGGRAPH - 25/08/2026 12:25:31
+👤 Atendimento ID: 17032 | Empresa ID: 5
+🤖 Modelo: gemini-3.5-flash-lite | Tentativas: 0
+🎯 Intenção: rag | Status Final: Aguardando Resposta
+--------------------------------------------------------------------------------
+📥 MENSAGEM DO CLIENTE:
+Cristian
+Bom dia vcs teriam ripado em mdf na cor off white ?
+--------------------------------------------------------------------------------
+🔍 CONTEXTO RAG RECUPERADO:
+### [DOCUMENTO #1 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: COMPACTO (25x90cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (9mm de espessura)
+- **Dimensões**: 25cm de largura x 90cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento
+- **Descrição**: Painel ripado rígido em peças menores, ideal para projetos de meia parede.
+- **Aplicações**: Cabeceiras de cama, projetos de "meia parede".
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 30cm) + cola PU. Corte c/ serra manual/elétrica. Encaixe macho/fêmea lateral.
+- **Observações**: Recomendado comprar perfil de acabamento para o topo. Desconto a partir de 10 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação").
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+- **Link Produto Específico**: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/ripado-compacto-90x25cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: COMPACTO (25x90cm) | Material: MDF revestido em Polietileno (9mm de espessura) | Descrição: Painel ripado rígido em peças menores, ideal para projetos de meia parede. | Dimensões: 25cm de largura x 90cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Cabeceiras de cama, projetos de "meia parede". | Ambiente: Interno, Seco | Instalação: Fita dupla face VHB na horizontal (a cada 30cm) + cola PU. Corte c/ serra manual/elétrica. Encaixe macho/fêmea lateral. | Observações: Recomendado comprar perfil de acabamento para o topo. Desconto a partir de 10 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação"). | Link Produto Específico: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/ripado-compacto-90x25cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+
+### [DOCUMENTO #2 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: COMPACTO (25x274cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (9mm de espessura)
+- **Dimensões**: 25cm de largura x 274cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento
+- **Descrição**: Painel ripado rígido em peças para revestimento de paredes e forros.
+- **Aplicações**: Paredes inteiras, forros e painéis de TV.
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 30cm) + 4 parafusos por peça (2 na base, 2 no topo). Paredes ásperas usar cola PU. Corte c/ serra manual/elétrica. TV/Suportes ancorados direto na parede. Encaixe macho/fêmea lateral.
+- **Observações**: Emenda vertical intermediária (p/ >2,74m usar linha Easy ou não até o teto). Desconto a partir de 4 ou 8 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação").
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+- **Link Produto Específico**: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: COMPACTO (25x274cm) | Material: MDF revestido em Polietileno (9mm de espessura) | Descrição: Painel ripado rígido em peças para revestimento de paredes e forros. | Dimensões: 25cm de largura x 274cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Paredes inteiras, forros e painéis de TV. | Ambiente: Interno, Seco | Instalação: Fita dupla face VHB na horizontal (a cada 30cm) + 4 parafusos por peça (2 na base, 2 no topo). Paredes ásperas usar cola PU. Corte c/ serra manual/elétrica. TV/Suportes ancorados direto na parede. Encaixe macho/fêmea lateral. | Observações: Emenda vertical intermediária (p/ >2,74m usar linha Easy ou não até o teto). Desconto a partir de 4 ou 8 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação"). | Link Produto Específico: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+
+### [DOCUMENTO #3 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x135cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 135cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido em peças intermediárias. Com essa medida o cliente consegue acessar opções de frete mais econômicas. Excelente qualidade de emenda vertical e lateral invisível.
+- **Aplicações**: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m), cabeceiras de cama, meia parede, detalhes em ambientes comerciais e residencial, "porta oculta" parcial.
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Resiste até 60°C. Não pintar.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-easy-135x15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x135cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido em peças intermediárias. Com essa medida o cliente consegue acessar opções de frete mais econômicas. Excelente qualidade de emenda vertical e lateral invisível. | Dimensões: 15cm de largura x 135cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m), cabeceiras de cama, meia parede, detalhes em ambientes comerciais e residencial, "porta oculta" parcial. | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Resiste até 60°C. Não pintar. | Link Produto Específico: https://www.talatto.com/painel-ripado-easy-135x15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #4 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x270cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 270cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido com cores muito realistas. Excelente qualidade de emenda vertical e lateral (emenda invisível).
+- **Aplicações**: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m).
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares/infiltração usar cola PU. TV ancorada na parede. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Perfeito p/ paredes >2,70m (emenda invisível). Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Vídeo/Manual no Drive.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-2-70m-x-15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x270cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido com cores muito realistas. Excelente qualidade de emenda vertical e lateral (emenda invisível). | Dimensões: 15cm de largura x 270cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m). | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares/infiltração usar cola PU. TV ancorada na parede. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Perfeito p/ paredes >2,70m (emenda invisível). Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Vídeo/Manual no Drive. | Link Produto Específico: www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-2-70m-x-15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #5 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x90cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido em peças menores. Excelente qualidade de emenda vertical e lateral invisível.
+- **Aplicações**: Cabeceiras de cama, meia parede, detalhes em ambientes comerciais, "porta oculta" parcial. Curvas longas (raio >1,80m).
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Se a parede for >90cm, compensa sugerir a opção de 135 ou de de 270cm.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-90cm-x-15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x90cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido em peças menores. Excelente qualidade de emenda vertical e lateral invisível. | Dimensões: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Cabeceiras de cama, meia parede, detalhes em ambientes comerciais, "porta oculta" parcial. Curvas longas (raio >1,80m). | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Se a parede for >90cm, compensa sugerir a opção de 135 ou de de 270cm. | Link Produto Específico: https://www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-90cm-x-15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #6 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Rosê, Azul, Rosa, Branco
+- **Linha**: RIPADOS
+- **Modelo**: EASY REDONDO (15x90cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças)
+- **Descrição**: Painel ripado redondo/canelado rígido em peças menores. Excelente emenda lateral invisível.
+- **Aplicações**: Cabeceiras, meia parede, detalhes em ambientes comerciais. Curvas longas (raio >1,80m).
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Resiste até 60°C. Não pintar. Se a parede for >90cm, compensa sugerir o de 2,90m cortado ao meio. Externo (pode desbotar c/ sol prolongado).
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-redondo-talatto-90cm-x-15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY REDONDO (15x90cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado redondo/canelado rígido em peças menores. Excelente emenda lateral invisível. | Dimensões: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças) | Cores: Rosê, Azul, Rosa, Branco | Aplicações: Cabeceiras, meia parede, detalhes em ambientes comerciais. Curvas longas (raio >1,80m). | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Resiste até 60°C. Não pintar. Se a parede for >90cm, compensa sugerir o de 2,90m cortado ao meio. Externo (pode desbotar c/ sol prolongado). | Link Produto Específico: https://www.talatto.com/painel-ripado-redondo-talatto-90cm-x-15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #7 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Cru (para pintura), Branco, Preto, Madeirados (consultar opções revestidas)
+- **Linha**: DIVISÓRIAS
+- **Modelo**: Divisórias de MDF
+- **Ambiente**: Interno, Seco
+- **Material**: MDF (Medium Density Fiberboard)
+- **Dimensões**: Placas em diversas espessuras e tamanhos, cortadas sob medida.
+- **Descrição**: Opção versátil e elegante para divisão de ambientes internos. Permite diversos acabamentos, como pintura e revestimentos. Excelente para personalização.
+- **Aplicações**: Divisórias de ambientes internos, painéis decorativos, móveis planejados, biombos.
+- **Instalação**: Estruturas de madeira ou metal, parafusos, cola.
+- **Observações**: Sensível à umidade. Permite acabamento personalizado com pintura ou laminados. Não é recomendado para áreas externas ou úmidas.
+- **Link da Categoria**: https://www.talatto.com/divisorias
+- **Link Produto Específico**: https://www.talatto.com/divisorias-mdf (Exemplo, link real deve ser adicionado)
+- **Conteúdo**: Linha: DIVISÓRIAS | Modelo: Divisórias de MDF | Material: MDF (Medium Density Fiberboard) | Descrição: Opção versátil e elegante para divisão de ambientes internos. Permite diversos acabamentos, como pintura e revestimentos. Excelente para personalização. | Dimensões: Placas em diversas espessuras e tamanhos, cortadas sob medida. | Cores: Cru (para pintura), Branco, Preto, Madeirados (consultar opções revestidas) | Aplicações: Divisórias de ambientes internos, painéis decorativos, móveis planejados, biombos. | Ambiente: Interno, Seco | Instalação: Estruturas de madeira ou metal, parafusos, cola. | Observações: Sensível à umidade. Permite acabamento personalizado com pintura ou laminados. Não é recomendado para áreas externas ou úmidas. | Link Produto Específico: https://www.talatto.com/divisorias-mdf (Exemplo, link real deve ser adicionado) | Link da Categoria: https://www.talatto.com/divisorias
+--------------------------------------------------------------------------------
+💬 RESPOSTA ENVIADA:
+Trabalhamos com painéis ripados muito bonitos em MDF revestido, mas especificamente na cor off white não temos no catálogo padrão. Temos opções em branco, areia, cinza, preto e diversos madeirados como Carvalho e Freijó, além do acabamento marmorizado. Você gostaria de conhecer alguma dessas outras opções disponíveis?
+--------------------------------------------------------------------------------
+📊 CONSUMO DE TOKENS: 18,869 (In: 18,441 | Out: 428)
+================================================================================
+
+================================================================================
+📌 EXECUÇÃO DO RAG AGÊNTICO LANGGRAPH - 25/08/2026 12:30:41
+👤 Atendimento ID: 17032 | Empresa ID: 5
+🤖 Modelo: gemini-3.5-flash-lite | Tentativas: 0
+🎯 Intenção: rag | Status Final: Aguardando Resposta
+--------------------------------------------------------------------------------
+📥 MENSAGEM DO CLIENTE:
+Sim
+--------------------------------------------------------------------------------
+🔍 CONTEXTO RAG RECUPERADO:
+### [DOCUMENTO #1 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: COMPACTO (25x90cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (9mm de espessura)
+- **Dimensões**: 25cm de largura x 90cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento
+- **Descrição**: Painel ripado rígido em peças menores, ideal para projetos de meia parede.
+- **Aplicações**: Cabeceiras de cama, projetos de "meia parede".
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 30cm) + cola PU. Corte c/ serra manual/elétrica. Encaixe macho/fêmea lateral.
+- **Observações**: Recomendado comprar perfil de acabamento para o topo. Desconto a partir de 10 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação").
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+- **Link Produto Específico**: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/ripado-compacto-90x25cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: COMPACTO (25x90cm) | Material: MDF revestido em Polietileno (9mm de espessura) | Descrição: Painel ripado rígido em peças menores, ideal para projetos de meia parede. | Dimensões: 25cm de largura x 90cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Cabeceiras de cama, projetos de "meia parede". | Ambiente: Interno, Seco | Instalação: Fita dupla face VHB na horizontal (a cada 30cm) + cola PU. Corte c/ serra manual/elétrica. Encaixe macho/fêmea lateral. | Observações: Recomendado comprar perfil de acabamento para o topo. Desconto a partir de 10 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação"). | Link Produto Específico: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/ripado-compacto-90x25cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+
+### [DOCUMENTO #2 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: COMPACTO (25x274cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (9mm de espessura)
+- **Dimensões**: 25cm de largura x 274cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento
+- **Descrição**: Painel ripado rígido em peças para revestimento de paredes e forros.
+- **Aplicações**: Paredes inteiras, forros e painéis de TV.
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 30cm) + 4 parafusos por peça (2 na base, 2 no topo). Paredes ásperas usar cola PU. Corte c/ serra manual/elétrica. TV/Suportes ancorados direto na parede. Encaixe macho/fêmea lateral.
+- **Observações**: Emenda vertical intermediária (p/ >2,74m usar linha Easy ou não até o teto). Desconto a partir de 4 ou 8 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação").
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+- **Link Produto Específico**: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: COMPACTO (25x274cm) | Material: MDF revestido em Polietileno (9mm de espessura) | Descrição: Painel ripado rígido em peças para revestimento de paredes e forros. | Dimensões: 25cm de largura x 274cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Paredes inteiras, forros e painéis de TV. | Ambiente: Interno, Seco | Instalação: Fita dupla face VHB na horizontal (a cada 30cm) + 4 parafusos por peça (2 na base, 2 no topo). Paredes ásperas usar cola PU. Corte c/ serra manual/elétrica. TV/Suportes ancorados direto na parede. Encaixe macho/fêmea lateral. | Observações: Emenda vertical intermediária (p/ >2,74m usar linha Easy ou não até o teto). Desconto a partir de 4 ou 8 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação"). | Link Produto Específico: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+
+### [DOCUMENTO #3 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: VERSÁTIL HORIZONTAL TRADICIONAL
+- **Ambiente**: Interno, Úmido, Seco, Molhado
+- **Material**: Polietileno (flexível, 400g/m²)
+- **Dimensões**: 270cm de largura x 110cm de altura
+Relevo 0,5cm, ripas c/ 3,5cm larg. e 2cm de espaçamento
+- **Descrição**: Rolo para meia parede. As ripas ficam na vertical, mas a impressão dos veios da madeira é na transversal (horizontal). Corte das pontas é reto.
+- **Aplicações**: Cabeceiras de cama, projetos de "meia parede".
+- **Instalação**: Corte com Tesoura/estilete. Fixação: dupla face VHB na horizontal (a cada 30cm). Paredes ásperas/com infiltração: cola PU.
+- **Observações**: Não autocolante. Precisa de perfil de acabamento para o fechamento. Não pode ser combinado com modelos verticais (veios diferentes).
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Versátil": https://www.talatto.com/ripados/versatil
+- **Link Produto Específico**: Link da categoria: https://www.talatto.com/ripados/versatil
+
+Link do produto: https://www.talatto.com/painel-ripado-flexivel-versatil-meia-parede-horizontal-110x270cm-larg
+- **Conteúdo**: Linha: RIPADOS | Modelo: VERSÁTIL HORIZONTAL TRADICIONAL | Material: Polietileno (flexível, 400g/m²) | Descrição: Rolo para meia parede. As ripas ficam na vertical, mas a impressão dos veios da madeira é na transversal (horizontal). Corte das pontas é reto. | Dimensões: 270cm de largura x 110cm de altura
+Relevo 0,5cm, ripas c/ 3,5cm larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Cabeceiras de cama, projetos de "meia parede". | Ambiente: Interno, Úmido, Seco, Molhado | Instalação: Corte com Tesoura/estilete. Fixação: dupla face VHB na horizontal (a cada 30cm). Paredes ásperas/com infiltração: cola PU. | Observações: Não autocolante. Precisa de perfil de acabamento para o fechamento. Não pode ser combinado com modelos verticais (veios diferentes). | Link Produto Específico: Link da categoria: https://www.talatto.com/ripados/versatil
+
+Link do produto: https://www.talatto.com/painel-ripado-flexivel-versatil-meia-parede-horizontal-110x270cm-larg | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Versátil": https://www.talatto.com/ripados/versatil
+
+### [DOCUMENTO #4 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Cru (para pintura), Branco, Preto, Madeirados (consultar opções revestidas)
+- **Linha**: DIVISÓRIAS
+- **Modelo**: Divisórias de MDF
+- **Ambiente**: Interno, Seco
+- **Material**: MDF (Medium Density Fiberboard)
+- **Dimensões**: Placas em diversas espessuras e tamanhos, cortadas sob medida.
+- **Descrição**: Opção versátil e elegante para divisão de ambientes internos. Permite diversos acabamentos, como pintura e revestimentos. Excelente para personalização.
+- **Aplicações**: Divisórias de ambientes internos, painéis decorativos, móveis planejados, biombos.
+- **Instalação**: Estruturas de madeira ou metal, parafusos, cola.
+- **Observações**: Sensível à umidade. Permite acabamento personalizado com pintura ou laminados. Não é recomendado para áreas externas ou úmidas.
+- **Link da Categoria**: https://www.talatto.com/divisorias
+- **Link Produto Específico**: https://www.talatto.com/divisorias-mdf (Exemplo, link real deve ser adicionado)
+- **Conteúdo**: Linha: DIVISÓRIAS | Modelo: Divisórias de MDF | Material: MDF (Medium Density Fiberboard) | Descrição: Opção versátil e elegante para divisão de ambientes internos. Permite diversos acabamentos, como pintura e revestimentos. Excelente para personalização. | Dimensões: Placas em diversas espessuras e tamanhos, cortadas sob medida. | Cores: Cru (para pintura), Branco, Preto, Madeirados (consultar opções revestidas) | Aplicações: Divisórias de ambientes internos, painéis decorativos, móveis planejados, biombos. | Ambiente: Interno, Seco | Instalação: Estruturas de madeira ou metal, parafusos, cola. | Observações: Sensível à umidade. Permite acabamento personalizado com pintura ou laminados. Não é recomendado para áreas externas ou úmidas. | Link Produto Específico: https://www.talatto.com/divisorias-mdf (Exemplo, link real deve ser adicionado) | Link da Categoria: https://www.talatto.com/divisorias
+
+### [DOCUMENTO #5 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Cru
+- **Linha**: SHIPLAP
+- **Modelo**: SHIPLAP TRADICIONAL (11x274cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (3mm de espessura).
+- **Dimensões**: 11cm de largura x 274cm de altura.
+- **Descrição**: Painel decorativo em peças individuais, muito utilizado para revestimento de paredes. Design mais clean e aspecto liso comparado com os ripados traicionais.
+- **Aplicações**: Revestimento de paredes inteiras e decoração interna.
+- **Instalação**: Produto autocolante (já vai com fita dupla face). Instalado lado a lado (sugere-se espaçamento de 3mm usando uma própria peça como guia). Corte c/ serra manual/elétrica. TV/Cargas fixadas na parede.
+- **Observações**: Emenda vertical de baixa qualidade (p/ >2,74m recomenda-se ir só até o limite da peça). Resiste até 60°C. Para pintar, comprar na cor CRU. Desconto a partir de 10 un. Vídeo/Manual no Drive.
+- **Link da Categoria**: https://www.talatto.com/shiplap
+- **Link Produto Específico**: https://www.talatto.com/painel-shiplap-tradicional-talatto-2-74m-x-11cm
+- **Conteúdo**: Linha: SHIPLAP | Modelo: SHIPLAP TRADICIONAL (11x274cm) | Material: MDF revestido em Polietileno (3mm de espessura). | Descrição: Painel decorativo em peças individuais, muito utilizado para revestimento de paredes. Design mais clean e aspecto liso comparado com os ripados traicionais. | Dimensões: 11cm de largura x 274cm de altura. | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Cru | Aplicações: Revestimento de paredes inteiras e decoração interna. | Ambiente: Interno, Seco | Instalação: Produto autocolante (já vai com fita dupla face). Instalado lado a lado (sugere-se espaçamento de 3mm usando uma própria peça como guia). Corte c/ serra manual/elétrica. TV/Cargas fixadas na parede. | Observações: Emenda vertical de baixa qualidade (p/ >2,74m recomenda-se ir só até o limite da peça). Resiste até 60°C. Para pintar, comprar na cor CRU. Desconto a partir de 10 un. Vídeo/Manual no Drive. | Link Produto Específico: https://www.talatto.com/painel-shiplap-tradicional-talatto-2-74m-x-11cm | Link da Categoria: https://www.talatto.com/shiplap
+
+### [DOCUMENTO #6 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x90cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido em peças menores. Excelente qualidade de emenda vertical e lateral invisível.
+- **Aplicações**: Cabeceiras de cama, meia parede, detalhes em ambientes comerciais, "porta oculta" parcial. Curvas longas (raio >1,80m).
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Se a parede for >90cm, compensa sugerir a opção de 135 ou de de 270cm.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-90cm-x-15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x90cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido em peças menores. Excelente qualidade de emenda vertical e lateral invisível. | Dimensões: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Cabeceiras de cama, meia parede, detalhes em ambientes comerciais, "porta oculta" parcial. Curvas longas (raio >1,80m). | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Se a parede for >90cm, compensa sugerir a opção de 135 ou de de 270cm. | Link Produto Específico: https://www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-90cm-x-15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #7 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x135cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 135cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido em peças intermediárias. Com essa medida o cliente consegue acessar opções de frete mais econômicas. Excelente qualidade de emenda vertical e lateral invisível.
+- **Aplicações**: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m), cabeceiras de cama, meia parede, detalhes em ambientes comerciais e residencial, "porta oculta" parcial.
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Resiste até 60°C. Não pintar.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-easy-135x15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x135cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido em peças intermediárias. Com essa medida o cliente consegue acessar opções de frete mais econômicas. Excelente qualidade de emenda vertical e lateral invisível. | Dimensões: 15cm de largura x 135cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m), cabeceiras de cama, meia parede, detalhes em ambientes comerciais e residencial, "porta oculta" parcial. | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Resiste até 60°C. Não pintar. | Link Produto Específico: https://www.talatto.com/painel-ripado-easy-135x15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+--------------------------------------------------------------------------------
+💬 RESPOSTA ENVIADA:
+Para qual ambiente você está planejando colocar o ripado, como uma sala ou quarto? Assim consigo te mostrar qual modelo e cor combinam melhor com o seu espaço.
+--------------------------------------------------------------------------------
+📊 CONSUMO DE TOKENS: 18,941 (In: 18,580 | Out: 361)
+================================================================================
+
+================================================================================
+📌 EXECUÇÃO DO RAG AGÊNTICO LANGGRAPH - 25/08/2026 12:37:22
+👤 Atendimento ID: 17032 | Empresa ID: 5
+🤖 Modelo: gemini-3.5-flash-lite | Tentativas: 0
+🎯 Intenção: rag | Status Final: Aguardando Resposta
+--------------------------------------------------------------------------------
+📥 MENSAGEM DO CLIENTE:
+para a sala
+--------------------------------------------------------------------------------
+🔍 CONTEXTO RAG RECUPERADO:
+### [DOCUMENTO #1 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: COMPACTO (25x274cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (9mm de espessura)
+- **Dimensões**: 25cm de largura x 274cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento
+- **Descrição**: Painel ripado rígido em peças para revestimento de paredes e forros.
+- **Aplicações**: Paredes inteiras, forros e painéis de TV.
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 30cm) + 4 parafusos por peça (2 na base, 2 no topo). Paredes ásperas usar cola PU. Corte c/ serra manual/elétrica. TV/Suportes ancorados direto na parede. Encaixe macho/fêmea lateral.
+- **Observações**: Emenda vertical intermediária (p/ >2,74m usar linha Easy ou não até o teto). Desconto a partir de 4 ou 8 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação").
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+- **Link Produto Específico**: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: COMPACTO (25x274cm) | Material: MDF revestido em Polietileno (9mm de espessura) | Descrição: Painel ripado rígido em peças para revestimento de paredes e forros. | Dimensões: 25cm de largura x 274cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Paredes inteiras, forros e painéis de TV. | Ambiente: Interno, Seco | Instalação: Fita dupla face VHB na horizontal (a cada 30cm) + 4 parafusos por peça (2 na base, 2 no topo). Paredes ásperas usar cola PU. Corte c/ serra manual/elétrica. TV/Suportes ancorados direto na parede. Encaixe macho/fêmea lateral. | Observações: Emenda vertical intermediária (p/ >2,74m usar linha Easy ou não até o teto). Desconto a partir de 4 ou 8 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação"). | Link Produto Específico: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+
+### [DOCUMENTO #2 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: COMPACTO (25x90cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (9mm de espessura)
+- **Dimensões**: 25cm de largura x 90cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento
+- **Descrição**: Painel ripado rígido em peças menores, ideal para projetos de meia parede.
+- **Aplicações**: Cabeceiras de cama, projetos de "meia parede".
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 30cm) + cola PU. Corte c/ serra manual/elétrica. Encaixe macho/fêmea lateral.
+- **Observações**: Recomendado comprar perfil de acabamento para o topo. Desconto a partir de 10 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação").
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+- **Link Produto Específico**: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/ripado-compacto-90x25cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: COMPACTO (25x90cm) | Material: MDF revestido em Polietileno (9mm de espessura) | Descrição: Painel ripado rígido em peças menores, ideal para projetos de meia parede. | Dimensões: 25cm de largura x 90cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Cabeceiras de cama, projetos de "meia parede". | Ambiente: Interno, Seco | Instalação: Fita dupla face VHB na horizontal (a cada 30cm) + cola PU. Corte c/ serra manual/elétrica. Encaixe macho/fêmea lateral. | Observações: Recomendado comprar perfil de acabamento para o topo. Desconto a partir de 10 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação"). | Link Produto Específico: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/ripado-compacto-90x25cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+
+### [DOCUMENTO #3 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: VERSÁTIL VERTICAL (110x270cm)
+- **Ambiente**: Interno, Úmido, Seco, Molhado
+- **Material**: Polietileno (flexível, 400g/m²)
+- **Dimensões**: 110cm de largura x 270cm de altura
+Relevo 0,5cm, ripas c/ 3,5cm larg. e 2cm de espaçamento
+- **Descrição**: Revestimento de parede em rolo. Sentido das ripas e veios da madeira na vertical. Peça com o melhor custo-benefício para cobrir grandes áreas.
+- **Aplicações**: Paredes inteiras, painéis de TV, palcos, igrejas e salas de reunião. Excelente efeito acústico.
+- **Instalação**: Corte com Tesoura/estilete. Fixação: dupla face VHB na horizontal (a cada 30cm). Paredes ásperas/com infiltração: cola PU. TV na parede.
+- **Observações**: Não autocolante. Não emendar na vertical (>2,70m usar linha Easy). Não pintar. Cores escuras deformam c/ sol direto. Desconto por quantidade.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Versátil": https://www.talatto.com/ripados/versatil
+- **Link Produto Específico**: Link da categoria: https://www.talatto.com/ripados/versatil
+
+Link do produto: https://www.talatto.com/painel-ripado-flexivel-versatil-talatto-2-70m-x-1-10m
+- **Conteúdo**: Linha: RIPADOS | Modelo: VERSÁTIL VERTICAL (110x270cm) | Material: Polietileno (flexível, 400g/m²) | Descrição: Revestimento de parede em rolo. Sentido das ripas e veios da madeira na vertical. Peça com o melhor custo-benefício para cobrir grandes áreas. | Dimensões: 110cm de largura x 270cm de altura
+Relevo 0,5cm, ripas c/ 3,5cm larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Paredes inteiras, painéis de TV, palcos, igrejas e salas de reunião. Excelente efeito acústico. | Ambiente: Interno, Úmido, Seco, Molhado | Instalação: Corte com Tesoura/estilete. Fixação: dupla face VHB na horizontal (a cada 30cm). Paredes ásperas/com infiltração: cola PU. TV na parede. | Observações: Não autocolante. Não emendar na vertical (>2,70m usar linha Easy). Não pintar. Cores escuras deformam c/ sol direto. Desconto por quantidade. | Link Produto Específico: Link da categoria: https://www.talatto.com/ripados/versatil
+
+Link do produto: https://www.talatto.com/painel-ripado-flexivel-versatil-talatto-2-70m-x-1-10m | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Versátil": https://www.talatto.com/ripados/versatil
+
+### [DOCUMENTO #4 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: VERSÁTIL HORIZONTAL TRADICIONAL
+- **Ambiente**: Interno, Úmido, Seco, Molhado
+- **Material**: Polietileno (flexível, 400g/m²)
+- **Dimensões**: 270cm de largura x 110cm de altura
+Relevo 0,5cm, ripas c/ 3,5cm larg. e 2cm de espaçamento
+- **Descrição**: Rolo para meia parede. As ripas ficam na vertical, mas a impressão dos veios da madeira é na transversal (horizontal). Corte das pontas é reto.
+- **Aplicações**: Cabeceiras de cama, projetos de "meia parede".
+- **Instalação**: Corte com Tesoura/estilete. Fixação: dupla face VHB na horizontal (a cada 30cm). Paredes ásperas/com infiltração: cola PU.
+- **Observações**: Não autocolante. Precisa de perfil de acabamento para o fechamento. Não pode ser combinado com modelos verticais (veios diferentes).
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Versátil": https://www.talatto.com/ripados/versatil
+- **Link Produto Específico**: Link da categoria: https://www.talatto.com/ripados/versatil
+
+Link do produto: https://www.talatto.com/painel-ripado-flexivel-versatil-meia-parede-horizontal-110x270cm-larg
+- **Conteúdo**: Linha: RIPADOS | Modelo: VERSÁTIL HORIZONTAL TRADICIONAL | Material: Polietileno (flexível, 400g/m²) | Descrição: Rolo para meia parede. As ripas ficam na vertical, mas a impressão dos veios da madeira é na transversal (horizontal). Corte das pontas é reto. | Dimensões: 270cm de largura x 110cm de altura
+Relevo 0,5cm, ripas c/ 3,5cm larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Cabeceiras de cama, projetos de "meia parede". | Ambiente: Interno, Úmido, Seco, Molhado | Instalação: Corte com Tesoura/estilete. Fixação: dupla face VHB na horizontal (a cada 30cm). Paredes ásperas/com infiltração: cola PU. | Observações: Não autocolante. Precisa de perfil de acabamento para o fechamento. Não pode ser combinado com modelos verticais (veios diferentes). | Link Produto Específico: Link da categoria: https://www.talatto.com/ripados/versatil
+
+Link do produto: https://www.talatto.com/painel-ripado-flexivel-versatil-meia-parede-horizontal-110x270cm-larg | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Versátil": https://www.talatto.com/ripados/versatil
+
+### [DOCUMENTO #5 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: VERSÁTIL REDONDO (110x270cm)
+- **Ambiente**: Interno, Úmido, Seco, Molhado
+- **Material**: Polietileno (flexível, 400g/m²)
+- **Dimensões**: 110cm de largura x 270cm de altura
+ Relevo ondulado de 1cm, ondas c/ 2cm de larg. e 0,5cm de espaçamento
+- **Descrição**: Revestimento de parede em rolo. Sentido das ondas na vertical. Peça com melhor custo-benefício para cobrir grandes áreas.
+- **Aplicações**: Paredes inteiras, painéis de TV, palcos, igrejas e salas de reunião. Excelente efeito acústico (quebra a refração do som).
+- **Instalação**: Corte com Tesoura/estilete. Fixação: dupla face VHB na horizontal (a cada 30cm). Paredes ásperas/com infiltração: cola PU. TV na parede.
+- **Observações**: Não autocolante. Não emendar na vertical (>2,70m usar linha Easy). Sem modelo horizontal de fábrica (sugere-se cortar a peça ao meio para meia parede). Não pintar. Cores escuras deformam c/ sol direto.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Versátil": https://www.talatto.com/ripados/versatil
+- **Link Produto Específico**: Link da categoria: https://www.talatto.com/ripados/versatil
+
+Link do produto: https://www.talatto.com/painel-ripado-redondo-versatil-talatto-2-70m-x-1-10m
+- **Conteúdo**: Linha: RIPADOS | Modelo: VERSÁTIL REDONDO (110x270cm) | Material: Polietileno (flexível, 400g/m²) | Descrição: Revestimento de parede em rolo. Sentido das ondas na vertical. Peça com melhor custo-benefício para cobrir grandes áreas. | Dimensões: 110cm de largura x 270cm de altura
+ Relevo ondulado de 1cm, ondas c/ 2cm de larg. e 0,5cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Paredes inteiras, painéis de TV, palcos, igrejas e salas de reunião. Excelente efeito acústico (quebra a refração do som). | Ambiente: Interno, Úmido, Seco, Molhado | Instalação: Corte com Tesoura/estilete. Fixação: dupla face VHB na horizontal (a cada 30cm). Paredes ásperas/com infiltração: cola PU. TV na parede. | Observações: Não autocolante. Não emendar na vertical (>2,70m usar linha Easy). Sem modelo horizontal de fábrica (sugere-se cortar a peça ao meio para meia parede). Não pintar. Cores escuras deformam c/ sol direto. | Link Produto Específico: Link da categoria: https://www.talatto.com/ripados/versatil
+
+Link do produto: https://www.talatto.com/painel-ripado-redondo-versatil-talatto-2-70m-x-1-10m | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Versátil": https://www.talatto.com/ripados/versatil
+
+### [DOCUMENTO #6 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Cru
+- **Linha**: SHIPLAP
+- **Modelo**: SHIPLAP TRADICIONAL (11x274cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (3mm de espessura).
+- **Dimensões**: 11cm de largura x 274cm de altura.
+- **Descrição**: Painel decorativo em peças individuais, muito utilizado para revestimento de paredes. Design mais clean e aspecto liso comparado com os ripados traicionais.
+- **Aplicações**: Revestimento de paredes inteiras e decoração interna.
+- **Instalação**: Produto autocolante (já vai com fita dupla face). Instalado lado a lado (sugere-se espaçamento de 3mm usando uma própria peça como guia). Corte c/ serra manual/elétrica. TV/Cargas fixadas na parede.
+- **Observações**: Emenda vertical de baixa qualidade (p/ >2,74m recomenda-se ir só até o limite da peça). Resiste até 60°C. Para pintar, comprar na cor CRU. Desconto a partir de 10 un. Vídeo/Manual no Drive.
+- **Link da Categoria**: https://www.talatto.com/shiplap
+- **Link Produto Específico**: https://www.talatto.com/painel-shiplap-tradicional-talatto-2-74m-x-11cm
+- **Conteúdo**: Linha: SHIPLAP | Modelo: SHIPLAP TRADICIONAL (11x274cm) | Material: MDF revestido em Polietileno (3mm de espessura). | Descrição: Painel decorativo em peças individuais, muito utilizado para revestimento de paredes. Design mais clean e aspecto liso comparado com os ripados traicionais. | Dimensões: 11cm de largura x 274cm de altura. | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Cru | Aplicações: Revestimento de paredes inteiras e decoração interna. | Ambiente: Interno, Seco | Instalação: Produto autocolante (já vai com fita dupla face). Instalado lado a lado (sugere-se espaçamento de 3mm usando uma própria peça como guia). Corte c/ serra manual/elétrica. TV/Cargas fixadas na parede. | Observações: Emenda vertical de baixa qualidade (p/ >2,74m recomenda-se ir só até o limite da peça). Resiste até 60°C. Para pintar, comprar na cor CRU. Desconto a partir de 10 un. Vídeo/Manual no Drive. | Link Produto Específico: https://www.talatto.com/painel-shiplap-tradicional-talatto-2-74m-x-11cm | Link da Categoria: https://www.talatto.com/shiplap
+
+### [DOCUMENTO #7 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Cru
+- **Linha**: SHIPLAP
+- **Modelo**: SHIPLAP AMERICANO (15x274cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (6mm de espessura).
+- **Dimensões**: 15cm de largura x 274cm de altura.
+- **Descrição**: Painel decorativo em peças individuais. É o modelo mais procurado entre os 3 tipos de Shiplap. Design mais clean e aspecto liso comparado com os ripados traicionais.
+- **Aplicações**: Revestimento de paredes inteiras e decoração interna.
+- **Instalação**: Produto autocolante (fita dupla face já aplicada). Instalado lado a lado sem espaços. Possui sistema de encaixe macho/fêmea na lateral. Corte c/ serra manual/elétrica. TV/Cargas ancoradas na parede.
+- **Observações**: Emenda vertical de baixa qualidade (p/ >2,74m recomenda-se ir só até o limite). Resiste até 60°C. Para pintar, comprar a cor CRU. Desconto a partir de 10 un. Possível instalar LED (vídeo no Drive).
+- **Link da Categoria**: https://www.talatto.com/shiplap
+- **Link Produto Específico**: https://www.talatto.com/painel-shiplap-americano-talatto-2-74m-x-15cm
+- **Conteúdo**: Linha: SHIPLAP | Modelo: SHIPLAP AMERICANO (15x274cm) | Material: MDF revestido em Polietileno (6mm de espessura). | Descrição: Painel decorativo em peças individuais. É o modelo mais procurado entre os 3 tipos de Shiplap. Design mais clean e aspecto liso comparado com os ripados traicionais. | Dimensões: 15cm de largura x 274cm de altura. | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Cru | Aplicações: Revestimento de paredes inteiras e decoração interna. | Ambiente: Interno, Seco | Instalação: Produto autocolante (fita dupla face já aplicada). Instalado lado a lado sem espaços. Possui sistema de encaixe macho/fêmea na lateral. Corte c/ serra manual/elétrica. TV/Cargas ancoradas na parede. | Observações: Emenda vertical de baixa qualidade (p/ >2,74m recomenda-se ir só até o limite). Resiste até 60°C. Para pintar, comprar a cor CRU. Desconto a partir de 10 un. Possível instalar LED (vídeo no Drive). | Link Produto Específico: https://www.talatto.com/painel-shiplap-americano-talatto-2-74m-x-15cm | Link da Categoria: https://www.talatto.com/shiplap
+--------------------------------------------------------------------------------
+💬 RESPOSTA ENVIADA:
+Para a sala, temos ótimas opções como o painel ripado compacto ou a linha Shiplap que deixam o ambiente super sofisticado. Para essa instalação na sala, você prefere um tom amadeirado como o Carvalho ou Freijó, ou prefere tons neutros como o cinza ou o preto? Você pode conferir os modelos em detalhes no link: https://www.talatto.com/ripados
+--------------------------------------------------------------------------------
+📊 CONSUMO DE TOKENS: 20,016 (In: 19,571 | Out: 445)
+================================================================================
+
+
+==================== PROMPT ENVIADO PARA IA ATENDIMENTO 17032 [2026-08-25 12:37:55] ====================
+--- SYSTEM INSTRUCTION ---
+Sua única tarefa é transcrever o áudio a seguir. Retorne apenas o texto transcrito, sem adicionar nenhuma outra palavra, introdução ou formatação.
+------------------------------
+[TEXTO]: ## TAREFA
+Transcreva o áudio.
+[MÍDIA/OBJETO]: <class 'google.genai.types.Part'>
+============================================================
+
+==================== RESPOSTA DA IA [2026-08-25 12:37:56] ====================
+Eu quero uma cor parecida com esse off-white, você, qual que você me recomenda?
+============================================================
+================================================================================
+📌 EXECUÇÃO DO RAG AGÊNTICO LANGGRAPH - 25/08/2026 12:39:26
+👤 Atendimento ID: 17032 | Empresa ID: 5
+🤖 Modelo: gemini-3.5-flash-lite | Tentativas: 0
+🎯 Intenção: rag | Status Final: Aguardando Resposta
+--------------------------------------------------------------------------------
+📥 MENSAGEM DO CLIENTE:
+[Áudio Transcrito]: Eu quero uma cor parecida com esse off-white, você, qual que você me recomenda?
+--------------------------------------------------------------------------------
+🔍 CONTEXTO RAG RECUPERADO:
+### [DOCUMENTO #1 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: COMPACTO (25x274cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (9mm de espessura)
+- **Dimensões**: 25cm de largura x 274cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento
+- **Descrição**: Painel ripado rígido em peças para revestimento de paredes e forros.
+- **Aplicações**: Paredes inteiras, forros e painéis de TV.
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 30cm) + 4 parafusos por peça (2 na base, 2 no topo). Paredes ásperas usar cola PU. Corte c/ serra manual/elétrica. TV/Suportes ancorados direto na parede. Encaixe macho/fêmea lateral.
+- **Observações**: Emenda vertical intermediária (p/ >2,74m usar linha Easy ou não até o teto). Desconto a partir de 4 ou 8 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação").
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+- **Link Produto Específico**: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: COMPACTO (25x274cm) | Material: MDF revestido em Polietileno (9mm de espessura) | Descrição: Painel ripado rígido em peças para revestimento de paredes e forros. | Dimensões: 25cm de largura x 274cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Paredes inteiras, forros e painéis de TV. | Ambiente: Interno, Seco | Instalação: Fita dupla face VHB na horizontal (a cada 30cm) + 4 parafusos por peça (2 na base, 2 no topo). Paredes ásperas usar cola PU. Corte c/ serra manual/elétrica. TV/Suportes ancorados direto na parede. Encaixe macho/fêmea lateral. | Observações: Emenda vertical intermediária (p/ >2,74m usar linha Easy ou não até o teto). Desconto a partir de 4 ou 8 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação"). | Link Produto Específico: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+
+### [DOCUMENTO #2 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: COMPACTO (25x90cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (9mm de espessura)
+- **Dimensões**: 25cm de largura x 90cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento
+- **Descrição**: Painel ripado rígido em peças menores, ideal para projetos de meia parede.
+- **Aplicações**: Cabeceiras de cama, projetos de "meia parede".
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 30cm) + cola PU. Corte c/ serra manual/elétrica. Encaixe macho/fêmea lateral.
+- **Observações**: Recomendado comprar perfil de acabamento para o topo. Desconto a partir de 10 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação").
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+- **Link Produto Específico**: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/ripado-compacto-90x25cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: COMPACTO (25x90cm) | Material: MDF revestido em Polietileno (9mm de espessura) | Descrição: Painel ripado rígido em peças menores, ideal para projetos de meia parede. | Dimensões: 25cm de largura x 90cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Cabeceiras de cama, projetos de "meia parede". | Ambiente: Interno, Seco | Instalação: Fita dupla face VHB na horizontal (a cada 30cm) + cola PU. Corte c/ serra manual/elétrica. Encaixe macho/fêmea lateral. | Observações: Recomendado comprar perfil de acabamento para o topo. Desconto a partir de 10 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação"). | Link Produto Específico: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/ripado-compacto-90x25cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+
+### [DOCUMENTO #3 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x270cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 270cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido com cores muito realistas. Excelente qualidade de emenda vertical e lateral (emenda invisível).
+- **Aplicações**: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m).
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares/infiltração usar cola PU. TV ancorada na parede. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Perfeito p/ paredes >2,70m (emenda invisível). Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Vídeo/Manual no Drive.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-2-70m-x-15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x270cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido com cores muito realistas. Excelente qualidade de emenda vertical e lateral (emenda invisível). | Dimensões: 15cm de largura x 270cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m). | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares/infiltração usar cola PU. TV ancorada na parede. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Perfeito p/ paredes >2,70m (emenda invisível). Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Vídeo/Manual no Drive. | Link Produto Específico: www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-2-70m-x-15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #4 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x135cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 135cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido em peças intermediárias. Com essa medida o cliente consegue acessar opções de frete mais econômicas. Excelente qualidade de emenda vertical e lateral invisível.
+- **Aplicações**: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m), cabeceiras de cama, meia parede, detalhes em ambientes comerciais e residencial, "porta oculta" parcial.
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Resiste até 60°C. Não pintar.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-easy-135x15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x135cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido em peças intermediárias. Com essa medida o cliente consegue acessar opções de frete mais econômicas. Excelente qualidade de emenda vertical e lateral invisível. | Dimensões: 15cm de largura x 135cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m), cabeceiras de cama, meia parede, detalhes em ambientes comerciais e residencial, "porta oculta" parcial. | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Resiste até 60°C. Não pintar. | Link Produto Específico: https://www.talatto.com/painel-ripado-easy-135x15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #5 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x90cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido em peças menores. Excelente qualidade de emenda vertical e lateral invisível.
+- **Aplicações**: Cabeceiras de cama, meia parede, detalhes em ambientes comerciais, "porta oculta" parcial. Curvas longas (raio >1,80m).
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Se a parede for >90cm, compensa sugerir a opção de 135 ou de de 270cm.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-90cm-x-15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x90cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido em peças menores. Excelente qualidade de emenda vertical e lateral invisível. | Dimensões: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Cabeceiras de cama, meia parede, detalhes em ambientes comerciais, "porta oculta" parcial. Curvas longas (raio >1,80m). | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Se a parede for >90cm, compensa sugerir a opção de 135 ou de de 270cm. | Link Produto Específico: https://www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-90cm-x-15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #6 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Cru
+- **Linha**: SHIPLAP
+- **Modelo**: SHIPLAP TRADICIONAL (11x274cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (3mm de espessura).
+- **Dimensões**: 11cm de largura x 274cm de altura.
+- **Descrição**: Painel decorativo em peças individuais, muito utilizado para revestimento de paredes. Design mais clean e aspecto liso comparado com os ripados traicionais.
+- **Aplicações**: Revestimento de paredes inteiras e decoração interna.
+- **Instalação**: Produto autocolante (já vai com fita dupla face). Instalado lado a lado (sugere-se espaçamento de 3mm usando uma própria peça como guia). Corte c/ serra manual/elétrica. TV/Cargas fixadas na parede.
+- **Observações**: Emenda vertical de baixa qualidade (p/ >2,74m recomenda-se ir só até o limite da peça). Resiste até 60°C. Para pintar, comprar na cor CRU. Desconto a partir de 10 un. Vídeo/Manual no Drive.
+- **Link da Categoria**: https://www.talatto.com/shiplap
+- **Link Produto Específico**: https://www.talatto.com/painel-shiplap-tradicional-talatto-2-74m-x-11cm
+- **Conteúdo**: Linha: SHIPLAP | Modelo: SHIPLAP TRADICIONAL (11x274cm) | Material: MDF revestido em Polietileno (3mm de espessura). | Descrição: Painel decorativo em peças individuais, muito utilizado para revestimento de paredes. Design mais clean e aspecto liso comparado com os ripados traicionais. | Dimensões: 11cm de largura x 274cm de altura. | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Cru | Aplicações: Revestimento de paredes inteiras e decoração interna. | Ambiente: Interno, Seco | Instalação: Produto autocolante (já vai com fita dupla face). Instalado lado a lado (sugere-se espaçamento de 3mm usando uma própria peça como guia). Corte c/ serra manual/elétrica. TV/Cargas fixadas na parede. | Observações: Emenda vertical de baixa qualidade (p/ >2,74m recomenda-se ir só até o limite da peça). Resiste até 60°C. Para pintar, comprar na cor CRU. Desconto a partir de 10 un. Vídeo/Manual no Drive. | Link Produto Específico: https://www.talatto.com/painel-shiplap-tradicional-talatto-2-74m-x-11cm | Link da Categoria: https://www.talatto.com/shiplap
+
+### [DOCUMENTO #7 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Branco, Rosê, Azul, Rosa
+- **Linha**: RIPADOS
+- **Modelo**: EASY CANELADO (15x290cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve).
+- **Dimensões**: 15cm de largura x 290cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças)
+- **Descrição**: Painel ripado canelado rígido. Excelente qualidade de emenda vertical e lateral (emenda invisível com sobreposição de 4mm).
+- **Aplicações**: Paredes, forros, ambientes comerciais/alimentação (fácil higienização). Pode ser usado em paredes com curvas longas (raio >1,80m).
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. TV/Cargas fixadas na parede. Possui sistema de encaixe macho/fêmea na lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Perfeito p/ paredes >2,90m. Resiste até 60°C. Não pintar. Vídeo/Manual no Drive.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-canelado-talatto-2-90m-x-15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY CANELADO (15x290cm) | Material: PVC Estruturado (Rígido e leve). | Descrição: Painel ripado canelado rígido. Excelente qualidade de emenda vertical e lateral (emenda invisível com sobreposição de 4mm). | Dimensões: 15cm de largura x 290cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças) | Cores: Branco, Rosê, Azul, Rosa | Aplicações: Paredes, forros, ambientes comerciais/alimentação (fácil higienização). Pode ser usado em paredes com curvas longas (raio >1,80m). | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. TV/Cargas fixadas na parede. Possui sistema de encaixe macho/fêmea na lateral. Corte c/ serra manual/elétrica. | Observações: Perfeito p/ paredes >2,90m. Resiste até 60°C. Não pintar. Vídeo/Manual no Drive. | Link Produto Específico: https://www.talatto.com/painel-ripado-canelado-talatto-2-90m-x-15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+--------------------------------------------------------------------------------
+💬 RESPOSTA ENVIADA:
+Para quem busca um tom bem claro e neutro que se aproxime do off-white, a nossa cor areia ou até mesmo o branco costumam ser as escolhas que melhor atendem a essa preferência na sala. O painel ripado compacto na cor areia traz uma suavidade excelente para o ambiente. Você gostaria de dar uma olhadinha nos detalhes e nas opções de medidas desse modelo em https://www.talatto.com/ripados/compacto?
+--------------------------------------------------------------------------------
+📊 CONSUMO DE TOKENS: 20,263 (In: 19,777 | Out: 486)
+================================================================================
+
+
+==================== PROMPT ENVIADO PARA IA ATENDIMENTO 17032 [2026-08-25 12:52:52] ====================
+--- SYSTEM INSTRUCTION ---
+Sua única tarefa é transcrever o áudio a seguir. Retorne apenas o texto transcrito, sem adicionar nenhuma outra palavra, introdução ou formatação.
+------------------------------
+[TEXTO]: ## TAREFA
+Transcreva o áudio.
+[MÍDIA/OBJETO]: <class 'google.genai.types.Part'>
+============================================================
+
+==================== RESPOSTA DA IA [2026-08-25 12:52:54] ====================
+Testando, um, dois, três, alô.
+============================================================
+
+==================== PROMPT ENVIADO PARA IA ATENDIMENTO 17032 [2026-08-25 13:09:11] ====================
+--- SYSTEM INSTRUCTION ---
+Sua única tarefa é transcrever o áudio a seguir. Retorne apenas o texto transcrito, sem adicionar nenhuma outra palavra, introdução ou formatação.
+------------------------------
+[TEXTO]: ## TAREFA
+Transcreva o áudio.
+[MÍDIA/OBJETO]: <class 'google.genai.types.Part'>
+============================================================
+
+==================== RESPOSTA DA IA [2026-08-25 13:09:13] ====================
+Não consegui ver o link.
+============================================================
+================================================================================
+📌 EXECUÇÃO DO RAG AGÊNTICO LANGGRAPH - 25/08/2026 13:09:42
+👤 Atendimento ID: 17032 | Empresa ID: 5
+🤖 Modelo: gemini-3.5-flash-lite | Tentativas: 0
+🎯 Intenção: rag | Status Final: Aguardando Resposta
+--------------------------------------------------------------------------------
+📥 MENSAGEM DO CLIENTE:
+[Áudio Transcrito]: Não consegui ver o link.
+--------------------------------------------------------------------------------
+🔍 CONTEXTO RAG RECUPERADO:
+### [DOCUMENTO #1 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: COMPACTO (25x90cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (9mm de espessura)
+- **Dimensões**: 25cm de largura x 90cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento
+- **Descrição**: Painel ripado rígido em peças menores, ideal para projetos de meia parede.
+- **Aplicações**: Cabeceiras de cama, projetos de "meia parede".
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 30cm) + cola PU. Corte c/ serra manual/elétrica. Encaixe macho/fêmea lateral.
+- **Observações**: Recomendado comprar perfil de acabamento para o topo. Desconto a partir de 10 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação").
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+- **Link Produto Específico**: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/ripado-compacto-90x25cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: COMPACTO (25x90cm) | Material: MDF revestido em Polietileno (9mm de espessura) | Descrição: Painel ripado rígido em peças menores, ideal para projetos de meia parede. | Dimensões: 25cm de largura x 90cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Cabeceiras de cama, projetos de "meia parede". | Ambiente: Interno, Seco | Instalação: Fita dupla face VHB na horizontal (a cada 30cm) + cola PU. Corte c/ serra manual/elétrica. Encaixe macho/fêmea lateral. | Observações: Recomendado comprar perfil de acabamento para o topo. Desconto a partir de 10 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação"). | Link Produto Específico: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/ripado-compacto-90x25cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+
+### [DOCUMENTO #2 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: COMPACTO (25x274cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (9mm de espessura)
+- **Dimensões**: 25cm de largura x 274cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento
+- **Descrição**: Painel ripado rígido em peças para revestimento de paredes e forros.
+- **Aplicações**: Paredes inteiras, forros e painéis de TV.
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 30cm) + 4 parafusos por peça (2 na base, 2 no topo). Paredes ásperas usar cola PU. Corte c/ serra manual/elétrica. TV/Suportes ancorados direto na parede. Encaixe macho/fêmea lateral.
+- **Observações**: Emenda vertical intermediária (p/ >2,74m usar linha Easy ou não até o teto). Desconto a partir de 4 ou 8 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação").
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+- **Link Produto Específico**: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: COMPACTO (25x274cm) | Material: MDF revestido em Polietileno (9mm de espessura) | Descrição: Painel ripado rígido em peças para revestimento de paredes e forros. | Dimensões: 25cm de largura x 274cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Paredes inteiras, forros e painéis de TV. | Ambiente: Interno, Seco | Instalação: Fita dupla face VHB na horizontal (a cada 30cm) + 4 parafusos por peça (2 na base, 2 no topo). Paredes ásperas usar cola PU. Corte c/ serra manual/elétrica. TV/Suportes ancorados direto na parede. Encaixe macho/fêmea lateral. | Observações: Emenda vertical intermediária (p/ >2,74m usar linha Easy ou não até o teto). Desconto a partir de 4 ou 8 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação"). | Link Produto Específico: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+
+### [DOCUMENTO #3 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Mármore Preto
+- **Linha**: ACESSÓRIOS
+- **Modelo**: PERFIL ACABAMENTO COMPACTO (MDF)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno.
+- **Dimensões**: 6cm de altura x 274cm de comprimento.
+
+Tem opção de comprar as peças fracionadas com 90cm de comprimento, que possuem um frete bem mais econômico.
+- **Descrição**: Perfil rígido de acabamento (o mesmo utilizado na linha Compacto). Para clientes que desejam melhor arremate no topo ou nas laterais.
+- **Aplicações**: Instalação recomendada no topo do painel, podendo também ser usado nas laterais.
+- **Instalação**: Fixação com fita dupla face ou cola PU.
+- **Observações**: Uso não obrigatório (a maioria das instalações é feita sem perfil). Acessório de baixo custo recomendado para esconder falhas de corte.
+- **Link da Categoria**: https://www.talatto.com/catalogsearch/result/?q=perfil+de+acabamento
+- **Link Produto Específico**: Barra com 2,74m: https://www.talatto.com/paineis-ripados/perfil-acabamento-compacto-01-unid-270x6cm-larg?variant_id=1744
+
+Peça com 90cm: https://www.talatto.com/perfil-de-acabamento-compacto-90cm
+- **Conteúdo**: Linha: ACESSÓRIOS | Modelo: PERFIL ACABAMENTO COMPACTO (MDF) | Material: MDF revestido em Polietileno. | Descrição: Perfil rígido de acabamento (o mesmo utilizado na linha Compacto). Para clientes que desejam melhor arremate no topo ou nas laterais. | Dimensões: 6cm de altura x 274cm de comprimento.
+
+Tem opção de comprar as peças fracionadas com 90cm de comprimento, que possuem um frete bem mais econômico. | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Mármore Preto | Aplicações: Instalação recomendada no topo do painel, podendo também ser usado nas laterais. | Ambiente: Interno, Seco | Instalação: Fixação com fita dupla face ou cola PU. | Observações: Uso não obrigatório (a maioria das instalações é feita sem perfil). Acessório de baixo custo recomendado para esconder falhas de corte. | Link Produto Específico: Barra com 2,74m: https://www.talatto.com/paineis-ripados/perfil-acabamento-compacto-01-unid-270x6cm-larg?variant_id=1744
+
+Peça com 90cm: https://www.talatto.com/perfil-de-acabamento-compacto-90cm | Link da Categoria: https://www.talatto.com/catalogsearch/result/?q=perfil+de+acabamento
+
+### [DOCUMENTO #4 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Cumaru
+- **Linha**: RIPADOS
+- **Modelo**: ÁREA EXTERNA (16x270cm)
+- **Ambiente**: Interno, Úmido, Externo, Seco
+- **Material**: Ecológico (Resistente a sol, chuva e maresia). 4cm de espessura. Ripas com 3,5cm de larg., espaçamento de 1,5cm e prof. de 1,5cm.
+- **Dimensões**: 16cm de largura x 270cm de altura.
+- **Descrição**: Painel ripado ecológico de alta durabilidade projetado especialmente para áreas externas.
+- **Aplicações**: Revestimento de paredes em qualquer tipo de ambiente.
+- **Instalação**: Instalação com parafusos diretos (recomendado a cada 80cm). Possui sistema de encaixe macho/fêmea na lateral.
+- **Observações**: Garantia de 5 anos. Boa qualidade de emenda vertical (pode ser usado p/ >2,70m). Resiste até 80°C. Não pode ser pintado (produto antiaderente). Vídeo no Drive.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Área Externa": https://www.talatto.com/ripados/area-externa
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-de-area-externa-talatto-2-70m-x-16cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: ÁREA EXTERNA (16x270cm) | Material: Ecológico (Resistente a sol, chuva e maresia). 4cm de espessura. Ripas com 3,5cm de larg., espaçamento de 1,5cm e prof. de 1,5cm. | Descrição: Painel ripado ecológico de alta durabilidade projetado especialmente para áreas externas. | Dimensões: 16cm de largura x 270cm de altura. | Cores: Cumaru | Aplicações: Revestimento de paredes em qualquer tipo de ambiente. | Ambiente: Interno, Úmido, Externo, Seco | Instalação: Instalação com parafusos diretos (recomendado a cada 80cm). Possui sistema de encaixe macho/fêmea na lateral. | Observações: Garantia de 5 anos. Boa qualidade de emenda vertical (pode ser usado p/ >2,70m). Resiste até 80°C. Não pode ser pintado (produto antiaderente). Vídeo no Drive. | Link Produto Específico: https://www.talatto.com/painel-ripado-de-area-externa-talatto-2-70m-x-16cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Área Externa": https://www.talatto.com/ripados/area-externa
+
+### [DOCUMENTO #5 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x270cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 270cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido com cores muito realistas. Excelente qualidade de emenda vertical e lateral (emenda invisível).
+- **Aplicações**: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m).
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares/infiltração usar cola PU. TV ancorada na parede. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Perfeito p/ paredes >2,70m (emenda invisível). Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Vídeo/Manual no Drive.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-2-70m-x-15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x270cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido com cores muito realistas. Excelente qualidade de emenda vertical e lateral (emenda invisível). | Dimensões: 15cm de largura x 270cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m). | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares/infiltração usar cola PU. TV ancorada na parede. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Perfeito p/ paredes >2,70m (emenda invisível). Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Vídeo/Manual no Drive. | Link Produto Específico: www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-2-70m-x-15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #6 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x135cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 135cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido em peças intermediárias. Com essa medida o cliente consegue acessar opções de frete mais econômicas. Excelente qualidade de emenda vertical e lateral invisível.
+- **Aplicações**: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m), cabeceiras de cama, meia parede, detalhes em ambientes comerciais e residencial, "porta oculta" parcial.
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Resiste até 60°C. Não pintar.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-easy-135x15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x135cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido em peças intermediárias. Com essa medida o cliente consegue acessar opções de frete mais econômicas. Excelente qualidade de emenda vertical e lateral invisível. | Dimensões: 15cm de largura x 135cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m), cabeceiras de cama, meia parede, detalhes em ambientes comerciais e residencial, "porta oculta" parcial. | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Resiste até 60°C. Não pintar. | Link Produto Específico: https://www.talatto.com/painel-ripado-easy-135x15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #7 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x90cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido em peças menores. Excelente qualidade de emenda vertical e lateral invisível.
+- **Aplicações**: Cabeceiras de cama, meia parede, detalhes em ambientes comerciais, "porta oculta" parcial. Curvas longas (raio >1,80m).
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Se a parede for >90cm, compensa sugerir a opção de 135 ou de de 270cm.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-90cm-x-15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x90cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido em peças menores. Excelente qualidade de emenda vertical e lateral invisível. | Dimensões: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Cabeceiras de cama, meia parede, detalhes em ambientes comerciais, "porta oculta" parcial. Curvas longas (raio >1,80m). | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Se a parede for >90cm, compensa sugerir a opção de 135 ou de de 270cm. | Link Produto Específico: https://www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-90cm-x-15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+--------------------------------------------------------------------------------
+💬 RESPOSTA ENVIADA:
+[TEXTO] Sem problemas, os links não aparecem direito por áudio. Você pode acessar direto pelo link: https://www.talatto.com/ripado-compacto-90x25cm
+
+Deseja que eu te ajude a calcular a quantidade de peças para a sua parede?
+--------------------------------------------------------------------------------
+📊 CONSUMO DE TOKENS: 21,025 (In: 20,575 | Out: 450)
+================================================================================
+
+================================================================================
+📌 EXECUÇÃO DO RAG AGÊNTICO LANGGRAPH - 25/08/2026 13:10:56
+👤 Atendimento ID: 17032 | Empresa ID: 5
+🤖 Modelo: gemini-3.5-flash-lite | Tentativas: 0
+🎯 Intenção: tool | Status Final: Aguardando Resposta
+--------------------------------------------------------------------------------
+📥 MENSAGEM DO CLIENTE:
+SIm
+tela tem 2,60 por 3 de largura
+--------------------------------------------------------------------------------
+🔍 CONTEXTO RAG RECUPERADO:
+Nenhum
+--------------------------------------------------------------------------------
+💬 RESPOSTA ENVIADA:
+[TEXTO] Com base nas medidas de 2,60 metros de altura por 3 metros de largura que você passou, calculamos e o total necessário é de 7,8 metros quadrados de painel. Para fechar essa área com o modelo compacto, você pode verificar a quantidade exata de peças e o orçamento completo diretamente no link: https://www.talatto.com/ripado-compacto-90x25cm
+
+Deseja que eu te ajude a finalizar o pedido ou prefere tirar mais alguma dúvida?
+--------------------------------------------------------------------------------
+📊 CONSUMO DE TOKENS: 10,165 (In: 9,673 | Out: 492)
+================================================================================
+
+
+==================== PROMPT ENVIADO PARA IA ATENDIMENTO 17032 [2026-08-25 13:14:08] ====================
+--- SYSTEM INSTRUCTION ---
+Sua única tarefa é transcrever o áudio a seguir. Retorne apenas o texto transcrito, sem adicionar nenhuma outra palavra, introdução ou formatação.
+------------------------------
+[TEXTO]: ## TAREFA
+Transcreva o áudio.
+[MÍDIA/OBJETO]: <class 'google.genai.types.Part'>
+============================================================
+
+==================== RESPOSTA DA IA [2026-08-25 13:14:09] ====================
+Quantas peças vai dar?
+============================================================
+================================================================================
+📌 EXECUÇÃO DO RAG AGÊNTICO LANGGRAPH - 25/08/2026 13:14:48
+👤 Atendimento ID: 17032 | Empresa ID: 5
+🤖 Modelo: gemini-3.5-flash-lite | Tentativas: 0
+🎯 Intenção: rag | Status Final: Aguardando Resposta
+--------------------------------------------------------------------------------
+📥 MENSAGEM DO CLIENTE:
+[Áudio Transcrito]: Quantas peças vai dar?
+--------------------------------------------------------------------------------
+🔍 CONTEXTO RAG RECUPERADO:
+### [DOCUMENTO #1 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: COMPACTO (25x274cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (9mm de espessura)
+- **Dimensões**: 25cm de largura x 274cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento
+- **Descrição**: Painel ripado rígido em peças para revestimento de paredes e forros.
+- **Aplicações**: Paredes inteiras, forros e painéis de TV.
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 30cm) + 4 parafusos por peça (2 na base, 2 no topo). Paredes ásperas usar cola PU. Corte c/ serra manual/elétrica. TV/Suportes ancorados direto na parede. Encaixe macho/fêmea lateral.
+- **Observações**: Emenda vertical intermediária (p/ >2,74m usar linha Easy ou não até o teto). Desconto a partir de 4 ou 8 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação").
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+- **Link Produto Específico**: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: COMPACTO (25x274cm) | Material: MDF revestido em Polietileno (9mm de espessura) | Descrição: Painel ripado rígido em peças para revestimento de paredes e forros. | Dimensões: 25cm de largura x 274cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Paredes inteiras, forros e painéis de TV. | Ambiente: Interno, Seco | Instalação: Fita dupla face VHB na horizontal (a cada 30cm) + 4 parafusos por peça (2 na base, 2 no topo). Paredes ásperas usar cola PU. Corte c/ serra manual/elétrica. TV/Suportes ancorados direto na parede. Encaixe macho/fêmea lateral. | Observações: Emenda vertical intermediária (p/ >2,74m usar linha Easy ou não até o teto). Desconto a partir de 4 ou 8 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação"). | Link Produto Específico: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+
+### [DOCUMENTO #2 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: COMPACTO (25x90cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (9mm de espessura)
+- **Dimensões**: 25cm de largura x 90cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento
+- **Descrição**: Painel ripado rígido em peças menores, ideal para projetos de meia parede.
+- **Aplicações**: Cabeceiras de cama, projetos de "meia parede".
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 30cm) + cola PU. Corte c/ serra manual/elétrica. Encaixe macho/fêmea lateral.
+- **Observações**: Recomendado comprar perfil de acabamento para o topo. Desconto a partir de 10 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação").
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+- **Link Produto Específico**: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/ripado-compacto-90x25cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: COMPACTO (25x90cm) | Material: MDF revestido em Polietileno (9mm de espessura) | Descrição: Painel ripado rígido em peças menores, ideal para projetos de meia parede. | Dimensões: 25cm de largura x 90cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Cabeceiras de cama, projetos de "meia parede". | Ambiente: Interno, Seco | Instalação: Fita dupla face VHB na horizontal (a cada 30cm) + cola PU. Corte c/ serra manual/elétrica. Encaixe macho/fêmea lateral. | Observações: Recomendado comprar perfil de acabamento para o topo. Desconto a partir de 10 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação"). | Link Produto Específico: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/ripado-compacto-90x25cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+
+### [DOCUMENTO #3 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x90cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido em peças menores. Excelente qualidade de emenda vertical e lateral invisível.
+- **Aplicações**: Cabeceiras de cama, meia parede, detalhes em ambientes comerciais, "porta oculta" parcial. Curvas longas (raio >1,80m).
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Se a parede for >90cm, compensa sugerir a opção de 135 ou de de 270cm.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-90cm-x-15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x90cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido em peças menores. Excelente qualidade de emenda vertical e lateral invisível. | Dimensões: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Cabeceiras de cama, meia parede, detalhes em ambientes comerciais, "porta oculta" parcial. Curvas longas (raio >1,80m). | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Se a parede for >90cm, compensa sugerir a opção de 135 ou de de 270cm. | Link Produto Específico: https://www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-90cm-x-15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #4 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x135cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 135cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido em peças intermediárias. Com essa medida o cliente consegue acessar opções de frete mais econômicas. Excelente qualidade de emenda vertical e lateral invisível.
+- **Aplicações**: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m), cabeceiras de cama, meia parede, detalhes em ambientes comerciais e residencial, "porta oculta" parcial.
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Resiste até 60°C. Não pintar.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-easy-135x15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x135cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido em peças intermediárias. Com essa medida o cliente consegue acessar opções de frete mais econômicas. Excelente qualidade de emenda vertical e lateral invisível. | Dimensões: 15cm de largura x 135cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m), cabeceiras de cama, meia parede, detalhes em ambientes comerciais e residencial, "porta oculta" parcial. | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Resiste até 60°C. Não pintar. | Link Produto Específico: https://www.talatto.com/painel-ripado-easy-135x15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #5 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x270cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 270cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido com cores muito realistas. Excelente qualidade de emenda vertical e lateral (emenda invisível).
+- **Aplicações**: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m).
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares/infiltração usar cola PU. TV ancorada na parede. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Perfeito p/ paredes >2,70m (emenda invisível). Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Vídeo/Manual no Drive.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-2-70m-x-15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x270cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido com cores muito realistas. Excelente qualidade de emenda vertical e lateral (emenda invisível). | Dimensões: 15cm de largura x 270cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m). | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares/infiltração usar cola PU. TV ancorada na parede. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Perfeito p/ paredes >2,70m (emenda invisível). Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Vídeo/Manual no Drive. | Link Produto Específico: www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-2-70m-x-15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #6 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Branco, Rosê, Azul, Rosa
+- **Linha**: RIPADOS
+- **Modelo**: EASY CANELADO (15x90cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve).
+- **Dimensões**: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças)
+- **Descrição**: Painel ripado canelado rígido em peças menores. Excelente emenda lateral invisível.
+- **Aplicações**: Cabeceiras, meia parede, detalhes em ambientes comerciais. Curvas longas (raio >1,80m).
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Possui sistema de encaixe macho/fêmea na lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Resiste até 60°C. Não pintar. Se a parede for >90cm, compensa sugerir o de 2,90m cortado ao meio.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-canelado-talatto-90cm-x-15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY CANELADO (15x90cm) | Material: PVC Estruturado (Rígido e leve). | Descrição: Painel ripado canelado rígido em peças menores. Excelente emenda lateral invisível. | Dimensões: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças) | Cores: Branco, Rosê, Azul, Rosa | Aplicações: Cabeceiras, meia parede, detalhes em ambientes comerciais. Curvas longas (raio >1,80m). | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Possui sistema de encaixe macho/fêmea na lateral. Corte c/ serra manual/elétrica. | Observações: Resiste até 60°C. Não pintar. Se a parede for >90cm, compensa sugerir o de 2,90m cortado ao meio. | Link Produto Específico: https://www.talatto.com/painel-ripado-canelado-talatto-90cm-x-15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #7 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Cumaru
+- **Linha**: RIPADOS
+- **Modelo**: ÁREA EXTERNA (16x270cm)
+- **Ambiente**: Interno, Úmido, Externo, Seco
+- **Material**: Ecológico (Resistente a sol, chuva e maresia). 4cm de espessura. Ripas com 3,5cm de larg., espaçamento de 1,5cm e prof. de 1,5cm.
+- **Dimensões**: 16cm de largura x 270cm de altura.
+- **Descrição**: Painel ripado ecológico de alta durabilidade projetado especialmente para áreas externas.
+- **Aplicações**: Revestimento de paredes em qualquer tipo de ambiente.
+- **Instalação**: Instalação com parafusos diretos (recomendado a cada 80cm). Possui sistema de encaixe macho/fêmea na lateral.
+- **Observações**: Garantia de 5 anos. Boa qualidade de emenda vertical (pode ser usado p/ >2,70m). Resiste até 80°C. Não pode ser pintado (produto antiaderente). Vídeo no Drive.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Área Externa": https://www.talatto.com/ripados/area-externa
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-de-area-externa-talatto-2-70m-x-16cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: ÁREA EXTERNA (16x270cm) | Material: Ecológico (Resistente a sol, chuva e maresia). 4cm de espessura. Ripas com 3,5cm de larg., espaçamento de 1,5cm e prof. de 1,5cm. | Descrição: Painel ripado ecológico de alta durabilidade projetado especialmente para áreas externas. | Dimensões: 16cm de largura x 270cm de altura. | Cores: Cumaru | Aplicações: Revestimento de paredes em qualquer tipo de ambiente. | Ambiente: Interno, Úmido, Externo, Seco | Instalação: Instalação com parafusos diretos (recomendado a cada 80cm). Possui sistema de encaixe macho/fêmea na lateral. | Observações: Garantia de 5 anos. Boa qualidade de emenda vertical (pode ser usado p/ >2,70m). Resiste até 80°C. Não pode ser pintado (produto antiaderente). Vídeo no Drive. | Link Produto Específico: https://www.talatto.com/painel-ripado-de-area-externa-talatto-2-70m-x-16cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Área Externa": https://www.talatto.com/ripados/area-externa
+--------------------------------------------------------------------------------
+💬 RESPOSTA ENVIADA:
+[TEXTO] Para cobrir uma parede de 3 metros de largura por 2,60 metros de altura usando o modelo compacto de 2,74m, você vai precisar de 12 peças, pois cada placa tem 25cm de largura. Você pode conferir os detalhes e fazer o cálculo exato no link: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm
+
+Gostaria que eu te ajude a verificar as formas de envio para o seu endereço?
+--------------------------------------------------------------------------------
+📊 CONSUMO DE TOKENS: 21,754 (In: 21,228 | Out: 526)
+================================================================================
+
+================================================================================
+📌 EXECUÇÃO DO RAG AGÊNTICO LANGGRAPH - 25/08/2026 13:17:01
+👤 Atendimento ID: 17032 | Empresa ID: 5
+🤖 Modelo: gemini-3.5-flash-lite | Tentativas: 0
+🎯 Intenção: rag | Status Final: Atendente Chamado
+--------------------------------------------------------------------------------
+📥 MENSAGEM DO CLIENTE:
+Sim
+--------------------------------------------------------------------------------
+🔍 CONTEXTO RAG RECUPERADO:
+### [DOCUMENTO #1 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: COMPACTO (25x274cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (9mm de espessura)
+- **Dimensões**: 25cm de largura x 274cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento
+- **Descrição**: Painel ripado rígido em peças para revestimento de paredes e forros.
+- **Aplicações**: Paredes inteiras, forros e painéis de TV.
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 30cm) + 4 parafusos por peça (2 na base, 2 no topo). Paredes ásperas usar cola PU. Corte c/ serra manual/elétrica. TV/Suportes ancorados direto na parede. Encaixe macho/fêmea lateral.
+- **Observações**: Emenda vertical intermediária (p/ >2,74m usar linha Easy ou não até o teto). Desconto a partir de 4 ou 8 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação").
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+- **Link Produto Específico**: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: COMPACTO (25x274cm) | Material: MDF revestido em Polietileno (9mm de espessura) | Descrição: Painel ripado rígido em peças para revestimento de paredes e forros. | Dimensões: 25cm de largura x 274cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Paredes inteiras, forros e painéis de TV. | Ambiente: Interno, Seco | Instalação: Fita dupla face VHB na horizontal (a cada 30cm) + 4 parafusos por peça (2 na base, 2 no topo). Paredes ásperas usar cola PU. Corte c/ serra manual/elétrica. TV/Suportes ancorados direto na parede. Encaixe macho/fêmea lateral. | Observações: Emenda vertical intermediária (p/ >2,74m usar linha Easy ou não até o teto). Desconto a partir de 4 ou 8 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação"). | Link Produto Específico: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+
+### [DOCUMENTO #2 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado
+- **Linha**: RIPADOS
+- **Modelo**: COMPACTO (25x90cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (9mm de espessura)
+- **Dimensões**: 25cm de largura x 90cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento
+- **Descrição**: Painel ripado rígido em peças menores, ideal para projetos de meia parede.
+- **Aplicações**: Cabeceiras de cama, projetos de "meia parede".
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 30cm) + cola PU. Corte c/ serra manual/elétrica. Encaixe macho/fêmea lateral.
+- **Observações**: Recomendado comprar perfil de acabamento para o topo. Desconto a partir de 10 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação").
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+- **Link Produto Específico**: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/ripado-compacto-90x25cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: COMPACTO (25x90cm) | Material: MDF revestido em Polietileno (9mm de espessura) | Descrição: Painel ripado rígido em peças menores, ideal para projetos de meia parede. | Dimensões: 25cm de largura x 90cm de altura
+Relevo de 6mm, ripas c/ 3cm de larg. e 2cm de espaçamento | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Marmorizado | Aplicações: Cabeceiras de cama, projetos de "meia parede". | Ambiente: Interno, Seco | Instalação: Fita dupla face VHB na horizontal (a cada 30cm) + cola PU. Corte c/ serra manual/elétrica. Encaixe macho/fêmea lateral. | Observações: Recomendado comprar perfil de acabamento para o topo. Desconto a partir de 10 un. Resiste até 60°C. Não pintar. Vídeos no Drive ("Apresentação" e "Instalação"). | Link Produto Específico: Link da categoria: www.talatto.com/ripados/compacto
+
+Link do produto: https://www.talatto.com/ripado-compacto-90x25cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Compacto":
+https://www.talatto.com/ripados/compacto
+
+### [DOCUMENTO #3 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x270cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 270cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido com cores muito realistas. Excelente qualidade de emenda vertical e lateral (emenda invisível).
+- **Aplicações**: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m).
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares/infiltração usar cola PU. TV ancorada na parede. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Perfeito p/ paredes >2,70m (emenda invisível). Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Vídeo/Manual no Drive.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-2-70m-x-15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x270cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido com cores muito realistas. Excelente qualidade de emenda vertical e lateral (emenda invisível). | Dimensões: 15cm de largura x 270cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m). | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares/infiltração usar cola PU. TV ancorada na parede. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Perfeito p/ paredes >2,70m (emenda invisível). Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Vídeo/Manual no Drive. | Link Produto Específico: www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-2-70m-x-15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #4 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x135cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 135cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido em peças intermediárias. Com essa medida o cliente consegue acessar opções de frete mais econômicas. Excelente qualidade de emenda vertical e lateral invisível.
+- **Aplicações**: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m), cabeceiras de cama, meia parede, detalhes em ambientes comerciais e residencial, "porta oculta" parcial.
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Resiste até 60°C. Não pintar.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-easy-135x15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x135cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido em peças intermediárias. Com essa medida o cliente consegue acessar opções de frete mais econômicas. Excelente qualidade de emenda vertical e lateral invisível. | Dimensões: 15cm de largura x 135cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Paredes, forros, ambientes comerciais (fácil higienização), projetos de "porta oculta". Pode ser usado em paredes com curvas longas (raio >1,80m), cabeceiras de cama, meia parede, detalhes em ambientes comerciais e residencial, "porta oculta" parcial. | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Resiste até 60°C. Não pintar. | Link Produto Específico: https://www.talatto.com/painel-ripado-easy-135x15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #5 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Freijó
+- **Linha**: RIPADOS
+- **Modelo**: EASY TRADICIONAL (15x90cm)
+- **Ambiente**: Interno, Úmido, Externo, Molhado
+- **Material**: PVC Estruturado (Rígido e leve)
+- **Dimensões**: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm
+- **Descrição**: Painel ripado rígido em peças menores. Excelente qualidade de emenda vertical e lateral invisível.
+- **Aplicações**: Cabeceiras de cama, meia parede, detalhes em ambientes comerciais, "porta oculta" parcial. Curvas longas (raio >1,80m).
+- **Instalação**: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Se a parede for >90cm, compensa sugerir a opção de 135 ou de de 270cm.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-90cm-x-15cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: EASY TRADICIONAL (15x90cm) | Material: PVC Estruturado (Rígido e leve) | Descrição: Painel ripado rígido em peças menores. Excelente qualidade de emenda vertical e lateral invisível. | Dimensões: 15cm de largura x 90cm de altura. (Considerar 14,6cm de largura útil para cálculo de peças devido ao encaixe)
+Espessura ~1cm (8mm), ripas ~2cm e canaleta ~1cm | Cores: Carvalho, Freijó | Aplicações: Cabeceiras de cama, meia parede, detalhes em ambientes comerciais, "porta oculta" parcial. Curvas longas (raio >1,80m). | Ambiente: Interno, Úmido, Externo, Molhado | Instalação: Fita dupla face VHB na horizontal (a cada 50cm). Paredes irregulares usar cola PU. Encaixe macho/fêmea lateral. Corte c/ serra manual/elétrica. | Observações: Resiste até 60°C. Não pintar. Desconto a partir de 12 un. Se a parede for >90cm, compensa sugerir a opção de 135 ou de de 270cm. | Link Produto Específico: https://www.talatto.com/painel-ripado-easy-pvc-estruturado-talatto-90cm-x-15cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Easy": 
+https://www.talatto.com/ripados/easy-pvc
+
+### [DOCUMENTO #6 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Cumaru
+- **Linha**: RIPADOS
+- **Modelo**: ÁREA EXTERNA (16x270cm)
+- **Ambiente**: Interno, Úmido, Externo, Seco
+- **Material**: Ecológico (Resistente a sol, chuva e maresia). 4cm de espessura. Ripas com 3,5cm de larg., espaçamento de 1,5cm e prof. de 1,5cm.
+- **Dimensões**: 16cm de largura x 270cm de altura.
+- **Descrição**: Painel ripado ecológico de alta durabilidade projetado especialmente para áreas externas.
+- **Aplicações**: Revestimento de paredes em qualquer tipo de ambiente.
+- **Instalação**: Instalação com parafusos diretos (recomendado a cada 80cm). Possui sistema de encaixe macho/fêmea na lateral.
+- **Observações**: Garantia de 5 anos. Boa qualidade de emenda vertical (pode ser usado p/ >2,70m). Resiste até 80°C. Não pode ser pintado (produto antiaderente). Vídeo no Drive.
+- **Link da Categoria**: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Área Externa": https://www.talatto.com/ripados/area-externa
+- **Link Produto Específico**: https://www.talatto.com/painel-ripado-de-area-externa-talatto-2-70m-x-16cm
+- **Conteúdo**: Linha: RIPADOS | Modelo: ÁREA EXTERNA (16x270cm) | Material: Ecológico (Resistente a sol, chuva e maresia). 4cm de espessura. Ripas com 3,5cm de larg., espaçamento de 1,5cm e prof. de 1,5cm. | Descrição: Painel ripado ecológico de alta durabilidade projetado especialmente para áreas externas. | Dimensões: 16cm de largura x 270cm de altura. | Cores: Cumaru | Aplicações: Revestimento de paredes em qualquer tipo de ambiente. | Ambiente: Interno, Úmido, Externo, Seco | Instalação: Instalação com parafusos diretos (recomendado a cada 80cm). Possui sistema de encaixe macho/fêmea na lateral. | Observações: Garantia de 5 anos. Boa qualidade de emenda vertical (pode ser usado p/ >2,70m). Resiste até 80°C. Não pode ser pintado (produto antiaderente). Vídeo no Drive. | Link Produto Específico: https://www.talatto.com/painel-ripado-de-area-externa-talatto-2-70m-x-16cm | Link da Categoria: Toda categoria de ripados: https://www.talatto.com/ripados
+
+Categoria específica do subgrupo  "Área Externa": https://www.talatto.com/ripados/area-externa
+
+### [DOCUMENTO #7 | Categoria: Produtos | Origem: sheet]
+- **Cores**: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Cru
+- **Linha**: SHIPLAP
+- **Modelo**: SHIPLAP AMERICANO (15x110cm)
+- **Ambiente**: Interno, Seco
+- **Material**: MDF revestido em Polietileno (6mm de espessura).
+- **Dimensões**: 15cm de largura x 110cm de altura.
+- **Descrição**: Painel decorativo em peças individuais menores, ideal para projetos de meia parede. Design mais clean e aspecto liso comparado com os ripados traicionais.
+- **Aplicações**: Cabeceiras de cama, projetos de "meia parede".
+- **Instalação**: Produto autocolante (fita dupla face já aplicada). Instalado lado a lado sem espaços. Possui sistema de encaixe macho/fêmea na lateral. Corte c/ serra manual/elétrica.
+- **Observações**: Recomendado comprar perfil de acabamento. Resiste até 60°C. Para pintar, comprar a cor CRU. Desconto a partir de 10 un. Se a parede for >110cm, compensa sugerir o de 2,74m cortado ao meio.
+- **Link da Categoria**: https://www.talatto.com/shiplap
+- **Link Produto Específico**: https://www.talatto.com/painel-shiplap-americano-talatto-meia-parede-1-10m-x-15cm
+- **Conteúdo**: Linha: SHIPLAP | Modelo: SHIPLAP AMERICANO (15x110cm) | Material: MDF revestido em Polietileno (6mm de espessura). | Descrição: Painel decorativo em peças individuais menores, ideal para projetos de meia parede. Design mais clean e aspecto liso comparado com os ripados traicionais. | Dimensões: 15cm de largura x 110cm de altura. | Cores: Carvalho, Peróba, Amêndoa, Freijó, Imbuia, Branco, Areia, Cinza, Preto, Cru | Aplicações: Cabeceiras de cama, projetos de "meia parede". | Ambiente: Interno, Seco | Instalação: Produto autocolante (fita dupla face já aplicada). Instalado lado a lado sem espaços. Possui sistema de encaixe macho/fêmea na lateral. Corte c/ serra manual/elétrica. | Observações: Recomendado comprar perfil de acabamento. Resiste até 60°C. Para pintar, comprar a cor CRU. Desconto a partir de 10 un. Se a parede for >110cm, compensa sugerir o de 2,74m cortado ao meio. | Link Produto Específico: https://www.talatto.com/painel-shiplap-americano-talatto-meia-parede-1-10m-x-15cm | Link da Categoria: https://www.talatto.com/shiplap
+--------------------------------------------------------------------------------
+💬 RESPOSTA ENVIADA:
+[TEXTO] Para verificar as opções de envio e o frete para o seu endereço, você pode acessar diretamente o link do produto: https://www.talatto.com/painel-ripado-compacto-talatto-2-74m-x-25cm
+
+Deseja que eu te encaminhe para a nossa equipe dar continuidade ao seu atendimento por aqui?
+--------------------------------------------------------------------------------
+📊 CONSUMO DE TOKENS: 22,076 (In: 21,601 | Out: 475)
+================================================================================
+
+
+==================== PROMPT ENVIADO PARA IA ATENDIMENTO 17032 [2026-08-25 13:18:14] ====================
+--- SYSTEM INSTRUCTION ---
+Você é um especialista em análise visual e interpretação de conteúdo multimodal para atendimentos de suporte e vendas.
+
+## INSTRUÇÃO DE ANÁLISE OBJETIVA E GENÉRICA
+Analise a mídia fornecida (imagem, documento ou foto) em conjunto com o histórico recente da conversa.
+Forneça um resumo extremamente direto, factual e objetivo em no máximo 3 a 5 tópicos curtos. Foque EXCLUSIVAMENTE em:
+1. *Elemento/Item Principal:* Identifique o produto, documento, objeto, local, comprovante ou item central demonstrado na mídia.
+2. *Dados e Informações Visíveis:* Extraia apenas textos, números, especificações, códigos, marcas, tabelas ou medidas visíveis de forma direta e literal (se houver).
+3. *Contexto do Atendimento:* Relacione a mídia apresentada ao histórico recente da conversa e à necessidade do cliente.
+
+PROIBIDO descrever detalhes estéticos secundários irrelevantes de fundo. Mantenha a descrição genérica, concisa e aplicável a qualquer segmento de empresa, sem fazer suposições não fundamentadas.
+------------------------------
+[TEXTO]: ## HISTÓRICO RECENTE DA CONVERSA
+
+
+## TAREFA DE ANÁLISE
+Analise a mídia enviada em contexto com o histórico acima.
+[MÍDIA/OBJETO]: <class 'google.genai.types.Part'>
+============================================================
+
+==================== RESPOSTA DA IA [2026-08-25 13:18:19] ====================
+- **Item Principal:** Superfície estruturada com ripas verticais e detalhe horizontal superior, com acabamento em tom bege claro/off-white.
+- **Dados Visíveis:** Não há textos, códigos, marcas, numerações ou especificações técnicas legíveis na imagem.
+- **Contexto do Atendimento:** Demonstração visual de acabamento, design ou componente de produto (como móvel, painel ou revestimento) para verificação do cliente.
+============================================================
+
+==================== PROMPT ENVIADO PARA IA ATENDIMENTO 17032 [2026-08-25 13:18:32] ====================
+--- SYSTEM INSTRUCTION ---
+Você é um especialista em análise visual e interpretação de conteúdo multimodal para atendimentos de suporte e vendas.
+
+## INSTRUÇÃO DE ANÁLISE OBJETIVA E GENÉRICA
+Analise a mídia fornecida (imagem, documento ou foto) em conjunto com o histórico recente da conversa.
+Forneça um resumo extremamente direto, factual e objetivo em no máximo 3 a 5 tópicos curtos. Foque EXCLUSIVAMENTE em:
+1. *Elemento/Item Principal:* Identifique o produto, documento, objeto, local, comprovante ou item central demonstrado na mídia.
+2. *Dados e Informações Visíveis:* Extraia apenas textos, números, especificações, códigos, marcas, tabelas ou medidas visíveis de forma direta e literal (se houver).
+3. *Contexto do Atendimento:* Relacione a mídia apresentada ao histórico recente da conversa e à necessidade do cliente.
+
+PROIBIDO descrever detalhes estéticos secundários irrelevantes de fundo. Mantenha a descrição genérica, concisa e aplicável a qualquer segmento de empresa, sem fazer suposições não fundamentadas.
+------------------------------
+[TEXTO]: ## HISTÓRICO RECENTE DA CONVERSA
+
+
+## TAREFA DE ANÁLISE
+Analise a mídia enviada em contexto com o histórico acima.
+[MÍDIA/OBJETO]: <class 'google.genai.types.Part'>
+============================================================
+
+==================== RESPOSTA DA IA [2026-08-25 13:18:38] ====================
+* **Elemento Principal:** Ambiente residencial (quarto) decorado, apresentando parede com revestimento em painel ripado e cabeceira estofada.
+* **Dados e Informações Visíveis:** Aparelho de ar-condicionado instalado na parede superior, com a marca "GREE" visível no equipamento.
+* **Contexto do Atendimento:** Sem histórico prévio na conversa, a imagem ilustra um ambiente físico com elementos de acabamento e climatização, podendo ser utilizada como referência para projetos, instalação ou suporte técnico.
+============================================================
+================================================================================
+📌 EXECUÇÃO DO RAG AGÊNTICO LANGGRAPH - 25/08/2026 13:18:40
+👤 Atendimento ID: 17032 | Empresa ID: 5
+🤖 Modelo: gemini-3.5-flash-lite | Tentativas: 1
+🎯 Intenção: rag | Status Final: Aguardando Resposta
+--------------------------------------------------------------------------------
+📥 MENSAGEM DO CLIENTE:
+Tem fotos dele?
+--------------------------------------------------------------------------------
+🔍 CONTEXTO RAG RECUPERADO:
+### [DOCUMENTO #1 | Categoria: image | Origem: drive]
+- **Estrutura de Pastas / Caminho Completo**: `Lojistas Talatto > Ripados > Compacto > Perfil de acabamento Ripado Compacto > Perfil de acabamento Compacto cor Areia aplicado na peça de ripado.png`
+- **Linha / Subpastas do Produto**: `Ripados > Compacto > Perfil de acabamento Ripado Compacto`
+- **Nome do Arquivo**: `Perfil de acabamento Compacto cor Areia aplicado na peça de ripado.png`
+- **id_arquivo do Google Drive (para media_file_ids)**: `1ZX4h7YL29g198WTisohgWzu5YkkvDhQl`
+- **tipo**: Imagem
+- **mime_type**: image/png
+- **Conteúdo**: Arquivo: Lojistas Talatto > Ripados > Compacto > Perfil de acabamento Ripado Compacto > Perfil de acabamento Compacto cor Areia aplicado na peça de ripado.png | Tipo: Imagem | ID: 1ZX4h7YL29g198WTisohgWzu5YkkvDhQl
+
+### [DOCUMENTO #2 | Categoria: image | Origem: drive]
+- **Estrutura de Pastas / Caminho Completo**: `Lojistas Talatto > Ripados > Compacto > Ripado Compacto 135cm - Areia.jpeg`
+- **Linha / Subpastas do Produto**: `Ripados > Compacto`
+- **Nome do Arquivo**: `Ripado Compacto 135cm - Areia.jpeg`
+- **id_arquivo do Google Drive (para media_file_ids)**: `1h--CiEYwzW0RebSRCQdHlawPO__jKoBo`
+- **tipo**: Imagem
+- **mime_type**: image/jpeg
+- **Conteúdo**: Arquivo: Lojistas Talatto > Ripados > Compacto > Ripado Compacto 135cm - Areia.jpeg | Tipo: Imagem | ID: 1h--CiEYwzW0RebSRCQdHlawPO__jKoBo
+
+### [DOCUMENTO #3 | Categoria: image | Origem: drive]
+- **Estrutura de Pastas / Caminho Completo**: `Lojistas Talatto > Ripados > Compacto > Perfil de acabamento Ripado Compacto > Perfil de acabamento Ripado Compacto cor Areia.png`
+- **Linha / Subpastas do Produto**: `Ripados > Compacto > Perfil de acabamento Ripado Compacto`
+- **Nome do Arquivo**: `Perfil de acabamento Ripado Compacto cor Areia.png`
+- **id_arquivo do Google Drive (para media_file_ids)**: `1deC09srVylj5pREtMEw7mBh2qHorEQfE`
+- **tipo**: Imagem
+- **mime_type**: image/png
+- **Conteúdo**: Arquivo: Lojistas Talatto > Ripados > Compacto > Perfil de acabamento Ripado Compacto > Perfil de acabamento Ripado Compacto cor Areia.png | Tipo: Imagem | ID: 1deC09srVylj5pREtMEw7mBh2qHorEQfE
+
+### [DOCUMENTO #4 | Categoria: image | Origem: drive]
+- **Estrutura de Pastas / Caminho Completo**: `Lojistas Talatto > Ripados > Compacto > areia.jpg`
+- **Linha / Subpastas do Produto**: `Ripados > Compacto`
+- **Nome do Arquivo**: `areia.jpg`
+- **id_arquivo do Google Drive (para media_file_ids)**: `16iKMEHsqTUVRKmGq2w93-JNaMDgiE815`
+- **tipo**: Imagem
+- **mime_type**: image/jpeg
+- **Conteúdo**: Arquivo: Lojistas Talatto > Ripados > Compacto > areia.jpg | Tipo: Imagem | ID: 16iKMEHsqTUVRKmGq2w93-JNaMDgiE815
+
+### [DOCUMENTO #5 | Categoria: image | Origem: drive]
+- **Estrutura de Pastas / Caminho Completo**: `Lojistas Talatto > Ripados > Versátil > Redondo > Ripado Versátil REDONDO cor areia ambientado.JPG`
+- **Linha / Subpastas do Produto**: `Ripados > Versátil > Redondo`
+- **Nome do Arquivo**: `Ripado Versátil REDONDO cor areia ambientado.JPG`
+- **id_arquivo do Google Drive (para media_file_ids)**: `13AAnDO9xleKjLGCaisiEcWSfVHAXEL20`
+- **tipo**: Imagem
+- **mime_type**: image/jpeg
+- **Conteúdo**: Arquivo: Lojistas Talatto > Ripados > Versátil > Redondo > Ripado Versátil REDONDO cor areia ambientado.JPG | Tipo: Imagem | ID: 13AAnDO9xleKjLGCaisiEcWSfVHAXEL20
+
+### [DOCUMENTO #6 | Categoria: image | Origem: drive]
+- **Estrutura de Pastas / Caminho Completo**: `Lojistas Talatto > Ripados > Compacto > Perfil de acabamento Ripado Compacto > Perfil de acabamento Compacto cor Imbuia aplicado na peça de ripado.png`
+- **Linha / Subpastas do Produto**: `Ripados > Compacto > Perfil de acabamento Ripado Compacto`
+- **Nome do Arquivo**: `Perfil de acabamento Compacto cor Imbuia aplicado na peça de ripado.png`
+- **id_arquivo do Google Drive (para media_file_ids)**: `1Nmc_-SkrjUR9pi31Vc7EscBU7b0_d0ry`
+- **tipo**: Imagem
+- **mime_type**: image/png
+- **Conteúdo**: Arquivo: Lojistas Talatto > Ripados > Compacto > Perfil de acabamento Ripado Compacto > Perfil de acabamento Compacto cor Imbuia aplicado na peça de ripado.png | Tipo: Imagem | ID: 1Nmc_-SkrjUR9pi31Vc7EscBU7b0_d0ry
+
+### [DOCUMENTO #7 | Categoria: image | Origem: drive]
+- **Estrutura de Pastas / Caminho Completo**: `Lojistas Talatto > ShipLap > Americano > SHIPLAP AMERICANO AREIA AMBIENTADO CORREDOR.JPG`
+- **Linha / Subpastas do Produto**: `ShipLap > Americano`
+- **Nome do Arquivo**: `SHIPLAP AMERICANO AREIA AMBIENTADO CORREDOR.JPG`
+- **id_arquivo do Google Drive (para media_file_ids)**: `1SRA4wmaYg8pulxmrysbzUoYf-gpjmCWQ`
+- **tipo**: Imagem
+- **mime_type**: image/jpeg
+- **Conteúdo**: Arquivo: Lojistas Talatto > ShipLap > Americano > SHIPLAP AMERICANO AREIA AMBIENTADO CORREDOR.JPG | Tipo: Imagem | ID: 1SRA4wmaYg8pulxmrysbzUoYf-gpjmCWQ
+--------------------------------------------------------------------------------
+💬 RESPOSTA ENVIADA:
+Para você conferir como o acabamento fica na cor areia, separei algumas fotos para te mostrar. O que achou do visual? [MEDIA: 1ZX4h7YL29g198WTisohgWzu5YkkvDhQl] [MEDIA: 1h--CiEYwzW0RebSRCQdHlawPO__jKoBo]
+--------------------------------------------------------------------------------
+📊 CONSUMO DE TOKENS: 27,849 (In: 26,761 | Out: 1,088)
+================================================================================
+
+================================================================================
+📌 EXECUÇÃO DO RAG AGÊNTICO LANGGRAPH - 25/08/2026 13:19:44
+👤 Atendimento ID: 17032 | Empresa ID: 5
+🤖 Modelo: gemini-3.5-flash-lite | Tentativas: 0
+🎯 Intenção: handoff | Status Final: Atendente Chamado
+--------------------------------------------------------------------------------
+📥 MENSAGEM DO CLIENTE:
+Muito bonito, consegue feçar o orçamento para mim?
+--------------------------------------------------------------------------------
+🔍 CONTEXTO RAG RECUPERADO:
+Nenhum
+--------------------------------------------------------------------------------
+💬 RESPOSTA ENVIADA:
+Vou te passar aqui para nossa equipe dar continuidade no seu orçamento. Só um instante!
+--------------------------------------------------------------------------------
+📊 CONSUMO DE TOKENS: 2,361 (In: 2,249 | Out: 112)
+================================================================================
+

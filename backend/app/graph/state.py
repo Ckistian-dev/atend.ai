@@ -24,7 +24,7 @@ class RouterDecision(BaseModel):
     )
     handoff_destinatario: Optional[str] = Field(
         default=None,
-        description="Nome do atendente (ex: 'Gabi', 'Carlos') ou do setor (ex: 'SAC', 'Vendas', 'Financeiro') caso a intenção seja 'handoff' ou transferência."
+        description="Nome do atendente ou cargo/setor solicitado pelo cliente caso a intenção seja 'handoff' ou transferência."
     )
     reason: Optional[str] = Field(
         default=None,
@@ -64,15 +64,15 @@ class GeneratorOutput(BaseModel):
     )
     intent_handoff: bool = Field(
         default=False,
-        description="True se o atendimento deve ser transferido para um atendente humano ou setor específico (seja por solicitação do cliente, por regra da persona ou por necessidade de suporte especializado)."
+        description="True se o atendimento deve ser transferido para um atendente humano ou setor específico cadastrado na empresa."
     )
     handoff_destinatario: Optional[str] = Field(
         default=None,
-        description="Nome do atendente específico (ex: 'Gabi', 'Carlos') e/ou nome do setor (ex: 'SAC', 'Vendas', 'Suporte', 'Financeiro') para onde este atendimento deve ser direcionado no transbordo."
+        description="Nome do atendente cadastrado ou cargo/setor cadastrado EXCLUSIVAMENTE dentre os disponíveis na lista de equipe cadastrada da empresa. NUNCA invente cargos ou setores não cadastrados."
     )
     handoff_motivo: Optional[str] = Field(
         default=None,
-        description="Breve motivo da transferência para o atendente/setor (ex: 'Solicitação direta do cliente por atendente', 'Dúvida sobre cancelamento')."
+        description="Breve motivo da transferência para o atendente/cargo cadastrado (ex: 'Solicitação direta do cliente por atendente')."
     )
     media_file_ids: Optional[List[str]] = Field(
         default=None,

@@ -140,7 +140,7 @@ class Atendimento(Base):
     assigned_user_id: Mapped[Optional[int]] = mapped_column(ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True, comment="ID do usuário responsável por este atendimento")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     active_persona_id: Mapped[Optional[int]] = mapped_column(ForeignKey('configs.id'), nullable=True)
-    conversa: Mapped[Optional[str]] = mapped_column(Text, default="[]")
+    conversa: Mapped[Optional[str]] = mapped_column(Text, default="[]", nullable=True, comment="Legado: histórico antigo em JSON. Novas mensagens usam relationship 'mensagens'")
     resumo: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="")
     observacoes: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="")
     notificacao_contato: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="Destino de notificação alocado para este atendimento via round-robin")

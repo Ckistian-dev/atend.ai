@@ -7,6 +7,7 @@ from typing import Dict, Any
 from google.genai import types
 from app.graph.state import AgentState, GeneratorOutput
 from app.graph.prompts import GENERATOR_SYSTEM_PROMPT
+from app.graph.history_utils import format_conversation_history
 from app.services.gemini_service import get_gemini_service
 from app.db.database import SessionLocal
 from app.crud import crud_atendimento
@@ -76,7 +77,15 @@ Você DEVE corrigir este erro agora. Remova afirmações não suportadas e siga 
   1. Se a última mensagem do cliente for um áudio gravado (identificada por `[ÁUDIO]` ou `[Áudio Transcrito]`).
   2. Se o cliente pedir para responder por áudio/voz (ex: "manda áudio", "me manda um áudio", "responde por voz", "fala comigo", "não consigo ler", "você consegue me enviar um áudio?").
   3. Se as instruções da Persona determinarem que você responda por áudio/voz.
-- REGRAS PARA O TEXTO QUANDO `send_as_audio = True`:
+- DECISÃO DINÂMICA DE BALÕES (ÁUDIO VS TEXTO):
+  - Você PODE e DEVE decidir quais balões enviar em áudio e quais em texto na mesma resposta:
+    * Para marcar um balão específico como áudio, inicie-o com a tag `[AUDIO]` (ex: `[AUDIO] Olá, que bom falar com você!`).
+    * Para marcar um balão específico como texto, inicie-o com a tag `[TEXTO]` (ex: `[TEXTO] Acesse o nosso site pelo link: https://...`).
+    * Se `send_as_audio = True`, balões normais são falados em áudio por padrão, EXCETO balões que contenham links/URLs ou que estejam marcados com `[TEXTO]`.
+- 🚨 REGRA SUPREMA: É TERMINANTEMENTE PROIBIDO ENVIAR LINKS/URLS EM ÁUDIO:
+  - NUNCA coloque links, sites, URLs (ex: https://..., www....) dentro de áudios. A síntese de voz não deve soletrar links.
+  - Se for enviar ou sugerir um link/site, coloque SEMPRE o link em um balão de TEXTO separado (usando `[TEXTO]` ou quebra de linha), para que o cliente consiga clicar normalmente no WhatsApp.
+- REGRAS PARA O TEXTO QUANDO ENVIADO EM ÁUDIO:
   - Escreva um texto EXTREMAMENTE NATURAL, DIRETO e CONVERSACIONAL (máximo de 1 a 2 frases curtas).
   - NUNCA use marcadores de lista (*, -, •), títulos (#), tabelas, URLs ou emojis soltos no texto do áudio, pois a síntese de voz lerá esses símbolos. Escreva a frase com pontuação natural como alguém que está gravando um áudio pelo WhatsApp.
 - SE NÃO FOR RESPONDER POR ÁUDIO: Mantenha `send_as_audio = False` e formule o texto normal formatado para WhatsApp."""
@@ -103,21 +112,13 @@ Você DEVE corrigir este erro agora. Remova afirmações não suportadas e siga 
     )
 
     # 5. Histórico da Conversa
-    history_turns = []
-    for msg in history[-10:]:
-        role = msg.get("role", "user")
-        content = msg.get("content", "")
-        caption = msg.get("caption")
-        msg_type = msg.get("type", "text")
-        turn_text = content
-        if caption and str(caption).strip() and str(caption).strip() not in turn_text:
-            turn_text = f"{turn_text} [Legenda: {caption}]".strip()
-        if msg_type not in ["text", "sending"] and f"[{msg_type}" not in turn_text.lower():
-            turn_text = f"[{msg_type.upper()}]: {turn_text}".strip()
-        if turn_text:
-            history_turns.append(f"{role.upper()}: {turn_text}")
-    history_turns.append(f"USER: {user_input}")
-    user_turn_prompt = "\n".join(history_turns)
+    history_str = format_conversation_history(history, max_messages=50)
+    user_turn_prompt = f"""--- HISTÓRICO DA CONVERSA ---
+{history_str}
+
+--- MENSAGEM ATUAL DO CLIENTE ---
+USER: {user_input}
+"""
 
     logger.info(
         f"[Generator Node] Gerando resposta (Model: {model_name}, Retry: {state.get('retry_count', 0)}) "

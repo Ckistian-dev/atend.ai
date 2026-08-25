@@ -217,6 +217,74 @@ class WhatsAppService:
 
         raise MessageSendError(f"WBP: Falha no envio para {clean_to_number} (Cód 131026 / Undeliverable ou Janela 24h Expirada). Último erro: {last_exception}")
 
+    async def mark_message_as_read_official(self, phone_number_id: str, access_token: str, message_id: str) -> bool:
+        """
+        Marca uma mensagem recebida como lida na API Oficial da Meta (WBP).
+        Isso envia os recibos de leitura (tiques azuis) para o cliente no WhatsApp.
+        """
+        if not phone_number_id or not access_token or not message_id:
+            return False
+
+        # Valida que é um ID válido da Meta (normalmente inicia com wamid.)
+        msg_id_clean = str(message_id).strip()
+        if not msg_id_clean or not msg_id_clean.startswith("wamid."):
+            logger.debug(f"WBP: message_id '{msg_id_clean}' não é um WAMID da Meta. Pulando envio de recibo de leitura.")
+            return False
+
+        url = f"{self.wbp_graph_url_base}/{self.wbp_api_version}/{phone_number_id}/messages"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "messaging_product": "whatsapp",
+            "status": "read",
+            "message_id": msg_id_clean
+        }
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, json=payload, timeout=15.0)
+                if response.status_code == 200:
+                    logger.info(f"WBP: Mensagem {msg_id_clean} marcada como lida na Meta com sucesso.")
+                    return True
+                else:
+                    logger.warning(f"WBP: Falha ao marcar mensagem {msg_id_clean} como lida na Meta. Status: {response.status_code}, Resposta: {response.text}")
+                    return False
+        except Exception as e:
+            logger.warning(f"WBP: Erro de requisição ao marcar mensagem {msg_id_clean} como lida na Meta: {e}")
+            return False
+
+    async def mark_message_as_read(self, company: models.Company, message_id: str) -> bool:
+        """Adapter para marcar mensagem como lida na Meta para uma empresa."""
+        if not company or not company.wbp_phone_number_id or not message_id:
+            return False
+        return await self.mark_message_as_read_official(
+            phone_number_id=company.wbp_phone_number_id,
+            access_token=settings.WBP_ACCESS_TOKEN,
+            message_id=message_id
+        )
+
+    async def mark_messages_as_read_batch(self, company: models.Company, message_ids: List[str]) -> List[bool]:
+        """Marca múltiplas mensagens como lidas na Meta em paralelo."""
+        if not company or not company.wbp_phone_number_id or not message_ids:
+            return []
+        
+        # Filtra apenas IDs válidos (WAMIDs)
+        valid_wamids = [str(m_id).strip() for m_id in message_ids if str(m_id).strip().startswith("wamid.")]
+        if not valid_wamids:
+            return []
+
+        tasks = [
+            self.mark_message_as_read_official(
+                phone_number_id=company.wbp_phone_number_id,
+                access_token=settings.WBP_ACCESS_TOKEN,
+                message_id=wamid
+            )
+            for wamid in valid_wamids
+        ]
+        return await asyncio.gather(*tasks, return_exceptions=True)
+
     def _guess_mimetype_from_bytes(self, file_bytes: bytes) -> Optional[str]:
         """Tenta adivinhar o mimetype a partir dos bytes iniciais (magic numbers)."""
         if not file_bytes:

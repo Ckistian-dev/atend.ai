@@ -71,15 +71,15 @@ def build_prompt_from_persona_form(persona_form: Any) -> str:
     if nature_identity == "ai":
         identity_parts.append("Natureza da Identidade: IA (Transparente)")
         identity_parts.append("Postura: Você é abertamente uma inteligência artificial assistente. Se o cliente perguntar se é IA/robô, confirme com simpatia e presteza.")
-        identity_parts.append("Postura de Transbordo: Ao transferir para atendimento humano, você pode informar com clareza que está transferindo o atendimento para nossa equipe humana / consultores especializados.")
+        identity_parts.append("Postura de Transbordo: Ao transferir para atendimento humano, informe com clareza e de forma direta que está transferindo o atendimento para nossa equipe, sem usar interjeições mecânicas.")
     elif nature_identity == "ignore":
         identity_parts.append("Natureza da Identidade: Neutra / Evasiva")
         identity_parts.append("Postura: Se o cliente perguntar se você é um robô/IA, desvie educadamente mantendo o foco total em ajudar com o atendimento, sem confirmar nem negar.")
-        identity_parts.append("Postura de Transbordo: Ao transferir, use termos neutros da equipe (ex: 'Vou direcionar seu atendimento para um especialista da nossa equipe que dará continuidade por aqui...'), sem enfatizar humano vs robô.")
+        identity_parts.append("Postura de Transbordo: Ao transferir, use termos neutros da equipe (ex: 'Vou direcionar seu atendimento para a nossa equipe dar continuidade por aqui...'), sem enfatizar humano vs robô, sem inventar cargos inexistentes e sem interjeições mecânicas.")
     else:  # "human" (padrão)
         identity_parts.append("Natureza da Identidade: HUMANA (Atendente Real da Empresa)")
         identity_parts.append("Postura: Você deve agir, falar e se comportar EXATAMENTE como um atendente humano real da empresa. NUNCA diga, insinue ou admita que é uma IA, robô, bot ou assistente virtual.")
-        identity_parts.append("Postura de Transbordo: NUNCA use termos como 'atendente humano', 'equipe humana' ou 'transferir para um humano'. Fale naturalmente de colega para colega como alguém da equipe: 'Vou te passar aqui para um colega da equipe dar continuidade', 'Só um instante que vou transferir para um especialista da nossa equipe te atender', 'Vou pedir para o pessoal do setor responsável continuar com você por aqui'.")
+        identity_parts.append("Postura de Transbordo: NUNCA use termos como 'atendente humano', 'equipe humana' ou 'transferir para um humano'. Fale naturalmente de colega para colega como alguém da equipe: 'Vou te passar aqui para um colega da equipe dar continuidade', 'Só um instante que vou transferir para nossa equipe te atender', 'Vou pedir para o responsável continuar com você por aqui'. NUNCA invente cargos ou setores que não existam na equipe cadastrada e NUNCA inicie com 'Entendido!' ou 'Com certeza!'.")
 
     if identity_parts:
         lines.append("## IDENTIDADE DA PERSONA")
@@ -110,6 +110,8 @@ def build_prompt_from_persona_form(persona_form: Any) -> str:
     if qualities:
         q_str = ", ".join(qualities) if isinstance(qualities, list) else str(qualities)
         style_parts.append(f"Atributos: {q_str}")
+
+    style_parts.append("Naturalidade no WhatsApp: Converse como uma pessoa real no chat. NUNCA use interjeições robóticas de confirmação ('Entendido!', 'Isso mesmo!', 'Perfeito!', 'Com certeza!') e NUNCA repita saudações ('Oi!', 'Tudo bem?') se a conversa já estiver em andamento. Vá direto ao assunto.")
 
     if style_parts:
         lines.append("## TOM DE VOZ E COMUNICAÇÃO")
@@ -246,19 +248,33 @@ async def _process_single_atendimento_inner(atendimento_id: int, company: models
 
             team_members = []
             team_lines = []
+            registered_depts = set()
             for u in company_users:
                 u_name = (u.name or u.email.split('@')[0]).strip()
                 u_dept = (u.department or ('Admin' if u.role == 'admin' else 'Atendimento Geral')).strip()
+                registered_depts.add(u_dept)
                 team_members.append({
                     "id": u.id,
                     "name": u_name,
                     "email": u.email,
                     "department": u_dept,
-                    "role": u.role
+                    "role": u.role,
+                    "participates_distribution": bool(u.participates_distribution)
                 })
-                team_lines.append(f"- Atendente: {u_name} | Função/Setor: {u_dept}")
+                team_lines.append(f"- Atendente: {u_name} | Cargo/Setor: {u_dept}")
 
-            company_team_info = "👥 EQUIPE DE ATENDENTES E SETORES DA EMPRESA:\n" + ("\n".join(team_lines) if team_lines else "- Nenhum atendente cadastrado")
+            depts_formatted = ", ".join([f"'{d}'" for d in sorted(registered_depts)]) if registered_depts else "Nenhum cargo específico cadastrado"
+            team_lines_str = "\n".join(team_lines) if team_lines else "- Nenhum atendente cadastrado"
+
+            company_team_info = (
+                f"👥 EQUIPE E CARGOS CADASTRADOS NA EMPRESA (EXCLUSIVOS PARA TRANSBORDO):\n"
+                f"- CARGOS / SETORES DISPONÍVEIS: [{depts_formatted}]\n"
+                f"- ATENDENTES CADASTRADOS:\n{team_lines_str}\n\n"
+                f"🚨 REGRA SUPREMA DE CARGOS E TRANSBORDO:\n"
+                f"A empresa possui ESTRITAMENTE os cargos/setores e atendentes listados acima.\n"
+                f"É EXPRESSAMENTE PROIBIDO inventar, deduzir ou transferir para qualquer cargo, setor ou atendente que NÃO esteja na lista acima (ex: NUNCA direcione para SAC, Especialista, Vendas, Suporte, RH ou Financeiro a menos que constem na lista de CARGOS DISPONÍVEIS acima).\n"
+                f"Se houver apenas um cargo/atendente cadastrado (ex: Admin), direcione SEMPRE E EXCLUSIVAMENTE para ele."
+            )
 
         # --- PASSO 3: RESOLUÇÃO DE CALENDÁRIO ---
         calendar_context = ""
@@ -298,8 +314,9 @@ async def _process_single_atendimento_inner(atendimento_id: int, company: models
             idx_split -= 1
             msg_item = conversation_history[idx_split]
             c_text = str(msg_item.get("content") or "").strip()
-            if msg_item.get("caption"):
-                c_text = f"{c_text}\n[Legenda: {msg_item.get('caption')}]".strip()
+            caption = str(msg_item.get("caption") or "").strip()
+            if caption and caption not in c_text:
+                c_text = f"{c_text}\n[Legenda: {caption}]".strip() if c_text else f"[Legenda: {caption}]"
             if c_text:
                 user_msgs_tail.insert(0, c_text)
 

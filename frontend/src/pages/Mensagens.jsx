@@ -343,6 +343,110 @@ function Mensagens() {
     useEffect(() => { sendingQueueRef.current = sendingQueue; }, [sendingQueue]);
     useEffect(() => { isProcessingRef.current = isProcessing; }, [isProcessing]);
 
+    // --- NOVA FUNÇÃO: Marcar mensagens como lidas ---
+    const handleMarkAsRead = useCallback(async (atendimentoId) => {
+        if (!atendimentoId) return;
+
+        // Atualização Otimista
+        setAtendimentos(prev => prev.map(at => {
+            if (at.id === atendimentoId) {
+                let updatedMsgs = at.mensagens;
+                if (Array.isArray(at.mensagens)) {
+                    updatedMsgs = at.mensagens.map(m => (m.role === 'user' || m.role === 'client') ? { ...m, status: 'read' } : m);
+                }
+                let updatedConv = at.conversa;
+                if (typeof at.conversa === 'string' && at.conversa !== '[]') {
+                    try {
+                        const parsed = JSON.parse(at.conversa);
+                        if (Array.isArray(parsed)) {
+                            updatedConv = JSON.stringify(parsed.map(m => (m.role === 'user' || m.role === 'client') ? { ...m, status: 'read' } : m));
+                        }
+                    } catch (e) {}
+                }
+                return { ...at, mensagens: updatedMsgs, conversa: updatedConv };
+            }
+            return at;
+        }));
+
+        setSelectedAtendimento(prev => {
+            if (prev?.id === atendimentoId) {
+                let updatedMsgs = prev.mensagens;
+                if (Array.isArray(prev.mensagens)) {
+                    updatedMsgs = prev.mensagens.map(m => (m.role === 'user' || m.role === 'client') ? { ...m, status: 'read' } : m);
+                }
+                let updatedConv = prev.conversa;
+                if (typeof prev.conversa === 'string' && prev.conversa !== '[]') {
+                    try {
+                        const parsed = JSON.parse(prev.conversa);
+                        if (Array.isArray(parsed)) {
+                            updatedConv = JSON.stringify(parsed.map(m => (m.role === 'user' || m.role === 'client') ? { ...m, status: 'read' } : m));
+                        }
+                    } catch (e) {}
+                }
+                return { ...prev, mensagens: updatedMsgs, conversa: updatedConv };
+            }
+            return prev;
+        });
+
+        try {
+            const res = await api.post(`/atendimentos/${atendimentoId}/mark_read`);
+            if (res.data) {
+                setAtendimentos(prev => prev.map(at => (at.id === atendimentoId ? res.data : at)));
+                setSelectedAtendimento(prev => (prev?.id === atendimentoId ? res.data : prev));
+            }
+        } catch (err) {
+            console.error("Erro ao marcar mensagens como lidas na API:", err);
+        }
+    }, []);
+
+    // --- NOVA FUNÇÃO: Marcar atendimento como não lido ---
+    const handleMarkAsUnread = useCallback(async (atendimentoId) => {
+        if (!atendimentoId) return;
+
+        // Atualização Otimista
+        setAtendimentos(prev => prev.map(at => {
+            if (at.id === atendimentoId) {
+                let updatedMsgs = at.mensagens;
+                if (Array.isArray(at.mensagens) && at.mensagens.length > 0) {
+                    const clone = [...at.mensagens];
+                    const lastUserIdx = clone.map(m => m.role).lastIndexOf('user');
+                    if (lastUserIdx !== -1) {
+                        clone[lastUserIdx] = { ...clone[lastUserIdx], status: 'unread' };
+                    }
+                    updatedMsgs = clone;
+                }
+                return { ...at, mensagens: updatedMsgs };
+            }
+            return at;
+        }));
+
+        setSelectedAtendimento(prev => {
+            if (prev?.id === atendimentoId) {
+                let updatedMsgs = prev.mensagens;
+                if (Array.isArray(prev.mensagens) && prev.mensagens.length > 0) {
+                    const clone = [...prev.mensagens];
+                    const lastUserIdx = clone.map(m => m.role).lastIndexOf('user');
+                    if (lastUserIdx !== -1) {
+                        clone[lastUserIdx] = { ...clone[lastUserIdx], status: 'unread' };
+                    }
+                    updatedMsgs = clone;
+                }
+                return { ...prev, mensagens: updatedMsgs };
+            }
+            return prev;
+        });
+
+        try {
+            const res = await api.post(`/atendimentos/${atendimentoId}/mark_unread`);
+            if (res.data) {
+                setAtendimentos(prev => prev.map(at => (at.id === atendimentoId ? res.data : at)));
+                setSelectedAtendimento(prev => (prev?.id === atendimentoId ? res.data : prev));
+            }
+        } catch (err) {
+            console.error("Erro ao marcar atendimento como não lido na API:", err);
+        }
+    }, []);
+
     // --- Fetch (User e Mensagens) ---
     const fetchData = useCallback(async (isInitialLoad = false) => {
         if (isInitialLoad) setIsLoading(true);
@@ -544,6 +648,14 @@ function Mensagens() {
                     if (isMounted && res.data) {
                         const serverData = res.data;
 
+                        // Se o chat está ativo e aberto na tela e recebeu novas mensagens unread, marca como lidas
+                        const hasUnread = Array.isArray(serverData.mensagens)
+                            ? serverData.mensagens.some(m => m && (m.role === 'user' || m.role === 'client') && m.status === 'unread')
+                            : false;
+                        if (hasUnread) {
+                            api.post(`/atendimentos/${currentAtendimentoId}/mark_read`).catch(() => {});
+                        }
+
                         setAtendimentos(prevAtendimentos => {
                             const localAtendimento = prevAtendimentos.find(at => at.id === currentAtendimentoId);
                             if (!localAtendimento) return prevAtendimentos;
@@ -694,6 +806,25 @@ function Mensagens() {
             localStorage.setItem('lastOpenedAtendimentoId', selectedAtendimento.id);
         }
     }, [selectedAtendimento]);
+
+    // Marca como lido automaticamente quando o atendimento selecionado possui mensagens não lidas
+    useEffect(() => {
+        if (!selectedAtendimento?.id) return;
+
+        let hasUnread = false;
+        if (Array.isArray(selectedAtendimento.mensagens) && selectedAtendimento.mensagens.length > 0) {
+            hasUnread = selectedAtendimento.mensagens.some(m => m && (m.role === 'user' || m.role === 'client') && m.status === 'unread');
+        } else if (typeof selectedAtendimento.conversa === 'string' && selectedAtendimento.conversa !== '[]') {
+            try {
+                const parsed = JSON.parse(selectedAtendimento.conversa || '[]');
+                hasUnread = Array.isArray(parsed) && parsed.some(m => m && (m.role === 'user' || m.role === 'client') && m.status === 'unread');
+            } catch (e) {}
+        }
+
+        if (hasUnread) {
+            handleMarkAsRead(selectedAtendimento.id);
+        }
+    }, [selectedAtendimento?.id, selectedAtendimento?.mensagens, selectedAtendimento?.conversa, handleMarkAsRead]);
 
     // --- FUNÇÃO CORRIGIDA PARA USAR AXIOS (api) ---
     const handleViewMedia = async (mediaId, type, filename) => {
@@ -1433,6 +1564,8 @@ function Mensagens() {
                                         onAddNewTag={handleAddNewTag}
                                         onDeleteTag={handleDeleteTag}
                                         onSwitchToAtendimentos={handleSwitchToAtendimentos}
+                                        onMarkAsRead={handleMarkAsRead}
+                                        onMarkAsUnread={handleMarkAsUnread}
                                     />
                                 ))
                             ) : (

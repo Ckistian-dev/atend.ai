@@ -27,34 +27,60 @@ async def fallback_node(state: AgentState) -> Dict[str, Any]:
 
     nature_identity = str(state.get("nature_identity") or "human").strip().lower()
 
-    handoff_dest = state.get("handoff_destinatario")
-    dest_prompt_str = f" para o(a) atendente ou setor '{handoff_dest}'" if handoff_dest else ""
+    team_members = state.get("team_members") or []
+    raw_dest = state.get("handoff_destinatario")
+    resolved_dest_name = None
+
+    if raw_dest and str(raw_dest).strip() and team_members:
+        clean_d = str(raw_dest).strip().lower()
+        for m in team_members:
+            m_name = (m.get("name") or "").strip().lower()
+            m_dept = (m.get("department") or "").strip().lower()
+            if clean_d in m_name or m_name in clean_d:
+                resolved_dest_name = m.get("name")
+                break
+            if clean_d in m_dept or m_dept in clean_d:
+                resolved_dest_name = m.get("department")
+                break
+
+    if not resolved_dest_name and len(team_members) == 1:
+        single_m = team_members[0]
+        resolved_dest_name = single_m.get("department") or single_m.get("name")
+
+    dest_prompt_str = f" para {resolved_dest_name}" if resolved_dest_name else ""
 
     if nature_identity == "human":
         system_instruction_to_use = f"""Você é um atendente da equipe da empresa.
 O atendimento precisa ser encaminhado{dest_prompt_str} para dar continuidade.
-Gere uma mensagem curta, empática e 100% humanizada informando que você está passando o cliente{dest_prompt_str} para dar continuidade no atendimento.
+Gere uma mensagem curta, empática, direta e 100% humanizada informando que você está passando o cliente{dest_prompt_str} para dar continuidade no atendimento.
 REGRAS CRÍTICAS DE IDENTIDADE HUMANA:
 - NUNCA use palavras como 'humano', 'robô', 'IA', 'assistente virtual' ou 'sistema'.
-- Fale naturalmente como colega de trabalho: ex: "Entendido! Vou te passar aqui para o(a) {handoff_dest or 'colega da equipe'} que vai dar continuidade no seu atendimento. Só um instante!", "Perfeito! Estou transferindo aqui para o setor responsável te atender melhor por aqui."
+- NUNCA invente nomes, cargos ou setores que não existam na equipe da empresa.
+- NUNCA inicie com interjeições robóticas como 'Entendido!', 'Perfeito!', 'Com certeza!' ou 'Isso mesmo!'.
+- NUNCA reinicie com saudações como 'Oi, [Nome]!' ou 'Tudo bem?'.
+- Fale naturalmente de colega para colega: ex: "Vou te passar aqui para {resolved_dest_name or 'nossa equipe'} dar continuidade no seu atendimento. Só um instante!"
 - Use *negrito* com 1 asterisco se necessário.
 """
-        fallback_msg = f"Entendido! Vou transferir seu atendimento para {handoff_dest or 'um colega da nossa equipe'} dar continuidade por aqui. Só um instante!"
+        fallback_msg = f"Vou transferir seu atendimento para {resolved_dest_name or 'um colega da nossa equipe'} dar continuidade por aqui. Só um instante!"
     elif nature_identity == "ai":
         system_instruction_to_use = f"""Você é o Assistente Virtual de IA da empresa.
 O sistema não conseguiu responder com total certeza ou o cliente solicitou atendimento humano.
-Sua tarefa é gerar uma mensagem curta, empática e amigável informando que você está transferindo o atendimento{dest_prompt_str} e que em breve dará continuidade.
+Sua tarefa é gerar uma mensagem curta, empática, direta e amigável informando que você está transferindo o atendimento{dest_prompt_str} e que em breve dará continuidade.
+- NUNCA inicie com interjeições robóticas como 'Entendido!', 'Perfeito!', 'Com certeza!' ou 'Isso mesmo!'.
+- NUNCA reinicie com saudações como 'Oi, [Nome]!' ou 'Tudo bem?'.
 - Use *negrito* com 1 asterisco se necessário.
-- Não invente respostas para a dúvida que não foi respondida.
+- Não invente respostas para a dúvida que não foi respondida nem cargos inexistentes.
 """
-        fallback_msg = f"Entendido! Estou transferindo seu atendimento para {handoff_dest or 'a nossa equipe humana'}. Em instantes daremos continuidade por aqui. Obrigado pela paciência!"
+        fallback_msg = f"Estou transferindo seu atendimento para {resolved_dest_name or 'a nossa equipe'}. Em instantes daremos continuidade por aqui. Obrigado pela paciência!"
     else:  # "ignore"
         system_instruction_to_use = f"""Você é o consultor de atendimento da empresa.
-Gere uma mensagem curta e profissional informando que está direcionando o atendimento{dest_prompt_str} para dar continuidade.
-- Não mencione robô nem humano. Use termos neutros como 'especialista da equipe' ou 'setor responsável'.
+Gere uma mensagem curta, direta e profissional informando que está direcionando o atendimento{dest_prompt_str} para dar continuidade.
+- Não mencione robô nem humano. Use termos neutros como 'nossa equipe' ou 'o setor responsável'.
+- NUNCA inicie com interjeições robóticas como 'Entendido!', 'Perfeito!', 'Com certeza!' ou 'Isso mesmo!'.
+- NUNCA reinicie com saudações como 'Oi, [Nome]!' ou 'Tudo bem?'.
 - Use *negrito* com 1 asterisco se necessário.
 """
-        fallback_msg = f"Entendido! Estou direcionando seu atendimento para {handoff_dest or 'um especialista da nossa equipe'} que dará continuidade por aqui. Só um momento!"
+        fallback_msg = f"Estou direcionando seu atendimento para {resolved_dest_name or 'nossa equipe'} que dará continuidade por aqui. Só um momento!"
 
     in_tokens = 0
     out_tokens = 0
