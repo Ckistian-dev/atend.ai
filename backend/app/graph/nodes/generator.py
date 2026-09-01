@@ -174,21 +174,44 @@ USER: {user_input}
 
         handoff_dest = gen_output.handoff_destinatario.strip() if gen_output.handoff_destinatario and gen_output.handoff_destinatario.strip() else None
         handoff_mot = gen_output.handoff_motivo.strip() if gen_output.handoff_motivo and gen_output.handoff_motivo.strip() else None
+        intent_handoff_val = bool(gen_output.intent_handoff or state.get("intent_handoff"))
+        is_conclude = bool(gen_output.intent_conclude or state.get("intent_conclude"))
+
+        audit_trail = dict(state.get("ai_audit_trail") or {})
+        iterations = list(audit_trail.get("iterations") or [])
+        iterations.append({
+            "retry_count": state.get("retry_count", 0),
+            "critique_received": state.get("critique") or None,
+            "draft_response": gen_output.response_text,
+            "send_as_audio": gen_output.send_as_audio,
+            "intent_handoff": gen_output.intent_handoff,
+            "handoff_destinatario": handoff_dest,
+            "handoff_motivo": handoff_mot,
+            "resumo_atualizado": gen_output.resumo_atualizado,
+            "tags_para_adicionar": gen_output.tags_para_adicionar,
+            "guardrail": None
+        })
+        audit_trail["iterations"] = iterations
 
         return {
             "draft_response": gen_output.response_text,
             "send_as_audio": bool(gen_output.send_as_audio and tts_voice),
             "resumo_crm": gen_output.resumo_atualizado,
-            "status_final": "Atendente Chamado" if gen_output.intent_handoff else ("Concluído" if gen_output.intent_conclude else "Aguardando Resposta"),
-            "intent_handoff": bool(gen_output.intent_handoff),
+            "status_final": "Atendente Chamado" if intent_handoff_val else ("Concluído" if is_conclude else "Aguardando Resposta"),
+            "intent_conclude": is_conclude,
+            "intent_handoff": intent_handoff_val,
             "handoff_destinatario": handoff_dest,
             "handoff_motivo": handoff_mot,
             "media_file_ids": [fid for fid in all_media_ids if fid and str(fid).strip()],
             "novo_nome_cliente": gen_output.novo_nome_cliente.strip() if gen_output.novo_nome_cliente and gen_output.novo_nome_cliente.strip() else None,
             "tags_para_adicionar": [t.strip() for t in (gen_output.tags_para_adicionar or []) if t and str(t).strip()],
+            "ai_audit_trail": audit_trail,
             "input_tokens": state.get("input_tokens", 0) + in_tokens,
             "output_tokens": state.get("output_tokens", 0) + out_tokens
         }
+
+
+
 
     except Exception as e:
         logger.error(f"[Generator Node] Erro na geração: {e}", exc_info=True)

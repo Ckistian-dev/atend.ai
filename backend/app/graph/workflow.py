@@ -13,17 +13,18 @@ from app.graph.nodes.output import output_node
 
 logger = logging.getLogger(__name__)
 
-def route_after_router(state: AgentState) -> Literal["retriever", "tools", "generator", "fallback"]:
+def route_after_router(state: AgentState) -> Literal["retriever", "tools", "generator"]:
     """
     Roteia a partir da decisão tomada pelo Router Node.
+    - 'rag': busca documentos e mídias na base de conhecimento antes de gerar a resposta.
+    - 'tool': executa ferramentas externas (cálculos, links, etc.) antes de gerar a resposta.
+    - Todos os demais casos (incluindo direct_chat e pedidos de handoff): seguem para o Generator Node para conduzir o diálogo de forma humanizada, resiliente e contextualizada.
     """
     intent = state.get("intent_category", "rag")
     if intent == "rag":
         return "retriever"
     elif intent == "tool":
         return "tools"
-    elif intent == "handoff":
-        return "fallback"
     else:
         return "generator"
 
@@ -71,8 +72,7 @@ def create_agent_graph():
         {
             "retriever": "retriever",
             "tools": "tools",
-            "generator": "generator",
-            "fallback": "fallback"
+            "generator": "generator"
         }
     )
 

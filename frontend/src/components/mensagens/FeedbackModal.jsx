@@ -23,6 +23,10 @@ const getFriendlySectionName = (secao, campo) => {
     if (secao && secao.trim()) return secao;
     const map = {
         ai_name: 'Identidade',
+        company_name: 'Identidade',
+        role: 'Identidade',
+        language: 'Identidade',
+        nature_identity: 'Identidade',
         objective: 'Missão e Objetivo',
         mission: 'Missão e Objetivo',
         restrictions: 'Regras e Restrições',
@@ -30,7 +34,8 @@ const getFriendlySectionName = (secao, campo) => {
         extra_instructions: 'Instruções Adicionais',
         formality: 'Tom de Voz',
         tone: 'Tom de Voz',
-        objectivity: 'Objetividade',
+        objectivity: 'Tom de Voz',
+        qualities: 'Tom de Voz',
     };
     return map[campo] || 'Regras da Persona';
 };
@@ -38,6 +43,10 @@ const getFriendlySectionName = (secao, campo) => {
 const getFriendlyFieldName = (campo) => {
     const map = {
         ai_name: 'Nome do Agente',
+        company_name: 'Empresa / Marca',
+        role: 'Cargo / Função',
+        language: 'Idioma',
+        nature_identity: 'Natureza da Identidade',
         objective: 'Objetivo Principal',
         mission: 'Missão',
         restrictions: 'Restrições e Conduta',
@@ -45,9 +54,50 @@ const getFriendlyFieldName = (campo) => {
         extra_instructions: 'Instruções Adicionais',
         formality: 'Nível de Formalidade',
         tone: 'Tom de Voz',
-        objectivity: 'Objetividade',
+        objectivity: 'Nível de Objetividade',
+        qualities: 'Atributos & Qualidades',
     };
     return map[campo] || campo;
+};
+
+const renderActionBadge = (acao) => {
+    const act = (acao || 'modificar').toLowerCase();
+    if (act === 'adicionar') {
+        return (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                + Adicionar
+            </span>
+        );
+    }
+    if (act === 'remover') {
+        return (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">
+                ✕ Remover
+            </span>
+        );
+    }
+    return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
+            ✎ Reformular / Substituir
+        </span>
+    );
+};
+
+const formatSliderValue = (campo, val) => {
+    if (val === null || val === undefined) return 'Não definido';
+    const num = Number(val);
+    if (isNaN(num)) return String(val);
+    if (campo === 'formality') {
+        if (num <= 0.3) return `Formal (${num.toFixed(1)})`;
+        if (num >= 0.7) return `Informal (${num.toFixed(1)})`;
+        return `Semi-formal (${num.toFixed(1)})`;
+    }
+    if (campo === 'objectivity') {
+        if (num <= 0.3) return `Direto (${num.toFixed(1)})`;
+        if (num >= 0.7) return `Detalhado (${num.toFixed(1)})`;
+        return `Moderado (${num.toFixed(1)})`;
+    }
+    return num.toFixed(1);
 };
 
 // Parser robusto para limpar arrays, JSON stringificados e artefatos de IA
@@ -160,6 +210,86 @@ const renderFormattedRule = (val, isNew = false) => {
     );
 };
 
+const renderFormDiff = (item) => {
+    const acao = (item.acao || 'modificar').toLowerCase();
+    const isSlider = ['formality', 'objectivity'].includes(item.campo);
+    const isRemove = acao === 'remover';
+    const isAdd = acao === 'adicionar';
+
+    if (isSlider) {
+        return (
+            <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="bg-slate-50/70 rounded-2xl p-4 border border-slate-200/70 flex flex-col">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Tom Atual</div>
+                    <div className="p-3 bg-white rounded-xl border border-slate-200 text-slate-700 text-xs font-bold">
+                        {formatSliderValue(item.campo, item.valor_antigo)}
+                    </div>
+                </div>
+                <div className="bg-indigo-50/30 rounded-2xl p-4 border border-indigo-100 flex flex-col">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-indigo-600 mb-2 flex items-center gap-1.5">
+                        <Sparkles size={12} /> Novo Tom Sugerido
+                    </div>
+                    <div className="p-3 bg-indigo-50/80 rounded-xl border border-indigo-200 text-indigo-950 text-xs font-bold">
+                        {formatSliderValue(item.campo, item.valor_novo)}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Lado Esquerdo: Estado Atual */}
+            <div className={`rounded-2xl p-4 border flex flex-col ${isRemove ? 'bg-rose-50/30 border-rose-100' : 'bg-slate-50/70 border-slate-200/70'}`}>
+                <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                        <span className={`w-1.5 h-1.5 rounded-full ${isRemove ? 'bg-rose-500' : 'bg-slate-400'}`} />
+                        {isAdd ? 'Diretriz Existente' : isRemove ? 'Diretriz a ser Excluída' : 'Diretriz Atual a Substituir'}
+                    </span>
+                    {item.item_referencia && item.item_referencia !== item.valor_antigo && (
+                        <span className="text-[9px] font-medium text-slate-400">Ref: {String(item.item_referencia).slice(0, 30)}...</span>
+                    )}
+                </div>
+                <div className="flex-1">
+                    {isAdd ? (
+                        <div className="flex items-center gap-2.5 py-4 px-4 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-slate-400 text-xs italic">
+                            <AlertCircle size={15} className="shrink-0 text-slate-400/80" />
+                            <span>Nenhuma regra substituída (Nova diretriz adicional)</span>
+                        </div>
+                    ) : (
+                        renderFormattedRule(item.valor_antigo, false)
+                    )}
+                </div>
+            </div>
+
+            {/* Lado Direito: Nova Proposta */}
+            <div className={`rounded-2xl p-4 border flex flex-col ${isRemove ? 'bg-slate-50/60 border-slate-200/60' : 'bg-indigo-50/30 border-indigo-100'}`}>
+                <div className="text-[10px] font-black uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    {isRemove ? (
+                        <span className="text-rose-600 font-bold flex items-center gap-1">
+                            <XIcon size={12} /> Ação Proposta
+                        </span>
+                    ) : (
+                        <span className="text-indigo-600 font-bold flex items-center gap-1">
+                            <Sparkles size={12} /> {isAdd ? 'Nova Diretriz a Adicionar' : 'Nova Diretriz Proposta'}
+                        </span>
+                    )}
+                </div>
+                <div className="flex-1">
+                    {isRemove ? (
+                        <div className="flex items-center gap-2.5 py-4 px-4 rounded-xl bg-rose-50/50 border border-dashed border-rose-200 text-rose-700 text-xs font-medium">
+                            <AlertCircle size={15} className="shrink-0 text-rose-500" />
+                            <span>Esta diretriz será removida das regras da persona.</span>
+                        </div>
+                    ) : (
+                        renderFormattedRule(item.valor_novo, true)
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId, mode = 'conversation' }) => {
     const [feedbackText, setFeedbackText] = useState('');
     const [feedbackAnalysis, setFeedbackAnalysis] = useState(null);
@@ -226,19 +356,21 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId, mode = 'conve
     const handleApplyFeedback = async () => {
         setIsApplyingFeedback(true);
         try {
-            const finalFormulario = feedbackAnalysis.alteracoes_formulario?.filter((_, i) => selectedFormulario.includes(i)).map(item => {
-                const isListField = ['restrictions', 'handoff_rules', 'qualities', 'tags'].includes(item.campo);
-                return {
-                    ...item,
-                    valor_novo: isListField ? parseRuleItems(item.valor_novo) : (typeof item.valor_novo === 'string' ? item.valor_novo.trim() : item.valor_novo)
-                };
-            }) || null;
+            const finalFormulario = feedbackAnalysis.alteracoes_formulario
+                ?.filter((_, i) => selectedFormulario.includes(i))
+                ?.map(item => ({
+                    campo: item.campo,
+                    secao: item.secao,
+                    acao: item.acao || 'modificar',
+                    item_referencia: item.item_referencia || (item.acao !== 'adicionar' ? (typeof item.valor_antigo === 'string' ? item.valor_antigo : null) : null),
+                    valor_antigo: item.valor_antigo,
+                    valor_novo: item.valor_novo,
+                    motivo: item.motivo
+                })) || null;
+
             const finalPlanilha = feedbackAnalysis.alteracoes_planilha?.filter((_, i) => selectedPlanilha.includes(i)) || null;
             const finalRag = feedbackAnalysis.alteracoes_rag?.filter((_, i) => selectedRag.includes(i)) || null;
             const finalWorkflow = applyWorkflow ? feedbackAnalysis.novo_workflow : null;
-
-            const allFormSelected = selectedFormulario.length === (feedbackAnalysis.alteracoes_formulario?.length || 0) && selectedFormulario.length > 0;
-            const finalNovoPersonaForm = allFormSelected ? feedbackAnalysis.novo_persona_form : null;
 
             let endpoint = '';
             if (atendimentoId) {
@@ -257,7 +389,7 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId, mode = 'conve
 
             const res = await api.post(endpoint, {
                 alteracoes_formulario: finalFormulario?.length > 0 ? finalFormulario : null,
-                novo_persona_form: finalNovoPersonaForm,
+                novo_persona_form: null,
                 alteracoes_planilha: finalPlanilha?.length > 0 ? finalPlanilha : null,
                 alteracoes_rag: finalRag?.length > 0 ? finalRag : null,
                 novo_workflow: finalWorkflow
@@ -428,13 +560,14 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId, mode = 'conve
                                                                 onChange={() => {}}
                                                                 className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer pointer-events-none"
                                                             />
-                                                            <div className="flex items-center gap-2">
+                                                            <div className="flex items-center gap-2 flex-wrap">
                                                                 <span className="text-xs font-bold text-slate-800">
                                                                     {getFriendlySectionName(item.secao, item.campo)}
                                                                 </span>
                                                                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-600 uppercase tracking-wider">
                                                                     {getFriendlyFieldName(item.campo)}
                                                                 </span>
+                                                                {renderActionBadge(item.acao)}
                                                             </div>
                                                         </div>
 
@@ -454,30 +587,8 @@ const FeedbackModal = ({ isOpen, onClose, atendimentoId, configId, mode = 'conve
                                                         </div>
                                                     )}
 
-                                                    {/* Comparação Antes vs Depois */}
-                                                    <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
-                                                        {/* Estado Atual */}
-                                                        <div className="bg-slate-50/70 rounded-2xl p-4 border border-slate-200/70 flex flex-col">
-                                                            <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-                                                                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                                                                Estado Atual
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                {renderFormattedRule(item.valor_antigo, false)}
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Nova Regra Sugerida */}
-                                                        <div className="bg-indigo-50/30 rounded-2xl p-4 border border-indigo-100 flex flex-col">
-                                                            <div className="text-[10px] font-black uppercase tracking-wider text-indigo-600 mb-3 flex items-center gap-1.5">
-                                                                <Sparkles size={12} className="text-indigo-600" />
-                                                                Nova Diretriz Proposta
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                {renderFormattedRule(item.valor_novo, true)}
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                    {/* Comparação Antes vs Depois Inteligente */}
+                                                    {renderFormDiff(item)}
                                                 </div>
                                             );
                                         })}

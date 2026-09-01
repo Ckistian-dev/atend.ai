@@ -30,9 +30,12 @@ const GlobalNotificationHandler = () => {
                 // Helper para contar mensagens não lidas do usuário
                 const getUnreadCount = (item) => {
                     try {
+                        if (Array.isArray(item.mensagens) && item.mensagens.length > 0) {
+                            return item.mensagens.filter(msg => (msg.role === 'user' || msg.role === 'client') && msg.status === 'unread').length;
+                        }
                         const conversa = typeof item.conversa === 'string' ? JSON.parse(item.conversa || '[]') : (item.conversa || []);
                         if (Array.isArray(conversa)) {
-                            return conversa.filter(msg => msg.role === 'user' && msg.status === 'unread').length;
+                            return conversa.filter(msg => (msg.role === 'user' || msg.role === 'client') && msg.status === 'unread').length;
                         }
                         return 0;
                     } catch (e) {
@@ -105,7 +108,7 @@ const GlobalNotificationHandler = () => {
             }
 
             if (isMounted) {
-                timeoutId = setTimeout(checkNotifications, 5000); // Polling a cada 5 segundos
+                timeoutId = setTimeout(checkNotifications, 8000); // Polling a cada 8 segundos
             }
         };
 

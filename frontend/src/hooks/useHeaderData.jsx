@@ -22,24 +22,13 @@ export const useHeaderData = () => {
 
     const fetchDashboardData = useCallback(async () => {
         try {
-            const [userRes, agentRes, dashboardRes] = await Promise.all([
+            const [userRes, agentRes] = await Promise.all([
                 api.get('/auth/me'),
-                api.get('/agent/status'),
-                api.get('/dashboard/')
+                api.get('/agent/status')
             ]);
 
             setUser(userRes.data);
             setAgentStatus(agentRes.data.status);
-
-            const newActivity = dashboardRes.data.recentActivity?.[0];
-            
-            setLatestActivity(currentActivity => {
-                // Previne re-renderizações desnecessárias se a atividade for a mesma
-                if (newActivity && JSON.stringify(newActivity) !== JSON.stringify(currentActivity)) {
-                    return newActivity;
-                }
-                return currentActivity;
-            });
 
             // Reseta o erro caso uma requisição subsequente funcione
             setHasError(false);
@@ -60,7 +49,7 @@ export const useHeaderData = () => {
             }
             
             if (isMounted) {
-                timeoutId = setTimeout(pollData, 5000);
+                timeoutId = setTimeout(pollData, 8000);
             }
         };
 

@@ -18,6 +18,7 @@ from app.graph.workflow import run_agent_workflow
 from app.services.gemini_service import get_gemini_service
 from app.services.google_calendar_service import get_google_calendar_service
 from app.services.agent_service import TABELA_PRECOS, BASE_FLASH_PRICE
+from app.services.whatsapp_service import get_whatsapp_service
 
 try:
     from langgraph.errors import NodeCancelledError
@@ -71,15 +72,16 @@ def build_prompt_from_persona_form(persona_form: Any) -> str:
     if nature_identity == "ai":
         identity_parts.append("Natureza da Identidade: IA (Transparente)")
         identity_parts.append("Postura: Você é abertamente uma inteligência artificial assistente. Se o cliente perguntar se é IA/robô, confirme com simpatia e presteza.")
-        identity_parts.append("Postura de Transbordo: Ao transferir para atendimento humano, informe com clareza e de forma direta que está transferindo o atendimento para nossa equipe, sem usar interjeições mecânicas.")
+        identity_parts.append("Postura de Transbordo: Ao transferir para atendimento humano, informe com clareza e de forma direta que está transferindo o atendimento para nossa equipe. 🚨 NUNCA use o nome do PRÓPRIO CLIENTE na mensagem de transferência (ex: nunca diga 'vou te passar para [Nome do Cliente]'). Use sempre 'a nossa equipe'.")
     elif nature_identity == "ignore":
         identity_parts.append("Natureza da Identidade: Neutra / Evasiva")
         identity_parts.append("Postura: Se o cliente perguntar se você é um robô/IA, desvie educadamente mantendo o foco total em ajudar com o atendimento, sem confirmar nem negar.")
-        identity_parts.append("Postura de Transbordo: Ao transferir, use termos neutros da equipe (ex: 'Vou direcionar seu atendimento para a nossa equipe dar continuidade por aqui...'), sem enfatizar humano vs robô, sem inventar cargos inexistentes e sem interjeições mecânicas.")
+        identity_parts.append("Postura de Transbordo: Ao transferir, use termos neutros da equipe (ex: 'Vou direcionar seu atendimento para a nossa equipe dar continuidade por aqui...'), sem enfatizar humano vs robô, sem inventar cargos inexistentes e 🚨 NUNCA use o nome do próprio cliente como atendente.")
     else:  # "human" (padrão)
         identity_parts.append("Natureza da Identidade: HUMANA (Atendente Real da Empresa)")
         identity_parts.append("Postura: Você deve agir, falar e se comportar EXATAMENTE como um atendente humano real da empresa. NUNCA diga, insinue ou admita que é uma IA, robô, bot ou assistente virtual.")
-        identity_parts.append("Postura de Transbordo: NUNCA use termos como 'atendente humano', 'equipe humana' ou 'transferir para um humano'. Fale naturalmente de colega para colega como alguém da equipe: 'Vou te passar aqui para um colega da equipe dar continuidade', 'Só um instante que vou transferir para nossa equipe te atender', 'Vou pedir para o responsável continuar com você por aqui'. NUNCA invente cargos ou setores que não existam na equipe cadastrada e NUNCA inicie com 'Entendido!' ou 'Com certeza!'.")
+        identity_parts.append("Postura de Transbordo: NUNCA use termos como 'atendente humano', 'equipe humana' ou 'transferir para um humano'. Fale naturalmente de colega para colega como alguém da equipe: 'Vou te passar aqui para um colega da equipe dar continuidade', 'Só um instante que vou transferir para nossa equipe te atender'. 🚨 NUNCA use o nome do PRÓPRIO CLIENTE como atendente (ex: NUNCA diga 'vou te passar para o [Nome do Cliente]'). NUNCA invente cargos ou setores que não existam na equipe cadastrada e NUNCA inicie com 'Entendido!' ou 'Com certeza!'.")
+
 
     if identity_parts:
         lines.append("## IDENTIDADE DA PERSONA")
@@ -112,6 +114,8 @@ def build_prompt_from_persona_form(persona_form: Any) -> str:
         style_parts.append(f"Atributos: {q_str}")
 
     style_parts.append("Naturalidade no WhatsApp: Converse como uma pessoa real no chat. NUNCA use interjeições robóticas de confirmação ('Entendido!', 'Isso mesmo!', 'Perfeito!', 'Com certeza!') e NUNCA repita saudações ('Oi!', 'Tudo bem?') se a conversa já estiver em andamento. Vá direto ao assunto.")
+    style_parts.append("Resiliência e Prioridade de Transbordo: Se houver regra específica da empresa/persona determinando transferência para determinado assunto (ex: cancelamentos, reclamações formais), transfira imediatamente sem hesitar. Em casos gerais, seja resiliente e não sugira transferência sem motivo. Se o cliente pedir atendente de forma genérica, ofereça ajuda por aqui e transfira apenas após confirmação. NUNCA transfira o atendimento no primeiro contato, em dúvidas de produtos/serviços, em pedidos de orçamento, nem quando o cliente responder 'Sim', 'Quero', 'Pode ser', 'Isso', 'Ok' ou escolher uma opção/plano/item em resposta a uma pergunta da IA. Prossiga sempre o atendimento com a IA e avance no diálogo.")
+
 
     if style_parts:
         lines.append("## TOM DE VOZ E COMUNICAÇÃO")
@@ -195,6 +199,22 @@ async def _process_single_atendimento_inner(atendimento_id: int, company: models
 
         # --- PASSO 2: COLETA DE CONTEXTO E CONFIGURAÇÃO ---
         async with SessionLocal() as db_ctx:
+            # Visualização automática de mensagens pela IA: marca como lida no banco e envia tiques azuis à Meta
+            try:
+                _, wamid_list = await crud_atendimento.mark_atendimento_messages_as_read(
+                    db=db_ctx,
+                    company_id=company.id,
+                    atendimento_id=atendimento_id
+                )
+                await db_ctx.commit()
+
+                if wamid_list and company and company.wbp_phone_number_id:
+                    whatsapp_svc = get_whatsapp_service()
+                    asyncio.create_task(whatsapp_svc.mark_messages_as_read_batch(company, wamid_list))
+                    logger.info(f"[LangGraph Agente] {len(wamid_list)} mensagem(ns) marcada(s) como visualizada(s)/lida(s) pela IA no Atendimento ID {atendimento_id}.")
+            except Exception as read_err:
+                logger.warning(f"[LangGraph Agente] Falha ao marcar mensagens como lidas pela IA (Atend {atendimento_id}): {read_err}")
+
             atendimento_ctx = await db_ctx.get(
                 models.Atendimento,
                 atendimento_id,
@@ -251,30 +271,36 @@ async def _process_single_atendimento_inner(atendimento_id: int, company: models
             registered_depts = set()
             for u in company_users:
                 u_name = (u.name or u.email.split('@')[0]).strip()
-                u_dept = (u.department or ('Admin' if u.role == 'admin' else 'Atendimento Geral')).strip()
-                registered_depts.add(u_dept)
+                raw_dept = (u.department or '').strip()
+                u_dept = raw_dept if raw_dept else ('Atendimento Geral' if u.role != 'admin' else '')
+                
+                is_admin = u.role == 'admin' or u_name.lower() in ['admin', 'administrador'] or raw_dept.lower() in ['admin', 'administrador']
+                
                 team_members.append({
                     "id": u.id,
                     "name": u_name,
                     "email": u.email,
                     "department": u_dept,
                     "role": u.role,
-                    "participates_distribution": bool(u.participates_distribution)
+                    "participates_distribution": bool(u.participates_distribution),
+                    "is_admin": is_admin
                 })
-                team_lines.append(f"- Atendente: {u_name} | Cargo/Setor: {u_dept}")
+                
+                # Apenas atendentes e setores públicos reais são expostos no prompt da IA
+                if not is_admin:
+                    if u_dept and u_dept.lower() not in ['admin', 'administrador']:
+                        registered_depts.add(u_dept)
+                    team_lines.append(f"- Atendente: {u_name} | Cargo/Setor: {u_dept or 'Atendimento Geral'}")
 
             depts_formatted = ", ".join([f"'{d}'" for d in sorted(registered_depts)]) if registered_depts else "Nenhum cargo específico cadastrado"
-            team_lines_str = "\n".join(team_lines) if team_lines else "- Nenhum atendente cadastrado"
+            team_lines_str = "\n".join(team_lines) if team_lines else "- Nenhum atendente específico cadastrado (atendimento geral pela equipe)"
 
             company_team_info = (
-                f"👥 EQUIPE E CARGOS CADASTRADOS NA EMPRESA (EXCLUSIVOS PARA TRANSBORDO):\n"
-                f"- CARGOS / SETORES DISPONÍVEIS: [{depts_formatted}]\n"
-                f"- ATENDENTES CADASTRADOS:\n{team_lines_str}\n\n"
-                f"🚨 REGRA SUPREMA DE CARGOS E TRANSBORDO:\n"
-                f"A empresa possui ESTRITAMENTE os cargos/setores e atendentes listados acima.\n"
-                f"É EXPRESSAMENTE PROIBIDO inventar, deduzir ou transferir para qualquer cargo, setor ou atendente que NÃO esteja na lista acima (ex: NUNCA direcione para SAC, Especialista, Vendas, Suporte, RH ou Financeiro a menos que constem na lista de CARGOS DISPONÍVEIS acima).\n"
-                f"Se houver apenas um cargo/atendente cadastrado (ex: Admin), direcione SEMPRE E EXCLUSIVAMENTE para ele."
+                f"Setores: [{depts_formatted}] | Atendentes: {team_lines_str}\n"
+                f"- Transbordo restrito aos setores/atendentes acima. NUNCA use o nome do PRÓPRIO CLIENTE no transbordo nem mencione 'Admin'. Use 'nossa equipe'."
             )
+
+
 
         # --- PASSO 3: RESOLUÇÃO DE CALENDÁRIO ---
         calendar_context = ""

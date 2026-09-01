@@ -1,6 +1,6 @@
 import logging
-from sqlalchemy import select, func, text, or_
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy import select, func, text, or_, and_
+from sqlalchemy.orm import joinedload, selectinload, undefer
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import models, schemas
@@ -152,9 +152,13 @@ async def get_message_by_media_id(
     except (ValueError, TypeError):
         pass
 
-    query = select(models.Message).where(
-        models.Message.company_id == company_id,
-        or_(*conditions)
+    query = (
+        select(models.Message)
+        .where(
+            models.Message.company_id == company_id,
+            or_(*conditions)
+        )
+        .options(undefer(models.Message.media_bytes))
     )
     if atendimento_id:
         query = query.where(models.Message.atendimento_id == atendimento_id)
@@ -413,7 +417,7 @@ async def mark_atendimento_messages_as_read(
     atendimento_id: int
 ) -> Tuple[Optional[models.Atendimento], List[str]]:
     """
-    Marca todas as mensagens não lidas do cliente como 'read'
+    Marca todas as mensagens não lidas como 'read'
     exclusivamente na tabela 'mensagens' (e sincroniza a conversa legada se houver).
     Retorna o atendimento atualizado e a lista de WAMIDs para envio de recibos à Meta.
     """
@@ -422,8 +426,13 @@ async def mark_atendimento_messages_as_read(
         .where(
             models.Message.company_id == company_id,
             models.Message.atendimento_id == atendimento_id,
-            models.Message.role.in_(["user", "client"]),
-            models.Message.status != "read"
+            or_(
+                models.Message.status == "unread",
+                and_(
+                    models.Message.role.in_(["user", "client"]),
+                    models.Message.status != "read"
+                )
+            )
         )
     )
     res_msgs = await db.execute(stmt_msgs)
@@ -436,6 +445,8 @@ async def mark_atendimento_messages_as_read(
         if msg.message_id and str(msg.message_id).startswith("wamid."):
             wamid_list.append(str(msg.message_id))
 
+    await db.flush()
+
     db_atendimento = await get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
     if db_atendimento and db_atendimento.conversa and db_atendimento.conversa != "[]":
         try:
@@ -443,12 +454,13 @@ async def mark_atendimento_messages_as_read(
             if isinstance(conv, list):
                 updated = False
                 for m in conv:
-                    if isinstance(m, dict) and m.get("role") in ["user", "client"] and m.get("status") != "read":
+                    if isinstance(m, dict) and (m.get("status") == "unread" or (m.get("role") in ["user", "client"] and m.get("status") != "read")):
                         m["status"] = "read"
                         updated = True
                 if updated:
                     db_atendimento.conversa = json.dumps(conv)
                     db.add(db_atendimento)
+                    await db.flush()
         except Exception:
             pass
 
@@ -477,23 +489,41 @@ async def mark_atendimento_messages_as_unread(
     res_last = await db.execute(stmt_last_msg)
     last_msg = res_last.scalars().first()
 
+    # Se não houver mensagem de user/client, busca a última mensagem de qualquer role
+    if not last_msg:
+        stmt_any_last = (
+            select(models.Message)
+            .where(
+                models.Message.company_id == company_id,
+                models.Message.atendimento_id == atendimento_id
+            )
+            .order_by(models.Message.timestamp.desc(), models.Message.id.desc())
+            .limit(1)
+        )
+        res_any = await db.execute(stmt_any_last)
+        last_msg = res_any.scalars().first()
+
     if last_msg:
         last_msg.status = "unread"
         db.add(last_msg)
+        await db.flush()
 
     db_atendimento = await get_atendimento(db, atendimento_id=atendimento_id, company_id=company_id)
     if db_atendimento and db_atendimento.conversa and db_atendimento.conversa != "[]":
         try:
             conv = json.loads(db_atendimento.conversa)
-            if isinstance(conv, list):
-                last_user_idx = -1
+            if isinstance(conv, list) and len(conv) > 0:
+                last_idx = -1
                 for idx, m in enumerate(conv):
                     if isinstance(m, dict) and m.get("role") in ["user", "client"]:
-                        last_user_idx = idx
-                if last_user_idx != -1:
-                    conv[last_user_idx]["status"] = "unread"
+                        last_idx = idx
+                if last_idx == -1:
+                    last_idx = len(conv) - 1
+                if last_idx != -1 and isinstance(conv[last_idx], dict):
+                    conv[last_idx]["status"] = "unread"
                     db_atendimento.conversa = json.dumps(conv)
                     db.add(db_atendimento)
+                    await db.flush()
         except Exception:
             pass
 

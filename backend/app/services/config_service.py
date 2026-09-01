@@ -1050,11 +1050,148 @@ class ConfigService:
         )
 
     @staticmethod
+    def apply_form_alterations(
+        current_form: Optional[Dict[str, Any]],
+        alterations: List[Any]
+    ) -> Dict[str, Any]:
+        """
+        Aplica alterações pontuais no formulário da Persona com precisão cirúrgica:
+        - Para listas (restrictions, handoff_rules, qualities, tags):
+          * 'adicionar': acrescenta o item à lista se não existir.
+          * 'modificar' / 'substituir': localiza o item antigo (pelo valor_antigo/item_referencia) e substitui no índice exato.
+          * 'remover': localiza o item antigo e remove apenas ele.
+        - Para textos livres (extra_instructions):
+          * 'adicionar': anexa à instrução.
+          * 'modificar' / 'substituir': substitui o trecho correspondente ou o texto todo.
+          * 'remover': remove o trecho.
+        - Para escalares (ai_name, company_name, role, language, nature_identity, objective, formality, objectivity):
+          * substitui o valor mantendo a integridade.
+        """
+        from app.services.feedback_agent_service import clean_rule_list, sanitize_persona_form
+
+        form = dict(current_form or {})
+
+        for item in alterations:
+            if isinstance(item, dict):
+                campo = item.get("campo")
+                secao = item.get("secao")
+                acao = str(item.get("acao") or "modificar").strip().lower()
+                v_antigo = item.get("valor_antigo")
+                v_novo = item.get("valor_novo")
+                item_ref = item.get("item_referencia")
+            else:
+                campo = getattr(item, "campo", None)
+                secao = getattr(item, "secao", None)
+                acao = str(getattr(item, "acao", "modificar") or "modificar").strip().lower()
+                v_antigo = getattr(item, "valor_antigo", None)
+                v_novo = getattr(item, "valor_novo", None)
+                item_ref = getattr(item, "item_referencia", None)
+
+            if not campo:
+                continue
+
+            target_old = item_ref or v_antigo
+
+            # 1. Campos de Lista (restrictions, handoff_rules, qualities, tags)
+            if campo in ["restrictions", "handoff_rules", "qualities", "tags"]:
+                curr_list = clean_rule_list(form.get(campo, []))
+
+                if acao == "adicionar":
+                    new_items = clean_rule_list(v_novo)
+                    for ni in new_items:
+                        if ni and ni not in curr_list:
+                            curr_list.append(ni)
+
+                elif acao == "remover":
+                    to_remove = clean_rule_list(target_old)
+                    for tr in to_remove:
+                        tr_norm = tr.strip().lower()
+                        match_idx = -1
+                        for idx, existing in enumerate(curr_list):
+                            if existing.strip().lower() == tr_norm or tr_norm in existing.strip().lower():
+                                match_idx = idx
+                                break
+                        if match_idx >= 0:
+                            curr_list.pop(match_idx)
+
+                elif acao in ["modificar", "substituir"]:
+                    new_items = clean_rule_list(v_novo)
+                    old_items = clean_rule_list(target_old)
+                    
+                    if old_items and new_items:
+                        target_str = old_items[0].strip().lower()
+                        match_idx = -1
+                        for idx, existing in enumerate(curr_list):
+                            ex_norm = existing.strip().lower()
+                            if ex_norm == target_str:
+                                match_idx = idx
+                                break
+                        if match_idx == -1:
+                            for idx, existing in enumerate(curr_list):
+                                ex_norm = existing.strip().lower()
+                                if target_str in ex_norm or ex_norm in target_str:
+                                    match_idx = idx
+                                    break
+
+                        if match_idx >= 0:
+                            curr_list[match_idx] = new_items[0]
+                            for extra_ni in new_items[1:]:
+                                if extra_ni not in curr_list:
+                                    curr_list.insert(match_idx + 1, extra_ni)
+                        else:
+                            for ni in new_items:
+                                if ni not in curr_list:
+                                    curr_list.append(ni)
+                    elif new_items:
+                        for ni in new_items:
+                            if ni not in curr_list:
+                                curr_list.append(ni)
+
+                form[campo] = curr_list
+
+            # 2. Instruções Adicionais (Texto livre)
+            elif campo == "extra_instructions":
+                curr_text = str(form.get("extra_instructions") or "").strip()
+                v_novo_str = str(v_novo or "").strip()
+                v_antigo_str = str(target_old or "").strip()
+
+                if acao == "adicionar":
+                    if curr_text and v_novo_str:
+                        if v_novo_str not in curr_text:
+                            form[campo] = f"{curr_text}\n{v_novo_str}"
+                    elif v_novo_str:
+                        form[campo] = v_novo_str
+
+                elif acao == "remover":
+                    if v_antigo_str and curr_text:
+                        form[campo] = curr_text.replace(v_antigo_str, "").strip()
+
+                elif acao in ["modificar", "substituir"]:
+                    if v_antigo_str and v_antigo_str in curr_text and v_antigo_str != curr_text:
+                        form[campo] = curr_text.replace(v_antigo_str, v_novo_str).strip()
+                    else:
+                        form[campo] = v_novo_str
+
+            # 3. Sliders de Tom de Voz (formality, objectivity)
+            elif campo in ["formality", "objectivity"]:
+                try:
+                    form[campo] = max(0.0, min(1.0, float(v_novo)))
+                except Exception:
+                    pass
+
+            # 4. Campos Escalares de Identidade e Missão
+            else:
+                if v_novo is not None:
+                    form[campo] = str(v_novo).strip()
+
+        return sanitize_persona_form(form)
+
+    @staticmethod
     async def apply_atendimento_feedback(
         db: AsyncSession,
         company_id: int,
         atendimento_id: int,
-        payload: schemas.AtendimentoUpdate  # Usando o payload do endpoint (ApplyFeedbackPayload)
+        payload: schemas.ApplyFeedbackPayload
     ) -> Dict[str, str]:
         """
         Aplica as atualizações propostas pela IA de feedback na planilha e nas configurações.
@@ -1062,7 +1199,7 @@ class ConfigService:
         @param db: Sessão do banco de dados.
         @param company_id: ID da empresa.
         @param atendimento_id: ID do atendimento relacionado.
-        @param payload: Objeto contendo as modificações para planilhas e RAG.
+        @param payload: Objeto contendo as modificações para formulário, planilhas, RAG e workflow.
         @returns: Relatório de status da aplicação.
         """
         from app.services.atendimento_service import AtendimentoNotFoundError
@@ -1078,17 +1215,15 @@ class ConfigService:
             raise ValueError("Persona não encontrada.")
             
         from app.services.feedback_agent_service import sanitize_persona_form
+        sheets_service = GoogleSheetsService()
         mensagens_sucesso = []
 
-        # 0. Aplicar alterações no Formulário de Persona (Aba Persona)
-        if hasattr(payload, 'novo_persona_form') and payload.novo_persona_form:
+        # 0. Aplicar alterações no Formulário de Persona (Aba Persona) com precisão cirúrgica
+        if hasattr(payload, 'alteracoes_formulario') and payload.alteracoes_formulario:
+            persona.persona_form = ConfigService.apply_form_alterations(persona.persona_form, payload.alteracoes_formulario)
+            mensagens_sucesso.append("Formulário de Persona atualizado com precisão.")
+        elif hasattr(payload, 'novo_persona_form') and payload.novo_persona_form:
             persona.persona_form = sanitize_persona_form(payload.novo_persona_form)
-            mensagens_sucesso.append("Formulário de Persona atualizado.")
-        elif hasattr(payload, 'alteracoes_formulario') and payload.alteracoes_formulario:
-            current_form = dict(persona.persona_form or {})
-            for item in payload.alteracoes_formulario:
-                current_form[item.campo] = item.valor_novo
-            persona.persona_form = sanitize_persona_form(current_form)
             mensagens_sucesso.append("Formulário de Persona atualizado.")
 
         # 1. Aplicar alterações na Planilha de Sistema (Fallback)
@@ -1172,15 +1307,12 @@ class ConfigService:
 
         from app.services.feedback_agent_service import sanitize_persona_form
 
-        # 0. Aplicar alterações no Formulário de Persona (Aba Persona)
-        if payload.novo_persona_form:
+        # 0. Aplicar alterações no Formulário de Persona (Aba Persona) com precisão cirúrgica
+        if payload.alteracoes_formulario:
+            persona.persona_form = ConfigService.apply_form_alterations(persona.persona_form, payload.alteracoes_formulario)
+            mensagens_sucesso.append("Formulário de Persona atualizado com precisão.")
+        elif payload.novo_persona_form:
             persona.persona_form = sanitize_persona_form(payload.novo_persona_form)
-            mensagens_sucesso.append("Formulário de Persona atualizado.")
-        elif payload.alteracoes_formulario:
-            current_form = dict(persona.persona_form or {})
-            for item in payload.alteracoes_formulario:
-                current_form[item.campo] = item.valor_novo
-            persona.persona_form = sanitize_persona_form(current_form)
             mensagens_sucesso.append("Formulário de Persona atualizado.")
 
         # 1. Aplicar alterações na Planilha de Sistema (Fallback)

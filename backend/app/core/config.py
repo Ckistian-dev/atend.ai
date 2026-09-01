@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     Configurações centralizadas da aplicação, carregadas de variáveis de ambiente.
     """
     # --- Configurações Principais ---
-    DATABASE_URL: str
+    DATABASE_URL: Optional[str] = None
     SECRET_KEY: str # Usada para assinar os tokens JWT
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 31 # 1 Mês
@@ -48,6 +48,12 @@ class Settings(BaseSettings):
 
 # Instância única das configurações para ser usada em toda a aplicação
 settings = Settings()
+
+if not settings.DATABASE_URL:
+    pg_user = os.getenv("POSTGRES_USER", "postgres")
+    pg_pass = os.getenv("POSTGRES_PASSWORD", "postgres")
+    pg_db = os.getenv("POSTGRES_DB", "atendai_local")
+    settings.DATABASE_URL = f"postgresql+asyncpg://{pg_user}:{pg_pass}@localhost:5434/{pg_db}"
 
 # Validação adicional
 if not settings.ENCRYPTION_KEY or len(settings.ENCRYPTION_KEY) < 32:

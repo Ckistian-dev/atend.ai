@@ -486,7 +486,19 @@ async def output_node(state: AgentState) -> Dict[str, Any]:
                             at_final.status = "Mensagem Recebida"
                         else:
                             at_final.status = status_final
+                            # Garante que todas as mensagens processadas nesta resposta estejam visualizadas
+                            try:
+                                _, wamid_list_final = await crud_atendimento.mark_atendimento_messages_as_read(
+                                    db=db_final,
+                                    company_id=tenant_id,
+                                    atendimento_id=atendimento_id
+                                )
+                                if wamid_list_final and company and company.wbp_phone_number_id:
+                                    asyncio.create_task(whatsapp_svc.mark_messages_as_read_batch(company, wamid_list_final))
+                            except Exception as read_post_err:
+                                logger.warning(f"[Output Node] Erro ao sincronizar recibos de leitura pós-envio: {read_post_err}")
 
+                        # Atribuição de Atendente / Setor no Transbordo
                         # Atribuição de Atendente / Setor no Transbordo
                         if status_final == "Atendente Chamado" or state.get("intent_handoff"):
                             destinatario = state.get("handoff_destinatario")
@@ -500,60 +512,71 @@ async def output_node(state: AgentState) -> Dict[str, Any]:
                                 m_name = (m.get("name") or "").strip()
                                 m_email = (m.get("email") or "").strip()
                                 m_dept = (m.get("department") or "").strip()
-                                if m_dept:
+                                m_role = (m.get("role") or "").strip()
+                                is_adm = m.get("is_admin") or m_role == "admin" or m_name.lower() in ["admin", "administrador"]
+
+                                if m_dept and m_dept.lower() not in ["admin", "administrador"]:
                                     valid_dept_map[m_dept.lower()] = m_dept
-                                if m_name:
-                                    valid_user_map[m_name.lower()] = m
-                                if m_email:
-                                    valid_user_map[m_email.lower()] = m
+                                if not is_adm:
+                                    if m_name:
+                                        valid_user_map[m_name.lower()] = m
+                                    if m_email:
+                                        valid_user_map[m_email.lower()] = m
 
                             assigned_user = None
                             resolved_dept = None
 
                             if destinatario and str(destinatario).strip():
                                 dest_clean = str(destinatario).strip().lower()
-
-                                # 1. Busca por correspondência de usuário cadastrado
-                                for key, u in valid_user_map.items():
-                                    if dest_clean == key or dest_clean in key or key in dest_clean:
-                                        assigned_user = u
-                                        resolved_dept = u.get("department")
-                                        break
-
-                                # 2. Se não encontrou usuário, busca por cargo/departamento cadastrado
-                                if not assigned_user:
-                                    for key, dept_name in valid_dept_map.items():
+                                if dest_clean not in ["admin", "administrador"]:
+                                    # 1. Busca por correspondência de usuário cadastrado não-admin
+                                    for key, u in valid_user_map.items():
                                         if dest_clean == key or dest_clean in key or key in dest_clean:
-                                            resolved_dept = dept_name
+                                            assigned_user = u
+                                            resolved_dept = u.get("department")
                                             break
+
+                                    # 2. Se não encontrou usuário, busca por cargo/departamento cadastrado
+                                    if not assigned_user:
+                                        for key, dept_name in valid_dept_map.items():
+                                            if dest_clean == key or dest_clean in key or key in dest_clean:
+                                                resolved_dept = dept_name
+                                                break
 
                             # Validação de dept_override caso exista
                             if not resolved_dept and dept_override and str(dept_override).strip():
                                 dept_clean = str(dept_override).strip().lower()
-                                for key, dept_name in valid_dept_map.items():
-                                    if dept_clean == key or dept_clean in key or key in dept_clean:
-                                        resolved_dept = dept_name
-                                        break
+                                if dept_clean not in ["admin", "administrador"]:
+                                    for key, dept_name in valid_dept_map.items():
+                                        if dept_clean == key or dept_clean in key or key in dept_clean:
+                                            resolved_dept = dept_name
+                                            break
 
-                            # 3. Fallback estrito com base nos usuários cadastrados
+                            # 3. Fallback seguro com base nos usuários cadastrados
                             if not assigned_user and not resolved_dept:
-                                if len(team_members) == 1:
-                                    single_u = team_members[0]
-                                    assigned_user = single_u
-                                    resolved_dept = single_u.get("department")
-                                elif len(team_members) > 1:
-                                    dist_users = [u for u in team_members if u.get("participates_distribution")]
-                                    if not dist_users:
-                                        first_admin = next((u for u in team_members if u.get("role") == "admin"), team_members[0])
-                                        assigned_user = first_admin
-                                        resolved_dept = first_admin.get("department")
+                                dist_users = [u for u in team_members if u.get("participates_distribution")]
+                                if not dist_users:
+                                    non_admin_users = [
+                                        u for u in team_members
+                                        if not u.get("is_admin")
+                                        and u.get("role") != "admin"
+                                        and (u.get("name") or "").strip().lower() not in ["admin", "administrador"]
+                                    ]
+                                    if non_admin_users:
+                                        assigned_user = non_admin_users[0]
+                                        resolved_dept = assigned_user.get("department")
+                                    else:
+                                        # Fallback silencioso para Admin quando não houver outro atendente
+                                        first_admin = next((u for u in team_members if u.get("role") == "admin"), team_members[0] if team_members else None)
+                                        if first_admin:
+                                            assigned_user = first_admin
 
                             if assigned_user:
                                 at_final.assigned_user_id = assigned_user.get("id")
-                                if resolved_dept:
+                                if resolved_dept and resolved_dept.lower() not in ["admin", "administrador"]:
                                     at_final.assigned_department = resolved_dept
-                                logger.info(f"[Output Node] Transbordo atribuído ao atendente cadastrado '{assigned_user.get('name')}' (ID: {assigned_user.get('id')}, Setor: {at_final.assigned_department})")
-                            elif resolved_dept:
+                                logger.info(f"[Output Node] Transbordo atribuído ao usuário ID {assigned_user.get('id')} ('{assigned_user.get('name')}')")
+                            elif resolved_dept and resolved_dept.lower() not in ["admin", "administrador"]:
                                 at_final.assigned_department = resolved_dept
                                 logger.info(f"[Output Node] Transbordo atribuído ao cargo/setor cadastrado '{resolved_dept}'")
 
@@ -623,9 +646,30 @@ async def output_node(state: AgentState) -> Dict[str, Any]:
                         if modificado:
                             at_final.tags = updated_tags
 
-            logger.info(f"[Output Node] Ciclo concluído com sucesso para o Atend {atendimento_id}. Status: '{status_final}'")
+                        # --- PERSISTÊNCIA DO LOG ESTRUTURADO DE AUDITORIA DA IA NO BANCO ---
+                        audit_trail = dict(state.get("ai_audit_trail") or {})
+                        audit_trail["final_outcome"] = {
+                            "status_final": status_final,
+                            "final_response": final_response,
+                            "intent_handoff": bool(state.get("intent_handoff")),
+                            "intent_conclude": bool(state.get("intent_conclude")),
+                            "total_retries": state.get("retry_count", 0),
+                            "tokens": {
+                                "input": state.get("input_tokens", 0),
+                                "output": state.get("output_tokens", 0)
+                            }
+                        }
+
+                        current_ai_logs = list(at_final.ai_logs or [])
+                        current_ai_logs.append(audit_trail)
+                        if len(current_ai_logs) > 100:
+                            current_ai_logs = current_ai_logs[-100:]
+                        at_final.ai_logs = current_ai_logs
+
+            logger.info(f"[Output Node] Ciclo concluído com sucesso para o Atend {atendimento_id}. Status: '{status_final}' | Log da IA persistido em atendimentos.ai_logs.")
 
         except Exception as update_err:
             logger.error(f"[Output Node] Erro ao atualizar status/resumo do Atend {atendimento_id}: {update_err}", exc_info=True)
+
 
     return state

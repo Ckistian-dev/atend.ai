@@ -100,8 +100,7 @@ class AtendimentoService:
             if assigned_user_id:
                 stmt_base = stmt_base.where(models.Atendimento.assigned_user_id == assigned_user_id)
 
-        last_client_ts = func.get_last_user_msg_timestamp(models.Atendimento.conversa)
-        sort_expression = func.coalesce(last_client_ts, models.Atendimento.updated_at)
+        sort_expression = models.Atendimento.updated_at
 
         if status:
             stmt_base = stmt_base.where(models.Atendimento.status.in_(status))
@@ -252,9 +251,8 @@ class AtendimentoService:
             if assigned_user_id:
                 stmt_base = stmt_base.where(models.Atendimento.assigned_user_id == assigned_user_id)
 
-        # Ordenação padrão pela última mensagem do cliente
-        last_client_ts = func.get_last_user_msg_timestamp(models.Atendimento.conversa)
-        sort_expression_default = func.coalesce(last_client_ts, models.Atendimento.updated_at)
+        # Ordenação padrão indexada
+        sort_expression_default = models.Atendimento.updated_at
 
         # Definição do campo de ordenação solicitado pelo frontend
         if sort_by == 'contato':
@@ -463,6 +461,48 @@ class AtendimentoService:
         return db_atendimento
 
     @staticmethod
+    async def complete_atendimento(
+        db: AsyncSession,
+        company_id: int,
+        atendimento_id: int,
+        notes: Optional[str] = None,
+        current_user: Optional[models.User] = None
+    ) -> models.Atendimento:
+        """
+        Conclui um atendimento, alterando seu status para 'Concluído'.
+        """
+        stmt = (
+            select(models.Atendimento)
+            .where(
+                models.Atendimento.id == atendimento_id,
+                models.Atendimento.company_id == company_id
+            )
+            .options(
+                joinedload(models.Atendimento.active_persona),
+                joinedload(models.Atendimento.assigned_user),
+                selectinload(models.Atendimento.mensagens)
+            )
+        )
+        result = await db.execute(stmt)
+        db_atendimento = result.scalars().first()
+        if not db_atendimento:
+            raise AtendimentoNotFoundError("Atendimento não encontrado")
+
+        db_atendimento.status = "Concluído"
+
+        if notes and notes.strip():
+            clean_notes = notes.strip()
+            user_label = current_user.name if current_user and current_user.name else "Operador"
+            conclude_msg = f"[Concluído por {user_label}]: {clean_notes}"
+            db_atendimento.observacoes = f"{db_atendimento.observacoes or ''}\n{conclude_msg}".strip()
+
+        db_atendimento.updated_at = datetime.now(timezone.utc)
+        db.add(db_atendimento)
+        await db.commit()
+        await db.refresh(db_atendimento, attribute_names=['active_persona', 'assigned_user', 'mensagens'])
+        return db_atendimento
+
+    @staticmethod
     async def update_atendimento(
         db: AsyncSession,
         company_id: int,
@@ -638,6 +678,19 @@ class AtendimentoService:
             
             if not atendimento_atualizado:
                 raise Exception("Falha ao salvar mensagem no histórico após envio")
+
+            # Marca mensagens anteriores do cliente como lidas e envia tiques azuis para a Meta
+            try:
+                _, wamid_list = await crud_atendimento.mark_atendimento_messages_as_read(
+                    db=db,
+                    company_id=company_id,
+                    atendimento_id=atendimento_id
+                )
+                await db.commit()
+                if wamid_list and company and company.wbp_phone_number_id:
+                    asyncio.create_task(whatsapp_service.mark_messages_as_read_batch(company, wamid_list))
+            except Exception as read_sync_err:
+                logger.warning(f"Aviso: Não foi possível sincronizar status de leitura no envio manual: {read_sync_err}")
             
             await db.refresh(atendimento_atualizado, attribute_names=['active_persona', 'mensagens'])
             return atendimento_atualizado
@@ -758,6 +811,19 @@ class AtendimentoService:
             
             if not atendimento_atualizado:
                 raise Exception("Falha ao salvar mídia no histórico após envio")
+
+            # Marca mensagens anteriores do cliente como lidas e envia tiques azuis para a Meta
+            try:
+                _, wamid_list = await crud_atendimento.mark_atendimento_messages_as_read(
+                    db=db,
+                    company_id=company_id,
+                    atendimento_id=atendimento_id
+                )
+                await db.commit()
+                if wamid_list and company and company.wbp_phone_number_id:
+                    asyncio.create_task(whatsapp_service.mark_messages_as_read_batch(company, wamid_list))
+            except Exception as read_sync_err:
+                logger.warning(f"Aviso: Não foi possível sincronizar status de leitura no envio de mídia manual: {read_sync_err}")
 
             await db.refresh(atendimento_atualizado, attribute_names=['active_persona', 'mensagens'])
             return atendimento_atualizado

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Phone, FileText, Tag, Edit, Cpu, X, Check, Plus, Clock, Bot, Headset, ArrowRightLeft, Building2, User } from 'lucide-react';
+import { Phone, FileText, Tag, Edit, Cpu, X, Check, Plus, Clock, Bot, Headset, ArrowRightLeft, Building2, User, CheckCircle2, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../api/axiosConfig';
 import TagEditor from './TagEditor'; // Importa o novo componente
@@ -166,40 +166,90 @@ const ProfileSidebar = ({
                     )}
 
                     <div className="mt-5 flex flex-col items-center gap-2 w-full">
-                        {atendimento.status === 'Atendente Chamado' ? (
+                        {atendimento.status === 'Concluído' ? (
                             <>
-                                <span className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200/60 shadow-sm flex items-center gap-1.5">
-                                    <Headset size={13} /> Atendente Chamado
+                                <span className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200/80 shadow-sm flex items-center gap-1.5">
+                                    <CheckCircle2 size={13} className="text-emerald-600" /> Atendimento Concluído
                                 </span>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsTransferModalOpen(true)}
-                                        className="px-3.5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
-                                        title="Transferir para outro setor ou atendente"
-                                    >
-                                        <ArrowRightLeft size={13} /> Re-transferir
-                                    </button>
+                                <div className="flex items-center gap-2 mt-1 w-full">
                                     <button
                                         type="button"
                                         onClick={() => {
                                             onUpdateStatus(atendimento.id, { status: 'Mensagem Recebida' });
-                                            toast.success('Atendimento devolvido para a IA');
+                                            toast.success('Atendimento reaberto com sucesso!');
                                         }}
-                                        className="px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                                        className="flex-1 px-3.5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
                                     >
-                                        <Bot size={14} /> Devolver IA
+                                        <RotateCcw size={13} /> Reabrir
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsTransferModalOpen(true)}
+                                        className="flex-1 px-3.5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-wider bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                                        title="Transferir para outro setor ou atendente"
+                                    >
+                                        <Headset size={13} /> Transferir
+                                    </button>
+                                </div>
+                            </>
+                        ) : atendimento.status === 'Atendente Chamado' ? (
+                            <>
+                                <span className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200/60 shadow-sm flex items-center gap-1.5">
+                                    <Headset size={13} /> Atendente Chamado
+                                </span>
+                                <div className="flex flex-col gap-2 mt-1 w-full">
+                                    <div className="flex items-center gap-2 w-full">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsTransferModalOpen(true)}
+                                            className="flex-1 px-3 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                                            title="Transferir para outro setor ou atendente"
+                                        >
+                                            <ArrowRightLeft size={13} /> Re-transferir
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                onUpdateStatus(atendimento.id, { status: 'Mensagem Recebida' });
+                                                toast.success('Atendimento devolvido para a IA');
+                                            }}
+                                            className="flex-1 px-3 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                                        >
+                                            <Bot size={14} /> Devolver IA
+                                        </button>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            onUpdateStatus(atendimento.id, { status: 'Concluído' });
+                                            toast.success('Atendimento concluído com sucesso!');
+                                        }}
+                                        className="w-full px-4 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                                    >
+                                        <CheckCircle2 size={15} /> Concluir Atendimento
                                     </button>
                                 </div>
                             </>
                         ) : (
-                            <button
-                                type="button"
-                                onClick={() => setIsTransferModalOpen(true)}
-                                className="mt-1 px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-wider bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200 transition-all flex items-center gap-2 active:scale-95 cursor-pointer"
-                            >
-                                <Headset size={15} /> Transferir para Setor/Atendente
-                            </button>
+                            <div className="flex flex-col gap-2 mt-1 w-full">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        onUpdateStatus(atendimento.id, { status: 'Concluído' });
+                                        toast.success('Atendimento concluído com sucesso!');
+                                    }}
+                                    className="w-full px-4 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                                >
+                                    <CheckCircle2 size={15} /> Concluir Atendimento
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsTransferModalOpen(true)}
+                                    className="w-full px-4 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-wider bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200 transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                                >
+                                    <Headset size={15} /> Transferir para Setor/Atendente
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>

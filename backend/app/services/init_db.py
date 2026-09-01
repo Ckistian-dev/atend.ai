@@ -1,8 +1,9 @@
 import logging
 from sqlalchemy import text, inspect
 from sqlalchemy.schema import CreateColumn, AddConstraint
-from app.db.database import engine
+from app.db.database import engine, SessionLocal
 from app.db import models
+from app.services.conversa_migration import migrate_legacy_conversations_for_session
 
 logger = logging.getLogger(__name__)
 
@@ -327,13 +328,47 @@ END $$;
             except Exception as compat_err:
                 logger.warning(f"Aviso ao ajustar compatibilidade da tabela mensagens: {compat_err}")
 
+            # --- GARANTIA DA COLUNA ai_logs NA TABELA ATENDIMENTOS ---
+            try:
+                ai_logs_sql = """
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'atendimentos') THEN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns 
+                            WHERE table_schema = 'public' AND table_name = 'atendimentos' AND column_name = 'ai_logs'
+                        ) THEN
+                            ALTER TABLE atendimentos ADD COLUMN ai_logs JSONB DEFAULT '[]'::jsonb;
+                        END IF;
+                    END IF;
+                END $$;
+                """
+                await conn.execute(text(ai_logs_sql))
+                logger.info("Coluna 'ai_logs' na tabela 'atendimentos' verificada/criada com sucesso.")
+            except Exception as ai_logs_err:
+                logger.warning(f"Aviso ao verificar coluna 'ai_logs' na tabela atendimentos: {ai_logs_err}")
+
             # Executa a sincronização segura de schema de forma dinâmica e persistente
             await conn.run_sync(sync_schema)
             logger.info("Tabelas e colunas do banco de dados verificadas/sincronizadas com sucesso.")
 
-            # --- Migração de mensagens legadas finalizada e desativada ---
-            pass
 
+            # --- CRIAÇÃO DE ÍNDICES DE ALTA PERFORMANCE PARA ATENDIMENTOS E MENSAGENS ---
+            indexes = [
+                "CREATE INDEX IF NOT EXISTS idx_atendimentos_company_updated ON atendimentos (company_id, updated_at DESC)",
+                "CREATE INDEX IF NOT EXISTS idx_atendimentos_company_status_updated ON atendimentos (company_id, status, updated_at DESC)",
+                "CREATE INDEX IF NOT EXISTS idx_atendimentos_company_dept_updated ON atendimentos (company_id, assigned_department, updated_at DESC)",
+                "CREATE INDEX IF NOT EXISTS idx_atendimentos_company_user_updated ON atendimentos (company_id, assigned_user_id, updated_at DESC)",
+                'CREATE INDEX IF NOT EXISTS idx_mensagens_atendimento_ts ON mensagens (atendimento_id, "timestamp" ASC)',
+                "CREATE INDEX IF NOT EXISTS idx_mensagens_atendimento_status ON mensagens (atendimento_id, role, status)",
+                "CREATE INDEX IF NOT EXISTS idx_mensagens_company_msgid ON mensagens (company_id, message_id)",
+            ]
+            for idx_stmt in indexes:
+                try:
+                    await conn.execute(text(idx_stmt))
+                except Exception as idx_err:
+                    logger.warning(f"Aviso ao criar índice individual '{idx_stmt}': {idx_err}")
+            logger.info("Índices de performance para 'atendimentos' e 'mensagens' verificados/criados.")
             # --- LIMPEZA DE HIGIENIZAÇÃO DE CONFIGS (Remoção de aspas armazenadas em thinking_level e tts_voice) ---
             try:
                 cleanup_sql = """
@@ -357,3 +392,14 @@ END $$;
         except Exception as e:
             logger.exception("ERRO CRÍTICO ao criar tabelas e colunas do banco de dados.") # Usa logger.exception para incluir traceback
             raise
+
+    # --- MIGRAÇÃO AUTOMÁTICA DE CONVERSAS LEGADAS (atendimentos.conversa -> mensagens) ---
+    try:
+        async with SessionLocal() as db_session:
+            stats = await migrate_legacy_conversations_for_session(db=db_session, dry_run=False)
+            if stats["mensagens_migradas"] > 0:
+                logger.info(f"Migração de conversas legadas concluída: {stats['mensagens_migradas']} mensagens migradas para a tabela 'mensagens'.")
+            else:
+                logger.info("Migração de conversas legadas verificada: Nenhuma nova mensagem pendente de migração.")
+    except Exception as mig_err:
+        logger.warning(f"Aviso durante a migração automática de conversas legadas no init_db: {mig_err}", exc_info=True)

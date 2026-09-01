@@ -3,7 +3,7 @@ import { useSearchParams, useOutletContext } from 'react-router-dom'; // Importa
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import {
-    Loader2, MoreVertical, Download, Wand2, Check, X as XIcon, Sparkles, ChevronLeft, Bot, Headset
+    Loader2, MoreVertical, Download, Wand2, Check, X as XIcon, Sparkles, ChevronLeft, Bot, Headset, CheckCircle2, RotateCcw
 } from 'lucide-react';
 import PageLoader from '../components/common/PageLoader';
 
@@ -18,6 +18,8 @@ import ChatPlaceholder from '../components/mensagens/ChatPlaceholder';
 import FilterPopover from '../components/mensagens/FilterPopover';
 import TemplateModal from '../components/mensagens/TemplateModal';
 import FeedbackModal from '../components/mensagens/FeedbackModal';
+import TransferModal from '../components/common/TransferModal';
+
 
 // --- DESIGN SYSTEM: INTELLIGENT STRATUM (MENSAGENS EDITION) ---
 const DS_STYLE = `
@@ -236,13 +238,29 @@ function Mensagens() {
     // Bloqueio do fetch principal até o perfil do usuário estar pronto
     const [isAuthReady, setIsAuthReady] = useState(false);
 
-    // Pre-fetch do perfil do usuário para aplicar filtros ANTES do primeiro carregamento de dados
+    // Pre-fetch do perfil do usuário e opções estáticas ANTES do primeiro carregamento de atendimentos
     useEffect(() => {
-        const initAuth = async () => {
+        const initAuthAndOptions = async () => {
             try {
-                const userRes = await api.get('/auth/me');
+                const [userRes, personasRes, situationsRes, tagsRes, deptsRes] = await Promise.all([
+                    api.get('/auth/me'),
+                    api.get('/configs/').catch(() => ({ data: [] })),
+                    api.get('/configs/situations').catch(() => ({ data: [] })),
+                    api.get('/atendimentos/tags').catch(() => ({ data: [] })),
+                    api.get('/atendimentos/departments').catch(() => ({ data: [] }))
+                ]);
                 const fetchedUser = userRes.data;
                 setCurrentUser(fetchedUser);
+                setPersonas(personasRes.data || []);
+                setDepartments(deptsRes.data || []);
+                setAllTags(tagsRes.data || []);
+
+                let sOptions = situationsRes.data || [];
+                if (!sOptions.some(opt => opt.nome === 'Aguardando Envio')) {
+                    sOptions = [...sOptions, { nome: 'Aguardando Envio', cor: '#9333ea' }];
+                }
+                setStatusOptions(sOptions);
+
                 const isCollab =
                     fetchedUser.role !== 'admin' &&
                     fetchedUser.role !== 'superadmin' &&
@@ -259,13 +277,23 @@ function Mensagens() {
                     }
                 }
             } catch (e) {
-                // Ignora — o fetchData principal também busca o usuário e tratará erros
+                console.error("Erro ao inicializar dados e opções:", e);
             } finally {
                 setIsAuthReady(true);
             }
         };
-        initAuth();
+        initAuthAndOptions();
     }, []); // Roda apenas uma vez na montagem
+
+    // Função para recarregar tags sob demanda (ex: ao criar/deletar tags)
+    const refreshTags = useCallback(async () => {
+        try {
+            const res = await api.get('/atendimentos/tags');
+            if (res.data) setAllTags(res.data);
+        } catch (e) {
+            console.error("Erro ao atualizar tags:", e);
+        }
+    }, []);
 
     // --- NOVO: Estado para o termo de busca com debounce ---
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
@@ -339,6 +367,7 @@ function Mensagens() {
     // --- REFS PARA O POLLING ESPECÍFICO DO CHAT ---
     const sendingQueueRef = useRef(sendingQueue);
     const isProcessingRef = useRef(isProcessing);
+    const manuallyUnreadIdsRef = useRef(new Set());
 
     useEffect(() => { sendingQueueRef.current = sendingQueue; }, [sendingQueue]);
     useEffect(() => { isProcessingRef.current = isProcessing; }, [isProcessing]);
@@ -347,19 +376,21 @@ function Mensagens() {
     const handleMarkAsRead = useCallback(async (atendimentoId) => {
         if (!atendimentoId) return;
 
+        manuallyUnreadIdsRef.current.delete(atendimentoId);
+
         // Atualização Otimista
         setAtendimentos(prev => prev.map(at => {
             if (at.id === atendimentoId) {
                 let updatedMsgs = at.mensagens;
                 if (Array.isArray(at.mensagens)) {
-                    updatedMsgs = at.mensagens.map(m => (m.role === 'user' || m.role === 'client') ? { ...m, status: 'read' } : m);
+                    updatedMsgs = at.mensagens.map(m => m ? { ...m, status: 'read' } : m);
                 }
                 let updatedConv = at.conversa;
                 if (typeof at.conversa === 'string' && at.conversa !== '[]') {
                     try {
                         const parsed = JSON.parse(at.conversa);
                         if (Array.isArray(parsed)) {
-                            updatedConv = JSON.stringify(parsed.map(m => (m.role === 'user' || m.role === 'client') ? { ...m, status: 'read' } : m));
+                            updatedConv = JSON.stringify(parsed.map(m => m ? { ...m, status: 'read' } : m));
                         }
                     } catch (e) {}
                 }
@@ -372,14 +403,14 @@ function Mensagens() {
             if (prev?.id === atendimentoId) {
                 let updatedMsgs = prev.mensagens;
                 if (Array.isArray(prev.mensagens)) {
-                    updatedMsgs = prev.mensagens.map(m => (m.role === 'user' || m.role === 'client') ? { ...m, status: 'read' } : m);
+                    updatedMsgs = prev.mensagens.map(m => m ? { ...m, status: 'read' } : m);
                 }
                 let updatedConv = prev.conversa;
                 if (typeof prev.conversa === 'string' && prev.conversa !== '[]') {
                     try {
                         const parsed = JSON.parse(prev.conversa);
                         if (Array.isArray(parsed)) {
-                            updatedConv = JSON.stringify(parsed.map(m => (m.role === 'user' || m.role === 'client') ? { ...m, status: 'read' } : m));
+                            updatedConv = JSON.stringify(parsed.map(m => m ? { ...m, status: 'read' } : m));
                         }
                     } catch (e) {}
                 }
@@ -403,19 +434,36 @@ function Mensagens() {
     const handleMarkAsUnread = useCallback(async (atendimentoId) => {
         if (!atendimentoId) return;
 
+        manuallyUnreadIdsRef.current.add(atendimentoId);
+
         // Atualização Otimista
         setAtendimentos(prev => prev.map(at => {
             if (at.id === atendimentoId) {
                 let updatedMsgs = at.mensagens;
                 if (Array.isArray(at.mensagens) && at.mensagens.length > 0) {
                     const clone = [...at.mensagens];
-                    const lastUserIdx = clone.map(m => m.role).lastIndexOf('user');
-                    if (lastUserIdx !== -1) {
-                        clone[lastUserIdx] = { ...clone[lastUserIdx], status: 'unread' };
+                    let lastIdx = clone.findLastIndex(m => m && (m.role === 'user' || m.role === 'client'));
+                    if (lastIdx === -1) lastIdx = clone.length - 1;
+                    if (lastIdx !== -1 && clone[lastIdx]) {
+                        clone[lastIdx] = { ...clone[lastIdx], status: 'unread' };
                     }
                     updatedMsgs = clone;
                 }
-                return { ...at, mensagens: updatedMsgs };
+                let updatedConv = at.conversa;
+                if (typeof at.conversa === 'string' && at.conversa !== '[]') {
+                    try {
+                        const parsed = JSON.parse(at.conversa);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            let lastIdx = parsed.findLastIndex(m => m && (m.role === 'user' || m.role === 'client'));
+                            if (lastIdx === -1) lastIdx = parsed.length - 1;
+                            if (lastIdx !== -1 && parsed[lastIdx]) {
+                                parsed[lastIdx] = { ...parsed[lastIdx], status: 'unread' };
+                                updatedConv = JSON.stringify(parsed);
+                            }
+                        }
+                    } catch (e) {}
+                }
+                return { ...at, mensagens: updatedMsgs, conversa: updatedConv };
             }
             return at;
         }));
@@ -425,13 +473,28 @@ function Mensagens() {
                 let updatedMsgs = prev.mensagens;
                 if (Array.isArray(prev.mensagens) && prev.mensagens.length > 0) {
                     const clone = [...prev.mensagens];
-                    const lastUserIdx = clone.map(m => m.role).lastIndexOf('user');
-                    if (lastUserIdx !== -1) {
-                        clone[lastUserIdx] = { ...clone[lastUserIdx], status: 'unread' };
+                    let lastIdx = clone.findLastIndex(m => m && (m.role === 'user' || m.role === 'client'));
+                    if (lastIdx === -1) lastIdx = clone.length - 1;
+                    if (lastIdx !== -1 && clone[lastIdx]) {
+                        clone[lastIdx] = { ...clone[lastIdx], status: 'unread' };
                     }
                     updatedMsgs = clone;
                 }
-                return { ...prev, mensagens: updatedMsgs };
+                let updatedConv = prev.conversa;
+                if (typeof prev.conversa === 'string' && prev.conversa !== '[]') {
+                    try {
+                        const parsed = JSON.parse(prev.conversa);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            let lastIdx = parsed.findLastIndex(m => m && (m.role === 'user' || m.role === 'client'));
+                            if (lastIdx === -1) lastIdx = parsed.length - 1;
+                            if (lastIdx !== -1 && parsed[lastIdx]) {
+                                parsed[lastIdx] = { ...parsed[lastIdx], status: 'unread' };
+                                updatedConv = JSON.stringify(parsed);
+                            }
+                        }
+                    } catch (e) {}
+                }
+                return { ...prev, mensagens: updatedMsgs, conversa: updatedConv };
             }
             return prev;
         });
@@ -447,12 +510,10 @@ function Mensagens() {
         }
     }, []);
 
-    // --- Fetch (User e Mensagens) ---
+    // --- Fetch Rápido (Apenas Atendimentos) ---
     const fetchData = useCallback(async (isInitialLoad = false) => {
         if (isInitialLoad) setIsLoading(true);
 
-        // Se não for uma carga inicial, significa que pode ser um "carregar mais" ou polling.
-        // Ativamos o estado de carregamento se o limite for maior que o inicial.
         if (!isInitialLoad && limit > 20) {
             setIsFetchingMore(true);
         }
@@ -463,8 +524,6 @@ function Mensagens() {
                 limit: limit,
             });
 
-            // --- ALTERADO: Adiciona filtros do popover (status e tags) à requisição ---
-            // Usa os filtros do popover se existirem, senão, usa os filtros dos botões principais.
             if (statusFilters && statusFilters.length > 0) {
                 statusFilters.forEach(s => params.append('status', s));
             } else if (activeFilters.length > 0) {
@@ -479,7 +538,6 @@ function Mensagens() {
                 params.append('department', departmentFilter);
             }
 
-            // --- NOVO: Adiciona filtros de horário à requisição ---
             if (timeStart) {
                 params.append('time_start', timeStart);
             }
@@ -488,41 +546,12 @@ function Mensagens() {
                 params.append('time_end', timeEnd);
             }
 
-            const [userRes, atendimentosRes, personasRes, situationsRes, tagsRes, deptsRes] = await Promise.all([
-                api.get('/auth/me'),
-                api.get('/atendimentos/', { params }), // Envia os parâmetros formatados
-                api.get('/configs/'),
-                api.get('/configs/situations'),
-                api.get('/atendimentos/tags'), // Busca todas as tags
-                api.get('/atendimentos/departments').catch(() => ({ data: [] }))
-            ]);
-            const fetchedUser = userRes.data;
-            setCurrentUser(fetchedUser);
-            setPersonas(personasRes.data);
-            setDepartments(deptsRes.data || []);
+            const response = await api.get('/atendimentos/', { params });
+            const serverData = response.data;
 
-            // Garante que 'Aguardando Envio' esteja nas opções para alteração manual
-            let sOptions = situationsRes.data || [];
-            if (!sOptions.some(opt => opt.nome === 'Aguardando Envio')) {
-                sOptions = [...sOptions, { nome: 'Aguardando Envio', cor: '#9333ea' }];
-            }
-            setStatusOptions(sOptions);
-            setAllTags(tagsRes.data);
-
-            // Atualiza flag de colaborador (sem reaplicar filtros — já foram aplicados no pre-fetch)
-            const isCollab =
-                fetchedUser.role !== 'admin' &&
-                fetchedUser.role !== 'superadmin' &&
-                fetchedUser.participates_distribution === true;
-            setIsDistributionCollaborator(isCollab);
-
-            const serverData = atendimentosRes.data;
             if (serverData && Array.isArray(serverData.items)) {
                 setAtendimentos(prevAtendimentos => {
-                    // Se for uma carga inicial, troca de filtro ou busca, substitui a lista.
-                    // Consideramos uma "carga nova" se o limite for o padrão (20).
                     const isNewLoad = limit === 20;
-
                     const newItems = serverData.items;
 
                     let combinedItems;
@@ -530,10 +559,9 @@ function Mensagens() {
                     if (isNewLoad) {
                         combinedItems = newItems;
                     } else {
-                        // Se não for carga nova (é um "carregar mais"), combina os resultados.
                         const prevItemsMap = new Map(prevAtendimentos.map(item => [item.id, item]));
                         newItems.forEach(item => {
-                            prevItemsMap.set(item.id, item); // Adiciona ou atualiza
+                            prevItemsMap.set(item.id, item);
                         });
                         combinedItems = Array.from(prevItemsMap.values());
                     }
@@ -549,7 +577,6 @@ function Mensagens() {
                         if (busyAtendimentoIds.has(at.id)) {
                             const localVersion = prevAtendimentos.find(local => local.id === at.id);
                             if (localVersion) {
-                                // Se existe uma versão local com mensagens em envio, usa ela.
                                 return localVersion;
                             }
                         }
@@ -563,17 +590,16 @@ function Mensagens() {
             }
             setError('');
         } catch (err) {
-            console.error("Erro ao carregar dados:", err);
+            console.error("Erro ao carregar atendimentos:", err);
             if (isInitialLoad) setError('Não foi possível carregar os dados. Verifique a sua conexão.');
         } finally {
             if (isInitialLoad) setIsLoading(false);
             setIsFetchingMore(false);
         }
-    }, [debouncedSearchTerm, limit, activeFilters, statusFilters, tagFilters, timeStart, timeEnd]);
+    }, [debouncedSearchTerm, limit, activeFilters, statusFilters, tagFilters, departmentFilter, timeStart, timeEnd, sendingQueue]);
 
     // --- Efeito: Polling Seguro (COM PAUSA EM SEGUNDO PLANO) ---
     useEffect(() => {
-        // Aguarda o perfil do usuário estar pronto para evitar piscar de dados sem filtro
         if (!isAuthReady) return;
 
         let isMounted = true;
@@ -584,18 +610,18 @@ function Mensagens() {
                 await fetchData(false);
             }
             if (isMounted) {
-                timeoutId = setTimeout(poll, 5000);
+                timeoutId = setTimeout(poll, 6000);
             }
         };
 
         fetchData(true).then(() => {
-            if (isMounted) timeoutId = setTimeout(poll, 5000);
+            if (isMounted) timeoutId = setTimeout(poll, 6000);
         });
 
         const handleVisibilityChange = () => {
             if (!document.hidden && isMounted) {
                 clearTimeout(timeoutId);
-                timeoutId = setTimeout(poll, 5000); // Apenas agenda o próximo poll
+                timeoutId = setTimeout(poll, 6000);
             }
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -606,24 +632,22 @@ function Mensagens() {
         };
     }, [fetchData, isAuthReady]);
 
-    // --- NOVO: Polling de Background para Notificações e Título ---
+    // --- NOVO: Polling de Background com intervalo inteligente (15s) ---
     useEffect(() => {
         const isMountedRef = { current: true };
         let timeoutId;
 
         const backgroundPoll = async () => {
-            // Executa apenas se estiver em segundo plano para manter notificações e título atualizados
-            // O polling principal (acima) já cuida quando está visível
             if (document.hidden) {
-                await fetchData(false, isMountedRef);
+                await fetchData(false);
             }
 
             if (isMountedRef.current) {
-                timeoutId = setTimeout(backgroundPoll, 5000);
+                timeoutId = setTimeout(backgroundPoll, 15000);
             }
         };
 
-        timeoutId = setTimeout(backgroundPoll, 5000);
+        timeoutId = setTimeout(backgroundPoll, 15000);
 
         return () => {
             isMountedRef.current = false;
@@ -648,11 +672,11 @@ function Mensagens() {
                     if (isMounted && res.data) {
                         const serverData = res.data;
 
-                        // Se o chat está ativo e aberto na tela e recebeu novas mensagens unread, marca como lidas
+                        // Se o chat está ativo e aberto na tela e recebeu novas mensagens unread, marca como lidas (exceto se foi marcado manualmente como não lido)
                         const hasUnread = Array.isArray(serverData.mensagens)
                             ? serverData.mensagens.some(m => m && (m.role === 'user' || m.role === 'client') && m.status === 'unread')
                             : false;
-                        if (hasUnread) {
+                        if (hasUnread && !manuallyUnreadIdsRef.current.has(currentAtendimentoId)) {
                             api.post(`/atendimentos/${currentAtendimentoId}/mark_read`).catch(() => {});
                         }
 
@@ -807,17 +831,20 @@ function Mensagens() {
         }
     }, [selectedAtendimento]);
 
-    // Marca como lido automaticamente quando o atendimento selecionado possui mensagens não lidas
+    // Marca como lido automaticamente quando o atendimento selecionado possui mensagens não lidas (exceto se marcado manualmente como não lido)
     useEffect(() => {
         if (!selectedAtendimento?.id) return;
 
+        // Se o atendimento foi marcado manualmente como não lido, respeita a decisão do usuário
+        if (manuallyUnreadIdsRef.current.has(selectedAtendimento.id)) return;
+
         let hasUnread = false;
         if (Array.isArray(selectedAtendimento.mensagens) && selectedAtendimento.mensagens.length > 0) {
-            hasUnread = selectedAtendimento.mensagens.some(m => m && (m.role === 'user' || m.role === 'client') && m.status === 'unread');
+            hasUnread = selectedAtendimento.mensagens.some(m => m && m.status === 'unread');
         } else if (typeof selectedAtendimento.conversa === 'string' && selectedAtendimento.conversa !== '[]') {
             try {
                 const parsed = JSON.parse(selectedAtendimento.conversa || '[]');
-                hasUnread = Array.isArray(parsed) && parsed.some(m => m && (m.role === 'user' || m.role === 'client') && m.status === 'unread');
+                hasUnread = Array.isArray(parsed) && parsed.some(m => m && m.status === 'unread');
             } catch (e) {}
         }
 
@@ -1012,13 +1039,23 @@ function Mensagens() {
         // Atualiza apenas o atendimento selecionado, sem alterar a lista da sidebar.
         if (selectedAtendimento?.id === atendimentoId) {
             setSelectedAtendimento(prevAtendimento => {
-                const conversa = JSON.parse(prevAtendimento.conversa || '[]');
-                conversa.push(msg);
-                // Não atualizamos 'updated_at' aqui para não causar reordenação na próxima busca.
-                // A atualização real virá do servidor.
+                let currentList = [];
+                if (Array.isArray(prevAtendimento.mensagens) && prevAtendimento.mensagens.length > 0) {
+                    currentList = [...prevAtendimento.mensagens];
+                } else if (typeof prevAtendimento.conversa === 'string') {
+                    try {
+                        currentList = JSON.parse(prevAtendimento.conversa || '[]');
+                    } catch {
+                        currentList = [];
+                    }
+                } else if (Array.isArray(prevAtendimento.conversa)) {
+                    currentList = [...prevAtendimento.conversa];
+                }
+                const updatedList = [...currentList, msg];
                 return {
                     ...prevAtendimento,
-                    conversa: JSON.stringify(conversa),
+                    mensagens: updatedList,
+                    conversa: JSON.stringify(updatedList),
                 };
             });
         }
@@ -1038,13 +1075,24 @@ function Mensagens() {
         setAtendimentos(prev =>
             prev.map(at => {
                 if (at.id === atendimentoId) {
-                    const conversa = JSON.parse(at.conversa || '[]');
-                    const updatedConversa = conversa.map(msg =>
+                    let currentList = [];
+                    if (Array.isArray(at.mensagens) && at.mensagens.length > 0) {
+                        currentList = [...at.mensagens];
+                    } else if (typeof at.conversa === 'string') {
+                        try {
+                            currentList = JSON.parse(at.conversa || '[]');
+                        } catch {
+                            currentList = [];
+                        }
+                    } else if (Array.isArray(at.conversa)) {
+                        currentList = [...at.conversa];
+                    }
+                    const updatedConversa = currentList.map(msg =>
                         msg.id === optimisticId
                             ? { ...msg, type: 'error', status: 'error', content: errorMessage } // Atualiza a mensagem 'sending' para 'error'
                             : msg
                     );
-                    const revertedAt = { ...at, conversa: JSON.stringify(updatedConversa) };
+                    const revertedAt = { ...at, mensagens: updatedConversa, conversa: JSON.stringify(updatedConversa) };
 
                     if (selectedAtendimento?.id === atendimentoId) {
                         setSelectedAtendimento(revertedAt);
@@ -1608,51 +1656,69 @@ function Mensagens() {
                                         <ChevronLeft size={24} />
                                     </button>
 
-                                    <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 executive-title text-sm sm:text-lg shrink-0">
-                                        {(selectedAtendimento.nome_contato || selectedAtendimento.whatsapp || '??').substring(0, 2).toUpperCase()}
-                                    </div>
-                                    <div className="min-w-0 flex-1 flex flex-col justify-center">
-                                        <h2 className="executive-title text-sm sm:text-lg text-slate-900 leading-tight truncate">
-                                            {selectedAtendimento.nome_contato || selectedAtendimento.whatsapp}
-                                        </h2>
-                                        <div className="flex items-center gap-2 mt-0.5 sm:mt-1 overflow-x-auto no-scrollbar w-full mask-fade-right pr-4">
-                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
-                                                <p className="editorial-label text-[8px] sm:text-[9px] whitespace-nowrap">Atendimento Ativo</p>
-                                            </div>
+                                    <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-white shadow-lg executive-title text-sm sm:text-lg shrink-0 ${
+                                         selectedAtendimento.status === 'Concluído' 
+                                             ? 'bg-emerald-600 shadow-emerald-200' 
+                                             : 'bg-blue-600 shadow-blue-200'
+                                     }`}>
+                                         {(selectedAtendimento.nome_contato || selectedAtendimento.whatsapp || '??').substring(0, 2).toUpperCase()}
+                                     </div>
+                                     <div className="min-w-0 flex-1 flex flex-col justify-center">
+                                         <h2 className="executive-title text-sm sm:text-lg text-slate-900 leading-tight truncate">
+                                             {selectedAtendimento.nome_contato || selectedAtendimento.whatsapp}
+                                         </h2>
+                                         <div className="flex items-center gap-2 mt-0.5 sm:mt-1 overflow-x-auto no-scrollbar w-full mask-fade-right pr-4">
+                                             {selectedAtendimento.status === 'Concluído' ? (
+                                                 <div className="flex items-center gap-1.5 shrink-0">
+                                                     <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-sm flex items-center gap-1">
+                                                         <CheckCircle2 size={11} className="text-emerald-600" /> Concluído
+                                                     </span>
+                                                 </div>
+                                             ) : selectedAtendimento.status === 'Atendente Chamado' ? (
+                                                 <div className="flex items-center gap-1.5 shrink-0">
+                                                     <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 shadow-sm flex items-center gap-1">
+                                                         <Headset size={11} className="text-amber-600" /> Atendente Chamado
+                                                     </span>
+                                                 </div>
+                                             ) : (
+                                                 <div className="flex items-center gap-1.5 shrink-0">
+                                                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
+                                                     <p className="editorial-label text-[8px] sm:text-[9px] whitespace-nowrap">Atendimento Ativo</p>
+                                                 </div>
+                                             )}
 
-                                            {/* HEADER TAGS */}
-                                            {selectedAtendimento.tags && selectedAtendimento.tags.length > 0 && (
-                                                <div className="flex items-center gap-1.5 pl-2 sm:pl-3 border-l border-slate-200 shrink-0">
-                                                    {selectedAtendimento.tags.map((tag, idx) => (
-                                                        <span
-                                                            key={idx}
-                                                            className="px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md border shadow-sm flex items-center gap-1 transition-all shrink-0 whitespace-nowrap"
-                                                            style={{
-                                                                backgroundColor: `${tag.color}10`,
-                                                                color: tag.color,
-                                                                borderColor: `${tag.color}30`
-                                                            }}
-                                                        >
-                                                            <div className="w-1 h-1 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
-                                                            {tag.name}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                                             {/* HEADER TAGS */}
+                                             {selectedAtendimento.tags && selectedAtendimento.tags.length > 0 && (
+                                                 <div className="flex items-center gap-1.5 pl-2 sm:pl-3 border-l border-slate-200 shrink-0">
+                                                     {selectedAtendimento.tags.map((tag, idx) => (
+                                                         <span
+                                                             key={idx}
+                                                             className="px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md border shadow-sm flex items-center gap-1 transition-all shrink-0 whitespace-nowrap"
+                                                             style={{
+                                                                 backgroundColor: `${tag.color}10`,
+                                                                 color: tag.color,
+                                                                 borderColor: `${tag.color}30`
+                                                             }}
+                                                         >
+                                                             <div className="w-1 h-1 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
+                                                             {tag.name}
+                                                         </span>
+                                                     ))}
+                                                 </div>
+                                             )}
+                                         </div>
+                                     </div>
+                                 </div>
 
-                                <div className="flex items-center gap-0 sm:gap-1 text-slate-400 shrink-0 ml-2">
-                                    <button onClick={handleExportConversation} className="hidden sm:flex w-10 h-10 items-center justify-center rounded-xl hover:bg-white hover:text-blue-600 transition-all" title="Exportar Log">
-                                        <Download size={20} />
-                                    </button>
-                                    <button onClick={() => setIsProfileSidebarOpen(prev => !prev)} className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl transition-all ${isProfileSidebarOpen ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'hover:bg-white hover:text-blue-600'}`} title="Dashboard de Lead">
-                                        <MoreVertical size={18} className="sm:w-5 sm:h-5" />
-                                    </button>
-                                </div>
-                            </header>
+                                 <div className="flex items-center gap-0 sm:gap-1 text-slate-400 shrink-0 ml-2">
+                                     <button onClick={handleExportConversation} className="hidden sm:flex w-10 h-10 items-center justify-center rounded-xl hover:bg-white hover:text-blue-600 transition-all cursor-pointer" title="Exportar Log">
+                                         <Download size={20} />
+                                     </button>
+                                     <button onClick={() => setIsProfileSidebarOpen(prev => !prev)} className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl transition-all cursor-pointer ${isProfileSidebarOpen ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'hover:bg-white hover:text-blue-600'}`} title="Dashboard de Lead">
+                                         <MoreVertical size={18} className="sm:w-5 sm:h-5" />
+                                     </button>
+                                 </div>
+                             </header>
 
                             <div className="flex-1 min-h-0 bg-slate-50/30 overflow-hidden flex flex-col relative">
                                 {/* Floating IA Button in top right */}

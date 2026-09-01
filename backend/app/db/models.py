@@ -1,4 +1,4 @@
-from sqlalchemy import ( Column, Integer, String, ForeignKey, Text, DateTime, LargeBinary, Boolean, func, Enum as SQLEnum )
+from sqlalchemy import ( Column, Integer, String, ForeignKey, Text, DateTime, LargeBinary, Boolean, func, Enum as SQLEnum, Index )
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import JSONB
 from typing import List, Optional, Dict, Any
@@ -148,12 +148,20 @@ class Atendimento(Base):
     bulk_template_params: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     tags: Mapped[Optional[List[Dict[str, str]]]] = mapped_column(JSONB, nullable=True, default=list)
     token_usage: Mapped[int] = mapped_column(Integer, default=0, comment="Total de tokens consumidos neste atendimento")
+    ai_logs: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(JSONB, nullable=True, default=list, server_default="'[]'", comment="Log completo e estruturado de auditoria das decisões da IA (Roteador, RAG, Gerador, Juiz Guardrail e Fallback)")
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), index=True)
+
 
     company: Mapped["Company"] = relationship(back_populates="atendimentos")
     active_persona: Mapped[Optional["Config"]] = relationship()
     assigned_user: Mapped[Optional["User"]] = relationship(foreign_keys=[assigned_user_id])
     mensagens: Mapped[List["Message"]] = relationship(back_populates="atendimento", cascade="all, delete-orphan", order_by="Message.timestamp.asc()")
+
+    __table_args__ = (
+        Index("idx_atendimentos_company_updated", "company_id", "updated_at"),
+        Index("idx_atendimentos_company_status_updated", "company_id", "status", "updated_at"),
+        Index("idx_atendimentos_company_dept_updated", "company_id", "assigned_department", "updated_at"),
+    )
 
 class Message(Base):
     __tablename__ = "mensagens"
@@ -175,7 +183,7 @@ class Message(Base):
     media_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     mime_type: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
     filename: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    media_bytes: Mapped[Optional[bytes]] = mapped_column(LargeBinary, nullable=True, comment="Bytes binários do arquivo de mídia persistidos diretamente no banco")
+    media_bytes: Mapped[Optional[bytes]] = mapped_column(LargeBinary, deferred=True, nullable=True, comment="Bytes binários do arquivo de mídia persistidos diretamente no banco")
     reaction: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, comment="Emoji da reação ativa")
     reactions: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, comment="Histórico/detalhes de reações na mensagem")
     quoted_msg_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True, comment="ID da mensagem respondida ou alvo da reação")
@@ -185,11 +193,17 @@ class Message(Base):
     quoted_msg: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     extra_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     atendimento_info: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
-    embedding: Mapped[Optional[List[float]]] = mapped_column(Vector(768), nullable=True)
+    embedding: Mapped[Optional[List[float]]] = mapped_column(Vector(768), deferred=True, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     company: Mapped["Company"] = relationship(back_populates="mensagens")
     atendimento: Mapped["Atendimento"] = relationship(back_populates="mensagens")
+
+    __table_args__ = (
+        Index("idx_mensagens_atendimento_ts", "atendimento_id", "timestamp"),
+        Index("idx_mensagens_atendimento_status", "atendimento_id", "role", "status"),
+        Index("idx_mensagens_company_msgid", "company_id", "message_id"),
+    )
 
 # Alias para manter compatibilidade com referências existentes a AtendimentoMessageSearch
 AtendimentoMessageSearch = Message

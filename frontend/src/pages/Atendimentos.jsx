@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import toast from 'react-hot-toast';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axiosConfig';
-import { Search, MessageSquare, Edit, Trash2, AlertTriangle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X as XIcon, Tag, Download, Plus, MessageSquarePlus, Loader2, Send, FileImage, FileVideo, File as FileIcon, Upload, FileText, Info, Bot, Clock, Database, User, Zap, ListFilter, ArrowRightLeft, Building2 } from 'lucide-react';
+import { Search, MessageSquare, Edit, Trash2, AlertTriangle, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X as XIcon, Tag, Download, Plus, MessageSquarePlus, Loader2, Send, FileImage, FileVideo, File as FileIcon, Upload, FileText, Info, Bot, Clock, Database, User, Zap, ListFilter, ArrowRightLeft, Building2, CheckCircle2, RotateCcw } from 'lucide-react';
 import PageLoader from '../components/common/PageLoader';
+
 import CreateTemplateModal from '../components/mensagens/CreateTemplateModal';
 import FilterPopover from '../components/mensagens/FilterPopover';
 import TransferModal from '../components/common/TransferModal';
@@ -2210,10 +2211,45 @@ function Atendimentos() {
                                             </td>
                                             <td className="px-4 sm:px-6 py-5 text-center">
                                                 <div className="flex justify-center items-center gap-0.5 sm:gap-1 transition-opacity">
-                                                    <button onClick={(e) => { e.stopPropagation(); setTransferModalData(at); }} className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-amber-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-lg sm:rounded-xl transition-all" title="Transferir Setor / Atendente"><ArrowRightLeft size={16} /></button>
-                                                    <button onClick={(e) => { e.stopPropagation(); setModalData({ type: 'conversation', data: at }); }} className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-lg sm:rounded-xl transition-all" title="Ver conversa"><MessageSquare size={16} /></button>
-                                                    <button onClick={(e) => { e.stopPropagation(); setModalData({ type: 'edit', data: at }); }} className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-lg sm:rounded-xl transition-all" title="Editar"><Edit size={16} /></button>
-                                                    <button onClick={(e) => { e.stopPropagation(); setModalData({ type: 'delete', data: at }); }} className="hidden xs:flex w-8 sm:w-9 h-8 sm:h-9 items-center justify-center text-slate-400 hover:text-red-500 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-lg sm:rounded-xl transition-all" title="Apagar"><Trash2 size={16} /></button>
+                                                    {at.status === 'Concluído' ? (
+                                                        <button 
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                try {
+                                                                    await api.put(`/atendimentos/${at.id}`, { status: 'Mensagem Recebida' });
+                                                                    setAtendimentos(prev => prev.map(item => item.id === at.id ? { ...item, status: 'Mensagem Recebida' } : item));
+                                                                    toast.success('Atendimento reaberto com sucesso!');
+                                                                } catch (err) {
+                                                                    toast.error('Erro ao reabrir atendimento.');
+                                                                }
+                                                            }} 
+                                                            className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-blue-600 hover:bg-blue-50 hover:shadow-md border border-transparent hover:border-blue-100 rounded-lg sm:rounded-xl transition-all cursor-pointer" 
+                                                            title="Reabrir Atendimento"
+                                                        >
+                                                            <RotateCcw size={16} />
+                                                        </button>
+                                                    ) : (
+                                                        <button 
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                try {
+                                                                    await api.put(`/atendimentos/${at.id}`, { status: 'Concluído' });
+                                                                    setAtendimentos(prev => prev.map(item => item.id === at.id ? { ...item, status: 'Concluído' } : item));
+                                                                    toast.success('Atendimento concluído com sucesso!');
+                                                                } catch (err) {
+                                                                    toast.error('Erro ao concluir atendimento.');
+                                                                }
+                                                            }} 
+                                                            className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:shadow-md border border-transparent hover:border-emerald-100 rounded-lg sm:rounded-xl transition-all cursor-pointer" 
+                                                            title="Concluir Atendimento"
+                                                        >
+                                                            <CheckCircle2 size={16} />
+                                                        </button>
+                                                    )}
+                                                    <button onClick={(e) => { e.stopPropagation(); setTransferModalData(at); }} className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-amber-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-lg sm:rounded-xl transition-all cursor-pointer" title="Transferir Setor / Atendente"><ArrowRightLeft size={16} /></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); setModalData({ type: 'conversation', data: at }); }} className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-lg sm:rounded-xl transition-all cursor-pointer" title="Ver conversa"><MessageSquare size={16} /></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); setModalData({ type: 'edit', data: at }); }} className="w-8 sm:w-9 h-8 sm:h-9 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-lg sm:rounded-xl transition-all cursor-pointer" title="Editar"><Edit size={16} /></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); setModalData({ type: 'delete', data: at }); }} className="hidden xs:flex w-8 sm:w-9 h-8 sm:h-9 items-center justify-center text-slate-400 hover:text-red-500 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-lg sm:rounded-xl transition-all cursor-pointer" title="Apagar"><Trash2 size={16} /></button>
                                                 </div>
                                             </td>
                                         </tr>

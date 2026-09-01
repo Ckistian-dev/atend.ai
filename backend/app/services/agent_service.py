@@ -217,7 +217,7 @@ def construir_prompt_base(ctx: RunContext[ContextoSaaS]) -> str:
         f"- NOME DO CONTATO: {pedir_nome_rule}\n"
         f"- RESUMO DO ATENDIMENTO: O campo 'resumo' do resultado final DEVE conter uma síntese consolidada e acumulada de TODA a conversa até o momento.\n"
         f"- TAGS: Para aplicar tags ao contato, execute `adicionar_tag_ao_cliente` com uma das tags listadas acima.\n"
-        f"- TRANSBORDO HUMANO: Quando necessário, avise o cliente amigavelmente e invoque a ferramenta `transferir_para_atendente`.\n"
+        f"- TRANSBORDO HUMANO: Se houver regra específica da empresa/persona para transferir em determinado assunto, execute `transferir_para_atendente` imediatamente sem hesitar. Em casos gerais, seja resolutivo por conta própria e só transfira se o cliente pedir e confirmar.\n"
         f"- CONCLUSÃO: Se o atendimento for finalizado com sucesso, invoque `concluir_atendimento`.\n\n"
 
         f"--- DIRETRIZES DE FORMATO E HUMANIZAÇÃO ---\n"
@@ -1397,47 +1397,54 @@ async def transferir_para_atendente(
                 valid_user_map = {}
                 for u in company_users:
                     u_name = (u.name or u.email.split('@')[0]).strip()
-                    u_dept = (u.department or ('Admin' if u.role == 'admin' else 'Atendimento Geral')).strip()
-                    if u_dept:
+                    u_dept = (u.department or '').strip()
+                    if u_dept and u_dept.lower() not in ['admin', 'administrador']:
                         valid_dept_map[u_dept.lower()] = u_dept
-                    if u_name:
-                        valid_user_map[u_name.lower()] = u
-                    if u.email:
-                        valid_user_map[u.email.lower()] = u
+                    if u.role != 'admin' and u_name.lower() not in ['admin', 'administrador']:
+                        if u_name:
+                            valid_user_map[u_name.lower()] = u
+                        if u.email:
+                            valid_user_map[u.email.lower()] = u
 
                 matched_user = None
                 resolved_dept = None
 
                 if destinatario and str(destinatario).strip():
                     dest_clean = str(destinatario).strip().lower()
-                    for key, u in valid_user_map.items():
-                        if dest_clean == key or dest_clean in key or key in dest_clean:
-                            matched_user = u
-                            resolved_dept = (u.department or ('Admin' if u.role == 'admin' else 'Atendimento Geral')).strip()
-                            break
-
-                    if not matched_user:
-                        for key, dept_name in valid_dept_map.items():
+                    if dest_clean not in ['admin', 'administrador']:
+                        for key, u in valid_user_map.items():
                             if dest_clean == key or dest_clean in key or key in dest_clean:
-                                resolved_dept = dept_name
+                                matched_user = u
+                                resolved_dept = (u.department or '').strip() or None
                                 break
+
+                        if not matched_user:
+                            for key, dept_name in valid_dept_map.items():
+                                if dest_clean == key or dest_clean in key or key in dest_clean:
+                                    resolved_dept = dept_name
+                                    break
 
                 if not resolved_dept and departamento and str(departamento).strip():
                     dept_clean = str(departamento).strip().lower()
-                    for key, dept_name in valid_dept_map.items():
-                        if dept_clean == key or dept_clean in key or key in dept_clean:
-                            resolved_dept = dept_name
-                            break
+                    if dept_clean not in ['admin', 'administrador']:
+                        for key, dept_name in valid_dept_map.items():
+                            if dept_clean == key or dept_clean in key or key in dept_clean:
+                                resolved_dept = dept_name
+                                break
 
-                # Fallback com base nos usuários cadastrados
+                # Fallback seguro com base nos usuários cadastrados
                 if not matched_user and not resolved_dept:
-                    if len(company_users) == 1:
-                        matched_user = company_users[0]
-                        resolved_dept = (matched_user.department or ('Admin' if matched_user.role == 'admin' else 'Atendimento Geral')).strip()
-                    elif len(company_users) > 1:
-                        first_admin = next((u for u in company_users if u.role == "admin"), company_users[0])
-                        matched_user = first_admin
-                        resolved_dept = (first_admin.department or ('Admin' if first_admin.role == 'admin' else 'Atendimento Geral')).strip()
+                    dist_users = [u for u in company_users if u.participates_distribution]
+                    if not dist_users:
+                        non_admin_users = [u for u in company_users if u.role != 'admin' and (u.name or '').strip().lower() not in ['admin', 'administrador']]
+                        if non_admin_users:
+                            matched_user = non_admin_users[0]
+                            resolved_dept = (matched_user.department or '').strip() or None
+                        else:
+                            # Fallback silencioso para o Admin quando não houver outro atendente
+                            first_admin = next((u for u in company_users if u.role == "admin"), company_users[0] if company_users else None)
+                            if first_admin:
+                                matched_user = first_admin
 
                 if matched_user:
                     at.assigned_user_id = matched_user.id
@@ -1445,7 +1452,7 @@ async def transferir_para_atendente(
                 else:
                     assigned_user_name = None
 
-                if resolved_dept:
+                if resolved_dept and resolved_dept.lower() not in ['admin', 'administrador']:
                     at.assigned_department = resolved_dept
 
                 if motivo and motivo.strip():
@@ -1457,7 +1464,12 @@ async def transferir_para_atendente(
                 if at.assigned_user_id:
                     ctx.deps.atendimento.assigned_user_id = at.assigned_user_id
                 
-    target_info = f"ao atendente '{assigned_user_name}' (Cargo/Setor: {at.assigned_department or 'Geral'})" if assigned_user_name else (f"ao setor '{at.assigned_department}'" if at.assigned_department else "à equipe de atendimento")
+    if matched_user and matched_user.role != 'admin' and assigned_user_name and assigned_user_name.lower() not in ['admin', 'administrador']:
+        target_info = f"ao atendente '{assigned_user_name}'" + (f" (Setor: {at.assigned_department})" if at.assigned_department else "")
+    elif at.assigned_department and at.assigned_department.lower() not in ['admin', 'administrador']:
+        target_info = f"ao setor '{at.assigned_department}'"
+    else:
+        target_info = "à equipe de atendimento"
     return f"Atendimento transferido com sucesso {target_info}."
 
 

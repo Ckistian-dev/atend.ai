@@ -16,7 +16,7 @@ class RouterDecision(BaseModel):
     )
     tool_to_call: Optional[str] = Field(
         default=None,
-        description="Nome da ferramenta a invocar: 'consultar_agenda_google', 'agendar_reuniao', 'executar_calculo_matematico', 'consultar_conteudo_link', 'obter_data_hora_atual', 'enviar_arquivo_do_drive', 'adicionar_tag_ao_cliente', 'atualizar_nome_contato', 'transferir_para_atendente'."
+        description="Nome da ferramenta a invocar: 'consultar_agenda_google', 'agendar_reuniao', 'executar_calculo_matematico', 'consultar_conteudo_link', 'obter_data_hora_atual', 'enviar_arquivo_do_drive', 'adicionar_tag_ao_cliente', 'atualizar_nome_contato', 'transferir_para_atendente', 'concluir_atendimento'."
     )
     tool_args: Optional[str] = Field(
         default=None,
@@ -33,17 +33,22 @@ class RouterDecision(BaseModel):
 
 
 class EvaluationResult(BaseModel):
-    """Resultado estruturado da validação anti-alucinação do Juiz."""
+    """Resultado estruturado da validação anti-alucinação e autoridade de transbordo do Juiz."""
     is_valid: bool = Field(
-        description="True se a resposta gerada for 100% suportada pelos fatos do contexto recuperado/ferramentas e não violar nenhuma regra. False se contiver alucinações, preços inventados ou suposições infundadas."
+        description="True se a proposta de resposta for 100% suportada pelos fatos, não violar regras e a decisão de transbordo (se houver) for legítima. False se contiver alucinações, erros de regra ou tentativa de transbordo indevido."
+    )
+    approve_handoff: bool = Field(
+        default=False,
+        description="True se a solicitação de transbordo para equipe/humano foi APROVADA pelo Juiz com base no contexto (o cliente pediu expressamente um humano ou confirmou oferta prévia ou há regra específica). False se a transferência foi rejeitada ou se não houve solicitação de transbordo."
     )
     critique: str = Field(
-        description="Se is_valid for False, detalhe exatamente qual fato/preço foi alucinado ou qual regra foi violada e instrua como corrigir. Se is_valid for True, retorne string vazia ou 'Aprovado'."
+        description="Se is_valid for False, detalhe exatamente o erro (alucinação, regra violada ou motivo da rejeição do transbordo) e instrua com clareza como o Gerador deve corrigir a resposta. Se is_valid for True, retorne 'Aprovado'."
     )
     reason: Optional[str] = Field(
         default=None,
-        description="Resumo do raciocínio de avaliação do Juiz."
+        description="Resumo do raciocínio e julgamento semântico do Juiz."
     )
+
 
 
 class GeneratorOutput(BaseModel):
@@ -60,7 +65,7 @@ class GeneratorOutput(BaseModel):
     )
     intent_conclude: bool = Field(
         default=False,
-        description="True se o atendimento foi concluído com sucesso."
+        description="True se o atendimento deve ser marcado como CONCLUÍDO (o cliente agradeceu, se despediu, respondeu 'obrigado', 'valeu', 'era só isso', 'tchau', confirmou que não precisa de mais nada ou o objetivo do diálogo foi 100% alcançado sem pendências). False para manter em andamento."
     )
     intent_handoff: bool = Field(
         default=False,
@@ -84,7 +89,7 @@ class GeneratorOutput(BaseModel):
     )
     tags_para_adicionar: Optional[List[str]] = Field(
         default=None,
-        description="Lista de nomes de tags a serem aplicadas a este atendimento, selecionadas EXCLUSIVAMENTE a partir da lista de tags disponíveis da empresa de acordo com o que o CLIENTE disse ou pediu (ex: ambiente, produto de interesse, intenção de compra). Não adicione tags de itens não pedidos pelo cliente."
+        description="Lista de nomes de tags a serem adicionadas, selecionadas ESTRITAMENTE da lista de tags cadastradas da empresa. REGRA CRÍTICA: A tag só pode ser incluída se o PRÓPRIO CLIENTE tiver expressamente solicitado, afirmado, escolhido ou confirmado o produto, ambiente ou interesse em suas mensagens. NUNCA inclua tags de produtos que apenas a IA sugeriu e o cliente ainda não confirmou/escolheu."
     )
 
 
@@ -110,12 +115,14 @@ class AgentState(TypedDict, total=False):
     target_category: Optional[str]
     tool_to_call: Optional[str]
     tool_args: Optional[Dict[str, Any]]
+    intent_conclude: Optional[bool]
     intent_handoff: Optional[bool]
     handoff_destinatario: Optional[str]
     handoff_department: Optional[str]
     handoff_user_id: Optional[int]
     handoff_user_name: Optional[str]
     handoff_motivo: Optional[str]
+    approve_handoff: Optional[bool]
 
     # Contexto Recuperado e Ferramentas
     retrieved_context: Optional[str]
@@ -156,6 +163,8 @@ class AgentState(TypedDict, total=False):
     thinking_budget: Optional[int]
     thinking_level: Optional[str]
 
-    # Mapeamento de Consumo de Tokens
+    # Mapeamento de Consumo de Tokens e Auditoria Interna
     input_tokens: int
     output_tokens: int
+    ai_audit_trail: Optional[Dict[str, Any]]
+

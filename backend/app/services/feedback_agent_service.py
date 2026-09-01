@@ -63,11 +63,28 @@ class AlteracaoItem(BaseModel):
     motivo: Optional[str] = Field(None, description="Explicação do porquê desta alteração")
 
 class AlteracaoFormularioItem(BaseModel):
-    campo: str = Field(description="Nome do campo no formulário da Persona (ex: 'ai_name', 'objective', 'restrictions', 'handoff_rules', 'extra_instructions', 'formality', 'objectivity')")
+    campo: str = Field(description="Nome do campo no formulário da Persona (ex: 'ai_name', 'company_name', 'role', 'language', 'nature_identity', 'formality', 'objectivity', 'qualities', 'objective', 'restrictions', 'handoff_rules', 'extra_instructions')")
     secao: Optional[str] = Field(None, description="Seção da Aba Persona: 'Identidade', 'Tom de Voz', 'Missão', 'Regras e Restrições' ou 'Instruções Adicionais'")
-    valor_antigo: Optional[Any] = Field(None, description="Valor anterior do campo")
-    valor_novo: Any = Field(description="Novo valor sugerido para o campo")
-    motivo: Optional[str] = Field(None, description="Motivo ou benefício da alteração")
+    acao: Literal['adicionar', 'modificar', 'remover', 'substituir'] = Field(
+        default='modificar',
+        description="Ação a ser executada: 'adicionar' (novo item em lista ou texto), 'modificar' (reformular um item existente específico referenciado em valor_antigo/item_referencia), 'remover' (excluir o item específico referenciado em valor_antigo/item_referencia), 'substituir' (trocar o valor do campo por completo)."
+    )
+    item_referencia: Optional[str] = Field(
+        default=None,
+        description="Para listas (restrictions, handoff_rules, qualities) ou textos: trecho/texto EXATO da regra atual a ser alterada ou removida. Nulo se acao='adicionar'."
+    )
+    valor_antigo: Optional[Any] = Field(
+        default=None,
+        description="Valor anterior (para listas, a regra antiga exata que está sendo substituída ou removida; para escalares, o valor prévio do campo)."
+    )
+    valor_novo: Optional[Any] = Field(
+        default=None,
+        description="Novo valor sugerido (para listas com acao='adicionar'/'modificar', o texto exato da nova regra individual; para acao='remover', None; para escalares, o novo valor)."
+    )
+    motivo: Optional[str] = Field(
+        default=None,
+        description="Explicação concisa do porquê desta alteração e benefício prático."
+    )
 
 class FeedbackAgentResponse(BaseModel):
     analise_geral: str = Field(description="Explicação detalhada das melhorias e diagnóstico proposto.")
@@ -106,8 +123,18 @@ def construir_prompt_feedback(ctx: RunContext[ContextoFeedback]) -> str:
         "Sua missão é analisar as configurações da IA e propor melhorias estruturadas com base no feedback do usuário em até 3 eixos fundamentais:\n\n"
         "=== OS 3 EIXOS DE CONFIGURAÇÃO DO SISTEMA ===\n"
         "1. EIXO REGRAS E POSTURA (Aba Persona / `alteracoes_formulario` e `novo_persona_form`):\n"
-        "   - Use sempre que o feedback envolver tom de voz, regras de atendimento, proibições, regras de transbordo humano, postura ou orientações gerais da IA.\n"
-        "   - Preencha `alteracoes_formulario` e o objeto consolidado `novo_persona_form`.\n\n"
+        "   - Use sempre que o feedback envolver tom de voz, regras de atendimento, proibições, regras de transbordo humano, postura ou orientações da IA.\n"
+        "   - Chame obrigatoriamente a ferramenta `obter_formulario_persona` para inspecionar os dados atuais da persona.\n"
+        "   - 🚨 REGRAS DE PRECISÃO CIRÚRGICA PARA `alteracoes_formulario`:\n"
+        "     a) CAMPOS DE LISTA (`restrictions`, `handoff_rules`, `qualities`):\n"
+        "        - NUNCA envie a lista inteira de regras num único item. CADA alteração deve ser um item atômico individual na lista `alteracoes_formulario`.\n"
+        "        - Para REFORMULAR / MODIFICAR uma regra existente: defina `acao='modificar'`, `campo='restrictions'` (ou 'handoff_rules'), `valor_antigo` e `item_referencia` com o texto EXATO da regra atual copiada literalmente do formulário, e `valor_novo` com o texto da nova regra aprimorada.\n"
+        "        - Para ADICIONAR uma regra nova: defina `acao='adicionar'`, `campo='restrictions'` (ou 'handoff_rules'), `valor_antigo=None`, `item_referencia=None`, e `valor_novo` com o texto da nova regra a acrescentar.\n"
+        "        - Para REMOVER uma regra inadequada: defina `acao='remover'`, `campo='restrictions'` (ou 'handoff_rules'), `valor_antigo` e `item_referencia` com o texto EXATO da regra a remover, e `valor_novo=None`.\n"
+        "     b) CAMPOS ESCALARES DE TEXTO E SLIDERS (`objective`, `extra_instructions`, `ai_name`, `company_name`, `role`, `language`, `nature_identity`, `formality`, `objectivity`):\n"
+        "        - Defina `acao='modificar'` ou `acao='substituir'`, `valor_antigo` com o valor anterior e `valor_novo` com o novo valor proposto.\n"
+        "     c) CONSOLIDAÇÃO EM `novo_persona_form`:\n"
+        "        - O objeto `novo_persona_form` DEVE preservar e conter TODAS as regras pré-existentes da empresa que NÃO foram alteradas/removidas. NUNCA descarte as demais regras!\n\n"
         "2. EIXO BASE DE CONHECIMENTO & PRODUTOS (Planilha RAG / `alteracoes_rag`):\n"
         "   - Use SEMPRE que o feedback envolver catálogo, produtos, variações, cores, acabamentos, preços, dimensões, estoque, prazos, políticas de troca, frete ou FAQs da empresa.\n"
         "   - Chame obrigatoriamente a ferramenta `obter_planilha_conhecimento_rag` para verificar as abas e linhas existentes.\n"
@@ -463,19 +490,57 @@ async def executar_agente_feedback(
         if resp.alteracoes_formulario:
             for item in resp.alteracoes_formulario:
                 campo_name = item.campo
+                acao = str(item.acao or "modificar").strip().lower()
+                if acao not in ["adicionar", "modificar", "remover", "substituir"]:
+                    acao = "modificar"
+
                 v_novo = item.valor_novo
                 v_antigo = item.valor_antigo
+                item_ref = item.item_referencia
                 
                 if campo_name in ["restrictions", "handoff_rules", "qualities", "tags"]:
-                    v_novo_clean = clean_rule_list(v_novo)
-                    v_antigo_clean = clean_rule_list(v_antigo) if v_antigo is not None else None
+                    # Para regras de lista: normaliza valor novo e antigo para string ou lista de strings
+                    if acao == "remover":
+                        v_novo_clean = None
+                    elif isinstance(v_novo, list):
+                        v_list = clean_rule_list(v_novo)
+                        v_novo_clean = v_list[0] if len(v_list) == 1 else v_list
+                    elif v_novo is not None:
+                        v_list = clean_rule_list(str(v_novo))
+                        v_novo_clean = v_list[0] if len(v_list) == 1 else (v_list if v_list else str(v_novo).strip())
+                    else:
+                        v_novo_clean = None
+
+                    if isinstance(v_antigo, list):
+                        a_list = clean_rule_list(v_antigo)
+                        v_antigo_clean = a_list[0] if len(a_list) == 1 else a_list
+                    elif v_antigo is not None:
+                        a_list = clean_rule_list(str(v_antigo))
+                        v_antigo_clean = a_list[0] if len(a_list) == 1 else (a_list if a_list else str(v_antigo).strip())
+                    else:
+                        v_antigo_clean = None
+
+                    item_ref_clean = str(item_ref).strip() if item_ref else (v_antigo_clean if isinstance(v_antigo_clean, str) else None)
+                elif campo_name in ["formality", "objectivity"]:
+                    try:
+                        v_novo_clean = float(v_novo) if v_novo is not None else 0.5
+                    except Exception:
+                        v_novo_clean = 0.5
+                    try:
+                        v_antigo_clean = float(v_antigo) if v_antigo is not None else None
+                    except Exception:
+                        v_antigo_clean = None
+                    item_ref_clean = None
                 else:
                     v_novo_clean = str(v_novo).strip() if v_novo is not None else ""
                     v_antigo_clean = str(v_antigo).strip() if v_antigo is not None else None
+                    item_ref_clean = str(item_ref).strip() if item_ref else None
                     
                 clean_alteracoes_form.append({
                     "campo": item.campo,
                     "secao": item.secao,
+                    "acao": acao,
+                    "item_referencia": item_ref_clean,
                     "valor_antigo": v_antigo_clean,
                     "valor_novo": v_novo_clean,
                     "motivo": item.motivo

@@ -181,6 +181,34 @@ async def transfer_atendimento(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Conclui um atendimento alterando seu status para 'Concluído'
+@router.post("/{atendimento_id}/complete", response_model=schemas.Atendimento, summary="Concluir atendimento")
+async def complete_atendimento(
+    atendimento_id: int,
+    payload: Optional[schemas.CompleteAtendimentoPayload] = Body(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(dependencies.get_current_active_user)
+):
+    """
+    Conclui um atendimento, alterando o status para 'Concluído'.
+    """
+    company_id = current_user.company_id or 0
+    try:
+        notes = payload.notes if payload else None
+        return await AtendimentoService.complete_atendimento(
+            db=db,
+            company_id=company_id,
+            atendimento_id=atendimento_id,
+            notes=notes,
+            current_user=current_user
+        )
+    except AtendimentoNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro ao concluir atendimento {atendimento_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Busca e retorna os detalhes de um atendimento específico pelo seu ID
 @router.get("/{atendimento_id}", response_model=schemas.Atendimento)
 async def get_atendimento_by_id(

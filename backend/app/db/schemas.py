@@ -239,6 +239,10 @@ class TransferAtendimentoPayload(BaseModel):
     user_id: Optional[int] = None
     notes: Optional[str] = None
 
+class CompleteAtendimentoPayload(BaseModel):
+    notes: Optional[str] = None
+
+
 # --- Schemas de Empresa ---
 class CompanyBase(BaseModel):
     name: str
@@ -384,8 +388,10 @@ class AlteracaoPlanilha(BaseModel):
 class AlteracaoFormularioItem(BaseModel):
     campo: str
     secao: Optional[str] = None
+    acao: Optional[str] = "modificar"
+    item_referencia: Optional[str] = None
     valor_antigo: Optional[Any] = None
-    valor_novo: Any
+    valor_novo: Optional[Any] = None
     motivo: Optional[str] = None
 
 

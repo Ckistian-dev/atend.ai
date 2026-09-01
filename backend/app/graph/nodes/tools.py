@@ -358,49 +358,54 @@ async def _transferir_para_atendente(atendimento_id: int, tenant_id: int, destin
             valid_user_map = {}
             for u in company_users:
                 u_name = (u.name or u.email.split('@')[0]).strip()
-                u_dept = (u.department or ('Admin' if u.role == 'admin' else 'Atendimento Geral')).strip()
-                if u_dept:
+                u_dept = (u.department or '').strip()
+                if u_dept and u_dept.lower() not in ['admin', 'administrador']:
                     valid_dept_map[u_dept.lower()] = u_dept
-                if u_name:
-                    valid_user_map[u_name.lower()] = u
-                if u.email:
-                    valid_user_map[u.email.lower()] = u
+                if u.role != 'admin' and u_name.lower() not in ['admin', 'administrador']:
+                    if u_name:
+                        valid_user_map[u_name.lower()] = u
+                    if u.email:
+                        valid_user_map[u.email.lower()] = u
 
             matched_user = None
             resolved_dept = None
 
             if destinatario and str(destinatario).strip():
                 dest_clean = str(destinatario).strip().lower()
-                for key, u in valid_user_map.items():
-                    if dest_clean == key or dest_clean in key or key in dest_clean:
-                        matched_user = u
-                        resolved_dept = (u.department or ('Admin' if u.role == 'admin' else 'Atendimento Geral')).strip()
-                        break
-
-                if not matched_user:
-                    for key, dept_name in valid_dept_map.items():
+                if dest_clean not in ['admin', 'administrador']:
+                    for key, u in valid_user_map.items():
                         if dest_clean == key or dest_clean in key or key in dest_clean:
-                            resolved_dept = dept_name
+                            matched_user = u
+                            resolved_dept = (u.department or '').strip() or None
                             break
+
+                    if not matched_user:
+                        for key, dept_name in valid_dept_map.items():
+                            if dest_clean == key or dest_clean in key or key in dest_clean:
+                                resolved_dept = dept_name
+                                break
 
             if not resolved_dept and departamento and str(departamento).strip():
                 dept_clean = str(departamento).strip().lower()
-                for key, dept_name in valid_dept_map.items():
-                    if dept_clean == key or dept_clean in key or key in dept_clean:
-                        resolved_dept = dept_name
-                        break
+                if dept_clean not in ['admin', 'administrador']:
+                    for key, dept_name in valid_dept_map.items():
+                        if dept_clean == key or dept_clean in key or key in dept_clean:
+                            resolved_dept = dept_name
+                            break
 
-            # Fallback com base nos usuários cadastrados
+            # Fallback seguro com base nos usuários cadastrados
             if not matched_user and not resolved_dept:
-                if len(company_users) == 1:
-                    matched_user = company_users[0]
-                    resolved_dept = (matched_user.department or ('Admin' if matched_user.role == 'admin' else 'Atendimento Geral')).strip()
-                elif len(company_users) > 1:
-                    dist_users = [u for u in company_users if u.participates_distribution]
-                    if not dist_users:
-                        first_admin = next((u for u in company_users if u.role == "admin"), company_users[0])
-                        matched_user = first_admin
-                        resolved_dept = (first_admin.department or ('Admin' if first_admin.role == 'admin' else 'Atendimento Geral')).strip()
+                dist_users = [u for u in company_users if u.participates_distribution]
+                if not dist_users:
+                    non_admin_users = [u for u in company_users if u.role != 'admin' and (u.name or '').strip().lower() not in ['admin', 'administrador']]
+                    if non_admin_users:
+                        matched_user = non_admin_users[0]
+                        resolved_dept = (matched_user.department or '').strip() or None
+                    else:
+                        # Fallback silencioso para o Admin quando não houver outro atendente
+                        first_admin = next((u for u in company_users if u.role == "admin"), company_users[0] if company_users else None)
+                        if first_admin:
+                            matched_user = first_admin
 
             if matched_user:
                 at.assigned_user_id = matched_user.id
@@ -408,7 +413,7 @@ async def _transferir_para_atendente(atendimento_id: int, tenant_id: int, destin
             else:
                 assigned_user_name = None
 
-            if resolved_dept:
+            if resolved_dept and resolved_dept.lower() not in ['admin', 'administrador']:
                 at.assigned_department = resolved_dept
 
             if motivo and str(motivo).strip():
@@ -417,8 +422,29 @@ async def _transferir_para_atendente(atendimento_id: int, tenant_id: int, destin
             await crud_atendimento.distribute_atendimento(db, at)
             db.add(at)
 
-            target_str = f"ao atendente '{assigned_user_name}' (Cargo/Setor: {at.assigned_department or 'Geral'})" if assigned_user_name else (f"ao setor '{at.assigned_department}'" if at.assigned_department else "à equipe de atendimento")
+            if matched_user and matched_user.role != 'admin' and assigned_user_name and assigned_user_name.lower() not in ['admin', 'administrador']:
+                target_str = f"ao atendente '{assigned_user_name}'" + (f" (Setor: {at.assigned_department})" if at.assigned_department else "")
+            elif at.assigned_department and at.assigned_department.lower() not in ['admin', 'administrador']:
+                target_str = f"ao setor '{at.assigned_department}'"
+            else:
+                target_str = "à equipe de atendimento"
+
             return f"Atendimento transferido com sucesso {target_str}."
+
+async def _concluir_atendimento(atendimento_id: int) -> str:
+    try:
+        async with SessionLocal() as db:
+            async with db.begin():
+                at = await db.get(models.Atendimento, atendimento_id, with_for_update=True)
+                if not at:
+                    return "Atendimento não encontrado."
+                at.status = "Concluído"
+                db.add(at)
+        logger.info(f"[Tools Node] Atendimento {atendimento_id} concluído com sucesso via ferramenta.")
+        return "Atendimento concluído com sucesso."
+    except Exception as e:
+        logger.error(f"[Tools Node] Erro ao concluir atendimento {atendimento_id}: {e}", exc_info=True)
+        return f"Erro ao concluir atendimento: {e}"
 
 async def tools_node(state: AgentState) -> Dict[str, Any]:
     """
@@ -466,16 +492,36 @@ async def tools_node(state: AgentState) -> Dict[str, Any]:
             nome_tag = tool_args.get("nome_da_tag", "")
             resultado_str = await _adicionar_tag(atendimento_id, tenant_id, nome_tag)
 
+        elif tool_name == "concluir_atendimento":
+            resultado_str = await _concluir_atendimento(atendimento_id)
+            extra_state_updates["status_final"] = "Concluído"
+            extra_state_updates["intent_conclude"] = True
+
         elif tool_name == "transferir_para_atendente":
-            dest = tool_args.get("destinatario") or tool_args.get("usuario") or tool_args.get("atendente") or tool_args.get("nome") or state.get("handoff_destinatario")
-            dept = tool_args.get("departamento") or tool_args.get("setor")
-            motivo = tool_args.get("motivo")
-            resultado_str = await _transferir_para_atendente(atendimento_id, tenant_id, dest, dept, motivo)
-            extra_state_updates["status_final"] = "Atendente Chamado"
-            extra_state_updates["intent_handoff"] = True
-            if dest: extra_state_updates["handoff_destinatario"] = dest
-            if dept: extra_state_updates["handoff_department"] = dept
-            if motivo: extra_state_updates["handoff_motivo"] = motivo
+            from app.graph.handoff_policy import should_allow_handoff
+            allowed, reason = should_allow_handoff(
+                user_input=state.get("user_input", ""),
+                history=state.get("conversation_history", []),
+                requested_by_ai=True
+            )
+            if allowed:
+                dest = tool_args.get("destinatario") or tool_args.get("usuario") or tool_args.get("atendente") or tool_args.get("nome") or state.get("handoff_destinatario")
+                dept = tool_args.get("departamento") or tool_args.get("setor")
+                motivo = tool_args.get("motivo")
+                resultado_str = await _transferir_para_atendente(atendimento_id, tenant_id, dest, dept, motivo)
+                extra_state_updates["status_final"] = "Atendente Chamado"
+                extra_state_updates["intent_handoff"] = True
+                if dest: extra_state_updates["handoff_destinatario"] = dest
+                if dept: extra_state_updates["handoff_department"] = dept
+                if motivo: extra_state_updates["handoff_motivo"] = motivo
+            else:
+                logger.warning(
+                    f"[Tools Node] Execução de 'transferir_para_atendente' bloqueada para Atend {atendimento_id}. "
+                    f"Motivo: {reason}."
+                )
+                resultado_str = "Transferência não autorizada: o cliente está em diálogo normal e não solicitou atendimento humano. Prossiga o atendimento tirando dúvidas e avançando na conversa."
+                extra_state_updates["intent_handoff"] = False
+
 
         elif tool_name == "enviar_arquivo_do_drive":
             id_ou_termo = (
@@ -504,7 +550,11 @@ async def tools_node(state: AgentState) -> Dict[str, Any]:
         "result": resultado_str
     }
 
+    audit_trail = dict(state.get("ai_audit_trail") or {})
+    audit_trail["tools"] = [tool_result_item]
+
     return {
         "tool_results": [tool_result_item],
+        "ai_audit_trail": audit_trail,
         **extra_state_updates
     }

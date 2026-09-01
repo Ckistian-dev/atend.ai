@@ -2,7 +2,7 @@ import re
 import json
 import asyncio
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, List, Tuple
 
 from google.genai import types
 from app.graph.state import AgentState, EvaluationResult
@@ -14,13 +14,101 @@ from app.crud import crud_atendimento
 
 logger = logging.getLogger(__name__)
 
+URL_PATTERN = re.compile(
+    r'(?:https?://|www\.)[^\s<>"\'\)]+|(?:[a-zA-Z0-9_\-\.]+\.(?:com|br|org|net|io|me|site|store|shop|app|online|edu|gov)(?:/[^\s<>"\'\)]*)?)',
+    re.IGNORECASE
+)
+
+def clean_url(raw_url: str) -> str:
+    """Limpa pontuação terminal e caracteres espúrios grudados na URL."""
+    url = raw_url.strip()
+    while url and url[-1] in '.,;:!?)>"\'\\]':
+        if url[-1] == ')' and url.count('(') >= url.count(')'):
+            break
+        url = url[:-1]
+    while url and url[0] in '(<>"\'\\[':
+        url = url[1:]
+    return url.strip()
+
+def extract_urls(text: str) -> List[str]:
+    """Extrai todas as URLs válidas de um texto estruturado."""
+    if not text:
+        return []
+    raw_matches = URL_PATTERN.findall(text)
+    cleaned = []
+    for m in raw_matches:
+        u = clean_url(m)
+        if u and len(u) >= 4 and '.' in u:
+            if not (u.startswith('http://') or u.startswith('https://') or u.startswith('www.')):
+                if not re.search(r'\.(?:com|br|org|net|io|me|site|store|shop|app|online|edu|gov)(?:/|$)', u, re.IGNORECASE):
+                    continue
+            cleaned.append(u)
+    return list(dict.fromkeys(cleaned))
+
+def normalize_for_comparison(url: str) -> str:
+    """Normaliza protocolo e barras terminais para comparação precisa de caminhos e parâmetros."""
+    u = url.strip().lower()
+    u = re.sub(r'^https?://', '', u)
+    u = re.sub(r'^www\.', '', u)
+    return u.rstrip('/')
+
+def validate_response_urls(draft_response: str, sources_text: str) -> Tuple[bool, str]:
+    """
+    Valida de forma determinística que todas as URLs do draft_response:
+    1. Não foram inventadas/alucinadas.
+    2. Não foram comprimidas, truncadas ou encurtadas em relação à fonte original.
+    """
+    draft_urls = extract_urls(draft_response)
+    if not draft_urls:
+        return True, ""
+
+    source_urls = extract_urls(sources_text)
+    source_norm_map = {normalize_for_comparison(su): su for su in source_urls}
+
+    for du in draft_urls:
+        du_norm = normalize_for_comparison(du)
+
+        # 1. Correspondência exata (mesmo caminho e parâmetros)
+        if du_norm in source_norm_map:
+            continue
+
+        # 2. Se a URL gerada é uma versão comprimida/truncada de alguma URL da fonte
+        truncated_match = None
+        for su in source_urls:
+            su_norm = normalize_for_comparison(su)
+            if su_norm.startswith(du_norm) and len(su_norm) > len(du_norm):
+                truncated_match = su
+                break
+
+        if truncated_match:
+            return False, (
+                f"A URL '{du}' foi comprimida ou truncada. Envie a URL exatamente e integralmente "
+                f"como ela consta na base de conhecimento ou diretrizes da empresa: '{truncated_match}'."
+            )
+
+        # 3. Checagem se existe literalmente no texto bruto das fontes
+        if du in sources_text:
+            continue
+
+        # 4. Caso contrário, a URL foi inventada ou alterada
+        return False, (
+            f"A URL '{du}' não foi encontrada no contexto recuperado ou nas diretrizes da empresa. "
+            f"NUNCA invente ou altere URLs."
+        )
+
+    return True, ""
+
+
 async def guardrail_node(state: AgentState) -> Dict[str, Any]:
     """
-    Nó 5: Juiz Guardrail Anti-Alucinação.
-    Avalia se o draft_response é 100% suportado pelo contexto e regras do tenant.
+    Nó 5: Juiz Guardrail Anti-Alucinação e Auditor Soberano de Atendimento.
+    Em uma ÚNICA chamada semântica, audita:
+    1. Factualidade e Grounding da resposta (zero alucinação).
+    2. Validade Semântica do Transbordo Humano (aprova ou rejeita transferências).
+    3. Integridade de URLs, tom de voz e regras da Persona.
 
     @param state: Estado atual do grafo.
-    @returns: Dicionário com 'validation_passed', 'critique' e 'retry_count'.
+    @returns: Dicionário com 'validation_passed', 'critique', 'approve_handoff' e 'retry_count'.
     """
     gemini_svc = get_gemini_service()
     model_name = state.get("ai_model") or "gemini-3.5-flash-lite"
@@ -29,6 +117,7 @@ async def guardrail_node(state: AgentState) -> Dict[str, Any]:
     tool_results = state.get("tool_results") or []
     retry_count = state.get("retry_count", 0)
     last_processed_msg_id = state.get("last_processed_msg_id", 0)
+    intent_handoff_proposto = bool(state.get("intent_handoff"))
 
     # Verificação de nova mensagem do cliente antes do julgamento
     if last_processed_msg_id > 0:
@@ -37,7 +126,7 @@ async def guardrail_node(state: AgentState) -> Dict[str, Any]:
                 logger.info(f"[Guardrail Node] Nova mensagem do cliente detectada antes da avaliação (Atend {state.get('atendimento_id')}). Abortando ciclo.")
                 raise asyncio.CancelledError()
 
-    # Avaliação de Grounding pelo Juiz LLM com histórico coeso
+    # Formatação do histórico para o Juiz
     history = state.get("conversation_history") or []
     history_str = format_conversation_history(history, max_messages=50)
     if state.get("user_input"):
@@ -55,10 +144,14 @@ async def guardrail_node(state: AgentState) -> Dict[str, Any]:
     send_as_audio = state.get("send_as_audio", False)
     formato_envio = "MENSAGEM DE VOZ / ÁUDIO NO WHATSAPP (Sintetizada por TTS)" if send_as_audio else "TEXTO NO WHATSAPP"
 
+    destinatario_transbordo = state.get("handoff_destinatario") or "Equipe Geral"
+    status_proposto = "SOLICITAÇÃO DE TRANSBORDO PARA EQUIPE" if intent_handoff_proposto else "ATENDIMENTO DIRETO PELA IA (SEM TRANSBORDO)"
+
     eval_prompt = f"""--- DIRETRIZES DA PERSONA / EMPRESA ---
 {persona_prompt}
 {workflow_sec}
 {resumo_sec}
+
 --- HISTÓRICO DA CONVERSA ---
 {history_str}
 
@@ -70,11 +163,18 @@ async def guardrail_node(state: AgentState) -> Dict[str, Any]:
 
 --- FORMATO DE ENVIO PLANEJADO ---
 Formato: {formato_envio}
-(Nota: A IA tem capacidade total de sintetizar o texto em voz humana e enviá-lo como áudio real no WhatsApp).
 
---- RESPOSTA GERADA PARA AVALIAÇÃO ---
+--- AÇÃO PROPOSTA PELA IA PARA AUDITORIA DO JUIZ ---
+Status de Transbordo Proposto: {status_proposto} (Destinatário: {destinatario_transbordo})
+Mensagem Gerada para Avaliação:
 {draft_response}
 """
+
+    # Validação determinística de URLs (garantia de não corrupção de links)
+    sources_text_combined = f"{persona_prompt}\n{workflow_sec}\n{resumo_sec}\n{history_str}\n{retrieved_context}\n{tools_summary}"
+    urls_valid, url_critique = validate_response_urls(draft_response, sources_text_combined)
+    if not urls_valid:
+        logger.warning(f"[Guardrail Node] Reprovação de integridade de URLs: {url_critique}")
 
     try:
         clean_model = model_name.replace("google:", "").replace("google-cloud:", "")
@@ -102,7 +202,7 @@ Formato: {formato_envio}
                     logger.info(f"[Guardrail Node] Nova mensagem do cliente detectada logo após avaliação (Atend {state.get('atendimento_id')}). Abortando ciclo.")
                     raise asyncio.CancelledError()
 
-        # Contabilização de tokens (incluindo pensamentos / reasoning)
+        # Contabilização de tokens
         usage = getattr(response, "usage_metadata", None)
         in_tokens = (getattr(usage, "prompt_token_count", 0) or 0) + (getattr(usage, "tool_use_prompt_token_count", 0) or 0)
         candidates_tokens = getattr(usage, "candidates_token_count", 0) or 0
@@ -113,31 +213,83 @@ Formato: {formato_envio}
             out_tokens += (total_tokens - (in_tokens + out_tokens))
 
         logger.info(
-            f"[Guardrail Node] Resultado da avaliação: is_valid={evaluation.is_valid}, "
-            f"critique='{evaluation.critique}'"
+            f"[Guardrail Node] Veredito do Juiz (Atend {state.get('atendimento_id')}): "
+            f"is_valid={evaluation.is_valid}, approve_handoff={evaluation.approve_handoff}, "
+            f"reason='{evaluation.reason}', critique='{evaluation.critique}'"
         )
 
-        if evaluation.is_valid:
+        # Se as URLs falharam na checagem estrita, reprova conjuntamente
+        final_is_valid = evaluation.is_valid and urls_valid
+
+        audit_trail = dict(state.get("ai_audit_trail") or {})
+        iterations = list(audit_trail.get("iterations") or [])
+        if iterations:
+            iterations[-1]["guardrail"] = {
+                "is_valid": evaluation.is_valid,
+                "approve_handoff": evaluation.approve_handoff,
+                "critique": evaluation.critique,
+                "reason": evaluation.reason,
+                "urls_valid": urls_valid,
+                "url_critique": url_critique if not urls_valid else None
+            }
+        audit_trail["iterations"] = iterations
+
+        if not final_is_valid:
+            critique_list = []
+            if not urls_valid and url_critique:
+                critique_list.append(url_critique)
+            if evaluation.critique and evaluation.critique.strip().lower() != "aprovado":
+                critique_list.append(evaluation.critique)
+            final_critique = " | ".join(critique_list) if critique_list else "Proposta reprovada pelo Juiz de atendimento."
+
             return {
-                "validation_passed": True,
-                "critique": "",
-                "final_response": draft_response,
+                "validation_passed": False,
+                "approve_handoff": False,
+                "intent_handoff": False,
+                "critique": final_critique,
+                "retry_count": retry_count + 1,
+                "ai_audit_trail": audit_trail,
                 "input_tokens": state.get("input_tokens", 0) + in_tokens,
                 "output_tokens": state.get("output_tokens", 0) + out_tokens
             }
         else:
+            # Resposta aprovada pelo Juiz
+            handoff_aprovado = bool(evaluation.approve_handoff)
+            is_conclude = bool(state.get("intent_conclude") or state.get("status_final") == "Concluído")
+            
+            if handoff_aprovado:
+                status_final_val = "Atendente Chamado"
+            elif is_conclude:
+                status_final_val = "Concluído"
+            else:
+                status_final_val = "Aguardando Resposta"
+
             return {
-                "validation_passed": False,
-                "critique": evaluation.critique,
-                "retry_count": retry_count + 1,
+                "validation_passed": True,
+                "approve_handoff": handoff_aprovado,
+                "intent_handoff": handoff_aprovado,
+                "critique": "",
+                "final_response": draft_response,
+                "status_final": status_final_val,
+                "ai_audit_trail": audit_trail,
                 "input_tokens": state.get("input_tokens", 0) + in_tokens,
                 "output_tokens": state.get("output_tokens", 0) + out_tokens
             }
 
+
     except Exception as e:
-        logger.error(f"[Guardrail Node] Erro na avaliação do juiz: {e}. Aprovando com cautela.", exc_info=True)
+        logger.error(f"[Guardrail Node] Erro na avaliação do Juiz: {e}", exc_info=True)
+        if not urls_valid:
+            return {
+                "validation_passed": False,
+                "critique": url_critique,
+                "retry_count": retry_count + 1
+            }
+        # Em caso de falha de conexão do juiz, aprova mantendo status seguro
         return {
             "validation_passed": True,
             "critique": "",
-            "final_response": draft_response
+            "final_response": draft_response,
+            "intent_handoff": False,
+            "status_final": state.get("status_final") or "Aguardando Resposta"
         }

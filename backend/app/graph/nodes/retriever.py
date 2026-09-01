@@ -35,12 +35,30 @@ async def retriever_node(state: AgentState) -> Dict[str, Any]:
         )
 
         context_str = retriever.format_context_for_prompt(nodes)
+        
+        audit_trail = dict(state.get("ai_audit_trail") or {})
+        audit_trail["retrieval"] = {
+            "search_query": search_query,
+            "category": target_category,
+            "nodes_retrieved_count": len(nodes),
+            "context_preview": (context_str[:250] + "...") if len(context_str) > 250 else context_str
+        }
+
         return {
-            "retrieved_context": context_str
+            "retrieved_context": context_str,
+            "ai_audit_trail": audit_trail
         }
 
     except Exception as e:
         logger.error(f"[Retriever Node] Erro ao recuperar contexto: {e}", exc_info=True)
-        return {
-            "retrieved_context": "Erro temporário ao acessar a base de conhecimento."
+        audit_trail = dict(state.get("ai_audit_trail") or {})
+        audit_trail["retrieval"] = {
+            "search_query": search_query,
+            "category": target_category,
+            "error": str(e)
         }
+        return {
+            "retrieved_context": "Erro temporário ao acessar a base de conhecimento.",
+            "ai_audit_trail": audit_trail
+        }
+

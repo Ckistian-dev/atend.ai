@@ -657,13 +657,34 @@ function RulesListInput({ label, items, placeholder, onChange }) {
     );
 }
 
-function PersonaFormTab({ personaForm, onChange, hasSpreadsheet }) {
+function PersonaFormTab({ personaForm, onChange, hasSpreadsheet, onAjustarComIA }) {
     const form = personaForm || {};
 
     const update = (key, value) => onChange({ ...form, [key]: value });
 
     return (
         <div className="animate-fade-in space-y-5 sm:space-y-6">
+
+            {onAjustarComIA && (
+                <div className="p-4 sm:p-5 bg-gradient-to-r from-indigo-50 via-blue-50 to-indigo-50 rounded-2xl border border-indigo-100/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                    <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-indigo-200">
+                            <Sparkles size={18} />
+                        </div>
+                        <div>
+                            <h4 className="text-xs sm:text-sm font-black text-slate-800">Aprimorar Persona com IA</h4>
+                            <p className="text-[11px] text-slate-500 font-medium">Diga o que a IA deve aprender, mudar ou respeitar e ela reformulará suas diretrizes mantendo todas as regras existentes protegidas.</p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onAjustarComIA}
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md shadow-indigo-200 active:scale-95 transition-all shrink-0 cursor-pointer"
+                    >
+                        <Wand2 size={14} /> Ajustar com IA
+                    </button>
+                </div>
+            )}
 
             {/* SEÇÃO 1: Identidade */}
             <FormSection icon={User} title="Identidade da IA">
@@ -1480,6 +1501,14 @@ function Configs() {
                                         personaForm={formData.persona_form || {}}
                                         onChange={(updatedForm) => setFormData(prev => ({ ...prev, persona_form: updatedForm }))}
                                         hasSpreadsheet={!!selectedConfig?.spreadsheet_id}
+                                        onAjustarComIA={() => {
+                                            if (!selectedConfig?.id) {
+                                                toast.error("Salve a persona antes de usar o assistente de IA.");
+                                                return;
+                                            }
+                                            setFeedbackMode('knowledge');
+                                            setIsFeedbackModalOpen(true);
+                                        }}
                                     />
                                 )}
 
