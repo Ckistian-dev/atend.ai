@@ -184,6 +184,7 @@ class AtendimentoUpdate(BaseModel):
     tags: Optional[List[Dict[str, str]]] = None
     assigned_department: Optional[str] = None
     assigned_user_id: Optional[int] = None
+    last_message_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class AtendimentoCreate(BaseModel):
@@ -197,6 +198,7 @@ class AtendimentoCreate(BaseModel):
     tags: Optional[List[Dict[str, str]]] = Field(default_factory=list)
     assigned_department: Optional[str] = None
     assigned_user_id: Optional[int] = None
+    last_message_at: Optional[datetime] = None
     # Campos opcionais para iniciar com um template
     template_name: Optional[str] = None
     template_language_code: Optional[str] = None
@@ -220,6 +222,7 @@ class Atendimento(BaseModel):
     created_at: datetime
     bulk_template_name: Optional[str] = None
     bulk_template_params: Optional[Dict[str, Any]] = None
+    last_message_at: Optional[datetime] = None
     updated_at: datetime
     whatsapp: str
     nome_contato: Optional[str] = None

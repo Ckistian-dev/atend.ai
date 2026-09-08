@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 _output_locks: Dict[int, asyncio.Lock] = {}
 _global_lock = asyncio.Lock()
 
-MEDIA_TAG_REGEX = re.compile(r'\[(?:MEDIA|ARQUIVO|IMAGEM|DOC|FOTO|VIDEO):\s*([a-zA-Z0-9_\-\.]+)\s*\]', re.IGNORECASE)
+MEDIA_TAG_REGEX = re.compile(r'\[(?:MEDIA|ARQUIVO|IMAGEM|DOC|FOTO|VIDEO):\s*([^\]]+)\]', re.IGNORECASE)
 URL_REGEX = re.compile(
     r'(?:https?://[^\s]+|www\.[^\s]+|[a-zA-Z0-9_\-\.]+\.(?:com|br|org|net|io|me|site|store|shop|app|online)(?:/[^\s]*)?)',
     re.IGNORECASE
@@ -43,7 +43,7 @@ def build_delivery_queue(
 ) -> List[Dict[str, Any]]:
     """
     Constrói a fila unificada e ordenada de entrega (balões de áudio, texto e mídias intercaladas).
-    Garante categoricamente que NENHUM link/URL seja enviado por áudio.
+    Garante categoricamente que NENHUM link/URL seja enviado por áudio e NENHUM colchete de mídia vaze no texto.
     """
     queue: List[Dict[str, Any]] = []
     used_media_ids = set()
@@ -57,9 +57,12 @@ def build_delivery_queue(
         is_explicit_audio = bool(AUDIO_TAG_REGEX.match(chunk))
         is_explicit_text = bool(TEXT_TAG_REGEX.match(chunk))
         clean_chunk = AUDIO_TAG_REGEX.sub('', chunk)
-        clean_chunk = TEXT_TAG_REGEX.sub('', clean_chunk).strip()
+        clean_chunk = TEXT_TAG_REGEX.sub('', clean_chunk)
+        # Garante que nenhum resíduo de tag de mídia vaze como texto bruto
+        clean_chunk = MEDIA_TAG_REGEX.sub('', clean_chunk).strip()
 
-        if not clean_chunk:
+        # Descarta chunks vazios ou que contenham apenas pontuações isoladas
+        if not clean_chunk or not re.search(r'[a-zA-Z0-9À-ÿ]', clean_chunk):
             return
 
         wants_audio = (is_explicit_audio or (default_is_audio and not is_explicit_text)) and has_tts_voice
@@ -373,18 +376,21 @@ async def output_node(state: AgentState) -> Dict[str, Any]:
                         res_kv = await db_kv.execute(stmt_kv)
                         kv_record = res_kv.scalar_one_or_none()
 
-                        if not kv_record and len(f_id) < 25:
+                        if not kv_record:
                             stmt_alt = select(models.KnowledgeVector).where(
                                 models.KnowledgeVector.config_id == state.get("config_id"),
                                 models.KnowledgeVector.origin == "drive",
-                                models.KnowledgeVector.content.ilike(f"%{f_id}%")
+                                (
+                                    models.KnowledgeVector.raw_data.op("->>")("nome_exato").ilike(f"%{f_id}%") |
+                                    models.KnowledgeVector.content.ilike(f"%{f_id}%")
+                                )
                             ).limit(1)
                             res_alt = await db_kv.execute(stmt_alt)
                             kv_record = res_alt.scalar_one_or_none()
 
                         if kv_record and kv_record.raw_data:
-                            real_drive_id = kv_record.raw_data.get("id_arquivo") or f_id
-                            filename = kv_record.raw_data.get("nome_exato") or "arquivo"
+                            real_drive_id = kv_record.raw_data.get("id_arquivo") or kv_record.raw_data.get("ID") or f_id
+                            filename = kv_record.raw_data.get("nome_exato") or kv_record.raw_data.get("nome") or "arquivo"
                             raw_cat = (kv_record.category or "document").lower().strip()
                             mimetype = kv_record.raw_data.get("mime_type") or "application/octet-stream"
 
@@ -399,8 +405,8 @@ async def output_node(state: AgentState) -> Dict[str, Any]:
                                 elif "video" in mimetype: media_type = "video"
                                 elif "audio" in mimetype: media_type = "audio"
 
-                    if not kv_record and (f_id.isdigit() or len(f_id) < 20):
-                        logger.warning(f"[Output Node] '{f_id}' não é um ID de arquivo do Google Drive válido. Ignorando.")
+                    if not kv_record and len(real_drive_id) < 15:
+                        logger.warning(f"[Output Node] '{f_id}' não foi localizado no banco nem é um ID de arquivo do Google Drive válido. Ignorando.")
                         continue
 
                     file_bytes = await asyncio.to_thread(drive_svc.download_file_bytes, real_drive_id)

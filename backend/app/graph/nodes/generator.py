@@ -14,7 +14,7 @@ from app.crud import crud_atendimento
 
 logger = logging.getLogger(__name__)
 
-MEDIA_TAG_REGEX = re.compile(r'\[(?:MEDIA|ARQUIVO|IMAGEM|DOC|FOTO|VIDEO):\s*([a-zA-Z0-9_\-\.]+)\s*\]', re.IGNORECASE)
+MEDIA_TAG_REGEX = re.compile(r'\[(?:MEDIA|ARQUIVO|IMAGEM|DOC|FOTO|VIDEO):\s*([^\]]+)\]', re.IGNORECASE)
 
 async def generator_node(state: AgentState) -> Dict[str, Any]:
     """
@@ -169,7 +169,7 @@ USER: {user_input}
 
         logger.info(f"[Generator Node] Resposta gerada (send_as_audio={gen_output.send_as_audio}, intent_handoff={gen_output.intent_handoff}, handoff_destinatario={gen_output.handoff_destinatario}): '{gen_output.response_text[:100]}...'")
 
-        text_media_ids = MEDIA_TAG_REGEX.findall(gen_output.response_text or "")
+        text_media_ids = [m.strip() for m in MEDIA_TAG_REGEX.findall(gen_output.response_text or "") if m.strip()]
         all_media_ids = list(dict.fromkeys((gen_output.media_file_ids or []) + text_media_ids))
 
         handoff_dest = gen_output.handoff_destinatario.strip() if gen_output.handoff_destinatario and gen_output.handoff_destinatario.strip() else None

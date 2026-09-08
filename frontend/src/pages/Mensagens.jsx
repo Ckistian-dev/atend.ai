@@ -18,7 +18,6 @@ import ChatPlaceholder from '../components/mensagens/ChatPlaceholder';
 import FilterPopover from '../components/mensagens/FilterPopover';
 import TemplateModal from '../components/mensagens/TemplateModal';
 import FeedbackModal from '../components/mensagens/FeedbackModal';
-import TransferModal from '../components/common/TransferModal';
 
 
 // --- DESIGN SYSTEM: INTELLIGENT STRATUM (MENSAGENS EDITION) ---
@@ -179,7 +178,31 @@ const getTextColorForBackground = (hexColor) => {
     return '#FFFFFF';
 };
 
+const parseToEpochMs = (val) => {
+    if (!val) return 0;
+    if (typeof val === 'number') {
+        return val > 1e11 ? val : val * 1000;
+    }
+    if (typeof val === 'string') {
+        const num = Number(val);
+        if (!isNaN(num) && num > 0) {
+            return num > 1e11 ? num : num * 1000;
+        }
+        const parsed = new Date(val).getTime();
+        return isNaN(parsed) ? 0 : parsed;
+    }
+    if (val instanceof Date) {
+        return val.getTime();
+    }
+    return 0;
+};
+
 const getLastMessageTimestamp = (at) => {
+    if (!at) return 0;
+    if (at.last_message_at) {
+        const parsed = parseToEpochMs(at.last_message_at);
+        if (parsed > 0) return parsed;
+    }
     try {
         let conversa = [];
         if (Array.isArray(at.mensagens) && at.mensagens.length > 0) {
@@ -189,22 +212,18 @@ const getLastMessageTimestamp = (at) => {
         } else if (Array.isArray(at.conversa)) {
             conversa = at.conversa;
         }
-        if (conversa.length === 0) {
-            return new Date(at.updated_at).getTime(); // Fallback se conversa vazia
+        if (conversa.length > 0) {
+            const lastMsg = conversa[conversa.length - 1];
+            if (lastMsg) {
+                const ts = lastMsg.timestamp || lastMsg.message_date || lastMsg.created_at;
+                const parsed = parseToEpochMs(ts);
+                if (parsed > 0) return parsed;
+            }
         }
-        const lastMsg = conversa[conversa.length - 1];
-        const ts = lastMsg.timestamp;
-
-        if (!ts) {
-            return new Date(at.updated_at).getTime(); // Fallback se msg não tiver timestamp
-        }
-
-        // Converte timestamp (seja unix/segundos ou ISO string) para ms
-        return (typeof ts === 'number') ? (ts * 1000) : new Date(ts).getTime();
     } catch (e) {
-        // Fallback em caso de JSON inválido ou erro
-        return new Date(at.updated_at).getTime();
+        // Ignora erro de JSON
     }
+    return parseToEpochMs(at.updated_at) || parseToEpochMs(at.created_at) || 0;
 };
 
 // --- COMPONENTE PRINCIPAL DA PÁGINA ---
@@ -686,9 +705,20 @@ function Mensagens() {
 
                             const localDate = new Date(localAtendimento.updated_at).getTime();
                             const serverDate = new Date(serverData.updated_at).getTime();
+                            const localMsgDate = new Date(localAtendimento.last_message_at || localAtendimento.updated_at).getTime();
+                            const serverMsgDate = new Date(serverData.last_message_at || serverData.updated_at).getTime();
+                            const localMsgsLen = Array.isArray(localAtendimento.mensagens) ? localAtendimento.mensagens.length : 0;
+                            const serverMsgsLen = Array.isArray(serverData.mensagens) ? serverData.mensagens.length : 0;
 
-                            // Atualiza se houver qualquer mudança (data, conversa ou status)
-                            if (serverDate > localDate || localAtendimento.conversa !== serverData.conversa || localAtendimento.status !== serverData.status) {
+                            // Atualiza se houver qualquer mudança (mensagem nova, data, conversa ou status)
+                            if (
+                                serverMsgDate > localMsgDate ||
+                                serverMsgsLen !== localMsgsLen ||
+                                serverDate > localDate ||
+                                localAtendimento.conversa !== serverData.conversa ||
+                                localAtendimento.status !== serverData.status ||
+                                localAtendimento.last_message_at !== serverData.last_message_at
+                            ) {
 
                                 setSelectedAtendimento(prevSelected => {
                                     if (prevSelected?.id === currentAtendimentoId) return serverData;
@@ -809,9 +839,11 @@ function Mensagens() {
                 const updatedSelected = sortedFiltered.find(at => at.id === selectedAtendimento.id);
                 if (updatedSelected) {
                     // Compara timestamps para evitar sobrescrever a UI com dados antigos
-                    const localDate = new Date(selectedAtendimento.updated_at).getTime();
-                    const serverDate = new Date(updatedSelected.updated_at).getTime();
-                    if (serverDate >= localDate) {
+                    const localDate = new Date(selectedAtendimento.last_message_at || selectedAtendimento.updated_at).getTime();
+                    const serverDate = new Date(updatedSelected.last_message_at || updatedSelected.updated_at).getTime();
+                    const localLen = Array.isArray(selectedAtendimento.mensagens) ? selectedAtendimento.mensagens.length : 0;
+                    const serverLen = Array.isArray(updatedSelected.mensagens) ? updatedSelected.mensagens.length : 0;
+                    if (serverDate >= localDate || serverLen !== localLen) {
                         setSelectedAtendimento(updatedSelected);
                     }
                 } else {

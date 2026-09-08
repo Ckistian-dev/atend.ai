@@ -100,7 +100,7 @@ class AtendimentoService:
             if assigned_user_id:
                 stmt_base = stmt_base.where(models.Atendimento.assigned_user_id == assigned_user_id)
 
-        sort_expression = models.Atendimento.updated_at
+        sort_expression = func.coalesce(models.Atendimento.last_message_at, models.Atendimento.updated_at, models.Atendimento.created_at)
 
         if status:
             stmt_base = stmt_base.where(models.Atendimento.status.in_(status))
@@ -186,7 +186,7 @@ class AtendimentoService:
                         tags_str,
                         persona_name,
                         item.created_at,
-                        item.updated_at,
+                        item.last_message_at or item.updated_at,
                         item.conversa or ""
                     ])
                 
@@ -251,8 +251,8 @@ class AtendimentoService:
             if assigned_user_id:
                 stmt_base = stmt_base.where(models.Atendimento.assigned_user_id == assigned_user_id)
 
-        # Ordenação padrão indexada
-        sort_expression_default = models.Atendimento.updated_at
+        # Ordenação padrão indexada pela última mensagem trocada
+        sort_expression_default = func.coalesce(models.Atendimento.last_message_at, models.Atendimento.updated_at, models.Atendimento.created_at)
 
         # Definição do campo de ordenação solicitado pelo frontend
         if sort_by == 'contato':
@@ -261,9 +261,9 @@ class AtendimentoService:
             sort_field = models.Atendimento.status
         elif sort_by == 'agente':
             sort_field = models.Atendimento.active_persona_id
-        elif sort_by == 'department' or sort_by == 'setor':
+        elif sort_by in ('department', 'setor'):
             sort_field = models.Atendimento.assigned_department
-        elif sort_by == 'atualizacao':
+        elif sort_by in ('atualizacao', 'last_message', 'ultima_mensagem'):
             sort_field = sort_expression_default
         else:
             sort_field = sort_expression_default

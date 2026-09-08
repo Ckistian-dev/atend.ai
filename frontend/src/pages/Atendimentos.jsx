@@ -2080,7 +2080,7 @@ function Atendimentos() {
                                     </th>
                                 )}
                                 <SortableHeader column="contato" label="Contato" />
-                                <SortableHeader column="atualizacao" label="Atualização" className="hidden lg:table-cell" />
+                                <SortableHeader column="atualizacao" label="Última Mensagem" className="hidden lg:table-cell" />
                                 <SortableHeader column="status" label="Status" center />
                                 <th className="px-4 sm:px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] hidden lg:table-cell">Setor</th>
                                 <th className="px-4 sm:px-6 py-5 text-[11px] font-black text-slate-400 uppercase tracking-[0.15em] hidden sm:table-cell">Categorias</th>
@@ -2138,7 +2138,7 @@ function Atendimentos() {
                                                         <span className="text-[11px] font-bold text-slate-400 mt-0.5 tracking-tight flex items-center gap-2">
                                                             {at.whatsapp}
                                                             <span className="lg:hidden flex items-center gap-1">
-                                                                • <Clock size={10} /> {at.updated_at ? new Date(at.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                                                • <Clock size={10} /> {(at.last_message_at || at.updated_at) ? new Date(at.last_message_at || at.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
                                                             </span>
                                                         </span>
                                                     </div>
@@ -2148,10 +2148,10 @@ function Atendimentos() {
                                                 <div className="flex flex-col">
                                                     <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
                                                         <Clock size={12} className="text-blue-500" />
-                                                        {at.updated_at ? new Date(at.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—'}
+                                                        {(at.last_message_at || at.updated_at) ? new Date(at.last_message_at || at.updated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—'}
                                                     </div>
                                                     <span className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                                        {at.updated_at ? new Date(at.updated_at).toLocaleDateString('pt-BR') : ''}
+                                                        {(at.last_message_at || at.updated_at) ? new Date(at.last_message_at || at.updated_at).toLocaleDateString('pt-BR') : ''}
                                                     </span>
                                                 </div>
                                             </td>

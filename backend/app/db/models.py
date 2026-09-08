@@ -149,6 +149,7 @@ class Atendimento(Base):
     tags: Mapped[Optional[List[Dict[str, str]]]] = mapped_column(JSONB, nullable=True, default=list)
     token_usage: Mapped[int] = mapped_column(Integer, default=0, comment="Total de tokens consumidos neste atendimento")
     ai_logs: Mapped[Optional[List[Dict[str, Any]]]] = mapped_column(JSONB, nullable=True, default=list, server_default="'[]'", comment="Log completo e estruturado de auditoria das decisões da IA (Roteador, RAG, Gerador, Juiz Guardrail e Fallback)")
+    last_message_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=True, index=True, comment="Data/hora da última mensagem trocada (cliente ou atendente/IA)")
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), index=True)
 
 
@@ -158,6 +159,7 @@ class Atendimento(Base):
     mensagens: Mapped[List["Message"]] = relationship(back_populates="atendimento", cascade="all, delete-orphan", order_by="Message.timestamp.asc()")
 
     __table_args__ = (
+        Index("idx_atendimentos_company_last_msg", "company_id", "last_message_at"),
         Index("idx_atendimentos_company_updated", "company_id", "updated_at"),
         Index("idx_atendimentos_company_status_updated", "company_id", "status", "updated_at"),
         Index("idx_atendimentos_company_dept_updated", "company_id", "assigned_department", "updated_at"),

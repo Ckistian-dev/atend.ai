@@ -3,7 +3,7 @@ import { MoreVertical, Tag, CheckCircle2, MailWarning, Edit, Headset, Bot, Rotat
 import { format } from 'date-fns';
 import TagEditor from './TagEditor';
 import NameEditor from './NameEditor';
-import TransferModal from '../common/TransferModal';
+import TransferSubPopup from './TransferSubPopup';
 import api from '../../api/axiosConfig';
 import toast from 'react-hot-toast';
 import { formatLastMessagePreview } from '../../utils/formatters';
@@ -17,9 +17,8 @@ const ContactItem = ({
     // --- ESTADOS DO MENU (MODIFICADO) ---
     // Controla o menu principal de 2 opções ('Alterar Situação', 'Editar Tags')
     const [isMainMenuOpen, setIsMainMenuOpen] = useState(false);
-    // Controla qual submenu/popup está ativo: 'status', 'tags' ou null
+    // Controla qual submenu/popup está ativo: 'status', 'tags', 'name' ou 'transfer'
     const [activeSubMenu, setActiveSubMenu] = useState(null);
-    const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
 
     // --- REFS PARA FECHAR AO CLICAR FORA ---
     const menuRef = useRef(null); // Ref para todos os menus
@@ -75,7 +74,7 @@ const ContactItem = ({
     }, []);
 
     let lastMessage = 'Nenhum histórico de conversa.';
-    let lastMessageTime = mensagem.updated_at;
+    let lastMessageTime = mensagem.last_message_at || mensagem.updated_at;
 
     try {
         let conv = [];
@@ -93,9 +92,16 @@ const ContactItem = ({
 
             if (lastMsgObj.timestamp) {
                 const ts = lastMsgObj.timestamp;
-                // Converte de segundos (Unix) ou ISO string para um Date object
-                const dateObj = (typeof ts === 'number') ? new Date(ts * 1000) : new Date(ts);
-                lastMessageTime = dateObj.toISOString(); // Passa ISO string para a formatTimestamp
+                const num = Number(ts);
+                let dateObj;
+                if (!isNaN(num) && num > 0) {
+                    dateObj = new Date(num > 1e11 ? num : num * 1000);
+                } else {
+                    dateObj = new Date(ts);
+                }
+                if (!isNaN(dateObj.getTime())) {
+                    lastMessageTime = dateObj.toISOString();
+                }
             }
         }
     } catch (e) {
@@ -354,8 +360,12 @@ const ContactItem = ({
                 <button
                     type="button"
                     onClick={handleMenuClick}
-                    className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${isSelected ? 'text-slate-400 hover:bg-slate-50 hover:text-blue-600' : 'text-slate-300 opacity-0 group-hover:opacity-100 hover:text-slate-600'
-                        }`}
+                    className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all cursor-pointer ${
+                        isSelected 
+                            ? 'text-slate-400 hover:bg-slate-50 hover:text-blue-600' 
+                            : 'text-slate-400 sm:text-slate-300 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:text-slate-600'
+                    }`}
+                    title="Mais opções"
                 >
                     <MoreVertical size={16} />
                 </button>
@@ -387,9 +397,9 @@ const ContactItem = ({
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setIsMainMenuOpen(false);
-                                        setIsTransferModalOpen(true);
+                                        setActiveSubMenu('transfer');
                                     }}
-                                    className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-amber-50 hover:text-amber-600 rounded-2xl flex items-center gap-3 transition-all"
+                                    className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-amber-50 hover:text-amber-600 rounded-2xl flex items-center gap-3 transition-all cursor-pointer"
                                 >
                                     <Headset size={16} className="text-amber-500" /> Re-transferir
                                 </button>
@@ -399,7 +409,7 @@ const ContactItem = ({
                                         setIsMainMenuOpen(false);
                                         onUpdateStatus(mensagem.id, { status: 'Mensagem Recebida' });
                                     }}
-                                    className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-2xl flex items-center gap-3 transition-all"
+                                    className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-2xl flex items-center gap-3 transition-all cursor-pointer"
                                 >
                                     <Bot size={16} className="text-blue-500" /> Devolver para IA
                                 </button>
@@ -409,9 +419,9 @@ const ContactItem = ({
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setIsMainMenuOpen(false);
-                                    setIsTransferModalOpen(true);
+                                    setActiveSubMenu('transfer');
                                 }}
-                                className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-amber-50 hover:text-amber-600 rounded-2xl flex items-center gap-3 transition-all"
+                                className="w-full text-left p-3 text-[12px] font-bold text-slate-600 hover:bg-amber-50 hover:text-amber-600 rounded-2xl flex items-center gap-3 transition-all cursor-pointer"
                             >
                                 <Headset size={16} className="text-amber-500" /> Transferir Atendimento
                             </button>
@@ -467,32 +477,32 @@ const ContactItem = ({
                         />
                     </div>
                 )}
-            </div>
 
-            {isTransferModalOpen && (
-                <TransferModal
-                    isOpen={isTransferModalOpen}
-                    onClose={() => setIsTransferModalOpen(false)}
-                    onConfirm={async ({ department, user_id, notes }) => {
-                        try {
-                            const res = await api.post(`/atendimentos/${mensagem.id}/transfer`, {
-                                department,
-                                user_id,
-                                notes
-                            });
-                            onUpdateStatus(mensagem.id, res.data);
-                            toast.success(`Atendimento transferido para ${department || 'Atendente'} com sucesso!`);
-                        } catch (err) {
-                            toast.error('Erro ao transferir atendimento.');
-                            throw err;
-                        }
-                    }}
-                    currentDepartment={mensagem.assigned_department}
-                    currentUserId={mensagem.assigned_user_id}
-                    atendimentoName={mensagem.nome_contato}
-                    atendimentoWhatsapp={mensagem.whatsapp}
-                />
-            )}
+                {/* SUBMENU DE TRANSFERENCIA */}
+                {activeSubMenu === 'transfer' && (
+                    <div className="absolute right-0 top-10 z-[100] animate-fade-in-up-fast">
+                        <TransferSubPopup
+                            currentDepartment={mensagem.assigned_department}
+                            currentUserId={mensagem.assigned_user_id}
+                            onClose={() => setActiveSubMenu(null)}
+                            onConfirm={async ({ department, user_id, notes }) => {
+                                try {
+                                    const res = await api.post(`/atendimentos/${mensagem.id}/transfer`, {
+                                        department,
+                                        user_id,
+                                        notes
+                                    });
+                                    onUpdateStatus(mensagem.id, res.data);
+                                    toast.success(`Atendimento transferido para ${department || 'Atendente'} com sucesso!`);
+                                } catch (err) {
+                                    toast.error('Erro ao transferir atendimento.');
+                                    throw err;
+                                }
+                            }}
+                        />
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

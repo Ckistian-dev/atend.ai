@@ -19,10 +19,15 @@ def parse_timestamp_to_datetime(ts: Any) -> datetime:
             return ts.replace(tzinfo=timezone.utc)
         return ts
     if isinstance(ts, (int, float)):
-        return datetime.fromtimestamp(ts, tz=timezone.utc)
+        val = float(ts)
+        if val > 1e11:
+            val = val / 1000.0
+        return datetime.fromtimestamp(val, tz=timezone.utc)
     if isinstance(ts, str):
         try:
             val = float(ts)
+            if val > 1e11:
+                val = val / 1000.0
             return datetime.fromtimestamp(val, tz=timezone.utc)
         except ValueError:
             pass
@@ -46,7 +51,7 @@ async def get_atendimento(db: AsyncSession, atendimento_id: int, company_id: int
     return result.scalars().first()
 
 async def get_atendimentos_by_user(db: AsyncSession, company_id: int) -> List[models.Atendimento]:
-    """Lista todos os atendimentos de uma empresa."""
+    """Lista todos os atendimentos de uma empresa ordenados pela última mensagem."""
     result = await db.execute(
         select(models.Atendimento)
         .where(models.Atendimento.company_id == company_id)
@@ -54,7 +59,7 @@ async def get_atendimentos_by_user(db: AsyncSession, company_id: int) -> List[mo
             joinedload(models.Atendimento.active_persona),
             selectinload(models.Atendimento.mensagens)
         )
-        .order_by(models.Atendimento.updated_at.desc())
+        .order_by(func.coalesce(models.Atendimento.last_message_at, models.Atendimento.updated_at, models.Atendimento.created_at).desc())
     )
     return result.scalars().all()
 
@@ -221,7 +226,7 @@ async def save_message(
         if media_bytes is not None:
             existing_msg.media_bytes = media_bytes
         db.add(existing_msg)
-        return existing_msg
+        target_msg = existing_msg
     else:
         new_msg = models.Message(
             company_id=company_id,
@@ -251,7 +256,27 @@ async def save_message(
             extra_data=message_data.get("extra_data")
         )
         db.add(new_msg)
-        return new_msg
+        target_msg = new_msg
+
+    # Atualiza last_message_at e updated_at no Atendimento pai
+    if atendimento_id:
+        try:
+            atend_stmt = select(models.Atendimento).where(
+                models.Atendimento.id == atendimento_id,
+                models.Atendimento.company_id == company_id
+            )
+            atend_res = await db.execute(atend_stmt)
+            db_atend = atend_res.scalars().first()
+            if db_atend:
+                now_utc = datetime.now(timezone.utc)
+                if not db_atend.last_message_at or ts >= db_atend.last_message_at:
+                    db_atend.last_message_at = ts
+                db_atend.updated_at = now_utc
+                db.add(db_atend)
+        except Exception as e:
+            logger.warning(f"Erro ao atualizar last_message_at no Atendimento {atendimento_id}: {e}")
+
+    return target_msg
 
 async def apply_reaction_to_message(
     db: AsyncSession,
@@ -397,6 +422,8 @@ async def create_atendimento(db: AsyncSession, atendimento_in: schemas.Atendimen
     Não faz commit.
     """
     create_data = atendimento_in.model_dump(exclude={'template_name', 'template_language_code', 'template_components'})
+    if not create_data.get('last_message_at'):
+        create_data['last_message_at'] = datetime.now(timezone.utc)
 
     db_atendimento = models.Atendimento(
         **create_data,
@@ -640,9 +667,11 @@ async def get_or_create_atendimento_by_number(db: AsyncSession, number: str, com
         return None # Retorna None se não puder criar
 
     logger.info(f"Nenhum atendimento ativo encontrado para {formatted_number}. Criando novo atendimento...")
+    now_utc = datetime.now(timezone.utc)
     new_atendimento = models.Atendimento(
         whatsapp=formatted_number, company_id=company.id,
-        active_persona_id=company.default_persona_id, status="Mensagem Recebida" # Status inicial
+        active_persona_id=company.default_persona_id, status="Mensagem Recebida", # Status inicial
+        last_message_at=now_utc
     )
     db.add(new_atendimento)
     try:

@@ -348,6 +348,42 @@ END $$;
             except Exception as ai_logs_err:
                 logger.warning(f"Aviso ao verificar coluna 'ai_logs' na tabela atendimentos: {ai_logs_err}")
 
+            # --- GARANTIA E BACKFILL DA COLUNA last_message_at NA TABELA ATENDIMENTOS ---
+            try:
+                last_msg_sql = """
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'atendimentos') THEN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns 
+                            WHERE table_schema = 'public' AND table_name = 'atendimentos' AND column_name = 'last_message_at'
+                        ) THEN
+                            ALTER TABLE atendimentos ADD COLUMN last_message_at TIMESTAMPTZ DEFAULT NOW();
+                        END IF;
+
+                        -- Backfill a partir do timestamp mais recente da tabela mensagens
+                        UPDATE atendimentos a
+                        SET last_message_at = sub.max_ts
+                        FROM (
+                            SELECT atendimento_id, MAX("timestamp") AS max_ts
+                            FROM mensagens
+                            GROUP BY atendimento_id
+                        ) sub
+                        WHERE a.id = sub.atendimento_id
+                          AND (a.last_message_at IS NULL OR sub.max_ts > a.last_message_at);
+
+                        -- Se ainda for NULL, preenche com updated_at ou created_at
+                        UPDATE atendimentos
+                        SET last_message_at = COALESCE(updated_at, created_at, NOW())
+                        WHERE last_message_at IS NULL;
+                    END IF;
+                END $$;
+                """
+                await conn.execute(text(last_msg_sql))
+                logger.info("Coluna 'last_message_at' e backfill na tabela 'atendimentos' verificados/executados com sucesso.")
+            except Exception as last_msg_err:
+                logger.warning(f"Aviso ao verificar coluna 'last_message_at' na tabela atendimentos: {last_msg_err}")
+
             # Executa a sincronização segura de schema de forma dinâmica e persistente
             await conn.run_sync(sync_schema)
             logger.info("Tabelas e colunas do banco de dados verificadas/sincronizadas com sucesso.")
@@ -355,6 +391,7 @@ END $$;
 
             # --- CRIAÇÃO DE ÍNDICES DE ALTA PERFORMANCE PARA ATENDIMENTOS E MENSAGENS ---
             indexes = [
+                "CREATE INDEX IF NOT EXISTS idx_atendimentos_company_last_msg ON atendimentos (company_id, last_message_at DESC)",
                 "CREATE INDEX IF NOT EXISTS idx_atendimentos_company_updated ON atendimentos (company_id, updated_at DESC)",
                 "CREATE INDEX IF NOT EXISTS idx_atendimentos_company_status_updated ON atendimentos (company_id, status, updated_at DESC)",
                 "CREATE INDEX IF NOT EXISTS idx_atendimentos_company_dept_updated ON atendimentos (company_id, assigned_department, updated_at DESC)",

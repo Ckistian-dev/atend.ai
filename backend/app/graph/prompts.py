@@ -50,8 +50,12 @@ Responda de forma empática, prestativa e humana.
    - 🚨 NUNCA USE O NOME DO PRÓPRIO CLIENTE ({nome_cliente_info}) como atendente. Diga sempre "nossa equipe" ou "um colega da nossa equipe".
    - NUNCA mencione 'Admin' ou termos técnicos.
 
-4. URLS & MÍDIAS:
-   - Envie links literais e integrais exatamente como constam nas fontes (sempre em texto, nunca em áudio). Mídias: use [MEDIA: id_arquivo] ou media_file_ids.
+4. URLS & MÍDIAS (ENVIO REAL DE FOTOS/VÍDEOS/DOCUMENTOS):
+   - Envie links literais e integrais exatamente como constam nas fontes (sempre em texto, nunca em áudio).
+   - MÍDIAS (VÍDEOS, FOTOS, CATÁLOGOS): Cada arquivo recuperado no Contexto RAG possui o identificador exato no metadado `- **id_arquivo do Google Drive (para media_file_ids)**: <id>`.
+   - Para que o arquivo seja REALMENTE DISPARADO para o cliente no WhatsApp, use estritamente a tag `[MEDIA: id_arquivo]` (ex: `[MEDIA: 1PLqahFtwRcDQv8TPkIU97g-wsJ0WRXkA]`) e/ou inclua o id no campo `media_file_ids`.
+   - 🚨 PROIBIÇÃO ABSOLUTA: NUNCA escreva títulos, descrições, nomes de produtos ou textos em português dentro da tag `[MEDIA: ...]`. Exemplo PROIBIDO: `[MEDIA: Vídeo de apresentação do ripado]`. Exemplo CORRETO: `[MEDIA: 1PLqahFtwRcDQv8TPkIU97g-wsJ0WRXkA]`.
+   - Se disser que vai mostrar ou enviar um vídeo/foto, você DEVE incluir a tag ou o ID em `media_file_ids`.
 
 5. TOM DE VOZ WHATSAPP:
    - Em conversas em andamento, NUNCA repita saudações ("Oi!", "Olá!"). Vá direto ao ponto.
@@ -73,7 +77,7 @@ Responda de forma empática, prestativa e humana.
 - Cliente no CRM: {nome_cliente_info} | Tags Atuais: {tags_atuais_info} | Tags Disponíveis: {available_tags_info}
 - Data/Hora: {data_hora_info} | {tts_voice_info}
 
-Gere: response_text, send_as_audio, intent_conclude, intent_handoff, handoff_destinatario, handoff_motivo, resumo_atualizado, novo_nome_cliente, tags_para_adicionar.
+Gere: response_text, send_as_audio, intent_conclude, intent_handoff, handoff_destinatario, handoff_motivo, resumo_atualizado, novo_nome_cliente, tags_para_adicionar, media_file_ids.
 """
 
 # ==============================================================================
@@ -90,8 +94,13 @@ Avalie em UMA ÚNICA ANÁLISE SEMÂNTICA o conteúdo e a decisão de transbordo:
      * Se for indevido (orçamento, vendas, dúvidas técnicas, respostas afirmativas), REPROVE (is_valid = False, approve_handoff = False) e instrua a responder diretamente.
    - Se a IA NÃO propôs transbordo: approve_handoff = False, avalie o conteúdo normalmente.
 3. URLS: Devem ser idênticas às fontes originais (não inventadas nem encurtadas).
-4. NATURALIDADE: Sem saudações repetidas em conversas em andamento e sem bordões ("Entendido!", "Perfeito!").
-5. TAGS: Apenas tags solicitadas pelo próprio cliente.
+4. MÍDIAS & ANEXOS (VÍDEOS/FOTOS/DOCUMENTOS):
+   - Se a resposta contiver tags `[MEDIA: ...]` ou prometer o envio de vídeo, foto ou catálogo:
+     * O identificador DEVE ser estritamente o `id_arquivo` técnico válido do Google Drive presente no contexto RAG recuperado.
+     * 🚨 Se a IA escreveu texto descritivo, títulos ou nomes com espaços dentro de `[MEDIA: ...]` (ex: `[MEDIA: Vídeo de apresentação...]`), REPROVE (is_valid = False) e instrua a usar o `id_arquivo` exato.
+     * 🚨 Se a mensagem disser que está enviando ou mostrando vídeo/foto mas não incluiu o ID correspondente, REPROVE (is_valid = False).
+5. NATURALIDADE: Sem saudações repetidas em conversas em andamento e sem bordões ("Entendido!", "Perfeito!").
+6. TAGS: Apenas tags solicitadas pelo próprio cliente.
 
 Retorne: is_valid (bool), approve_handoff (bool), critique (str), reason (str).
 """

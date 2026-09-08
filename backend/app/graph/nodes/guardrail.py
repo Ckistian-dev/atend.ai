@@ -99,13 +99,71 @@ def validate_response_urls(draft_response: str, sources_text: str) -> Tuple[bool
     return True, ""
 
 
+MEDIA_TAG_GENERAL_REGEX = re.compile(r'\[(?:MEDIA|ARQUIVO|IMAGEM|DOC|FOTO|VIDEO):\s*([^\]]+)\]', re.IGNORECASE)
+
+def extract_media_tags(text: str) -> List[str]:
+    """Extrai todos os identificadores ou descrições passadas em tags de mídia."""
+    if not text:
+        return []
+    matches = MEDIA_TAG_GENERAL_REGEX.findall(text)
+    return [m.strip() for m in matches if m.strip()]
+
+def validate_response_media(
+    draft_response: str, 
+    media_file_ids: List[str], 
+    sources_text: str
+) -> Tuple[bool, str]:
+    """
+    Valida de forma determinística que todas as tags de mídia do draft_response:
+    1. Não utilizam nomes descritivos com espaços ou títulos em português no lugar do id_arquivo.
+    2. Usam um id_arquivo existente no contexto recuperado / fontes.
+    3. Se prometeu envio de vídeo/foto, incluiu a tag correspondente ou media_file_ids.
+    """
+    tags = extract_media_tags(draft_response)
+    
+    for tag in tags:
+        # Se contiver espaços ou texto descritivo
+        if " " in tag:
+            return False, (
+                f"A tag '[MEDIA: {tag}]' contém texto descritivo com espaços em vez do 'id_arquivo' técnico do Google Drive. "
+                f"Use estritamente o código exato presente no campo 'id_arquivo' dos documentos recuperados da base de conhecimento (ex: [MEDIA: 1PLqahFtwRcDQv8TPkIU97g-wsJ0WRXkA])."
+            )
+        
+        # Se a tag não aparece no texto das fontes recuperadas
+        if tag not in sources_text:
+            return False, (
+                f"O identificador de mídia '[MEDIA: {tag}]' não foi encontrado no contexto RAG recuperado. "
+                f"Utilize estritamente o 'id_arquivo' do Google Drive fornecido no contexto de documentos."
+            )
+
+    # Checagem de promessa explícita de mídia sem tag ou sem media_file_ids
+    lower_draft = (draft_response or "").lower()
+    media_promise_patterns = [
+        r'\b(?:veja|assista|segue|confira|envio|estou enviando)\s+(?:o\s+)?(?:vídeo|video)\b',
+        r'\b(?:veja|segue|confira|envio|estou enviando)\s+(?:a\s+)?(?:foto|imagem)\b',
+        r'\b(?:segue|envio|estou enviando)\s+(?:o\s+)?(?:catálogo|catalogo|pdf|documento)\b',
+    ]
+    has_promise = any(re.search(pat, lower_draft) for pat in media_promise_patterns)
+    has_attached_media = bool(tags or (media_file_ids and len(media_file_ids) > 0))
+
+    if has_promise and not has_attached_media:
+        if "id_arquivo" in sources_text:
+            return False, (
+                "A mensagem informa ao cliente que está enviando/mostrando um vídeo, foto ou catálogo, "
+                "mas não incluiu a tag [MEDIA: id_arquivo] nem preencheu o campo media_file_ids. "
+                "Insira a tag [MEDIA: <id_exato>] com o id_arquivo presente no contexto RAG."
+            )
+
+    return True, ""
+
+
 async def guardrail_node(state: AgentState) -> Dict[str, Any]:
     """
     Nó 5: Juiz Guardrail Anti-Alucinação e Auditor Soberano de Atendimento.
     Em uma ÚNICA chamada semântica, audita:
     1. Factualidade e Grounding da resposta (zero alucinação).
     2. Validade Semântica do Transbordo Humano (aprova ou rejeita transferências).
-    3. Integridade de URLs, tom de voz e regras da Persona.
+    3. Integridade de URLs, mídias, tom de voz e regras da Persona.
 
     @param state: Estado atual do grafo.
     @returns: Dicionário com 'validation_passed', 'critique', 'approve_handoff' e 'retry_count'.
@@ -176,6 +234,15 @@ Mensagem Gerada para Avaliação:
     if not urls_valid:
         logger.warning(f"[Guardrail Node] Reprovação de integridade de URLs: {url_critique}")
 
+    # Validação determinística de Mídias (garantia de IDs válidos e envio real)
+    media_valid, media_critique = validate_response_media(
+        draft_response=draft_response,
+        media_file_ids=state.get("media_file_ids") or [],
+        sources_text=sources_text_combined
+    )
+    if not media_valid:
+        logger.warning(f"[Guardrail Node] Reprovação de integridade de Mídias: {media_critique}")
+
     try:
         clean_model = model_name.replace("google:", "").replace("google-cloud:", "")
         config = types.GenerateContentConfig(
@@ -218,8 +285,8 @@ Mensagem Gerada para Avaliação:
             f"reason='{evaluation.reason}', critique='{evaluation.critique}'"
         )
 
-        # Se as URLs falharam na checagem estrita, reprova conjuntamente
-        final_is_valid = evaluation.is_valid and urls_valid
+        # Se as URLs ou Mídias falharam na checagem estrita, reprova conjuntamente
+        final_is_valid = evaluation.is_valid and urls_valid and media_valid
 
         audit_trail = dict(state.get("ai_audit_trail") or {})
         iterations = list(audit_trail.get("iterations") or [])
@@ -230,7 +297,9 @@ Mensagem Gerada para Avaliação:
                 "critique": evaluation.critique,
                 "reason": evaluation.reason,
                 "urls_valid": urls_valid,
-                "url_critique": url_critique if not urls_valid else None
+                "url_critique": url_critique if not urls_valid else None,
+                "media_valid": media_valid,
+                "media_critique": media_critique if not media_valid else None
             }
         audit_trail["iterations"] = iterations
 
@@ -238,6 +307,8 @@ Mensagem Gerada para Avaliação:
             critique_list = []
             if not urls_valid and url_critique:
                 critique_list.append(url_critique)
+            if not media_valid and media_critique:
+                critique_list.append(media_critique)
             if evaluation.critique and evaluation.critique.strip().lower() != "aprovado":
                 critique_list.append(evaluation.critique)
             final_critique = " | ".join(critique_list) if critique_list else "Proposta reprovada pelo Juiz de atendimento."
@@ -283,6 +354,12 @@ Mensagem Gerada para Avaliação:
             return {
                 "validation_passed": False,
                 "critique": url_critique,
+                "retry_count": retry_count + 1
+            }
+        if not media_valid:
+            return {
+                "validation_passed": False,
+                "critique": media_critique,
                 "retry_count": retry_count + 1
             }
         # Em caso de falha de conexão do juiz, aprova mantendo status seguro

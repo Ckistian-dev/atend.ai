@@ -137,7 +137,7 @@ class MultiTenantHybridRetriever:
                 if nome_arq:
                     lines.append(f"- **Nome do Arquivo**: `{nome_arq}`")
                 if id_drive:
-                    lines.append(f"- **id_arquivo do Google Drive (para media_file_ids)**: `{id_drive}`")
+                    lines.append(f"- **id_arquivo do Google Drive (OBRIGATÓRIO usar este ID exato em [MEDIA: id] ou media_file_ids)**: `{id_drive}`")
 
             # Se houver outros dados estruturados (raw_data de planilhas/drive)
             # adiciona campo a campo com alta clareza
