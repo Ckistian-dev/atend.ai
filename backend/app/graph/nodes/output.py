@@ -25,8 +25,22 @@ URL_REGEX = re.compile(
     r'(?:https?://[^\s]+|www\.[^\s]+|[a-zA-Z0-9_\-\.]+\.(?:com|br|org|net|io|me|site|store|shop|app|online)(?:/[^\s]*)?)',
     re.IGNORECASE
 )
-AUDIO_TAG_REGEX = re.compile(r'^\s*\[(?:AUDIO|ÁUDIO|VOZ)\]\s*', re.IGNORECASE)
-TEXT_TAG_REGEX = re.compile(r'^\s*\[(?:TEXTO|TEXT)\]\s*', re.IGNORECASE)
+INTERNAL_CONTROL_TAGS_REGEX = re.compile(r'\[(?:TEXTO|TEXT|AUDIO|ÁUDIO|VOZ)\]\s*', re.IGNORECASE)
+AUDIO_TAG_CHECK_REGEX = re.compile(r'\[(?:AUDIO|ÁUDIO|VOZ)\]', re.IGNORECASE)
+TEXT_TAG_CHECK_REGEX = re.compile(r'\[(?:TEXTO|TEXT)\]', re.IGNORECASE)
+DRIVE_ID_REGEX = re.compile(r'^[a-zA-Z0-9_-]{15,65}$')
+
+def is_valid_drive_id(file_id: str) -> bool:
+    """Valida se o identificador possui o formato estrito de ID técnico do Google Drive."""
+    if not file_id:
+        return False
+    clean = str(file_id).strip()
+    if " " in clean:
+        return False
+    clean_lower = clean.lower()
+    if any(p in clean_lower for p in ["_id_", "exemplo", "link", "none", "null", "vídeo", "video", "foto"]):
+        return False
+    return bool(DRIVE_ID_REGEX.match(clean))
 
 async def _get_lock(atendimento_id: int) -> asyncio.Lock:
     async with _global_lock:
@@ -43,7 +57,7 @@ def build_delivery_queue(
 ) -> List[Dict[str, Any]]:
     """
     Constrói a fila unificada e ordenada de entrega (balões de áudio, texto e mídias intercaladas).
-    Garante categoricamente que NENHUM link/URL seja enviado por áudio e NENHUM colchete de mídia vaze no texto.
+    Garante categoricamente que NENHUM link/URL seja enviado por áudio e NENHUM colchete de mídia ou tag [TEXTO]/[AUDIO] vaze no texto.
     """
     queue: List[Dict[str, Any]] = []
     used_media_ids = set()
@@ -54,10 +68,10 @@ def build_delivery_queue(
         if not chunk:
             return
 
-        is_explicit_audio = bool(AUDIO_TAG_REGEX.match(chunk))
-        is_explicit_text = bool(TEXT_TAG_REGEX.match(chunk))
-        clean_chunk = AUDIO_TAG_REGEX.sub('', chunk)
-        clean_chunk = TEXT_TAG_REGEX.sub('', clean_chunk)
+        is_explicit_audio = bool(AUDIO_TAG_CHECK_REGEX.search(chunk))
+        is_explicit_text = bool(TEXT_TAG_CHECK_REGEX.search(chunk))
+        # Remove todas as tags de controle interno globalmente (início, meio ou fim do chunk)
+        clean_chunk = INTERNAL_CONTROL_TAGS_REGEX.sub('', chunk)
         # Garante que nenhum resíduo de tag de mídia vaze como texto bruto
         clean_chunk = MEDIA_TAG_REGEX.sub('', clean_chunk).strip()
 
@@ -119,8 +133,11 @@ def build_delivery_queue(
                     is_match = not is_match
                     continue
                 if is_match:
-                    queue.append({"type": "media", "file_id": chunk})
-                    used_media_ids.add(chunk)
+                    if is_valid_drive_id(chunk):
+                        queue.append({"type": "media", "file_id": chunk})
+                        used_media_ids.add(chunk)
+                    else:
+                        logger.warning(f"[Output Node] Tag de mídia com formato inválido ignorada na fila: '{chunk}'")
                 else:
                     if len(chunk) > 250:
                         frases = [p.strip() for p in chunk.replace(". ", ".\n").replace("! ", "!\n").replace("? ", "?\n").split("\n") if p.strip()]
@@ -141,8 +158,11 @@ def build_delivery_queue(
     for f_id in (media_file_ids or []):
         f_id_clean = str(f_id).strip()
         if f_id_clean and f_id_clean not in used_media_ids:
-            queue.append({"type": "media", "file_id": f_id_clean})
-            used_media_ids.add(f_id_clean)
+            if is_valid_drive_id(f_id_clean):
+                queue.append({"type": "media", "file_id": f_id_clean})
+                used_media_ids.add(f_id_clean)
+            else:
+                logger.warning(f"[Output Node] Media ID com formato inválido ignorado na fila: '{f_id_clean}'")
 
     return queue
 
@@ -345,10 +365,6 @@ async def output_node(state: AgentState) -> Dict[str, Any]:
                     raise
                 except Exception as send_err:
                     logger.error(f"[Output Node] Falha no envio do balão de texto #{idx+1}: {send_err}", exc_info=True)
-                except asyncio.CancelledError:
-                    raise
-                except Exception as send_err:
-                    logger.error(f"[Output Node] Falha no envio do balão #{idx+1}: {send_err}", exc_info=True)
 
             # --- CASO B: ITEM É UMA MÍDIA INTERCALADA (FOTO, VÍDEO, DOCUMENTO) ---
             elif item["type"] == "media":
@@ -492,19 +508,7 @@ async def output_node(state: AgentState) -> Dict[str, Any]:
                             at_final.status = "Mensagem Recebida"
                         else:
                             at_final.status = status_final
-                            # Garante que todas as mensagens processadas nesta resposta estejam visualizadas
-                            try:
-                                _, wamid_list_final = await crud_atendimento.mark_atendimento_messages_as_read(
-                                    db=db_final,
-                                    company_id=tenant_id,
-                                    atendimento_id=atendimento_id
-                                )
-                                if wamid_list_final and company and company.wbp_phone_number_id:
-                                    asyncio.create_task(whatsapp_svc.mark_messages_as_read_batch(company, wamid_list_final))
-                            except Exception as read_post_err:
-                                logger.warning(f"[Output Node] Erro ao sincronizar recibos de leitura pós-envio: {read_post_err}")
 
-                        # Atribuição de Atendente / Setor no Transbordo
                         # Atribuição de Atendente / Setor no Transbordo
                         if status_final == "Atendente Chamado" or state.get("intent_handoff"):
                             destinatario = state.get("handoff_destinatario")
@@ -630,22 +634,31 @@ async def output_node(state: AgentState) -> Dict[str, Any]:
                                 nomes_atuais.add(key)
 
                         if tags_para_add:
+                            # Nome do cliente para verificação rigorosa contra criação indevida de tags
+                            nome_contato_final = (at_final.nome_contato or novo_nome or "").strip().lower()
+                            nome_contato_tokens = set(t for t in re.split(r'\s+', nome_contato_final) if len(t) > 2) if nome_contato_final else set()
+
                             for tag in tags_para_add:
                                 if tag and str(tag).strip():
                                     clean_tag = str(tag).strip()
                                     key = clean_tag.lower()
+
+                                    # 1. 🚨 BLOQUEIO ABSOLUTO: Nunca adicionar o nome do cliente como tag
+                                    if nome_contato_final and (key == nome_contato_final or key in nome_contato_tokens):
+                                        logger.warning(f"[Output Node] Tag '{clean_tag}' rejeitada: corresponde ao nome do contato ('{nome_contato_final}').")
+                                        continue
+
+                                    # 2. 🚨 A IA NUNCA PODE INVENTAR TAGS: Deve existir previamente em tag_lookup (cadastradas na empresa)
+                                    if key not in tag_lookup:
+                                        logger.warning(f"[Output Node] Tag '{clean_tag}' rejeitada: NÃO está na lista de tags cadastradas da empresa.")
+                                        continue
+
                                     if key not in nomes_atuais:
-                                        if key in tag_lookup:
-                                            official_tag = tag_lookup[key]
-                                            updated_tags.append({
-                                                "name": official_tag.get('name', clean_tag),
-                                                "color": official_tag.get('color', '#3B82F6')
-                                            })
-                                        else:
-                                            updated_tags.append({
-                                                "name": clean_tag,
-                                                "color": '#3B82F6'
-                                            })
+                                        official_tag = tag_lookup[key]
+                                        updated_tags.append({
+                                            "name": official_tag.get('name', clean_tag),
+                                            "color": official_tag.get('color', '#3B82F6')
+                                        })
                                         nomes_atuais.add(key)
                                         modificado = True
 
@@ -653,10 +666,11 @@ async def output_node(state: AgentState) -> Dict[str, Any]:
                             at_final.tags = updated_tags
 
                         # --- PERSISTÊNCIA DO LOG ESTRUTURADO DE AUDITORIA DA IA NO BANCO ---
+                        clean_final_response = INTERNAL_CONTROL_TAGS_REGEX.sub('', final_response or "").strip()
                         audit_trail = dict(state.get("ai_audit_trail") or {})
                         audit_trail["final_outcome"] = {
                             "status_final": status_final,
-                            "final_response": final_response,
+                            "final_response": clean_final_response,
                             "intent_handoff": bool(state.get("intent_handoff")),
                             "intent_conclude": bool(state.get("intent_conclude")),
                             "total_retries": state.get("retry_count", 0),

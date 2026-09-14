@@ -113,8 +113,8 @@ def build_prompt_from_persona_form(persona_form: Any) -> str:
         q_str = ", ".join(qualities) if isinstance(qualities, list) else str(qualities)
         style_parts.append(f"Atributos: {q_str}")
 
-    style_parts.append("Naturalidade no WhatsApp: Converse como uma pessoa real no chat. NUNCA use interjeições robóticas de confirmação ('Entendido!', 'Isso mesmo!', 'Perfeito!', 'Com certeza!') e NUNCA repita saudações ('Oi!', 'Tudo bem?') se a conversa já estiver em andamento. Vá direto ao assunto.")
-    style_parts.append("Resiliência e Prioridade de Transbordo: Se houver regra específica da empresa/persona determinando transferência para determinado assunto (ex: cancelamentos, reclamações formais), transfira imediatamente sem hesitar. Em casos gerais, seja resiliente e não sugira transferência sem motivo. Se o cliente pedir atendente de forma genérica, ofereça ajuda por aqui e transfira apenas após confirmação. NUNCA transfira o atendimento no primeiro contato, em dúvidas de produtos/serviços, em pedidos de orçamento, nem quando o cliente responder 'Sim', 'Quero', 'Pode ser', 'Isso', 'Ok' ou escolher uma opção/plano/item em resposta a uma pergunta da IA. Prossiga sempre o atendimento com a IA e avance no diálogo.")
+    style_parts.append("Naturalidade no WhatsApp: Converse como uma pessoa real no chat. NUNCA use interjeições robóticas de confirmação vazias ('Entendido!', 'Isso mesmo!', 'Perfeito!', 'Com certeza!'), mas demonstre EMPATIA humana e acolhedora diante de dúvidas ou frustrações ('Compreendo a situação', 'Peço desculpas por isso', 'Entendo perfeitamente o seu ponto'). Em conversas em andamento, não repita apresentações formais longas, mas se o cliente enviar uma saudação pura ('Olá', 'Oi', 'Boa tarde'), responda de forma breve, natural e acolhedora.")
+    style_parts.append("Resiliência e Prioridade de Transbordo: Se houver regra específica da empresa/persona determinando transferência para determinado assunto (ex: cancelamentos, reclamações formais), transfira imediatamente sem hesitar. Em casos gerais, seja resiliente e atenda diretamente. Se houver impasse técnico ou frustração explícita do cliente, ofereça ajuda da equipe. NUNCA transfira o atendimento no primeiro contato, em dúvidas de produtos/serviços de rotina, em pedidos de orçamento, nem quando o cliente responder 'Sim', 'Quero', 'Pode ser', 'Isso', 'Ok' ou escolher uma opção/plano/item em resposta a uma pergunta da IA. Prossiga sempre o atendimento com a IA e avance no diálogo.")
 
 
     if style_parts:
@@ -199,22 +199,6 @@ async def _process_single_atendimento_inner(atendimento_id: int, company: models
 
         # --- PASSO 2: COLETA DE CONTEXTO E CONFIGURAÇÃO ---
         async with SessionLocal() as db_ctx:
-            # Visualização automática de mensagens pela IA: marca como lida no banco e envia tiques azuis à Meta
-            try:
-                _, wamid_list = await crud_atendimento.mark_atendimento_messages_as_read(
-                    db=db_ctx,
-                    company_id=company.id,
-                    atendimento_id=atendimento_id
-                )
-                await db_ctx.commit()
-
-                if wamid_list and company and company.wbp_phone_number_id:
-                    whatsapp_svc = get_whatsapp_service()
-                    asyncio.create_task(whatsapp_svc.mark_messages_as_read_batch(company, wamid_list))
-                    logger.info(f"[LangGraph Agente] {len(wamid_list)} mensagem(ns) marcada(s) como visualizada(s)/lida(s) pela IA no Atendimento ID {atendimento_id}.")
-            except Exception as read_err:
-                logger.warning(f"[LangGraph Agente] Falha ao marcar mensagens como lidas pela IA (Atend {atendimento_id}): {read_err}")
-
             atendimento_ctx = await db_ctx.get(
                 models.Atendimento,
                 atendimento_id,

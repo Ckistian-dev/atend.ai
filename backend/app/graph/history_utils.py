@@ -149,6 +149,35 @@ def extract_substantive_tokens(text: str, max_tokens: int = 4) -> List[str]:
                 substantives.append(t)
     return substantives[:max_tokens]
 
+def detect_pending_media_promise(history: List[Dict[str, Any]]) -> Optional[str]:
+    """
+    Detecta se na última mensagem da IA houve uma promessa ou oferta de envio de mídia (vídeo, foto, catálogo).
+    Retorna a categoria correspondente ('video', 'fotos', 'document') ou None de forma 100% genérica.
+    """
+    last_assistant = get_last_assistant_message(history).lower()
+    if not last_assistant:
+        return None
+
+    import re
+    has_video = bool(re.search(r'\b(?:vídeo|video|videos|vídeos)\b', last_assistant))
+    has_photo = bool(re.search(r'\b(?:foto|fotos|imagem|imagens)\b', last_assistant))
+    has_doc = bool(re.search(r'\b(?:catálogo|catalogo|pdf|documento|tabela)\b', last_assistant))
+
+    promise_verbs = bool(re.search(
+        r'\b(?:vou te enviar|vou enviar|vou te mandar|vou mandar|posso te enviar|posso enviar|quer ver|gostaria de ver|preparei|separei|te mostro|vou te mostrar)\b', 
+        last_assistant
+    ))
+
+    if promise_verbs or ("vídeo" in last_assistant and "posso saber" in last_assistant):
+        if has_video:
+            return "video"
+        if has_photo:
+            return "fotos"
+        if has_doc:
+            return "document"
+    return None
+
+
 def synthesize_contextual_search_query(
     user_input: str, 
     history: List[Dict[str, Any]], 

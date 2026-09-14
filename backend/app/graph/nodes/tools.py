@@ -197,12 +197,21 @@ async def _adicionar_tag(atendimento_id: int, tenant_id: int, nome_tag: str) -> 
     async with SessionLocal() as db:
         tags_disponiveis = await crud_atendimento.get_all_user_tags(db, company_id=tenant_id)
         tag_match = next((t for t in tags_disponiveis if t['name'].lower() == nome_tag_clean.lower()), None)
-        tag_nome_final = tag_match['name'] if tag_match else nome_tag_clean
-        tag_color_final = tag_match['color'] if tag_match else '#3b82f6'
+        if not tag_match:
+            return f"Erro: A tag '{nome_tag_clean}' não está cadastrada no CRM desta empresa. Apenas tags já cadastradas podem ser aplicadas."
 
         async with db.begin():
             at = await db.get(models.Atendimento, atendimento_id, with_for_update=True)
             if at:
+                # 🚨 BLOQUEIO: Não permitir criar/adicionar tag com o nome do cliente
+                nome_contato_lower = (at.nome_contato or "").strip().lower()
+                nome_parts = set(p for p in re.split(r'\s+', nome_contato_lower) if len(p) > 2) if nome_contato_lower else set()
+                if nome_contato_lower and (nome_tag_clean.lower() == nome_contato_lower or nome_tag_clean.lower() in nome_parts):
+                    return f"Erro: Não é permitido adicionar tag com o nome do cliente ('{nome_tag_clean}')."
+
+                tag_nome_final = tag_match['name']
+                tag_color_final = tag_match.get('color', '#3b82f6')
+
                 current_tags = at.tags or []
                 if not isinstance(current_tags, list):
                     current_tags = json.loads(current_tags) if isinstance(current_tags, str) else list(current_tags)

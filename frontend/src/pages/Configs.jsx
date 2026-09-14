@@ -1346,7 +1346,7 @@ function Configs() {
     }
 
     return (
-        <div className="p-0 sm:p-4 md:p-5 bg-[#f0f4ff] flex-1 flex flex-col configs-page h-full sm:h-[93vh]">
+        <div className="p-0 sm:p-4 md:p-5 bg-[#f0f4ff] flex-1 flex flex-col configs-page h-full">
             <style>{DS_STYLE}</style>
 
             <div className="mx-auto w-full flex-1 flex flex-col min-h-0">
@@ -1364,9 +1364,9 @@ function Configs() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 sm:h-full overflow-hidden">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 sm:h-full">
                     {/* SIDEBAR: SELEÇÃO DE PERSONA */}
-                    <div className={`${mobileView === 'form' ? 'hidden sm:flex' : 'flex'} lg:col-span-3 space-y-4 sm:space-y-8 flex flex-col h-full sm:h-[78vh] p-4 sm:p-0`}>
+                    <div className={`${mobileView === 'form' ? 'hidden sm:flex' : 'flex'} lg:col-span-3 space-y-4 sm:space-y-8 flex flex-col h-full sm:h-[120vh] p-4 sm:p-0`}>
                         <button onClick={handleNewConfig} className="w-full h-14 sm:h-16 flex items-center justify-center gap-3 bg-blue-600 text-white font-black text-sm uppercase tracking-widest rounded-[1.5rem] sm:rounded-3xl shadow-xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 transition-all active:scale-[0.98] shrink-0">
                             <Plus size={20} /> Nova Persona
                         </button>
@@ -1409,7 +1409,7 @@ function Configs() {
                     </div>
 
                     {/* MAIN CONTENT Area */}
-                    <div className={`${mobileView === 'list' ? 'hidden sm:flex' : 'flex'} lg:col-span-9 bg-white rounded-0 sm:rounded-[2.5rem] shadow-sm border-none sm:border border-slate-100 flex flex-col h-full sm:h-[78vh] min-h-0`}>
+                    <div className={`${mobileView === 'list' ? 'hidden sm:flex' : 'flex'} lg:col-span-9 bg-white rounded-0 sm:rounded-[2.5rem] shadow-sm border-none sm:border border-slate-100 flex flex-col h-full sm:h-[120vh] min-h-0`}>
                         <form onSubmit={handleSave} className="flex-1 flex flex-col min-h-0 overflow-hidden">
                             {/* Header & Tabs - Fixo no topo */}
                             <div className="px-4 pt-4 sm:px-6 sm:pt-6 md:px-8 md:pt-8 bg-white/80 backdrop-blur-md sticky top-0 z-20 shrink-0 border-b border-slate-50">

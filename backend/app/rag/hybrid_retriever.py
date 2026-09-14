@@ -92,14 +92,49 @@ class MultiTenantHybridRetriever:
         except Exception as e:
             logger.error(f"[MultiTenantHybridRetriever] Falha na busca lexical: {e}", exc_info=True)
 
-        # 3. Fallback: Se não encontrou nada com filtro de categoria, tenta sem filtro de categoria
+        # 3. Busca Complementar de Mídias (RAG Multimodal)
+        # Quando a busca principal é em categorias textuais (ex: Produtos, Dados da Empresa),
+        # verifica se existem mídias diretamente correlacionadas (vídeos demonstrativos, fotos)
+        # para que o agente tenha o id_arquivo técnico exato caso decida enviar conforme diretrizes.
+        is_media_category = category and any(
+            m in str(category).strip().lower() 
+            for m in ["video", "image", "foto", "vídeo", "mídia", "midia"]
+        )
+        if not is_media_category:
+            try:
+                media_keywords = self._extract_keywords(clean_query)
+                if media_keywords:
+                    # Busca específica por vídeo demonstrativo correlacionado
+                    video_nodes = await self.vector_store.query_text(
+                        keywords=media_keywords,
+                        top_k=1,
+                        category="video"
+                    )
+                    for n in video_nodes:
+                        if n.node.node_id not in nodes_dict:
+                            nodes_dict[n.node.node_id] = NodeWithScore(node=n.node, score=0.015)
+
+                    # Busca específica por imagens/fotos correlacionadas
+                    image_nodes = await self.vector_store.query_text(
+                        keywords=media_keywords,
+                        top_k=2,
+                        category="image"
+                    )
+                    for rank, n in enumerate(image_nodes):
+                        if n.node.node_id not in nodes_dict:
+                            nodes_dict[n.node.node_id] = NodeWithScore(node=n.node, score=0.012 - (0.002 * rank))
+            except Exception as e:
+                logger.debug(f"[MultiTenantHybridRetriever] Busca complementar de mídia ignorada: {e}")
+
+        # 4. Fallback: Se não encontrou nada com filtro de categoria, tenta sem filtro de categoria
         if not nodes_dict and category and category.strip().lower() != "todas":
             logger.info(f"[MultiTenantHybridRetriever] Nenhum resultado para categoria '{category}'. Executando fallback sem categoria...")
             return await self.retrieve(query=clean_query, category=None, top_k=top_k)
 
-        # Ordena pelo score consolidado decrescente
+        # Ordena pelo score consolidado decrescente (permitindo mídias suplementares até top_k + 3)
         sorted_nodes = sorted(nodes_dict.values(), key=lambda x: x.score or 0.0, reverse=True)
-        return sorted_nodes[:top_k]
+        max_limit = top_k + 3 if not is_media_category else top_k
+        return sorted_nodes[:max_limit]
 
     def format_context_for_prompt(self, nodes: List[NodeWithScore]) -> str:
         """

@@ -106,6 +106,23 @@ def is_sales_or_inquiry_intent(text: str) -> bool:
     clean = str(text).strip().lower()
     return any(p.search(clean) for p in SALES_AND_INQUIRY_PATTERNS)
 
+# Expressões de impasse ou frustração técnica decorrente de limitações da IA
+FRUSTRATION_AND_IMPASSE_PATTERNS = [
+    re.compile(r'\b(?:não\s+adianta|nao\s+adianta)\s+(?:eu\s+)?(?:ficar\s+)?(?:falando|aqui)\b', re.IGNORECASE),
+    re.compile(r'\b(?:voc[eê]\s+n[aã]o\s+(?:entende|ajuda|resolve|sabe|consegue|pode\s+ver))\b', re.IGNORECASE),
+    re.compile(r'\b(?:se\s+vc\s+n[aã]o\s+pode\s+ver|se\s+voc[eê]\s+n[aã]o\s+pode\s+ver)\b', re.IGNORECASE),
+    re.compile(r'\b(?:estou\s+(?:falando\s+com\s+uma\s+parede|perdendo\s+tempo))\b', re.IGNORECASE),
+    re.compile(r'\b(?:n[aã]o\s+est[aá]\s+me\s+ajudando|n[aã]o\s+estou\s+conseguindo\s+explicar)\b', re.IGNORECASE),
+    re.compile(r'\b(?:n[aã]o\s+estou\s+entendendo\s+nada|estou\s+muito\s+confusa?)\b', re.IGNORECASE),
+]
+
+def is_frustration_or_impasse(text: str) -> bool:
+    """Verifica se o usuário expressou impasse ou frustração direta com as limitações da IA."""
+    if not text or not str(text).strip():
+        return False
+    clean = str(text).strip().lower()
+    return any(p.search(clean) for p in FRUSTRATION_AND_IMPASSE_PATTERNS)
+
 def should_allow_handoff(
     user_input: str,
     history: List[Dict[str, Any]],
@@ -136,18 +153,22 @@ def should_allow_handoff(
     if is_formal_escalation(clean_input):
         return True, "Escalação formal / Reclamação grave detectada."
 
-    # 4. Caso o cliente esteja em fluxo de vendas, interesse, orçamento ou dúvidas
-    if is_sales_or_inquiry_intent(clean_input):
+    # 4. Impasse técnico ou frustração declarada do cliente com as limitações da IA
+    if is_frustration_or_impasse(clean_input) and requested_by_ai:
+        return True, "Impasse técnico ou frustração do cliente diante de limitações do atendimento automatizado."
+
+    # 5. Caso o cliente esteja em fluxo de vendas, interesse, orçamento ou dúvidas normais
+    if is_sales_or_inquiry_intent(clean_input) and not is_frustration_or_impasse(clean_input):
         return False, "Mensagem do cliente é uma dúvida, interesse ou pedido de orçamento comercial (não é transbordo)."
 
-    # 5. Respostas curtas/afirmativas em meio a diálogo sem oferta de transferência
+    # 6. Respostas curtas/afirmativas em meio a diálogo sem oferta de transferência
     clean_lower = clean_input.lower().rstrip('.!?,')
     if clean_lower in AFFIRMATIVE_RESPONSES:
         return False, "Resposta afirmativa ou de continuidade a diálogo anterior da IA."
 
-    # 6. Primeiro contato ou mensagens de saudação + assunto
+    # 7. Primeiro contato ou mensagens de saudação + assunto
     if not history or len(history) <= 2:
         return False, "Início de atendimento (primeiro contato do cliente)."
 
-    # 7. Regra padrão para qualquer outro caso: NÃO autorizar transbordo indevido
+    # 8. Regra padrão para qualquer outro caso: NÃO autorizar transbordo indevido
     return False, "Cliente não solicitou atendimento humano e não há regra de transbordo aplicável."

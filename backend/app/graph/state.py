@@ -41,12 +41,13 @@ class EvaluationResult(BaseModel):
         default=False,
         description="True se a solicitação de transbordo para equipe/humano foi APROVADA pelo Juiz com base no contexto (o cliente pediu expressamente um humano ou confirmou oferta prévia ou há regra específica). False se a transferência foi rejeitada ou se não houve solicitação de transbordo."
     )
-    critique: str = Field(
-        description="Se is_valid for False, detalhe exatamente o erro (alucinação, regra violada ou motivo da rejeição do transbordo) e instrua com clareza como o Gerador deve corrigir a resposta. Se is_valid for True, retorne 'Aprovado'."
+    critique: Optional[str] = Field(
+        default=None,
+        description="Preencha EXCLUSIVAMENTE se is_valid == False. Detalhe com precisão o erro identificado e como o Gerador deve corrigir a resposta. Se is_valid == True, deixe OBRIGATORIAMENTE null ou vazio."
     )
     reason: Optional[str] = Field(
         default=None,
-        description="Resumo do raciocínio e julgamento semântico do Juiz."
+        description="Preencha EXCLUSIVAMENTE se is_valid == False. Breve resumo do motivo da reprovação. Se is_valid == True, deixe OBRIGATORIAMENTE null ou vazio."
     )
 
 
@@ -89,7 +90,7 @@ class GeneratorOutput(BaseModel):
     )
     tags_para_adicionar: Optional[List[str]] = Field(
         default=None,
-        description="Lista de nomes de tags a serem adicionadas, selecionadas ESTRITAMENTE da lista de tags cadastradas da empresa. REGRA CRÍTICA: A tag só pode ser incluída se o PRÓPRIO CLIENTE tiver expressamente solicitado, afirmado, escolhido ou confirmado o produto, ambiente ou interesse em suas mensagens. NUNCA inclua tags de produtos que apenas a IA sugeriu e o cliente ainda não confirmou/escolheu."
+        description="Lista de nomes de tags a serem adicionadas, selecionadas ESTRITAMENTE da lista de tags cadastradas da empresa. 🚨 NUNCA inclua o nome do cliente ou de pessoas como tag (o nome do cliente pertence EXCLUSIVAMENTE ao campo 'novo_nome_cliente'). 🚨 NUNCA invente tags novas que não constem na lista de Tags Disponíveis da empresa. A tag só pode ser incluída se for uma tag cadastrada e o cliente tiver confirmado interesse explícito."
     )
 
 

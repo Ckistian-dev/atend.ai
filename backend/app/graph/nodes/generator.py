@@ -46,6 +46,7 @@ async def generator_node(state: AgentState) -> Dict[str, Any]:
 Sua resposta anterior foi REJEITADA com a seguinte crítica:
 "{critique}"
 Você DEVE corrigir este erro agora. Remova afirmações não suportadas e siga estritamente o contexto.
+🚨 SALVAGUARDA DE FACTUALIDADE: Baseie-se ESTRITAMENTE nos dados reais informados pelo cliente e no contexto RAG recuperado. Ignore quaisquer medidas, números ou dados técnicos citados na crítica que não tenham sido expressamente informados pelo cliente ou pela base de conhecimento.
 """
     else:
         secao_critica = ""
@@ -65,7 +66,7 @@ Você DEVE corrigir este erro agora. Remova afirmações não suportadas e siga 
     tags_atuais_info = ", ".join([f"'{t}'" for t in current_tags]) if current_tags else "Nenhuma tag aplicada ainda"
 
     available_tags = state.get("available_tags") or []
-    available_tags_info = ", ".join([f"'{t}'" for t in available_tags]) if available_tags else "Nenhuma tag cadastrada"
+    available_tags_info = ", ".join([f"'{t}'" for t in available_tags]) if available_tags else "Nenhuma tag cadastrada na empresa (NÃO adicione tags ao campo tags_para_adicionar)"
 
     # Resolução de TTS / Resposta em Áudio
     tts_voice = state.get("tts_voice")
@@ -78,19 +79,22 @@ Você DEVE corrigir este erro agora. Remova afirmações não suportadas e siga 
   2. Se o cliente pedir para responder por áudio/voz (ex: "manda áudio", "me manda um áudio", "responde por voz", "fala comigo", "não consigo ler", "você consegue me enviar um áudio?").
   3. Se as instruções da Persona determinarem que você responda por áudio/voz.
 - DECISÃO DINÂMICA DE BALÕES (ÁUDIO VS TEXTO):
-  - Você PODE e DEVE decidir quais balões enviar em áudio e quais em texto na mesma resposta:
+  - QUANDO `send_as_audio = True`:
+    * Você PODE e DEVE decidir quais balões enviar em áudio e quais em texto na mesma resposta.
     * Para marcar um balão específico como áudio, inicie-o com a tag `[AUDIO]` (ex: `[AUDIO] Olá, que bom falar com você!`).
-    * Para marcar um balão específico como texto, inicie-o com a tag `[TEXTO]` (ex: `[TEXTO] Acesse o nosso site pelo link: https://...`).
-    * Se `send_as_audio = True`, balões normais são falados em áudio por padrão, EXCETO balões que contenham links/URLs ou que estejam marcados com `[TEXTO]`.
+    * Para marcar um balão específico como texto (contendo links/URLs ou especificações detalhadas), inicie-o com a tag `[TEXTO]` (ex: `[TEXTO] Acesse o link: https://...`).
+    * Balões normais sem tag são falados em áudio por padrão, EXCETO balões que contenham links/URLs ou que estejam marcados com `[TEXTO]`.
+  - QUANDO `send_as_audio = False` (RESPOSTA EM TEXTO NORMAL):
+    * 🚨 NUNCA use tags como `[TEXTO]`, `[AUDIO]` ou `[VOZ]`. Escreva diretamente o texto limpo sem tags de formatação entre colchetes.
 - 🚨 REGRA SUPREMA: É TERMINANTEMENTE PROIBIDO ENVIAR LINKS/URLS EM ÁUDIO:
   - NUNCA coloque links, sites, URLs (ex: https://..., www....) dentro de áudios. A síntese de voz não deve soletrar links.
-  - Se for enviar ou sugerir um link/site, coloque SEMPRE o link em um balão de TEXTO separado (usando `[TEXTO]` ou quebra de linha), para que o cliente consiga clicar normalmente no WhatsApp.
+  - Se for enviar ou sugerir um link/site, coloque SEMPRE o link em um balão de TEXTO separado (usando `[TEXTO]` se send_as_audio=True ou quebra de linha), para que o cliente consiga clicar normalmente no WhatsApp.
 - REGRAS PARA O TEXTO QUANDO ENVIADO EM ÁUDIO:
   - Escreva um texto EXTREMAMENTE NATURAL, DIRETO e CONVERSACIONAL (máximo de 1 a 2 frases curtas).
-  - NUNCA use marcadores de lista (*, -, •), títulos (#), tabelas, URLs ou emojis soltos no texto do áudio, pois a síntese de voz lerá esses símbolos. Escreva a frase com pontuação natural como alguém que está gravando um áudio pelo WhatsApp.
+  - NUNCA use marcadores de lista (*, -, •), títulos (#), tabelas, URLs ou emojis soltos no texto do áudio.
 - SE NÃO FOR RESPONDER POR ÁUDIO: Mantenha `send_as_audio = False` e formule o texto normal formatado para WhatsApp."""
     else:
-        tts_voice_info = "🎙️ RESPOSTA POR ÁUDIO (TTS): Voz desativada. Mantenha `send_as_audio = False`."
+        tts_voice_info = "🎙️ RESPOSTA POR ÁUDIO (TTS): Voz desativada. Mantenha `send_as_audio = False` e NUNCA inclua tags `[TEXTO]` ou `[AUDIO]` no corpo da mensagem."
 
     data_hora_info = state.get("data_hora_atual") or "Horário atual de Brasília"
 
@@ -167,9 +171,17 @@ USER: {user_input}
         if total_tokens > (in_tokens + out_tokens):
             out_tokens += (total_tokens - (in_tokens + out_tokens))
 
-        logger.info(f"[Generator Node] Resposta gerada (send_as_audio={gen_output.send_as_audio}, intent_handoff={gen_output.intent_handoff}, handoff_destinatario={gen_output.handoff_destinatario}): '{gen_output.response_text[:100]}...'")
+        raw_text = gen_output.response_text or ""
+        is_audio_active = bool(gen_output.send_as_audio and tts_voice)
+        # Se não for envio de áudio, limpa qualquer resíduo de [TEXTO], [AUDIO], etc.
+        if not is_audio_active:
+            clean_draft_resp = re.sub(r'\[(?:TEXTO|TEXT|AUDIO|ÁUDIO|VOZ)\]\s*', '', raw_text, flags=re.IGNORECASE).strip()
+        else:
+            clean_draft_resp = raw_text.strip()
 
-        text_media_ids = [m.strip() for m in MEDIA_TAG_REGEX.findall(gen_output.response_text or "") if m.strip()]
+        logger.info(f"[Generator Node] Resposta gerada (send_as_audio={gen_output.send_as_audio}, intent_handoff={gen_output.intent_handoff}, handoff_destinatario={gen_output.handoff_destinatario}): '{clean_draft_resp[:100]}...'")
+
+        text_media_ids = [m.strip() for m in MEDIA_TAG_REGEX.findall(clean_draft_resp) if m.strip()]
         all_media_ids = list(dict.fromkeys((gen_output.media_file_ids or []) + text_media_ids))
 
         handoff_dest = gen_output.handoff_destinatario.strip() if gen_output.handoff_destinatario and gen_output.handoff_destinatario.strip() else None
@@ -182,7 +194,7 @@ USER: {user_input}
         iterations.append({
             "retry_count": state.get("retry_count", 0),
             "critique_received": state.get("critique") or None,
-            "draft_response": gen_output.response_text,
+            "draft_response": clean_draft_resp,
             "send_as_audio": gen_output.send_as_audio,
             "intent_handoff": gen_output.intent_handoff,
             "handoff_destinatario": handoff_dest,
@@ -193,8 +205,39 @@ USER: {user_input}
         })
         audit_trail["iterations"] = iterations
 
+        novo_nome_val = gen_output.novo_nome_cliente.strip() if gen_output.novo_nome_cliente and gen_output.novo_nome_cliente.strip() else None
+        nome_cliente_check = (novo_nome_val or nome_cliente_atual or "").strip().lower()
+        nome_cliente_tokens = set(t for t in re.split(r'\s+', nome_cliente_check) if len(t) > 2) if nome_cliente_check else set()
+
+        sanitized_tags = []
+        for t in (gen_output.tags_para_adicionar or []):
+            if not t or not str(t).strip():
+                continue
+            t_clean = str(t).strip()
+            t_lower = t_clean.lower()
+            # Descarta qualquer tag que coincida com o nome do cliente ou partes dele
+            if nome_cliente_check and (t_lower == nome_cliente_check or t_lower in nome_cliente_tokens):
+                logger.warning(f"[Generator Node] Tag descartada por corresponder ao nome do cliente: '{t_clean}'")
+                continue
+            sanitized_tags.append(t_clean)
+
+        # Higienização de IDs de mídia: apenas IDs que realmente constam no contexto recuperado
+        valid_context_str = f"{state.get('retrieved_context') or ''}\n{str(state.get('tool_results') or [])}"
+        sanitized_media_ids = []
+        for fid in all_media_ids:
+            if not fid:
+                continue
+            fid_clean = str(fid).strip()
+            if " " in fid_clean or len(fid_clean) > 80:
+                logger.warning(f"[Generator Node] Media ID descartado por formato inválido/espaços: '{fid_clean}'")
+                continue
+            if fid_clean not in valid_context_str:
+                logger.warning(f"[Generator Node] Media ID descartado por não constar no contexto recuperado: '{fid_clean}'")
+                continue
+            sanitized_media_ids.append(fid_clean)
+
         return {
-            "draft_response": gen_output.response_text,
+            "draft_response": clean_draft_resp,
             "send_as_audio": bool(gen_output.send_as_audio and tts_voice),
             "resumo_crm": gen_output.resumo_atualizado,
             "status_final": "Atendente Chamado" if intent_handoff_val else ("Concluído" if is_conclude else "Aguardando Resposta"),
@@ -202,9 +245,9 @@ USER: {user_input}
             "intent_handoff": intent_handoff_val,
             "handoff_destinatario": handoff_dest,
             "handoff_motivo": handoff_mot,
-            "media_file_ids": [fid for fid in all_media_ids if fid and str(fid).strip()],
-            "novo_nome_cliente": gen_output.novo_nome_cliente.strip() if gen_output.novo_nome_cliente and gen_output.novo_nome_cliente.strip() else None,
-            "tags_para_adicionar": [t.strip() for t in (gen_output.tags_para_adicionar or []) if t and str(t).strip()],
+            "media_file_ids": sanitized_media_ids,
+            "novo_nome_cliente": novo_nome_val,
+            "tags_para_adicionar": sanitized_tags,
             "ai_audit_trail": audit_trail,
             "input_tokens": state.get("input_tokens", 0) + in_tokens,
             "output_tokens": state.get("output_tokens", 0) + out_tokens

@@ -353,9 +353,10 @@ class GeminiService:
                 "## INSTRUÇÃO DE ANÁLISE OBJETIVA E GENÉRICA\n"
                 "Analise a mídia fornecida (imagem, documento ou foto) em conjunto com o histórico recente da conversa.\n"
                 "Forneça um resumo extremamente direto, factual e objetivo em no máximo 3 a 5 tópicos curtos. Foque EXCLUSIVAMENTE em:\n"
-                "1. *Elemento/Item Principal:* Identifique o produto, documento, objeto, local, comprovante ou item central demonstrado na mídia.\n"
-                "2. *Dados e Informações Visíveis:* Extraia apenas textos, números, especificações, códigos, marcas, tabelas ou medidas visíveis de forma direta e literal (se houver).\n"
-                "3. *Contexto do Atendimento:* Relacione a mídia apresentada ao histórico recente da conversa e à necessidade do cliente.\n\n"
+                "1. *Elemento/Item Principal:* Identifique o produto, documento, objeto, local, formato de aplicação (ex: em rolo, placas/réguas modulares, painel rígido, etc.), comprovante ou item central demonstrado na mídia.\n"
+                "2. *Dados e Informações Visíveis:* Extraia apenas textos, legendas, números, especificações, códigos, marcas, tabelas ou medidas visíveis de forma direta e literal (se houver).\n"
+                "3. *Contexto do Atendimento:* Relacione a mídia apresentada à dúvida ou necessidade do cliente com total neutralidade.\n\n"
+                "🚨 PREVENÇÃO DE VIÉS DE CONFIRMAÇÃO: Descreva estritamente o que está visualmente visível na imagem. NUNCA afirme ou 'confirme' que a mídia retrata um modelo específico apenas porque ele foi mencionado no histórico da conversa se a imagem não contiver comprovação visual ou textual explícita disso.\n"
                 "PROIBIDO descrever detalhes estéticos secundários irrelevantes de fundo. Mantenha a descrição genérica, concisa e aplicável a qualquer segmento de empresa, sem fazer suposições não fundamentadas."
             )
             

@@ -68,11 +68,15 @@ def validate_response_urls(draft_response: str, sources_text: str) -> Tuple[bool
     for du in draft_urls:
         du_norm = normalize_for_comparison(du)
 
-        # 1. Correspondência exata (mesmo caminho e parâmetros)
+        # 1. Correspondência exata (mesmo caminho e parâmetros normalizados)
         if du_norm in source_norm_map:
             continue
 
-        # 2. Se a URL gerada é uma versão comprimida/truncada de alguma URL da fonte
+        # 2. Checagem se a URL existe literalmente no texto bruto das fontes ou diretrizes
+        if du in sources_text:
+            continue
+
+        # 3. Se a URL gerada é uma versão comprimida/truncada de alguma URL da fonte
         truncated_match = None
         for su in source_urls:
             su_norm = normalize_for_comparison(su)
@@ -85,10 +89,6 @@ def validate_response_urls(draft_response: str, sources_text: str) -> Tuple[bool
                 f"A URL '{du}' foi comprimida ou truncada. Envie a URL exatamente e integralmente "
                 f"como ela consta na base de conhecimento ou diretrizes da empresa: '{truncated_match}'."
             )
-
-        # 3. Checagem se existe literalmente no texto bruto das fontes
-        if du in sources_text:
-            continue
 
         # 4. Caso contrário, a URL foi inventada ou alterada
         return False, (
@@ -120,28 +120,40 @@ def validate_response_media(
     3. Se prometeu envio de vídeo/foto, incluiu a tag correspondente ou media_file_ids.
     """
     tags = extract_media_tags(draft_response)
+    has_sources_media = ("id_arquivo" in sources_text) or ("id_drive" in sources_text)
     
     for tag in tags:
         # Se contiver espaços ou texto descritivo
         if " " in tag:
+            if not has_sources_media:
+                return False, (
+                    f"A tag '[MEDIA: {tag}]' é inválida. Não há arquivos de mídia recuperados no contexto RAG. "
+                    f"Remova completamente qualquer tag [MEDIA: ...] e responda exclusivamente em texto."
+                )
             return False, (
-                f"A tag '[MEDIA: {tag}]' contém texto descritivo com espaços em vez do 'id_arquivo' técnico do Google Drive. "
-                f"Use estritamente o código exato presente no campo 'id_arquivo' dos documentos recuperados da base de conhecimento (ex: [MEDIA: 1PLqahFtwRcDQv8TPkIU97g-wsJ0WRXkA])."
+                f"A tag '[MEDIA: {tag}]' contém texto descritivo ou placeholder em vez do código técnico do Google Drive. "
+                f"Use estritamente o código alfanumérico exato presente no campo 'id_arquivo' dos documentos recuperados, ou remova a tag."
             )
         
         # Se a tag não aparece no texto das fontes recuperadas
         if tag not in sources_text:
+            if not has_sources_media:
+                return False, (
+                    f"O identificador de mídia '[MEDIA: {tag}]' é inválido pois nenhuma mídia foi recuperada no contexto RAG atual. "
+                    f"Remova completamente qualquer tag [MEDIA: ...] e responda apenas em texto."
+                )
             return False, (
                 f"O identificador de mídia '[MEDIA: {tag}]' não foi encontrado no contexto RAG recuperado. "
-                f"Utilize estritamente o 'id_arquivo' do Google Drive fornecido no contexto de documentos."
+                f"Utilize estritamente o 'id_arquivo' do Google Drive fornecido no contexto de documentos, ou remova a tag."
             )
 
     # Checagem de promessa explícita de mídia sem tag ou sem media_file_ids
     lower_draft = (draft_response or "").lower()
     media_promise_patterns = [
-        r'\b(?:veja|assista|segue|confira|envio|estou enviando)\s+(?:o\s+)?(?:vídeo|video)\b',
-        r'\b(?:veja|segue|confira|envio|estou enviando)\s+(?:a\s+)?(?:foto|imagem)\b',
-        r'\b(?:segue|envio|estou enviando)\s+(?:o\s+)?(?:catálogo|catalogo|pdf|documento)\b',
+        r'\b(?:veja|assista|segue|confira|envio|estou enviando|preparei|separei|aqui está|aqui esta|vou te enviar|vou enviar|vou te mandar|vou mandar)\s+(?:um\s+|uma\s+|o\s+|a\s+)?(?:vídeo|video)\b',
+        r'\b(?:veja|segue|confira|envio|estou enviando|preparei|separei|aqui está|aqui esta|vou te enviar|vou enviar|vou te mandar|vou mandar)\s+(?:uma\s+|a\s+)?(?:foto|imagem)\b',
+        r'\b(?:segue|envio|estou enviando|preparei|separei|aqui está|aqui esta|vou te enviar|vou enviar|vou te mandar|vou mandar)\s+(?:um\s+|o\s+)?(?:catálogo|catalogo|pdf|documento)\b',
+        r'\b(?:preparei|separei)\s+(?:um\s+)?(?:vídeo|video|foto|imagem|catálogo|catalogo)\b',
     ]
     has_promise = any(re.search(pat, lower_draft) for pat in media_promise_patterns)
     has_attached_media = bool(tags or (media_file_ids and len(media_file_ids) > 0))
@@ -149,7 +161,7 @@ def validate_response_media(
     if has_promise and not has_attached_media:
         if "id_arquivo" in sources_text:
             return False, (
-                "A mensagem informa ao cliente que está enviando/mostrando um vídeo, foto ou catálogo, "
+                "A mensagem informa ao cliente que está enviando/mostrando, preparou ou separou um vídeo, foto ou catálogo, "
                 "mas não incluiu a tag [MEDIA: id_arquivo] nem preencheu o campo media_file_ids. "
                 "Insira a tag [MEDIA: <id_exato>] com o id_arquivo presente no contexto RAG."
             )
@@ -279,11 +291,36 @@ Mensagem Gerada para Avaliação:
         if total_tokens > (in_tokens + out_tokens):
             out_tokens += (total_tokens - (in_tokens + out_tokens))
 
+        # Se for válido, assegura que campos de crítica e razão fiquem nulos
+        if evaluation.is_valid:
+            evaluation.critique = None
+            evaluation.reason = None
+
+        critique_log = f", critique='{evaluation.critique}'" if not evaluation.is_valid and evaluation.critique else ""
+        reason_log = f", reason='{evaluation.reason}'" if not evaluation.is_valid and evaluation.reason else ""
+
         logger.info(
             f"[Guardrail Node] Veredito do Juiz (Atend {state.get('atendimento_id')}): "
-            f"is_valid={evaluation.is_valid}, approve_handoff={evaluation.approve_handoff}, "
-            f"reason='{evaluation.reason}', critique='{evaluation.critique}'"
+            f"is_valid={evaluation.is_valid}, approve_handoff={evaluation.approve_handoff}"
+            f"{reason_log}{critique_log}"
         )
+
+        # Salvaguarda determinística contra loops em saudações simples do cliente
+        user_input_raw = (state.get("user_input") or "").strip().lower().rstrip('.!?,')
+        is_client_greeting = user_input_raw in [
+            "olá", "ola", "oi", "oii", "oiii", "opa", "bom dia", "boa tarde", "boa noite", 
+            "tudo bem", "tudo bom", "e ai", "e aí", "fala", "salve"
+        ]
+        if is_client_greeting and not evaluation.is_valid:
+            critique_lower = (evaluation.critique or "").lower()
+            reason_lower = (evaluation.reason or "").lower()
+            greeting_terms = ["saudação", "saudacao", "saudações", "saudacoes", "cumprimento", "repetir saudação", "repetiu a saudação"]
+            if any(term in critique_lower or term in reason_lower for term in greeting_terms):
+                if urls_valid and media_valid and not evaluation.approve_handoff:
+                    logger.info(f"[Guardrail Node] Reprovação de saudação anulada: cliente enviou saudação ('{user_input_raw}').")
+                    evaluation.is_valid = True
+                    evaluation.critique = None
+                    evaluation.reason = None
 
         # Se as URLs ou Mídias falharam na checagem estrita, reprova conjuntamente
         final_is_valid = evaluation.is_valid and urls_valid and media_valid
@@ -294,8 +331,8 @@ Mensagem Gerada para Avaliação:
             iterations[-1]["guardrail"] = {
                 "is_valid": evaluation.is_valid,
                 "approve_handoff": evaluation.approve_handoff,
-                "critique": evaluation.critique,
-                "reason": evaluation.reason,
+                "critique": evaluation.critique if not final_is_valid else None,
+                "reason": evaluation.reason if not final_is_valid else None,
                 "urls_valid": urls_valid,
                 "url_critique": url_critique if not urls_valid else None,
                 "media_valid": media_valid,
@@ -309,7 +346,7 @@ Mensagem Gerada para Avaliação:
                 critique_list.append(url_critique)
             if not media_valid and media_critique:
                 critique_list.append(media_critique)
-            if evaluation.critique and evaluation.critique.strip().lower() != "aprovado":
+            if evaluation.critique and evaluation.critique.strip().lower() not in ["aprovado", "null", "none", ""]:
                 critique_list.append(evaluation.critique)
             final_critique = " | ".join(critique_list) if critique_list else "Proposta reprovada pelo Juiz de atendimento."
 

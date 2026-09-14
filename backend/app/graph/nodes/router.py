@@ -117,12 +117,34 @@ USER: {user_input}
                 final_intent = "rag"
                 final_search_query = synthesize_contextual_search_query(user_input, history, user_input)
 
-        # 3. Se a intenção final for RAG, garante query de busca enriquecida com o histórico recente
+        # 3. Detecção de promessa pendente de mídia na mensagem anterior da IA
+        from app.graph.history_utils import detect_pending_media_promise
+        pending_media_cat = detect_pending_media_promise(history)
+        if pending_media_cat and (final_intent in ["rag", "direct_chat"] or not final_tool):
+            logger.info(f"[Router Node] Promessa pendente de mídia detectada ({pending_media_cat}) para Atend {state.get('atendimento_id')}. Direcionando busca para {pending_media_cat}.")
+            final_intent = "rag"
+            final_target_category = pending_media_cat
+            final_search_query = synthesize_contextual_search_query(user_input, history, final_search_query)
+
+        # 4. Se a intenção final for RAG, garante query de busca enriquecida com o histórico recente
         if final_intent == "rag":
             final_search_query = synthesize_contextual_search_query(user_input, history, final_search_query)
 
-        is_handoff = bool(final_intent == "handoff" or final_tool == "transferir_para_atendente")
+        # 5. Salvaguarda contra conclusão prematura se o cliente adiou por confusão ou mal-entendido
         is_conclude = bool(final_intent == "conclude" or final_tool == "concluir_atendimento")
+        if is_conclude:
+            lower_input = (user_input or "").lower()
+            postponement_friction = any(term in lower_input for term in [
+                "não foi assim", "nao foi assim", "não foi isso", "nao foi isso", 
+                "diferente", "confuso", "confusa", "não é esse", "nao é esse", "nao adianta", "não adianta"
+            ])
+            if postponement_friction:
+                logger.info(f"[Router Node] Conclusão prematura prevenida: cliente expressou dúvida/atrito ('{user_input}'). Reclassificando para 'rag'.")
+                is_conclude = False
+                final_intent = "rag"
+                final_search_query = synthesize_contextual_search_query(user_input, history, user_input)
+
+        is_handoff = bool(final_intent == "handoff" or final_tool == "transferir_para_atendente")
 
         audit_trail = {
             "turn_timestamp": datetime.now(timezone.utc).isoformat(),

@@ -96,6 +96,7 @@ async def fallback_node(state: AgentState) -> Dict[str, Any]:
             "status_final": "Aguardando Resposta",
             "intent_handoff": False,
             "validation_passed": True,
+            "media_file_ids": [],
             "ai_audit_trail": audit_trail,
             "input_tokens": state.get("input_tokens", 0) + in_tokens,
             "output_tokens": state.get("output_tokens", 0) + out_tokens
@@ -228,6 +229,7 @@ Gere uma mensagem curta, direta e profissional informando que está direcionando
         "status_final": "Atendente Chamado",
         "intent_handoff": True,
         "validation_passed": True,
+        "media_file_ids": [],
         "ai_audit_trail": audit_trail,
         "input_tokens": state.get("input_tokens", 0) + in_tokens,
         "output_tokens": state.get("output_tokens", 0) + out_tokens
