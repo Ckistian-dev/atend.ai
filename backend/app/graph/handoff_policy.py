@@ -15,6 +15,9 @@ EXPLICIT_HUMAN_REQUEST_PATTERNS = [
     re.compile(r'\b(?:falar\s+com\s+algu[eé]m|falar\s+com\s+gente|falar\s+com\s+uma\s+pessoa)\b', re.IGNORECASE),
     re.compile(r'\b(?:atendimento\s+humano|suporte\s+humano|atendente\s+humano)\b', re.IGNORECASE),
     re.compile(r'\b(?:transfere\s+logo|me\s+passa\s+para\s+algu[eé]m|me\s+transfere)\b', re.IGNORECASE),
+    re.compile(r'\b(?:pode\s+)?(?:me\s+)?(?:conectar|transferir|passar|chamar)\s+(?:com\s+ele|com\s+ela|com\s+algu[eé]m|com\s+eles|com\s+a\s+equipe)\b', re.IGNORECASE),
+    re.compile(r'\b(?:sim\s*[,!]?\s*)?(?:claro\s*[,!]?\s*)?(?:pode\s+me\s+conectar|pode\s+conectar|pode\s+transferir)\b', re.IGNORECASE),
+    re.compile(r'\b(?:conectar|conecta)\s+(?:com\s+ele|com\s+o\s+comercial|com\s+a\s+equipe|com\s+vendedor)\b', re.IGNORECASE),
 ]
 
 # Expressões regulares para escalações formais / reclamações graves
@@ -27,17 +30,19 @@ FORMAL_ESCALATION_PATTERNS = [
 
 # Gatilhos em mensagens anteriores da IA oferecendo transferência humana
 ASSISTANT_TRANSFER_OFFER_PATTERNS = [
-    re.compile(r'\b(?:deseja|quer|prefere|posso|gostaria\s+que\s+eu)\s+(?:te\s+)?(?:transfira|passar|direcionar|encaminhar)\s+(?:para\s+)?(?:um\s+)?(?:atendente|nossa\s+equipe|especialista|suporte)\b', re.IGNORECASE),
-    re.compile(r'\b(?:prefere\s+falar\s+com\s+(?:a\s+nossa\s+equipe|um\s+atendente|um\s+especialista))\b', re.IGNORECASE),
-    re.compile(r'\b(?:posso\s+transferir\s+seu\s+atendimento)\b', re.IGNORECASE),
-    re.compile(r'\b(?:deseja\s+falar\s+com\s+um\s+(?:atendente|especialista|humano))\b', re.IGNORECASE),
+    re.compile(r'\b(?:deseja|quer|prefere|posso|gostaria\s+que\s+eu)\s+(?:te\s+)?(?:transfira|transferir|transferisse|passar|passasse|direcionar|encaminhar|conectar|conectasse|chamar)\s+(?:para\s+|com\s+)?(?:um\s+|uma\s+)?(?:atendente|humano|nossa\s+equipe|equipe|equipe\s+comercial|especialista|suporte|colega|colega\s+da\s+nossa\s+equipe|vendedor)\b', re.IGNORECASE),
+    re.compile(r'\b(?:prefere\s+falar\s+com\s+(?:a\s+nossa\s+equipe|um\s+atendente|um\s+especialista|um\s+colega))\b', re.IGNORECASE),
+    re.compile(r'\b(?:posso\s+(?:transferir|conectar|passar)\s+seu\s+atendimento)\b', re.IGNORECASE),
+    re.compile(r'\b(?:deseja\s+falar\s+com\s+um\s+(?:atendente|especialista|humano|colega))\b', re.IGNORECASE),
+    re.compile(r'\b(?:conectar|conectasse)\s+com\s+(?:um\s+colega|a\s+equipe|algu[eé]m)\b', re.IGNORECASE),
 ]
 
 # Respostas afirmativas curtas do cliente a ofertas
 AFFIRMATIVE_RESPONSES = {
     "sim", "quero", "pode ser", "por favor", "porfavor", "prefiro", "transfere",
     "sim por favor", "sim quero", "quero sim", "pode transferir", "pode passar",
-    "sim pode transferir", "transfere sim", "claro", "com certeza", "isso"
+    "sim pode transferir", "transfere sim", "claro", "com certeza", "isso",
+    "sim claro", "claro sim", "pode conectar", "pode me conectar", "sim pode conectar"
 }
 
 # Expressões de interesse comercial / vendas / dúvidas que NUNCA devem ser confundidas com handoff
@@ -94,7 +99,10 @@ def was_responding_to_transfer_offer(last_assistant_msg: str, user_input: str) -
     if clean_user in AFFIRMATIVE_RESPONSES:
         return True
     
-    if any(clean_user.startswith(aff) for aff in ["sim", "quero", "pode transferir", "pode passar", "prefiro"]):
+    if any(clean_user.startswith(aff) for aff in ["sim", "quero", "pode transferir", "pode passar", "pode conectar", "pode me conectar", "prefiro", "claro"]):
+        return True
+
+    if re.search(r'\b(?:pode\s+(?:me\s+)?(?:conectar|transferir|passar)|sim\s+claro|claro\s+pode)\b', clean_user):
         return True
 
     return False

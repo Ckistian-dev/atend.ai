@@ -387,6 +387,7 @@ function Mensagens() {
     const sendingQueueRef = useRef(sendingQueue);
     const isProcessingRef = useRef(isProcessing);
     const manuallyUnreadIdsRef = useRef(new Set());
+    const hasInitialLoadedRef = useRef(false);
 
     useEffect(() => { sendingQueueRef.current = sendingQueue; }, [sendingQueue]);
     useEffect(() => { isProcessingRef.current = isProcessing; }, [isProcessing]);
@@ -586,9 +587,10 @@ function Mensagens() {
                     }
 
                     // Lógica para manter mensagens otimistas (em envio)
+                    const currentQueue = sendingQueueRef.current || {};
                     const busyAtendimentoIds = new Set(
-                        Object.keys(sendingQueue)
-                            .filter(id => sendingQueue[id]?.length > 0)
+                        Object.keys(currentQueue)
+                            .filter(id => (currentQueue[id] || []).length > 0)
                             .map(id => parseInt(id, 10))
                     );
 
@@ -615,7 +617,7 @@ function Mensagens() {
             if (isInitialLoad) setIsLoading(false);
             setIsFetchingMore(false);
         }
-    }, [debouncedSearchTerm, limit, activeFilters, statusFilters, tagFilters, departmentFilter, timeStart, timeEnd, sendingQueue]);
+    }, [debouncedSearchTerm, limit, activeFilters, statusFilters, tagFilters, departmentFilter, timeStart, timeEnd]);
 
     // --- Efeito: Polling Seguro (COM PAUSA EM SEGUNDO PLANO) ---
     useEffect(() => {
@@ -633,7 +635,12 @@ function Mensagens() {
             }
         };
 
-        fetchData(true).then(() => {
+        const isInitial = !hasInitialLoadedRef.current;
+        if (isInitial) {
+            hasInitialLoadedRef.current = true;
+        }
+
+        fetchData(isInitial).then(() => {
             if (isMounted) timeoutId = setTimeout(poll, 6000);
         });
 
@@ -838,12 +845,22 @@ function Mensagens() {
             } else if (selectedAtendimento) {
                 const updatedSelected = sortedFiltered.find(at => at.id === selectedAtendimento.id);
                 if (updatedSelected) {
+                    const isBusy = (sendingQueueRef.current?.[selectedAtendimento.id] || []).length > 0;
+                    const hasSendingLocally = Array.isArray(selectedAtendimento.mensagens) &&
+                        selectedAtendimento.mensagens.some(m => m && m.type === 'sending');
+
                     // Compara timestamps para evitar sobrescrever a UI com dados antigos
                     const localDate = new Date(selectedAtendimento.last_message_at || selectedAtendimento.updated_at).getTime();
                     const serverDate = new Date(updatedSelected.last_message_at || updatedSelected.updated_at).getTime();
                     const localLen = Array.isArray(selectedAtendimento.mensagens) ? selectedAtendimento.mensagens.length : 0;
                     const serverLen = Array.isArray(updatedSelected.mensagens) ? updatedSelected.mensagens.length : 0;
-                    if (serverDate >= localDate || serverLen !== localLen) {
+
+                    if (isBusy || hasSendingLocally) {
+                        // Se o atendimento ativo está enviando mídia/texto, não sobrescreve com dados do servidor que ainda não têm a mensagem
+                        if (serverLen > localLen || serverDate > localDate) {
+                            setSelectedAtendimento(updatedSelected);
+                        }
+                    } else if (serverDate >= localDate || serverLen !== localLen) {
                         setSelectedAtendimento(updatedSelected);
                     }
                 } else {
@@ -1068,29 +1085,33 @@ function Mensagens() {
 
 
     const addOptimisticMessage = (atendimentoId, msg) => {
-        // Atualiza apenas o atendimento selecionado, sem alterar a lista da sidebar.
-        if (selectedAtendimento?.id === atendimentoId) {
-            setSelectedAtendimento(prevAtendimento => {
-                let currentList = [];
-                if (Array.isArray(prevAtendimento.mensagens) && prevAtendimento.mensagens.length > 0) {
-                    currentList = [...prevAtendimento.mensagens];
-                } else if (typeof prevAtendimento.conversa === 'string') {
-                    try {
-                        currentList = JSON.parse(prevAtendimento.conversa || '[]');
-                    } catch {
-                        currentList = [];
-                    }
-                } else if (Array.isArray(prevAtendimento.conversa)) {
-                    currentList = [...prevAtendimento.conversa];
+        const appendMsg = (prev) => {
+            if (!prev) return prev;
+            let currentList = [];
+            if (Array.isArray(prev.mensagens) && prev.mensagens.length > 0) {
+                currentList = [...prev.mensagens];
+            } else if (typeof prev.conversa === 'string') {
+                try {
+                    currentList = JSON.parse(prev.conversa || '[]');
+                } catch {
+                    currentList = [];
                 }
-                const updatedList = [...currentList, msg];
-                return {
-                    ...prevAtendimento,
-                    mensagens: updatedList,
-                    conversa: JSON.stringify(updatedList),
-                };
-            });
-        }
+            } else if (Array.isArray(prev.conversa)) {
+                currentList = [...prev.conversa];
+            }
+            const updatedList = [...currentList, msg];
+            return {
+                ...prev,
+                mensagens: updatedList,
+                conversa: JSON.stringify(updatedList),
+                last_message_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
+        };
+
+        // Atualiza tanto o chat selecionado quanto a lista em memória para manter consistência sem piscadas
+        setSelectedAtendimento(prev => (prev?.id === atendimentoId ? appendMsg(prev) : prev));
+        setAtendimentos(prev => prev.map(at => (at.id === atendimentoId ? appendMsg(at) : at)));
     };
 
     const updateAtendimentoState = (atendimentoId, updatedAtendimento) => {
@@ -1272,7 +1293,8 @@ function Mensagens() {
             id: optimisticId,
             role: 'assistant',
             type: 'sending',
-            content: caption ? caption : `Enviando ${type}...`,
+            mediaType: type,
+            content: caption ? caption : (type === 'audio' ? 'Processando áudio de voz...' : `Enviando ${type}...`),
             caption: caption,
             localUrl: localUrl,
             filename: filename,
@@ -1777,6 +1799,8 @@ function Mensagens() {
 
                             <div className="px-3 sm:px-6 pt-2 pb-4 sm:py-4 bg-white/40 border-t border-white/50">
                                 <ChatFooter
+                                    key={selectedAtendimento.id}
+                                    atendimentoId={selectedAtendimento.id}
                                     onSendMessage={handleSendMessage}
                                     onSendMedia={handleSendMedia}
                                     onOpenTemplateModal={() => setIsTemplateModalOpen(true)}

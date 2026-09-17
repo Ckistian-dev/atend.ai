@@ -1,3 +1,4 @@
+import re
 import pytz
 from datetime import datetime
 from typing import List, Dict, Any, Optional
@@ -128,7 +129,9 @@ PORTUGUESE_STOPWORDS = {
     "ter", "teu", "teus", "tinha", "tinham", "toda", "todas", "todo", "todos", "tu", "tua", "tuas", "tudo", "um", 
     "uma", "umas", "uns", "você", "voce", "vocês", "voces", "vos", "olá", "ola", "oi", "bom", "boa", "dia", "tarde", "noite", 
     "sim", "ok", "quero", "gostaria", "pode", "podemos", "seria", "favor", "obrigado", "obrigada", "valeu",
-    "deseja", "prefere", "temos", "consegue", "ajudar", "sobre", "qualquer", "aqui", "ali", "então", "entao"
+    "deseja", "prefere", "temos", "consegue", "ajudar", "sobre", "qualquer", "aqui", "ali", "então", "entao",
+    "chamar", "chamo", "chama", "nome", "antes", "continuar", "continuarmos", "posso", "pode", "dizer", "dizer-me",
+    "quais", "gentileza", "saber", "olhar", "conferir", "site", "link", "links", "url", "urls"
 }
 
 def extract_substantive_tokens(text: str, max_tokens: int = 4) -> List[str]:
@@ -159,14 +162,23 @@ def detect_pending_media_promise(history: List[Dict[str, Any]]) -> Optional[str]
         return None
 
     import re
+    # Se a mensagem anterior da IA já contém uma tag de mídia entregue, não há promessa pendente
+    if re.search(r'\[(?:media|arquivo|imagem|doc|foto|video):', last_assistant):
+        return None
+
     has_video = bool(re.search(r'\b(?:vídeo|video|videos|vídeos)\b', last_assistant))
     has_photo = bool(re.search(r'\b(?:foto|fotos|imagem|imagens)\b', last_assistant))
     has_doc = bool(re.search(r'\b(?:catálogo|catalogo|pdf|documento|tabela)\b', last_assistant))
 
     promise_verbs = bool(re.search(
-        r'\b(?:vou te enviar|vou enviar|vou te mandar|vou mandar|posso te enviar|posso enviar|quer ver|gostaria de ver|preparei|separei|te mostro|vou te mostrar)\b', 
+        r'\b(?:vou te enviar|vou enviar|vou te mandar|vou mandar|posso te enviar|posso enviar|quer ver|quer que eu envie|gostaria de ver|gostaria\s+que\s+eu\s+(?:te\s+)?envie|deseja\s+que\s+eu\s+(?:te\s+)?envie|preparei|separei|te mostro|vou te mostrar)\b', 
         last_assistant
     ))
+
+    # Evita falso positivo quando a pergunta for apenas direcionamento para o site oficial
+    if "em nosso site" in last_assistant or "no nosso site" in last_assistant or "no site" in last_assistant:
+        if not (has_video or has_photo or has_doc and "enviar" in last_assistant):
+            return None
 
     if promise_verbs or ("vídeo" in last_assistant and "posso saber" in last_assistant):
         if has_video:
@@ -187,18 +199,28 @@ def synthesize_contextual_search_query(
     Sintetiza uma query de busca RAG contextualizada combinando o assunto em discussão
     no histórico recente com a escolha/resposta atual do cliente de forma 100% genérica (multi-tenant).
     """
+    import re
     clean_input = str(user_input or "").strip()
     
-    # Se a query padrão gerada pelo roteador for rica (>= 2 palavras substantivas e não genérica), utiliza diretamente
+    # Se a query padrão gerada pelo roteador for rica (>= 2 palavras substantivas e não genérica/poluída), utiliza diretamente
     if default_query and len(default_query.split()) >= 2:
         dq_lower = default_query.strip().lower()
-        if dq_lower not in ["sim", "não", "nao", "quero", "ok", "pode ser", "produtos", "informações", "serviços"]:
+        is_polluted_with_name_prompt = any(term in dq_lower for term in [
+            "posso chamar", "como posso te chamar", "qual o seu nome", "antes continuarmos", "seu nome", "te chamar"
+        ])
+        if not is_polluted_with_name_prompt and dq_lower not in ["sim", "não", "nao", "quero", "ok", "pode ser", "produtos", "informações", "serviços"]:
             return default_query.strip()
 
     # Extrai termos substantivos da última mensagem do assistente e do input do usuário
     last_assistant = get_last_assistant_message(history)
-    assistant_tokens = extract_substantive_tokens(last_assistant, max_tokens=4)
-    user_tokens = extract_substantive_tokens(clean_input, max_tokens=3)
+    # Remove perguntas de nome do assistente para não contaminar a query
+    clean_assistant = re.sub(r'(?:como\s+posso\s+te\s+chamar|qual\s+(?:é\s+)?(?:o\s+)?seu\s+nome|antes\s+de\s+continuarmos).*$', '', last_assistant, flags=re.IGNORECASE).strip()
+    assistant_tokens = extract_substantive_tokens(clean_assistant or last_assistant, max_tokens=4)
+
+    # Se o input do usuário for apenas uma palavra (como um nome ou confirmação), não usa como token de produto
+    user_tokens = []
+    if len(clean_input.split()) > 1 or clean_input.lower() not in PORTUGUESE_STOPWORDS:
+        user_tokens = extract_substantive_tokens(clean_input, max_tokens=3)
 
     combined_tokens = []
     for t in assistant_tokens:
@@ -213,5 +235,26 @@ def synthesize_contextual_search_query(
 
     # Fallback genérico para o input do usuário ou default_query
     return default_query or clean_input or "informações"
+
+
+FORBIDDEN_OPENERS_REGEX = re.compile(
+    r'^(?:perfeito|com\s+certeza|entendido|isso\s+mesmo|maravilha)\s*[,!.]?\s*', 
+    re.IGNORECASE
+)
+
+def sanitize_forbidden_openers(text: str) -> str:
+    """Remove deterministamente interjeições/bordões proibidos no início da resposta."""
+    if not text:
+        return text
+    import re
+    clean = text.strip()
+    match = FORBIDDEN_OPENERS_REGEX.match(clean)
+    if match:
+        remainder = clean[match.end():].strip()
+        if remainder:
+            remainder = remainder[0].upper() + remainder[1:]
+            return remainder
+    return clean
+
 
 

@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     Paperclip, Mic, Send, Image as ImageIcon, FileText, Loader2, StopCircle, Trash2, FileVideo, MessageSquarePlus, X as XIcon
 } from 'lucide-react';
 
-const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
+const ChatFooter = ({ atendimentoId, onSendMessage, onSendMedia, onOpenTemplateModal }) => {
     const [text, setText] = useState('');
     const [showAttachMenu, setShowAttachMenu] = useState(false);
     const attachMenuRef = useRef(null); // Ref para o menu de anexo
@@ -30,8 +30,63 @@ const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
     const docInputRef = useRef(null);
     const videoInputRef = useRef(null);
 
-    // Efeito para fechar o menu de anexo ao clicar fora
+    // Função para focar com segurança no campo de digitação
+    const focusInput = useCallback(() => {
+        const textarea = textInputRef.current;
+        if (!textarea) return;
+
+        // Se o elemento já for o activeElement (típico descompasso do Chromium ao alternar abas/janelas
+        // onde o cursor visual pisca mas o IME e eventos de teclado não respondem até reestabelecer o contexto),
+        // executamos blur() seguido de focus() para forçar o navegador a reiniciar a captura de teclas.
+        if (document.activeElement === textarea) {
+            textarea.blur();
+        }
+        textarea.focus();
+    }, []);
+
+    // Auto-foco ao montar ou ao alternar atendimentos
     useEffect(() => {
+        const timer = setTimeout(() => {
+            focusInput();
+        }, 50);
+        return () => clearTimeout(timer);
+    }, [atendimentoId, focusInput]);
+
+    // Recuperação imediata de foco ao retornar à aba ou à janela
+    useEffect(() => {
+        const handleWindowFocus = () => {
+            const active = document.activeElement;
+            // Se o usuário estiver com foco em outro campo (como busca ou modal), respeita a interação
+            const isOtherInputFocused = active && 
+                (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA') && 
+                active !== textInputRef.current;
+
+            if (!isOtherInputFocused) {
+                setTimeout(() => {
+                    focusInput();
+                }, 30);
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                handleWindowFocus();
+            }
+        };
+
+        window.addEventListener('focus', handleWindowFocus);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            window.removeEventListener('focus', handleWindowFocus);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [focusInput]);
+
+    // Efeito para fechar o menu de anexo ao clicar fora (ativo somente enquanto o menu estiver aberto)
+    useEffect(() => {
+        if (!showAttachMenu) return;
+
         const handleClickOutside = (event) => {
             if (attachMenuRef.current && !attachMenuRef.current.contains(event.target)) {
                 setShowAttachMenu(false);
@@ -42,7 +97,7 @@ const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, []);
+    }, [showAttachMenu]);
 
     useEffect(() => {
         const textarea = textInputRef.current;
@@ -68,19 +123,19 @@ const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
             // --- INÍCIO DA CORREÇÃO ---
-            // Tenta os formatos aceitos pela WBP primeiro
+            // Tenta os formatos de áudio suportados pelo navegador
             const mimeTypes = [
-                'audio/ogg; codecs=opus', // Ideal
-                'audio/opus',             // Aceito
-                'audio/ogg',              // Aceito
-                'audio/mp3',              // Aceito
-                'audio/webm; codecs=opus' // Fallback (não para WBP, mas para Evo)
+                'audio/webm; codecs=opus', // Padrão Chrome/Edge/Opera
+                'audio/ogg; codecs=opus',  // Suportado por Firefox
+                'audio/webm',
+                'audio/ogg',
+                'audio/mp4'
             ];
             // Encontra o primeiro tipo que o navegador suporta
             const supportedType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type));
 
             if (!supportedType) {
-                alert("Seu navegador não suporta a gravação de áudio em um formato compatível (OGG, Opus ou MP3).");
+                alert("Seu navegador não suporta a gravação de áudio em um formato compatível.");
                 console.error("Nenhum tipo de MIME suportado para gravação de áudio.");
                 return;
             }
@@ -113,32 +168,29 @@ const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
                 }
 
                 // 4. Se NÃO foi cancelado, prossegue com o envio
+                // Identifica o formato real gravado pelo navegador
+                const recordedMimeType = recordingMimeTypeRef.current || 'audio/webm';
+                let targetMimeType = 'audio/webm';
+                let targetExtension = '.webm';
 
-                // --- INÍCIO DA CORREÇÃO (Lógica que você já tinha) ---
-                let targetMimeType = 'audio/ogg'; // O tipo que a WBP aceita
-                let targetExtension = '.ogg';
-
-                // Pega o tipo que o navegador *realmente* gravou
-                const recordedMimeType = recordingMimeTypeRef.current;
-
-                if (recordedMimeType.includes('opus') || recordedMimeType.includes('ogg')) {
-                    targetMimeType = 'audio/ogg'; // WBP aceita 'audio/ogg'
-                    targetExtension = '.ogg';
-                } else if (recordedMimeType.includes('mp3')) {
-                    targetMimeType = 'audio/mpeg'; // Mimetype de MP3
-                    targetExtension = '.mp3';
-                } else {
-                    // Fallback se o navegador gravou algo inesperado
-                    console.warn(`Tipo gravado não otimizado: ${recordedMimeType}. Enviando como .ogg`);
+                if (recordedMimeType.includes('ogg')) {
                     targetMimeType = 'audio/ogg';
                     targetExtension = '.ogg';
+                } else if (recordedMimeType.includes('webm')) {
+                    targetMimeType = 'audio/webm';
+                    targetExtension = '.webm';
+                } else if (recordedMimeType.includes('mp4')) {
+                    targetMimeType = 'audio/mp4';
+                    targetExtension = '.mp4';
+                } else if (recordedMimeType.includes('mp3') || recordedMimeType.includes('mpeg')) {
+                    targetMimeType = 'audio/mpeg';
+                    targetExtension = '.mp3';
                 }
 
-
-                // FORÇA o blob a ter o tipo que a WBP aceita
+                // Cria o blob com o tipo real gravado
+                // O backend se encarrega de converter fielmente para OGG OPUS PTT via FFmpeg
                 const audioBlob = new Blob(audioChunksRef.current, { type: targetMimeType });
                 const filename = `audio_${Date.now()}${targetExtension}`;
-                // --- FIM DA CORREÇÃO ---
 
                 // Envia o Blob
                 if (audioBlob.size > 1000) { // Evita enviar blobs vazios se parar rápido
@@ -361,6 +413,16 @@ const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
         return `${minutes}:${seconds}`;
     };
 
+    const handleCapsuleMouseDown = (e) => {
+        // Se o clique não foi em botões, inputs ou no menu de anexo
+        if (!e.target.closest('button, input[type="file"], .attach-menu-popover')) {
+            if (e.target !== textInputRef.current) {
+                e.preventDefault();
+            }
+            focusInput();
+        }
+    };
+
     return (
         <footer className="footer-loft bg-transparent">
             <input type="file" ref={imageInputRef} accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, 'image')} multiple />
@@ -371,7 +433,9 @@ const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`relative flex ${selectedFiles.length > 0 ? 'items-end' : 'items-center'} gap-3 p-1.5 bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-blue-900/5 border transition-all duration-500 ${isRecording ? 'ring-2 ring-red-500/20' : 'hover:shadow-blue-900/10'} ${isDragging ? 'border-dashed border-blue-500 bg-blue-50/50 scale-[1.01]' : 'border-white'}`}>
+                onMouseDown={handleCapsuleMouseDown}
+                onClick={focusInput}
+                className={`relative flex ${selectedFiles.length > 0 ? 'items-end' : 'items-center'} gap-3 p-1.5 bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl shadow-blue-900/5 border transition-all duration-500 cursor-text ${isRecording ? 'ring-2 ring-red-500/20' : 'hover:shadow-blue-900/10'} ${isDragging ? 'border-dashed border-blue-500 bg-blue-50/50 scale-[1.01]' : 'border-white'}`}>
 
                 {isRecording ? (
                     <div className="flex-1 flex items-center justify-between px-3 h-12">
@@ -402,7 +466,7 @@ const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
                                 </button>
 
                                 {showAttachMenu && (
-                                    <div className="absolute bottom-14 left-0 bg-white border border-slate-100 rounded-[2rem] shadow-2xl w-52 p-1.5 z-50 animate-fade-in">
+                                    <div className="attach-menu-popover absolute bottom-14 left-0 bg-white border border-slate-100 rounded-[2rem] shadow-2xl w-52 p-1.5 z-50 animate-fade-in">
                                         <button onClick={() => imageInputRef.current?.click()} className="w-full flex items-center gap-3 p-3 text-[11px] font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-2xl transition-all">
                                             <div className="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center"><ImageIcon size={16} /></div> Imagem
                                         </button>
@@ -422,7 +486,16 @@ const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
                         </div>
 
                         {/* TEXT INPUT CAPSULE AND PREVIEWS */}
-                        <div className="flex-1 flex flex-col min-w-0 gap-4">
+                        <div 
+                            className={`flex-1 flex flex-col justify-center min-w-0 cursor-text ${selectedFiles.length > 0 ? 'gap-3' : ''}`}
+                            onMouseDown={(e) => {
+                                if (e.target !== textInputRef.current) {
+                                    e.preventDefault();
+                                }
+                                focusInput();
+                            }}
+                            onClick={focusInput}
+                        >
                             {selectedFiles.length > 0 && (
                                 <div className="w-full flex items-center gap-2 pb-2 mb-1 border-b border-slate-100 overflow-x-auto no-scrollbar">
                                     {selectedFiles.map((item, index) => (
@@ -459,6 +532,7 @@ const ChatFooter = ({ onSendMessage, onSendMedia, onOpenTemplateModal }) => {
                                 onChange={(e) => setText(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 onPaste={handlePaste}
+                                onClick={() => textInputRef.current?.focus()}
                             />
                         </div>
 

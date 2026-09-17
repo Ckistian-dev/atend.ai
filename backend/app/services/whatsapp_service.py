@@ -67,45 +67,6 @@ class WhatsAppService:
         """Usa a função global de formatação."""
         return format_whatsapp_number(number)
 
-    def _run_ffmpeg_sync(self, input_path: str, output_path: str):
-        """
-        Função síncrona para executar o ffmpeg.
-        Converte para OGG OPUS (mono, 16kHz) para envio como mensagem de voz nativa gravada (PTT - Push To Talk).
-        """
-        command = [
-            "ffmpeg",
-            "-y",
-            "-i", input_path,
-            "-c:a", "libopus",     # Codec OPUS oficial da Meta para PTT
-            "-b:a", "32k",         # Bitrate de voz nítido e leve
-            "-vbr", "on",
-            "-compression_level", "10",
-            "-ar", "16000",        # 16kHz sample rate padrão de voz
-            "-ac", "1",            # 1 canal (mono obrigatório para PTT)
-            output_path            # Saída .ogg
-        ]
-        
-        try:
-            result = subprocess.run(command, capture_output=True, check=True, text=True, encoding='utf-8')
-            if result.stdout and result.stdout.strip():
-                    logger.info(f"FFmpeg stdout:\n{result.stdout.strip()}")
-            if result.stderr and result.stderr.strip():
-                    common_info = ["ffmpeg version", "configuration:", "libavutil", "libavcodec", "libavformat", "built with gcc", "size=", "time=", "bitrate=", "speed=", "video:", "audio:", "subtitle:", "global headers:", "muxing overhead:"]
-                    is_real_error = not any(info in result.stderr for info in common_info)
-                    if is_real_error:
-                        logger.error(f"FFmpeg stderr (ERRO):\n{result.stderr.strip()}")
-                    else:
-                        logger.warning(f"FFmpeg stderr (INFO): Convertendo...")
-        except FileNotFoundError:
-            logger.error("Comando 'ffmpeg' não encontrado.")
-            raise
-        except subprocess.CalledProcessError as e:
-            stderr_output = e.stderr.strip() if e.stderr else "N/A"
-            logger.error(f"Erro do FFmpeg (código {e.returncode}):\n{stderr_output}")
-            raise
-        except Exception as e:
-                logger.error(f"Erro inesperado rodando FFmpeg sync: {e}", exc_info=True)
-                raise
 
     async def get_media_url_official(self, media_id: str, access_token: str) -> Optional[str]:
         """Etapa B (Oficial): Pega a URL de download a partir do Media ID."""
@@ -313,15 +274,32 @@ class WhatsAppService:
         return None
 
     def _run_ffmpeg_sync(self, input_path: str, output_path: str) -> None:
-        """Executa FFmpeg síncrono para converter qualquer áudio em OGG OPUS mono 48kHz (PTT WhatsApp nativo)."""
+        """
+        Executa FFmpeg síncrono para converter qualquer áudio em OGG OPUS mono 48kHz (PTT WhatsApp nativo).
+        Aplica:
+        - -vn: remove qualquer stream de vídeo ou metadados de imagem do container WebM/MP4
+        - -af asetpts=N/SR/TB: recalcula e normaliza timestamps PTS do zero de forma linear contínua,
+          eliminando o erro 'Áudio não disponível' em clientes WhatsApp (principalmente iOS/iPhone)
+        - -c:a libopus: codec Opus exigido pela Meta para mensagens de voz
+        - -b:a 32k: bitrate otimizado para áudio de voz nítido e leve
+        - -ar 48000: taxa de amostragem padrão de 48kHz para Opus
+        - -ac 1: 1 canal mono (obrigatório para PTT)
+        - -application voip: otimizado para voz
+        - -f ogg: força saída em container Ogg
+        """
         command = [
             "ffmpeg", "-y",
             "-i", input_path,
+            "-vn",
+            "-af", "asetpts=N/SR/TB",
             "-c:a", "libopus",
             "-b:a", "32k",
+            "-vbr", "on",
+            "-compression_level", "10",
             "-ar", "48000",
             "-ac", "1",
             "-application", "voip",
+            "-f", "ogg",
             output_path
         ]
         logger.debug(f"WBP: Executando conversão de áudio para PTT: {' '.join(command)}")
@@ -356,15 +334,26 @@ class WhatsAppService:
             logger.info(f"WBP: Áudio ({mimetype}) recebido. Convertendo para OGG OPUS (PTT) para envio nativo de mensagem de voz.")
             try:
                 with tempfile.TemporaryDirectory() as temp_dir:
-                    input_ext = os.path.splitext(filename)[1] or '.bin'
-                    input_path = os.path.join(temp_dir, f"{uuid.uuid4()}{input_ext}")
+                    input_ext = os.path.splitext(filename)[1]
+                    if not input_ext or input_ext.lower() not in ['.ogg', '.opus', '.webm', '.mp3', '.wav', '.m4a', '.aac', '.mp4']:
+                        if mimetype and 'webm' in mimetype.lower():
+                            input_ext = '.webm'
+                        elif mimetype and ('mp3' in mimetype.lower() or 'mpeg' in mimetype.lower()):
+                            input_ext = '.mp3'
+                        elif mimetype and 'wav' in mimetype.lower():
+                            input_ext = '.wav'
+                        elif mimetype and 'ogg' in mimetype.lower():
+                            input_ext = '.ogg'
+                        else:
+                            input_ext = '.bin'
                     
+                    input_path = os.path.join(temp_dir, f"{uuid.uuid4()}{input_ext}")
                     output_path = os.path.join(temp_dir, f"{uuid.uuid4()}.ogg") # Saída .ogg
                     
                     with open(input_path, "wb") as f:
                         f.write(file_bytes)
                     
-                    # Chama a função síncrona do ffmpeg (converte para OGG OPUS Mono 16kHz)
+                    # Converte para OGG OPUS Mono 48kHz PTT com timestamps normalizados
                     await asyncio.to_thread(self._run_ffmpeg_sync, input_path, output_path)
                     
                     with open(output_path, "rb") as f:
@@ -381,8 +370,16 @@ class WhatsAppService:
 
             except Exception as conv_e:
                 logger.error(f"WBP: Falha na conversão de áudio para OGG OPUS: {conv_e}", exc_info=True)
-                logger.warning("WBP: Tentando enviar áudio original...")
-                # Se a conversão falhar, ele tentará enviar o original.
+                is_standard_audio = any(filename.lower().endswith(ext) for ext in ['.mp3', '.m4a', '.aac']) or (
+                    mimetype and any(t in mimetype.lower() for t in ['audio/mp3', 'audio/mpeg', 'audio/aac', 'audio/mp4'])
+                )
+                if is_standard_audio:
+                    logger.warning("WBP: Falha na conversão para PTT. Enviando áudio original como arquivo de áudio...")
+                    final_file_bytes = file_bytes
+                    final_mimetype = mimetype or 'audio/mpeg'
+                    final_filename = filename
+                else:
+                    raise MessageSendError(f"WBP: Falha ao converter áudio ({filename}) para formato compatível com WhatsApp: {conv_e}") from conv_e
         
         # --- INÍCIO DA LÓGICA DE CONVERSÃO DE IMAGEM (NOVO) ---
         # Processa TODAS as imagens para garantir a orientação correta e compatibilidade.

@@ -7,7 +7,7 @@ from typing import Dict, Any
 from google.genai import types
 from app.graph.state import AgentState, GeneratorOutput
 from app.graph.prompts import GENERATOR_SYSTEM_PROMPT
-from app.graph.history_utils import format_conversation_history
+from app.graph.history_utils import format_conversation_history, sanitize_forbidden_openers
 from app.services.gemini_service import get_gemini_service
 from app.db.database import SessionLocal
 from app.crud import crud_atendimento
@@ -15,6 +15,90 @@ from app.crud import crud_atendimento
 logger = logging.getLogger(__name__)
 
 MEDIA_TAG_REGEX = re.compile(r'\[(?:MEDIA|ARQUIVO|IMAGEM|DOC|FOTO|VIDEO):\s*([^\]]+)\]', re.IGNORECASE)
+
+def sanitize_media_tags(text: str, valid_context_str: str) -> str:
+    """
+    Remove tags [MEDIA: ...] que sejam inválidas (com texto descritivo/espaços) 
+    ou cujo id_arquivo não conste no contexto recuperado, evitando falhas no juiz.
+    """
+    if not text:
+        return text
+
+    def replace_media_tag(match: re.Match) -> str:
+        fid = match.group(1).strip()
+        if " " in fid or len(fid) > 80 or fid not in valid_context_str:
+            return ""
+        return match.group(0)
+
+    cleaned = MEDIA_TAG_REGEX.sub(replace_media_tag, text)
+    cleaned = re.sub(r'\n{3,}', '\n\n', cleaned).strip()
+    return cleaned
+
+def sanitize_response_urls(draft_response: str, sources_text: str) -> str:
+    """
+    Substitui URLs alucinadas ou com caminhos alterados pela URL válida mais próxima
+    da mesma empresa/domínio presente no contexto ou diretrizes.
+    """
+    if not draft_response or not sources_text:
+        return draft_response
+
+    from app.graph.nodes.guardrail import extract_urls, normalize_for_comparison
+    source_urls = extract_urls(sources_text)
+    if not source_urls:
+        return draft_response
+
+    source_norm_map = {normalize_for_comparison(su): su for su in source_urls}
+    draft_urls = extract_urls(draft_response)
+    if not draft_urls:
+        return draft_response
+
+    updated_response = draft_response
+
+    for du in draft_urls:
+        du_norm = normalize_for_comparison(du)
+        # Se a URL gerada já é válida e consta nas fontes, mantém
+        if du_norm in source_norm_map or du in sources_text:
+            continue
+
+        domain_match = re.search(r'^(?:https?://)?(?:www\.)?([^/]+)', du, re.IGNORECASE)
+        if not domain_match:
+            continue
+        du_domain = domain_match.group(1).lower()
+
+        same_domain_sources = []
+        for su in source_urls:
+            su_domain_match = re.search(r'^(?:https?://)?(?:www\.)?([^/]+)', su, re.IGNORECASE)
+            if su_domain_match and su_domain_match.group(1).lower() == du_domain:
+                same_domain_sources.append(su)
+
+        if not same_domain_sources:
+            continue
+
+        du_slug = re.sub(r'^(?:https?://)?[^/]+', '', du).lower()
+        du_tokens = set(re.findall(r'[a-zA-Z0-9]{3,}', du_slug))
+
+        best_match = None
+        best_overlap = 0
+
+        for su in same_domain_sources:
+            su_slug = re.sub(r'^(?:https?://)?[^/]+', '', su).lower()
+            su_tokens = set(re.findall(r'[a-zA-Z0-9]{3,}', su_slug))
+            overlap = len(du_tokens.intersection(su_tokens))
+            if overlap > best_overlap:
+                best_overlap = overlap
+                best_match = su
+
+        target_replacement = None
+        if best_match and best_overlap >= 1:
+            target_replacement = best_match
+        else:
+            target_replacement = min(same_domain_sources, key=len)
+
+        if target_replacement and target_replacement != du:
+            logger.info(f"[Generator Node] Substituindo URL alucinada '{du}' por '{target_replacement}'.")
+            updated_response = updated_response.replace(du, target_replacement)
+
+    return updated_response
 
 async def generator_node(state: AgentState) -> Dict[str, Any]:
     """
@@ -179,6 +263,17 @@ USER: {user_input}
         else:
             clean_draft_resp = raw_text.strip()
 
+        # 1. Sanitização de bordões proibidos no início da resposta
+        clean_draft_resp = sanitize_forbidden_openers(clean_draft_resp)
+
+        # 2. Sanitização de tags de mídia inválidas ou alucinadas
+        valid_context_str = f"{state.get('retrieved_context') or ''}\n{str(state.get('tool_results') or [])}"
+        clean_draft_resp = sanitize_media_tags(clean_draft_resp, valid_context_str)
+
+        # 3. Sanitização de URLs alucinadas
+        sources_text_combined = f"{state.get('persona_prompt') or ''}\n{state.get('workflow_context') or ''}\n{state.get('resumo_crm') or ''}\n{history_str}\n{retrieved_context}\n{tool_results_str}"
+        clean_draft_resp = sanitize_response_urls(clean_draft_resp, sources_text_combined)
+
         logger.info(f"[Generator Node] Resposta gerada (send_as_audio={gen_output.send_as_audio}, intent_handoff={gen_output.intent_handoff}, handoff_destinatario={gen_output.handoff_destinatario}): '{clean_draft_resp[:100]}...'")
 
         text_media_ids = [m.strip() for m in MEDIA_TAG_REGEX.findall(clean_draft_resp) if m.strip()]
@@ -189,25 +284,12 @@ USER: {user_input}
         intent_handoff_val = bool(gen_output.intent_handoff or state.get("intent_handoff"))
         is_conclude = bool(gen_output.intent_conclude or state.get("intent_conclude"))
 
-        audit_trail = dict(state.get("ai_audit_trail") or {})
-        iterations = list(audit_trail.get("iterations") or [])
-        iterations.append({
-            "retry_count": state.get("retry_count", 0),
-            "critique_received": state.get("critique") or None,
-            "draft_response": clean_draft_resp,
-            "send_as_audio": gen_output.send_as_audio,
-            "intent_handoff": gen_output.intent_handoff,
-            "handoff_destinatario": handoff_dest,
-            "handoff_motivo": handoff_mot,
-            "resumo_atualizado": gen_output.resumo_atualizado,
-            "tags_para_adicionar": gen_output.tags_para_adicionar,
-            "guardrail": None
-        })
-        audit_trail["iterations"] = iterations
-
         novo_nome_val = gen_output.novo_nome_cliente.strip() if gen_output.novo_nome_cliente and gen_output.novo_nome_cliente.strip() else None
         nome_cliente_check = (novo_nome_val or nome_cliente_atual or "").strip().lower()
         nome_cliente_tokens = set(t for t in re.split(r'\s+', nome_cliente_check) if len(t) > 2) if nome_cliente_check else set()
+
+        available_tags = state.get("available_tags") or []
+        avail_map = {str(at).strip().lower(): str(at).strip() for at in available_tags if at and str(at).strip()}
 
         sanitized_tags = []
         for t in (gen_output.tags_para_adicionar or []):
@@ -215,14 +297,27 @@ USER: {user_input}
                 continue
             t_clean = str(t).strip()
             t_lower = t_clean.lower()
+            
+            # Bloqueio estrito: a tag DEVE existir em available_tags se a empresa tiver tags cadastradas
+            if avail_map:
+                if t_lower not in avail_map:
+                    logger.warning(f"[Generator Node] Tag '{t_clean}' descartada pois não consta nas tags cadastradas da empresa.")
+                    continue
+                t_clean = avail_map[t_lower]
+                t_lower = t_clean.lower()
+            else:
+                logger.warning(f"[Generator Node] Nenhuma tag cadastrada na empresa. Descartando tag '{t_clean}'.")
+                continue
+
             # Descarta qualquer tag que coincida com o nome do cliente ou partes dele
             if nome_cliente_check and (t_lower == nome_cliente_check or t_lower in nome_cliente_tokens):
                 logger.warning(f"[Generator Node] Tag descartada por corresponder ao nome do cliente: '{t_clean}'")
                 continue
-            sanitized_tags.append(t_clean)
+
+            if t_clean not in sanitized_tags:
+                sanitized_tags.append(t_clean)
 
         # Higienização de IDs de mídia: apenas IDs que realmente constam no contexto recuperado
-        valid_context_str = f"{state.get('retrieved_context') or ''}\n{str(state.get('tool_results') or [])}"
         sanitized_media_ids = []
         for fid in all_media_ids:
             if not fid:
@@ -235,6 +330,22 @@ USER: {user_input}
                 logger.warning(f"[Generator Node] Media ID descartado por não constar no contexto recuperado: '{fid_clean}'")
                 continue
             sanitized_media_ids.append(fid_clean)
+
+        audit_trail = dict(state.get("ai_audit_trail") or {})
+        iterations = list(audit_trail.get("iterations") or [])
+        iterations.append({
+            "retry_count": state.get("retry_count", 0),
+            "critique_received": state.get("critique") or None,
+            "draft_response": clean_draft_resp,
+            "send_as_audio": gen_output.send_as_audio,
+            "intent_handoff": gen_output.intent_handoff,
+            "handoff_destinatario": handoff_dest,
+            "handoff_motivo": handoff_mot,
+            "resumo_atualizado": gen_output.resumo_atualizado,
+            "tags_para_adicionar": sanitized_tags,
+            "guardrail": None
+        })
+        audit_trail["iterations"] = iterations
 
         return {
             "draft_response": clean_draft_resp,

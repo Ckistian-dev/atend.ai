@@ -92,6 +92,42 @@ USER: {user_input}
         final_target_category = decision.target_category
         handoff_dest = decision.handoff_destinatario.strip() if decision.handoff_destinatario and decision.handoff_destinatario.strip() else None
 
+        # Sanitização de target_category
+        if final_target_category:
+            cat_clean = str(final_target_category).strip().lower()
+            if cat_clean in ["links", "link", "url", "urls", "site", "sites", "geral", "todas", "all", "none", "null"]:
+                logger.info(f"[Router Node] Sanitizando target_category inválida ('{final_target_category}') para None.")
+                final_target_category = None
+
+        # 0. Detecção de resposta direta à pergunta de nome feita pelo assistente
+        from app.graph.history_utils import get_last_assistant_message
+        import re
+        last_asst = get_last_assistant_message(history).lower()
+        is_name_question = bool(re.search(
+            r'\b(?:qual\s+(?:é\s+)?(?:o\s+)?seu\s+nome|como\s+posso\s+te\s+chamar|me\s+dizer\s+(?:o\s+)?seu\s+nome|seu\s+nome\s+por\s+gentileza|como\s+se\s+chama|qual\s+o\s+nome)\b',
+            last_asst
+        ))
+        
+        clean_user_input = str(user_input or "").strip()
+        from app.graph.handoff_policy import is_sales_or_inquiry_intent
+        user_words = clean_user_input.split()
+        if is_name_question and len(user_words) <= 4 and not is_sales_or_inquiry_intent(clean_user_input) and "?" not in clean_user_input:
+            name_candidate = re.sub(
+                r'^(?:me\s+chamo|sou\s+(?:o|a)?|meu\s+nome\s+é|meu\s+nome\s+e|é\s+(?:o|a)?|e\s+(?:o|a)?|aqui\s+é\s+(?:o|a)?|pode\s+chamar\s+de)\s+',
+                '',
+                clean_user_input,
+                flags=re.IGNORECASE
+            ).strip(' .,"\'!?:;\n\r\t')
+            if name_candidate and len(name_candidate) >= 2 and name_candidate.lower() not in ["olá", "ola", "oi", "bom dia", "boa tarde", "boa noite", "sim", "não", "nao"]:
+                if name_candidate.islower() or name_candidate.isupper():
+                    name_candidate = name_candidate.title()
+                logger.info(f"[Router Node] Resposta a pergunta de nome detectada ('{clean_user_input}' -> '{name_candidate}'). Direcionando para tool 'atualizar_nome_contato'.")
+                final_intent = "tool"
+                final_tool = "atualizar_nome_contato"
+                parsed_tool_args = {"novo_nome": name_candidate}
+                final_search_query = None
+                final_target_category = None
+
         # 1. Interceptação determinística de falso positivo de transbordo
         if final_intent == "handoff" or final_tool == "transferir_para_atendente":
             from app.graph.handoff_policy import should_allow_handoff, is_sales_or_inquiry_intent

@@ -783,7 +783,10 @@ class AtendimentoService:
             message_id = send_result.get('id') or f"manual-{uuid.uuid4()}"
             timestamp_epoch = send_result.get('timestamp', int(datetime.now(timezone.utc).timestamp()))
             media_id_from_send = send_result.get("media_id")
-            final_mimetype_saved = 'audio/mpeg' if media_type == 'audio' else mimetype
+            if media_type == 'audio':
+                final_mimetype_saved = 'audio/ogg' if str(filename).lower().endswith('.ogg') else (mimetype or 'audio/ogg')
+            else:
+                final_mimetype_saved = mimetype
 
             formatted_message = schemas.FormattedMessage(
                 id=str(message_id),

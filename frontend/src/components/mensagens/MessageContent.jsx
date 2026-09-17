@@ -1,5 +1,4 @@
-import React from 'react';
-import { AlertTriangle, Download, Loader2, FileText, AlertCircle } from 'lucide-react';
+import { AlertTriangle, Download, Loader2, FileText, AlertCircle, Mic } from 'lucide-react';
 
 // Importa o novo componente de áudio
 import AudioPlayer from './AudioPlayer';
@@ -239,16 +238,70 @@ const MessageContent = ({ msg, atendimentoId, onViewMedia, onDownloadDocument, i
                     </div>
                 );
 
-            case 'sending':
+            case 'sending': {
+                const isAudio = msg.mediaType === 'audio' || 
+                    (msg.filename && msg.filename.toLowerCase().includes('audio')) || 
+                    (msg.content && (msg.content.toLowerCase().includes('áudio') || msg.content.toLowerCase().includes('audio')));
+
+                if (isAudio) {
+                    return (
+                        <div className="flex flex-col min-w-[280px] sm:min-w-[320px] max-w-full">
+                            {quotedView}
+                            <div className="flex items-center gap-3.5 py-2 px-1">
+                                {/* Glowing Mic Badge with animated pulse ring */}
+                                <div className="relative flex-shrink-0">
+                                    <div className="absolute -inset-1 rounded-2xl bg-cyan-400/30 animate-ping pointer-events-none" />
+                                    <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shadow-inner">
+                                        <Mic size={20} className="text-cyan-200 animate-pulse" />
+                                    </div>
+                                </div>
+
+                                {/* Audio Processing Details */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                        <div className="flex items-center gap-1.5">
+                                            <Loader2 size={12} className="animate-spin text-cyan-200" />
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-white">
+                                                Processando Áudio
+                                            </span>
+                                        </div>
+
+                                        {/* Animated Equalizer Waveform Bars */}
+                                        <div className="flex items-center gap-1 h-3 px-1">
+                                            <span className="w-1 bg-cyan-300 rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-2" />
+                                            <span className="w-1 bg-white rounded-full animate-[pulse_0.4s_ease-in-out_infinite_0.2s] h-3.5" />
+                                            <span className="w-1 bg-cyan-200 rounded-full animate-[pulse_0.7s_ease-in-out_infinite_0.4s] h-2.5" />
+                                            <span className="w-1 bg-white rounded-full animate-[pulse_0.5s_ease-in-out_infinite_0.1s] h-3" />
+                                            <span className="w-1 bg-cyan-300 rounded-full animate-[pulse_0.8s_ease-in-out_infinite_0.3s] h-1.5" />
+                                        </div>
+                                    </div>
+
+                                    <p className="text-[11px] text-white/80 font-medium leading-tight truncate">
+                                        Convertendo e enviando ao WhatsApp...
+                                    </p>
+
+                                    {/* Shimmering Progress Bar */}
+                                    <div className="w-full h-1.5 bg-white/15 rounded-full overflow-hidden mt-2 p-0.5">
+                                        <div className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-white to-blue-200 animate-pulse w-full" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+
                 return (
                     <div className="flex flex-col">
                         {quotedView}
                         <div className="flex items-center gap-3 py-2">
-                            <Loader2 size={16} className="animate-spin text-white/60" />
-                            <span className="text-[12px] font-bold uppercase tracking-widest text-white/50">Enviando...</span>
+                            <Loader2 size={16} className="animate-spin text-white/70" />
+                            <span className="text-[12px] font-bold uppercase tracking-wider text-white/80">
+                                {msg.content || 'Enviando...'}
+                            </span>
                         </div>
                     </div>
                 );
+            }
 
             case 'text':
             default:

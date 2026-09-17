@@ -179,9 +179,17 @@ async def _consultar_link(url: str, tenant_id: int, atendimento_id: int) -> str:
 async def _atualizar_nome(atendimento_id: int, novo_nome: str) -> str:
     if not novo_nome or not str(novo_nome).strip():
         return "Nome inválido."
-    clean_nome = str(novo_nome).strip()
-    if clean_nome.lower() in ["null", "none", "não informado", "desconhecido", "cliente"]:
-        return "Nome não fornecido."
+    raw_name = str(novo_nome).strip()
+    clean_nome = re.sub(
+        r'^(?:me\s+chamo|sou\s+(?:o|a)?|meu\s+nome\s+é|meu\s+nome\s+e|é\s+(?:o|a)?|e\s+(?:o|a)?|aqui\s+é\s+(?:o|a)?|pode\s+chamar\s+de|pode\s+me\s+chamar\s+de)\s+',
+        '',
+        raw_name,
+        flags=re.IGNORECASE
+    ).strip(' .,"\'!?:;\n\r\t')
+    if not clean_nome or clean_nome.lower() in ["null", "none", "não informado", "desconhecido", "cliente", "undefined"]:
+        return "Nome não fornecido ou inválido."
+    if clean_nome.islower() or clean_nome.isupper():
+        clean_nome = clean_nome.title()
     async with SessionLocal() as db:
         async with db.begin():
             at = await db.get(models.Atendimento, atendimento_id, with_for_update=True)
@@ -494,11 +502,28 @@ async def tools_node(state: AgentState) -> Dict[str, Any]:
             resultado_str = await _obter_data_hora_atual()
 
         elif tool_name == "atualizar_nome_contato":
-            novo_nome = tool_args.get("novo_nome", "")
+            novo_nome = (
+                tool_args.get("novo_nome") or 
+                tool_args.get("nome") or 
+                tool_args.get("name") or 
+                tool_args.get("nome_contato") or 
+                tool_args.get("cliente") or 
+                tool_args.get("contact_name")
+            )
+            if not novo_nome and isinstance(tool_args, dict) and len(tool_args) == 1:
+                val = next(iter(tool_args.values()))
+                if isinstance(val, str) and val.strip():
+                    novo_nome = val.strip()
+
             resultado_str = await _atualizar_nome(atendimento_id, novo_nome)
+            if "registrado no CRM" in resultado_str:
+                match = re.search(r"'([^']+)'", resultado_str)
+                clean_saved = match.group(1) if match else str(novo_nome).strip()
+                extra_state_updates["novo_nome_cliente"] = clean_saved
+                extra_state_updates["nome_cliente"] = clean_saved
 
         elif tool_name == "adicionar_tag_ao_cliente":
-            nome_tag = tool_args.get("nome_da_tag", "")
+            nome_tag = tool_args.get("nome_da_tag") or tool_args.get("tag") or tool_args.get("nome") or tool_args.get("nome_tag") or ""
             resultado_str = await _adicionar_tag(atendimento_id, tenant_id, nome_tag)
 
         elif tool_name == "concluir_atendimento":

@@ -17,8 +17,8 @@ const deduplicateMessages = (msgs) => {
             continue;
         }
 
-        // Evita duplicatas com mesmo conteúdo, role e timestamp aproximado
-        const isContentDuplicate = result.some(r => 
+        // Evita duplicatas com mesmo conteúdo, role e timestamp aproximado (nunca descarta mensagens locais em envio)
+        const isContentDuplicate = msg.type !== 'sending' && result.some(r => 
             r.role === msg.role && 
             (r.content || '') === (msg.content || '') &&
             (r.type || 'text') === (msg.type || 'text') &&
@@ -243,10 +243,10 @@ const ChatBody = ({ mensagem, onViewMedia, onDownloadDocument, isDownloadingMedi
 
                     const rawContent = (msg.content || '').trim();
                     const isUnsupportedText = /^\[Mensagem tipo .* não suportada\]/i.test(rawContent);
-                    const hasMedia = !!(msg.media_id || ['image', 'audio', 'video', 'document', 'location'].includes(msg.type));
+                    const hasMedia = !!(msg.media_id || msg.localUrl || ['image', 'audio', 'video', 'document', 'location'].includes(msg.type) || ['image', 'audio', 'video', 'document', 'location'].includes(msg.mediaType));
                     const hasInteractive = !!(msg.buttons?.length || msg.quoted_msg);
 
-                    if (!hasMedia && !hasInteractive && (isUnsupportedText || !rawContent)) {
+                    if (msg.type !== 'sending' && !hasMedia && !hasInteractive && (isUnsupportedText || !rawContent)) {
                         return null;
                     }
 

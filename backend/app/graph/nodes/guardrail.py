@@ -7,7 +7,7 @@ from typing import Dict, Any, List, Tuple
 from google.genai import types
 from app.graph.state import AgentState, EvaluationResult
 from app.graph.prompts import GUARDRAIL_JUDGE_PROMPT
-from app.graph.history_utils import format_conversation_history
+from app.graph.history_utils import format_conversation_history, sanitize_forbidden_openers
 from app.services.gemini_service import get_gemini_service
 from app.db.database import SessionLocal
 from app.crud import crud_atendimento
@@ -305,7 +305,41 @@ Mensagem Gerada para Avaliação:
             f"{reason_log}{critique_log}"
         )
 
-        # Salvaguarda determinística contra loops em saudações simples do cliente
+        # Higienização determinística de bordões/aberturas proibidas
+        draft_response = sanitize_forbidden_openers(draft_response)
+
+        # Salvaguarda 1: Se a resposta foi reprovada devido a bordão/abertura proibida no início, higieniza e aprova sem retry
+        if not evaluation.is_valid and evaluation.critique:
+            crit_lower = evaluation.critique.lower()
+            reason_lower = (evaluation.reason or "").lower()
+            opener_terms = ["perfeito", "com certeza", "entendido", "bordão", "bordao", "interjeição", "interjeicao", "palavra proibida", "termo proibido"]
+            has_opener_complaint = any(term in crit_lower or term in reason_lower for term in opener_terms)
+            if has_opener_complaint:
+                other_errors = any(term in crit_lower for term in ["alucin", "invent", "incorreto", "preço indevido"])
+                if not other_errors and urls_valid and media_valid:
+                    logger.info(f"[Guardrail Node] Bordão proibido removido no draft. Aprovando resposta sem retry desnecessário.")
+                    evaluation.is_valid = True
+                    evaluation.critique = None
+                    evaluation.reason = None
+
+        # Salvaguarda 2: Se o cliente confirmou ou solicitou transbordo expressamente, aprova o handoff sem perguntas redundantes
+        if intent_handoff_proposto:
+            from app.graph.handoff_policy import should_allow_handoff
+            allowed_h, _ = should_allow_handoff(user_input=state.get("user_input", ""), history=history, requested_by_ai=True)
+            if allowed_h:
+                if not evaluation.approve_handoff:
+                    logger.info(f"[Guardrail Node] Transbordo legitimamente confirmado pelo cliente. Aprovando handoff.")
+                    evaluation.approve_handoff = True
+                if not evaluation.is_valid:
+                    crit_lower = (evaluation.critique or "").lower()
+                    transfer_complaints = ["procedimento", "pergunta", "dúvida antes", "duvida antes", "outra dúvida", "horário de atendimento"]
+                    if any(term in crit_lower for term in transfer_complaints):
+                        logger.info(f"[Guardrail Node] Dispensa de pergunta redundante pré-transbordo após confirmação expressa do cliente.")
+                        evaluation.is_valid = True
+                        evaluation.critique = None
+                        evaluation.reason = None
+
+        # Salvaguarda 3: Determinística contra loops em saudações simples do cliente
         user_input_raw = (state.get("user_input") or "").strip().lower().rstrip('.!?,')
         is_client_greeting = user_input_raw in [
             "olá", "ola", "oi", "oii", "oiii", "opa", "bom dia", "boa tarde", "boa noite", 
